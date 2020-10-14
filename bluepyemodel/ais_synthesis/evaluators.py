@@ -51,6 +51,7 @@ def _single_evaluation(
     morphology_path="morphology_path",
     save_traces=False,
     trace_folder="traces",
+    stochasticity=True,
 ):
     """Evaluating single protocol."""
 
@@ -61,6 +62,7 @@ def _single_evaluation(
         cell_model=cell,
         protocols_definition=protocols,
         features_definition=features,
+        stochasticity=stochasticity,
     )
 
     responses = _evaluator.run_protocols(
@@ -191,6 +193,7 @@ def _rin_evaluation(
     key="rin",
     morphology_path="morphology_path",
     with_currents=False,
+    stochasticity=True,
 ):
     """Evaluating rin protocol."""
 
@@ -204,6 +207,7 @@ def _rin_evaluation(
             prot: protocols[prot] for prot in ["RMP", "RinHoldCurrent"]
         },
         features_definition=features,
+        stochasticity=stochasticity,
     )
     _evaluator.fitness_protocols[
         "main_protocol"
@@ -246,6 +250,7 @@ def evaluate_ais_rin(
     Returns:
         pandas.DataFrame: original combos with computed rin of ais
     """
+
     key = "rin_ais"
     rin_ais_evaluation = partial(
         _rin_evaluation,

@@ -24,7 +24,7 @@ class StepProtocol(ephys.protocols.SweepProtocol):
         step_stimulus=None,
         holding_stimulus=None,
         recordings=None,
-        stochasticity=False,
+        stochasticity=True,
     ):
         """Constructor
 
@@ -66,19 +66,13 @@ class StepProtocol(ephys.protocols.SweepProtocol):
 
     def run(self, cell_model, param_values, sim=None, isolate=None, timeout=None):
         """Run protocol"""
+        if self.stochasticity:
+            for mechanism in cell_model.mechanisms:
+                if not mechanism.deterministic:
+                    self.cvode_active = False
 
-        for mechanism in cell_model.mechanisms:
-            if "Stoch" in mechanism.prefix:
-                mechanism.deterministic = self.stochasticity
-
-        responses = {}
-        responses.update(
-            super(StepProtocol, self).run(cell_model, param_values, sim=sim)
-        )
-
-        for mechanism in cell_model.mechanisms:
-            if "Stoch" in mechanism.prefix:
-                mechanism.deterministic = True
+        responses = super(StepProtocol, self).run(cell_model, param_values, sim=sim)
+        self.cvode_active = True
 
         return responses
 
@@ -96,7 +90,7 @@ class StepThresholdProtocol(StepProtocol):
         step_stimulus=None,
         holding_stimulus=None,
         recordings=None,
-        stochasticity=False,
+        stochasticity=True,
     ):
         """Constructor
 
@@ -161,7 +155,7 @@ class RMPProtocol(StepProtocol):
         step_stimulus=None,
         holding_stimulus=None,
         recordings=None,
-        stochasticity=False,
+        stochasticity=True,
         target_voltage=None,
     ):
         """Constructor

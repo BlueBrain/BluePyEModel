@@ -91,6 +91,14 @@ class Singlecell_API(DatabaseAPI):
             params_definition["parameters"].pop("__comment")
 
         mech_definition = params["mechanisms"]
+        for mech in mech_definition.values():
+            stoch = []
+            for m in mech["mech"]:
+                if "Stoch" in m:
+                    stoch.append(True)
+                else:
+                    stoch.append(False)
+            mech["stoch"] = stoch
 
         mech_names = []
         for mechs in mech_definition.values():

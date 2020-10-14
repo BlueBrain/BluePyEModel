@@ -461,6 +461,26 @@ class PostgreSQL_API(DatabaseAPI):
             dists.append(param["distribution"])
             mech_names.append(param["mechanism"])
 
+        mech_names = set(mech_names)
+
+        # Stochasticity
+        mechanism_paths = self.fetch(
+            table="mechanisms_path", conditions={"name": tuple(mech_names)}
+        )
+        if mechanism_paths.empty:
+            logger.warning("PostgreSQL warning: could not get the mechanism paths")
+            return None
+        mechanism_paths = mechanism_paths.to_dict(orient="records")
+
+        for loc in mech_definition:
+            stoch = []
+            for m in mech_definition[loc]["mech"]:
+                is_stock = next(
+                    item["stochastic"] for item in mechanism_paths if item["name"] == m
+                )
+                stoch.append(is_stock)
+                mech_definition[loc]["stoch"] = stoch
+
         # Get the functions matching the distributions
         dists = set(dists)
         dist_def = self.fetch(
@@ -479,7 +499,7 @@ class PostgreSQL_API(DatabaseAPI):
                 "parameters": dd["parameters"],
             }
 
-        return params_definition, mech_definition, set(mech_names)
+        return params_definition, mech_definition, mech_names
 
     def get_protocols(
         self,

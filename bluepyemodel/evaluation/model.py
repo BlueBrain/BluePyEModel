@@ -218,10 +218,8 @@ def define_mechanisms(mechanisms_definition):
 
     mechanisms = []
     for sectionlist, channels in mechanisms_definition.items():
-
         seclist_locs = multi_locations(sectionlist)
-
-        for channel in channels["mech"]:
+        for channel, stoch in zip(channels["mech"], channels["stoch"]):
             mechanisms.append(
                 ephys.mechanisms.NrnMODMechanism(
                     name="%s.%s" % (channel, sectionlist),
@@ -229,6 +227,7 @@ def define_mechanisms(mechanisms_definition):
                     prefix=channel,
                     locations=seclist_locs,
                     preloaded=True,
+                    deterministic=not stoch,
                 )
             )
 
