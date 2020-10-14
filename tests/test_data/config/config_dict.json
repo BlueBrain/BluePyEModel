@@ -1,0 +1,73 @@
+{
+    "files_metadata": {
+        "C010600C1-MT-C1": {
+            "IDRest": [
+                {
+                    "filepath": "./ephys_data/C010600C1-MT-C1.nwb",
+                    "i_unit": "A",
+                    "v_unit": "V",
+                    "t_unit": "s",
+                    "dt": 0.0001,
+                    "ljp": 14.0,
+                    "protocol_name": "IDRest",
+                    "repetition": [
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                }
+            ],
+            "IDThres": [
+                {
+                    "filepath": "./ephys_data/C010600C1-MT-C1.nwb",
+                    "i_unit": "A",
+                    "v_unit": "V",
+                    "t_unit": "s",
+                    "dt": 0.0001,
+                    "ljp": 14.0,
+                    "protocol_name": "IDThres",
+                    "repetition": [
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                }
+            ]
+        }
+    },
+    "targets": {
+        "IDRest": {
+            "amplitudes": [
+                140,
+                180,
+                260
+            ],
+            "tolerances": [
+                10.0
+            ],
+            "efeatures": [
+                "AP_height"
+            ],
+            "location": "soma"
+        },
+        "IDThres": {
+            "amplitudes": [
+                80,
+                100,
+                120,
+                150,
+                160
+            ],
+            "tolerances": [
+                10.0
+            ],
+            "efeatures": [],
+            "location": "soma"
+        }
+    },
+    "protocols_threshold": [
+        "IDThres"
+    ]
+}

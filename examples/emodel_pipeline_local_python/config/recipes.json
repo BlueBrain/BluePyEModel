@@ -1,0 +1,32 @@
+{
+    "L5PC": {
+        "morph_path": "./morphologies/",
+        "morphology": [
+            [
+                "L5TPCa",
+                "C060114A5.asc"
+            ]
+        ],
+        "params": "config/parameters/pyr.json",
+        "protocol": "config/features/L5PC.json",
+        "features": "config/features/L5PC.json",
+        "pipeline_settings": {
+            "path_extract_config": "config/features/L5PC_config.json",
+            "plot_extraction": true,
+            "optimisation_timeout": 300,
+            "optimiser": "MO-CMA",
+            "max_ngen": 100,
+            "optimisation_params": {
+                "offspring_size": 20
+            },
+            "validation_threshold": 5,
+            "plot_currentscape": true,
+            "currentscape_config": {
+                "title": "L5PC"
+            },
+            "validation_protocols": [
+                "APWaveform_300"
+            ]
+        }
+    }
+}

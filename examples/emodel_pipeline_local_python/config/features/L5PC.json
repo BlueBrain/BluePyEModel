@@ -1,0 +1,110 @@
+{
+  "efeatures": [
+    {
+      "efel_feature_name": "Spikecount",
+      "protocol_name": "IDRest_200",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "mean": 18.5625,
+      "original_std": 5.061728336250376,
+      "sample_size": 16,
+      "efeature_name": "Spikecount",
+      "efel_settings": {
+        "interp_step": 0.025,
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efel_feature_name": "voltage_base",
+      "protocol_name": "IDRest_200",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "mean": -71.84710911089577,
+      "original_std": 0.9996541782018281,
+      "sample_size": 16,
+      "efeature_name": "voltage_base",
+      "efel_settings": {
+        "interp_step": 0.025,
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efel_feature_name": "AP_amplitude",
+      "protocol_name": "IDRest_200",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "mean": 50.5113145252614,
+      "original_std": 1.8035119835947135,
+      "sample_size": 16,
+      "efeature_name": "AP_amplitude",
+      "efel_settings": {
+        "interp_step": 0.025,
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efel_feature_name": "AP_amplitude",
+      "protocol_name": "APWaveform_300",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "mean": 53.29020082028301,
+      "original_std": 4.03220131226907,
+      "sample_size": 23,
+      "efeature_name": "AP_amplitude",
+      "efel_settings": {
+        "interp_step": 0.025,
+        "strict_stiminterval": true
+      }
+    }
+  ],
+  "protocols": [
+    {
+      "name": "IDRest_200",
+      "stimuli": [
+        {
+          "delay": 700.15625,
+          "amp": 0.04941164824413135,
+          "thresh_perc": 197.65625064031553,
+          "duration": 1999.953125,
+          "totduration": 3000.0,
+          "holding_current": -0.025389384478330612
+        }
+      ],
+      "recordings": [
+        {
+          "type": "CompRecording",
+          "name": "IDRest_200.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": false,
+      "protocol_type": "Protocol",
+      "stochasticity": false
+    },
+    {
+      "name": "APWaveform_300",
+      "stimuli": [
+        {
+          "delay": 5.02875,
+          "amp": 0.07304330635815859,
+          "thresh_perc": 292.18750197915716,
+          "duration": 50.069583333333334,
+          "totduration": 60.0,
+          "holding_current": -0.024998778477311134
+        }
+      ],
+      "recordings": [
+        {
+          "type": "CompRecording",
+          "name": "APWaveform_300.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": true,
+      "protocol_type": "Protocol",
+      "stochasticity": false
+    }
+  ]
+}

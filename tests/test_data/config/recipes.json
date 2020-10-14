@@ -1,0 +1,20 @@
+{
+    "cADpyr_L5TPC": {
+        "morph_path": "./morphology/",
+        "morphology": [
+            [
+                "L5TPCa",
+                "C060114A5.asc"
+            ]
+        ],
+        "params": "config/params.json",
+        "protocol": "config/protocols.json",
+        "features": "config/features.json",
+        "pipeline_settings": {
+            "path_extract_config": "tests/test_data/config/config_dict.json",
+            "validation_protocols": [
+                "APWaveform_140"
+            ]
+        }
+    }
+}
