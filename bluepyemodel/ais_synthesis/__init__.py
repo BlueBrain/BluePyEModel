@@ -1,0 +1,1 @@
+"""AIS synthesis module."""
