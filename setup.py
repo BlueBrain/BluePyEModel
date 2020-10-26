@@ -8,7 +8,8 @@ from setuptools import setup, find_packages
 if sys.version_info < (3, 6):
     sys.exit("Sorry, Python < 3.6 is not supported")
 
-VERSION = "0.0.1dev1" # imp.load_source("", "cell_optimisation_analysis/version.py").__version__
+VERSION = imp.load_source("", "bluepyemodel/version.py").__version__
+
 
 setup(
     name="BluePyEModel",
@@ -35,6 +36,7 @@ setup(
     ],
     packages=find_packages(),
     entry_points={
-        "console_scripts": ["cell-optimisation-analysis=cell_optimisation_analysis.apps.emodel_release:cli"],
+        "console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"],
+
     },
 )

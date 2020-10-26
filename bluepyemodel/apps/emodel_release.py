@@ -19,8 +19,13 @@ L = logging.getLogger(__name__)
 
 
 @click.group()
-def cli():
+@click.option("-v", "--verbose", count=True)
+def cli(verbose):
     """Cli to learn and generate diameters of neurons."""
+
+    logging.basicConfig(
+        level=(logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
+    )
 
 
 def _get_database(api, emodel_path):
@@ -138,9 +143,15 @@ def create_emodel_release(
     shutil.copytree(mechanisms, release_paths["mechanisms"])
 
 
-def _load_cells(circuit_config):
+def _load_cells(circuit_config, mtype=None, n_cells=None):
     """Load cells from a circuit into a dataframe."""
-    return Circuit(circuit_config).cells.get({"mtype": "L5_TPC:A"})
+    if mtype is not None:
+        cells = Circuit(circuit_config).cells.get({"mtype": mtype})
+    else:
+        cells = Circuit(circuit_config).cells.get()
+    if n_cells is not None:
+        cells = cells[:n_cells]
+    return cells
 
 
 def _create_emodel_column(cells, etype_emodel_map):
@@ -165,21 +176,30 @@ def _create_emodel_column(cells, etype_emodel_map):
 
 
 @cli.command("get_me_combos_parameters")
-@click.argument("circuit_config", type=click.Path(exists=True))
-@click.option("--release-path", type=click.Path(exists=True), default="emodel_release")
+@click.option("--circuit-config", type=click.Path(exists=True), required=True)
+@click.option(
+    "--release-path",
+    type=click.Path(exists=True),
+    default="emodel_release",
+    required=True,
+)
 @click.option("--morphology-path", type=click.Path(exists=True), required=True)
 @click.option("--output", default="mecombo_emodel.tsv", type=str)
 @click.option("--ipyp-profile", default=None, type=str)
-@click.option("--n-cells", default=None, type=int)
 @click.option("--emodel-api", default="singlecell", type=str)
+@click.option("--sql-tmp-path", default="tmp", type=str)
+@click.option("--n-cells", default=None, type=int)
+@click.option("--mtype", default=None, type=str)
 def get_me_combos_parameters(
     circuit_config,
     release_path,
     morphology_path,
     output,
     ipyp_profile,
-    n_cells,
     emodel_api,
+    sql_tmp_path,
+    n_cells,
+    mtype,
 ):
     """For each me-combos, compute the AIS scale and thresholds currents.
 
@@ -189,14 +209,15 @@ def get_me_combos_parameters(
         morphology_path (str): base path to morphologies
         output (str): .csv file to save output data for each me-combos
         ipyp_profile (str): name of ipython profile, with None, multiprocessing will be used
+        emodel_api (str): name of emodel api, so far only 'singlecell' is available
+        sql_tmp_path (str): path to a folder to save sql files used during computations
         n_cells (int): for testing, only use first n_cells in cells dataframe
+        mtype (str): name of mtype to use (for testing only)
     """
 
     # 1) load release data, cells and compile mechanisms
     L.info("Load release data, cells and compile mechanisms.")
-    cells = _load_cells(circuit_config)
-    if n_cells is not None:
-        cells = cells[:n_cells]
+    cells = _load_cells(circuit_config, mtype, n_cells)
 
     release_paths = get_release_paths(release_path)
     with open(release_paths["ais_model_path"], "r") as ais_file:
@@ -220,6 +241,7 @@ def get_me_combos_parameters(
 
     # 3) Compute AIS scales
     L.info("Compute AIS scales.")
+    Path(sql_tmp_path).mkdir(parents=True, exist_ok=True)
     results_df = synthesize_ais(
         morphs_combos_df,
         emodel_db,
@@ -227,7 +249,7 @@ def get_me_combos_parameters(
         target_rhos,
         ipyp_profile=ipyp_profile,
         scales_params=ais_models["scales_params"],
-        combos_db_filename="synth_db.sql",
+        combos_db_filename=Path(sql_tmp_path) / "synth_db.sql",
     )
 
     # 4) compute holding and threshold currents
@@ -236,7 +258,7 @@ def get_me_combos_parameters(
         results_df,
         emodel_db,
         ipyp_profile=ipyp_profile,
-        combos_db_filename="current_db.sql",
+        combos_db_filename=Path(sql_tmp_path) / "current_db.sql",
     )
 
     # 5) save all values in .tv
@@ -254,6 +276,7 @@ def get_me_combos_parameters(
         axis=1,
     )
 
+    Path(output).parent.mkdir(parents=True, exist_ok=True)
     results_df.to_csv(
         output,
         columns=[
