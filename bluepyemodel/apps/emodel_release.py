@@ -14,6 +14,7 @@ from bluepyemodel.evaluation.modifiers import get_synth_axon_hoc
 from bluepyemodel.api.singlecell import Singlecell_API
 from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
 from bluepyemodel.ais_synthesis.evaluators import evaluate_currents
+from bluepyemodel.ais_synthesis.tools import init_parallel_factory
 
 L = logging.getLogger(__name__)
 
@@ -22,10 +23,9 @@ L = logging.getLogger(__name__)
 @click.option("-v", "--verbose", count=True)
 def cli(verbose):
     """Cli to learn and generate diameters of neurons."""
-
-    logging.basicConfig(
-        level=(logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
-    )
+    loglevel = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
+    logformat = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+    logging.basicConfig(level=loglevel, format=logformat)
 
 
 def _get_database(api, emodel_path):
@@ -184,22 +184,22 @@ def _create_emodel_column(cells, etype_emodel_map):
     required=True,
 )
 @click.option("--morphology-path", type=click.Path(exists=True), required=True)
-@click.option("--output", default="mecombo_emodel.tsv", type=str)
-@click.option("--ipyp-profile", default=None, type=str)
-@click.option("--emodel-api", default="singlecell", type=str)
-@click.option("--sql-tmp-path", default="tmp", type=str)
+@click.option("--output", default="mecombo_emodel.tsv", type=str, show_default=True)
+@click.option("--emodel-api", default="singlecell", type=str, show_default=True)
+@click.option("--sql-tmp-path", default="tmp", type=str, show_default=True)
 @click.option("--n-cells", default=None, type=int)
 @click.option("--mtype", default=None, type=str)
+@click.option("--parallel-lib", default="multiprocessing", show_default=True)
 def get_me_combos_parameters(
     circuit_config,
     release_path,
     morphology_path,
     output,
-    ipyp_profile,
     emodel_api,
     sql_tmp_path,
     n_cells,
     mtype,
+    parallel_lib,
 ):
     """For each me-combos, compute the AIS scale and thresholds currents.
 
@@ -208,12 +208,15 @@ def get_me_combos_parameters(
         release_path (str): path to emodel release folder
         morphology_path (str): base path to morphologies
         output (str): .csv file to save output data for each me-combos
-        ipyp_profile (str): name of ipython profile, with None, multiprocessing will be used
         emodel_api (str): name of emodel api, so far only 'singlecell' is available
         sql_tmp_path (str): path to a folder to save sql files used during computations
+        parallel_lib (str): parallel library
         n_cells (int): for testing, only use first n_cells in cells dataframe
         mtype (str): name of mtype to use (for testing only)
     """
+
+    # Initialize the parallel library. If using dask, it must be called at the beginning.
+    parallel_factory = init_parallel_factory(parallel_lib)
 
     # 1) load release data, cells and compile mechanisms
     L.info("Load release data, cells and compile mechanisms.")
@@ -247,7 +250,7 @@ def get_me_combos_parameters(
         emodel_db,
         ais_models["mtype"],
         target_rhos,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
         scales_params=ais_models["scales_params"],
         combos_db_filename=Path(sql_tmp_path) / "synth_db.sql",
     )
@@ -257,7 +260,7 @@ def get_me_combos_parameters(
     results_df = evaluate_currents(
         results_df,
         emodel_db,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
         combos_db_filename=Path(sql_tmp_path) / "current_db.sql",
     )
 
@@ -293,3 +296,5 @@ def get_me_combos_parameters(
         index=False,
         sep="\t",
     )
+    # clean up the parallel library, if needed
+    parallel_factory.shutdown()

@@ -47,6 +47,7 @@ def synthesize_ais(
     morphology_path="morphology_path",
     continu=False,
     ipyp_profile=None,
+    parallel_factory=None,
     scales_params=None,
     debug_plots=False,
     combos_db_filename="synth_db.sql",
@@ -63,6 +64,7 @@ def synthesize_ais(
         scales_params (dict): parmeter for scales of AIS to use
         debug_plots (bool): set to tru to save a figure for each AIS scale
         ipyp_profile (str): name of ipyparallel profile
+        parallel_factory (ParallelFactory): parallel factory instance (alternative to ipyp_profile)
     """
     emodels = get_emodels(morphs_combos_df, emodels)
 
@@ -81,6 +83,7 @@ def synthesize_ais(
         morphology_path=morphology_path,
         continu=continu,
         ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
         combos_db_filename=combos_db_filename,
     )
 

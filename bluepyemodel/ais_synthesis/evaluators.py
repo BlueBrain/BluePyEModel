@@ -274,6 +274,7 @@ def evaluate_somadend_rin(
     continu=False,
     combos_db_filename="eval_db.sql",
     ipyp_profile=None,
+    parallel_factory=None,
 ):
     """Compute the input resistance of the soma and dentrites.
 
@@ -286,6 +287,7 @@ def evaluate_somadend_rin(
             if False, it will ecrase or generate the database
         combos_db_filename (str): filename for the combos sqlite database
         ipyp_profile (str): name of ipyparallel profile
+        parallel_factory (ParallelFactory): parallel factory instance (alternative to ipyp_profile)
 
     Returns:
         pandas.DataFrame: original combos with computed rin or soma+dendrite
@@ -305,6 +307,7 @@ def evaluate_somadend_rin(
         task_ids=task_ids,
         continu=continu,
         ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
         combos_db_filename=combos_db_filename,
     )
 
@@ -424,6 +427,7 @@ def evaluate_currents(
     continu=False,
     combos_db_filename="eval_db.sql",
     ipyp_profile=None,
+    parallel_factory=None,
 ):
     """Compute the threshold and holding currents.
 
@@ -436,6 +440,7 @@ def evaluate_currents(
             if False, it will ecrase or generate the database
         combos_db_filename (str): filename for the combos sqlite database
         ipyp_profile (str): name of ipyparallel profile
+        parallel_factory (ParallelFactory): parallel factory instance (alternative to ipyp_profile)
 
     Returns:
         pandas.DataFrame: original combos with computed rin of ais
@@ -455,5 +460,6 @@ def evaluate_currents(
         task_ids=task_ids,
         continu=continu,
         ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
         combos_db_filename=combos_db_filename,
     )

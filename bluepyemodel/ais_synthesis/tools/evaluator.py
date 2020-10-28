@@ -1,41 +1,23 @@
 """Module to evaluate generic functions on rows of combos dataframe (similar to BluePyMMM)."""
 import logging
+import os
 import sqlite3
 import sys
 import traceback
 from functools import partial
-import multiprocessing
-import multiprocessing.pool
 from tqdm import tqdm
 import pandas as pd
+
+from .parallel import init_parallel_factory
 
 logger = logging.getLogger(__name__)
 
 
-class NoDaemonProcess(multiprocessing.Process):
-    """Class that represents a non-daemon process"""
-
-    def _get_daemon(self):  # pylint: disable=R0201
-        """Get daemon flag"""
-        return False
-
-    def _set_daemon(self, value):
-        """Set daemon flag"""
-
-    daemon = property(_get_daemon, _set_daemon)
-
-
-class NestedPool(multiprocessing.pool.Pool):  # pylint: disable=abstract-method
-    """Class that represents a MultiProcessing nested pool"""
-
-    Process = NoDaemonProcess
-
-
 def _try_evaluation(task, evaluation_function=None):
     """Encapsulate the evaluation function into a try/except and isolate to record exceptions."""
-    task_id = task[0]
+    task_id, task_args = task
     try:
-        result = evaluation_function(task[1])
+        result = evaluation_function(task_args)
         exception = ""
 
     except Exception:  # pylint: disable=broad-except
@@ -75,18 +57,6 @@ def _write_to_sql(combos_db_filename, task_id, results, new_columns, exception):
             )
 
 
-def _get_mapper(ipyp_profile=None):
-    """Get an ipyparallel map if profile name provided, else a NestedPool"""
-    if ipyp_profile is not None:
-        from ipyparallel import Client
-
-        rc = Client(profile=ipyp_profile)
-        lview = rc.load_balanced_view()
-        return partial(lview.imap, ordered=False)
-
-    return partial(NestedPool(maxtasksperchild=1).imap_unordered, chunksize=1)
-
-
 def evaluate_combos(
     combos_df,
     evaluation_function,
@@ -94,6 +64,7 @@ def evaluate_combos(
     task_ids=None,
     continu=False,
     ipyp_profile=None,
+    parallel_factory=None,
     combos_db_filename="combos_db.sql",
 ):
     """Evaluate combos and save results in a sqlite database on the fly and return combos dataframe.
@@ -109,12 +80,18 @@ def evaluate_combos(
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
         ipyp_profile (str): name of ipyparallel profile
+        parallel_factory (ParallelFactory): parallel factory instance (alternative to ipyp_profile)
         combos_db_filename (str): filename for the combos sqlite database
     Return:
-        pandas.DataFrame: combod_df dataframe with new columns containing computed results
+        pandas.DataFrame: combos_df dataframe with new columns containing computed results
     """
-    if ipyp_profile == "None":
-        ipyp_profile = None
+
+    # FIXME: remove this code when ipyp_profile is not used anymore.
+    if ipyp_profile and ipyp_profile != "None":
+        os.environ["IPYTHON_PROFILE"] = ipyp_profile
+        parallel_factory = init_parallel_factory("ipyparallel")
+    elif parallel_factory is None:
+        parallel_factory = init_parallel_factory("multiprocessing")
 
     if task_ids is None:
         task_ids = combos_df.index
@@ -145,7 +122,7 @@ def evaluate_combos(
     else:
         logger.warning("WARNING: No combos to compute, something may be wrong")
 
-    mapper = _get_mapper(ipyp_profile=ipyp_profile)
+    mapper = parallel_factory.get_mapper()
     eval_func = partial(_try_evaluation, evaluation_function=evaluation_function)
     try:
         for task_id, results, exception in tqdm(
@@ -159,6 +136,6 @@ def evaluate_combos(
                 exception,
             )
     # to save dataframe even if program is killed
-    except (KeyboardInterrupt, SystemExit):
-        pass
+    except (KeyboardInterrupt, SystemExit) as ex:
+        logger.warning("Stopping mapper loop. Reason: %r", ex)
     return _load_database_to_dataframe(combos_db_filename)

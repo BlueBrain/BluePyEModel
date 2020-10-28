@@ -24,6 +24,8 @@ setup(
         'pandas',
         'nose',
         'ipyparallel',
+        'dask[distributed]>=2.0',
+        'dask_mpi>=2.0',
         'tqdm',
         'pyyaml',
         'luigi',
@@ -37,6 +39,5 @@ setup(
     packages=find_packages(),
     entry_points={
         "console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"],
-
     },
 )
