@@ -35,7 +35,7 @@ def ipyparallel_map_function(flag_use_IPYP=None, ipython_profil="IPYTHON_PROFILE
             return ret
 
     else:
-        mapper = None
+        mapper = map
 
     return mapper
 
@@ -75,7 +75,7 @@ def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
     raise Exception("Unknown optimizer: {}".format(optimizer))
 
 
-def run_optimization(optimizer, checkpoint_path, max_ngen):
+def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt):
     """Run the optimisation.
 
     Args:
@@ -91,7 +91,9 @@ def run_optimization(optimizer, checkpoint_path, max_ngen):
     path.parents[0].mkdir(parents=True, exist_ok=True)
 
     logger.info("Running optimisation ...")
-    pop, hof, log, history = optimizer.run(max_ngen=max_ngen, cp_filename=str(path))
+    pop, hof, log, history = optimizer.run(
+        max_ngen=max_ngen, cp_filename=str(path), continue_cp=continue_opt
+    )
     logger.info("Running optimisation ... Done.")
 
     return pop, hof, log, history

@@ -71,7 +71,12 @@ class StepProtocol(ephys.protocols.SweepProtocol):
                 if not mechanism.deterministic:
                     self.cvode_active = False
 
-        responses = super(StepProtocol, self).run(cell_model, param_values, sim=sim)
+        responses = super(StepProtocol, self).run(
+            cell_model,
+            param_values,
+            sim=sim,
+            timeout=timeout
+        )
         self.cvode_active = True
 
         return responses
@@ -139,7 +144,9 @@ class StepThresholdProtocol(StepProtocol):
 
         responses = {}
         responses.update(
-            super(StepThresholdProtocol, self).run(cell_model, param_values, sim=sim)
+            super(StepThresholdProtocol, self).run(
+                cell_model, param_values, sim=sim, timeout=timeout
+            )
         )
 
         return responses
@@ -255,21 +262,23 @@ class SearchRinHoldingCurrent:
         protocol.holding_stimulus.step_amplitude = holding_current
         return protocol
 
-    def get_voltage_base(self, holding_current, cell_model, param_values, sim, isolate):
+    def get_voltage_base(
+        self, holding_current, cell_model, param_values, sim, isolate, timeout=None
+    ):
         """ Calculate voltage base for a certain holding current """
         protocol = self.create_protocol(holding_current=holding_current)
-        response = protocol.run(cell_model, param_values, sim, isolate)
+        response = protocol.run(cell_model, param_values, sim, isolate, timeout=timeout)
         self.target_voltage.stim_start = protocol.stim_start
         self.target_voltage.stim_end = protocol.stim_end
         self.target_voltage.stim_amp = protocol.step_amplitude
         return self.target_voltage.calculate_feature(response)
 
-    def run(self, cell_model, param_values, rmp, sim=None, isolate=None):
+    def run(self, cell_model, param_values, rmp, sim=None, isolate=None, timeout=None):
         """Run protocol"""
 
         # Calculate Rin without holding current
         protocol = self.create_protocol(holding_current=0.0)
-        response = protocol.run(cell_model, param_values, sim, isolate)
+        response = protocol.run(cell_model, param_values, sim, isolate, timeout)
         rin = self.target_Rin.calculate_feature(response)
 
         holding_current = self.search_holding_current(
@@ -280,7 +289,7 @@ class SearchRinHoldingCurrent:
 
         # Return the response of the final estimate of the holding current
         protocol = self.create_protocol(holding_current=holding_current)
-        response = protocol.run(cell_model, param_values, sim, isolate)
+        response = protocol.run(cell_model, param_values, sim, isolate, timeout)
         response["bpo_holding_current"] = holding_current
 
         return response
@@ -428,7 +437,15 @@ class SearchThresholdCurrent:
         )
 
     def run(
-        self, cell_model, param_values, holding_current, rin, rmp, sim, isolate=None
+        self,
+        cell_model,
+        param_values,
+        holding_current,
+        rin,
+        rmp,
+        sim,
+        isolate=None,
+        timeout=None,
     ):
         """Run protocol"""
 
@@ -444,6 +461,7 @@ class SearchThresholdCurrent:
             max_threshold_current,
             sim,
             isolate,
+            timeout,
         )
 
         responses = {"bpo_threshold_current": step_current}
@@ -456,12 +474,19 @@ class SearchThresholdCurrent:
         return max_threshold_current
 
     def is_spike(
-        self, cell_model, param_values, holding_current, step_current, sim, isolate
+        self,
+        cell_model,
+        param_values,
+        holding_current,
+        step_current,
+        sim,
+        isolate,
+        timeout=None,
     ):
         """Returns True if step_current makes the model produce an AP,
         False otherwise"""
         protocol = self.create_protocol(holding_current, step_current)
-        response = protocol.run(cell_model, param_values, sim, isolate)
+        response = protocol.run(cell_model, param_values, sim, isolate, timeout)
         spikecount = self.spike_feature.calculate_feature(response)
 
         return spikecount
@@ -475,13 +500,20 @@ class SearchThresholdCurrent:
         upper_bound,
         sim,
         isolate,
+        timeout=None,
     ):
         step_currents = numpy.linspace(lower_bound, upper_bound, num=self.nsteps)
         if len(step_currents) == 0:
             return None
         for i, step_current in enumerate(step_currents):
             spikecount = self.is_spike(
-                cell_model, param_values, holding_current, step_current, sim, isolate
+                cell_model,
+                param_values,
+                holding_current,
+                step_current,
+                sim,
+                isolate,
+                timeout,
             )
             if spikecount:
                 return self.bisection_search(
@@ -492,6 +524,7 @@ class SearchThresholdCurrent:
                     isolate,
                     upper_bound=step_current,
                     lower_bound=step_currents[i - 1],
+                    timeout=timeout,
                 )
         else:
             return None
@@ -506,6 +539,7 @@ class SearchThresholdCurrent:
         upper_bound,
         lower_bound,
         depth=1,
+        timeout=None,
     ):
         """Do bisection search to find threshold current"""
         logger.debug(
@@ -517,12 +551,7 @@ class SearchThresholdCurrent:
             return mid_bound
 
         spikecount = self.is_spike(
-            cell_model,
-            param_values,
-            holding_current,
-            mid_bound,
-            sim,
-            isolate,
+            cell_model, param_values, holding_current, mid_bound, sim, isolate, timeout
         )
 
         if spikecount == 1:
@@ -538,6 +567,7 @@ class SearchThresholdCurrent:
                 lower_bound=mid_bound,
                 upper_bound=upper_bound,
                 depth=depth + 1,
+                timeout=timeout,
             )
 
         if spikecount > 1:
@@ -550,6 +580,7 @@ class SearchThresholdCurrent:
                 lower_bound=lower_bound,
                 upper_bound=mid_bound,
                 depth=depth + 1,
+                timeout=timeout,
             )
 
 
@@ -625,7 +656,7 @@ class MainProtocol(ephys.protocols.Protocol):
 
         # Find the RMP and check if it is close to the exp RMP
         t1 = time.time()
-        rmp_response = self.RMP_protocol.run(cell_model, {}, sim=sim)
+        rmp_response = self.RMP_protocol.run(cell_model, {}, sim=sim, timeout=timeout)
         responses.update(rmp_response)
         rmp = self.RMP_protocol.target_voltage.calculate_feature(rmp_response)
         rmp_score = self.RMP_protocol.target_voltage.calculate_score(rmp_response)
@@ -638,7 +669,9 @@ class MainProtocol(ephys.protocols.Protocol):
 
             # Find the holding current and input resistance
             t1 = time.time()
-            rin_response = self.Rin_protocol.run(cell_model, {}, sim=sim, rmp=rmp)
+            rin_response = self.Rin_protocol.run(
+                cell_model, {}, sim=sim, rmp=rmp, timeout=timeout
+            )
             responses.update(rin_response)
             rin = self.Rin_protocol.target_Rin.calculate_feature(rin_response)
             rin_score = self.Rin_protocol.target_Rin.calculate_score(rin_response)
@@ -661,6 +694,7 @@ class MainProtocol(ephys.protocols.Protocol):
                     rmp,
                     sim,
                     isolate,
+                    timeout,
                 )
                 responses.update(threshold_response)
 
@@ -692,6 +726,7 @@ class MainProtocol(ephys.protocols.Protocol):
                                 threshold_current=responses["bpo_threshold_current"],
                                 sim=sim,
                                 isolate=isolate,
+                                timeout=timeout,
                             )
                         )
 
@@ -724,7 +759,9 @@ class MainProtocol(ephys.protocols.Protocol):
 
         # Run protocols that are not based on holding/threshold detection
         for protocol_name, protocol in self.other_protocols.items():
-            responses[protocol_name] = protocol.run(cell_model, {}, sim, isolate)
+            responses[protocol_name] = protocol.run(
+                cell_model, {}, sim, isolate, timeout
+            )
 
         cell_model.unfreeze(param_values.keys())
         return responses

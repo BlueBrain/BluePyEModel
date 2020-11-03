@@ -5,19 +5,35 @@ import pandas
 import psycopg2
 from psycopg2.extras import Json
 
+# pylint: disable=W0231,W0401,W0703,R1702
+
 from bluepyemodel.api.databaseAPI import DatabaseAPI
+from bluepyemodel.api.postgreSQL_tables import *
 
 logger = logging.getLogger("__main__")
-
-# pylint: disable=W0231
 
 
 class PostgreSQL_API(DatabaseAPI):
     """API using sql"""
 
-    def __init__(self):
-        """"""
+    tables = [
+        "extraction_targets",
+        "extraction_files",
+        "extraction_efeatures",
+        "extraction_protocols",
+        "optimisation_targets",
+        "morphologies",
+        "optimisation_morphology",
+        "optimisation_parameters",
+        "optimisation_distributions",
+        "mechanisms_path",
+        "models",
+        "validation_targets",
+    ]
 
+    def __init__(self, project_name):
+        """"""
+        self.project_name = project_name
         self.connection = psycopg2.connect(
             user="emodel_pipeline",
             password="Cells2020!",
@@ -25,6 +41,71 @@ class PostgreSQL_API(DatabaseAPI):
             port="5432",
             database="emodel_pipeline",
         )
+
+    def reset_project(self, answer=""):
+        """Delete and re-create all the tables for a project."""
+        while answer not in ["y", "n"]:
+            answer = input(
+                "You are about to reset the tables of proj {}"
+                ". All data will be lost. Are you sure (y/n)"
+                "".format(self.project_name)
+            )
+
+        if answer == "y":
+            self.delete_project(answer="y")
+            self.create_project()
+        else:
+            logger.info("Aborting reset.")
+
+    def delete_project(self, answer=""):
+        """Delete all the tables for a project"""
+        while answer not in ["y", "n"]:
+            answer = input(
+                "You are about to delete all the tables of proj {}"
+                ". All data will be lost. Are you sure (y/n)"
+                "".format(self.project_name)
+            )
+
+        if answer == "y":
+            for table in self.tables:
+                query = "DROP TABLE {}_{};".format(self.project_name, table)
+                self.execute_no_error(query)
+        else:
+            logger.info("Aborting deletion.")
+
+    def create_project(self):
+        """Create all tables neede for a project."""
+        for def_table in [
+            def_extraction_targets,
+            def_extraction_files,
+            def_extraction_efeatures,
+            def_extraction_protocols,
+            def_optimisation_targets,
+            def_morphologies,
+            def_optimisation_morphology,
+            def_optimisation_parameters,
+            def_optimisation_distributions,
+            def_mechanisms_path,
+            def_models,
+            def_validation_targets,
+        ]:
+            self.execute_no_error(def_table.format(self.project_name))
+
+    def execute_no_error(self, query):
+        """Execute a query."""
+
+        cursor = self.connection.cursor()
+        logger.debug("PostgreSQL query: %s", query)
+
+        try:
+            cursor.execute(query)
+            self.connection.commit()
+            cursor.close()
+
+        except Exception as e:
+            logger.warning("PostgreSQL error: %s", e)
+            self.connection.commit()
+            cursor.close()
 
     def execute(self, query):
         """Execute a query."""
@@ -35,12 +116,11 @@ class PostgreSQL_API(DatabaseAPI):
         try:
             cursor.execute(query)
             self.connection.commit()
+            cursor.close()
 
         except Exception as e:
-            raise Exception(f"PostgreSQL error: {e}") from e
-
-        finally:
             cursor.close()
+            raise Exception(f"PostgreSQL error: {e}") from e
 
     def execute_fill(self, query):
         """Execute a fill query."""
@@ -102,7 +182,7 @@ class PostgreSQL_API(DatabaseAPI):
             replace_keys_values = tuple([entry[rk] for rk in replace_keys])
 
             # Check of entry is in table
-            query_exist = "SELECT 1 FROM {} WHERE ".format(table)
+            query_exist = "SELECT 1 FROM {}_{} WHERE ".format(self.project_name, table)
             for i, rk in enumerate(replace_keys):
                 query_exist += "{} = %s".format(rk)
                 if i < (len(replace_keys) - 1):
@@ -111,7 +191,7 @@ class PostgreSQL_API(DatabaseAPI):
             entry_exist = self.execute_fetch(query_exist)
 
             # Prepare the query to delete the entry if needed
-            query_remove = "DELETE FROM {} WHERE ".format(table)
+            query_remove = "DELETE FROM {}_{} WHERE ".format(self.project_name, table)
             for i, rk in enumerate(replace_keys):
                 query_remove += "{} = %s".format(rk)
                 if i < (len(replace_keys) - 1):
@@ -119,7 +199,7 @@ class PostgreSQL_API(DatabaseAPI):
             query_remove = cursor.mogrify(query_remove, replace_keys_values)
 
             # Prepare the query to insert the entry if needed
-            query_fill = "INSERT INTO {} (".format(table)
+            query_fill = "INSERT INTO {}_{} (".format(self.project_name, table)
             for i, k in enumerate(entry.keys()):
                 query_fill += "{}".format(k)
                 if i < (len(entry.keys()) - 1):
@@ -152,7 +232,7 @@ class PostgreSQL_API(DatabaseAPI):
         cursor = self.connection.cursor()
 
         values = tuple(conditions.values())
-        query_remove = "DELETE FROM {} WHERE ".format(table)
+        query_remove = "DELETE FROM {}_{} WHERE ".format(self.project_name, table)
         for i, rk in enumerate(conditions):
             query_remove += "{} = %s".format(rk)
             if i < (len(conditions) - 1):
@@ -177,12 +257,12 @@ class PostgreSQL_API(DatabaseAPI):
 
         col_query = (
             "SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS "
-            "WHERE TABLE_NAME = '{}';".format(table)
+            "WHERE TABLE_NAME = '{}_{}';".format(self.project_name, table)
         )
         column_names = self.execute_fetch(col_query)
         column_names = [c[0] for c in column_names]
 
-        query = "SELECT * FROM {} WHERE ".format(table)
+        query = "SELECT * FROM {}_{} WHERE ".format(self.project_name, table)
         for i, cond in enumerate(conditions):
             if isinstance(conditions[cond], tuple):
                 query += " {} IN %s".format(cond)
@@ -255,7 +335,17 @@ class PostgreSQL_API(DatabaseAPI):
                     "ljp": p["liquid_junction_potential"],
                 }
 
-                for opt_key in ["ton", "toff", "i_unit", "v_unit", "t_unit"]:
+                for opt_key in [
+                    "ton",
+                    "toff",
+                    "i_unit",
+                    "v_unit",
+                    "t_unit",
+                    "tmid",
+                    "tmid2",
+                    "tend",
+                    "t_unit",
+                ]:
                     if opt_key in p and p[opt_key] and not (pandas.isnull(p[opt_key])):
                         trace_metadata[opt_key] = p[opt_key]
 
@@ -286,7 +376,7 @@ class PostgreSQL_API(DatabaseAPI):
                 )
 
         # Add holding and threshold current
-        for cur in current:
+        for cur in ["hypamp", "thresh"]:
             entries.append(
                 {
                     "emodel": emodel,
@@ -315,16 +405,7 @@ class PostgreSQL_API(DatabaseAPI):
                     "emodel": emodel,
                     "species": species,
                     "name": stim_name,
-                    "type": "StepProtocol",
-                    "stimulus_amp": stim["step"]["amp"],
-                    "stimulus_thresh_perc": stim["step"]["thresh_perc"],
-                    "stimulus_delay": stim["step"]["delay"],
-                    "stimulus_duration": stim["step"]["duration"],
-                    "stimulus_totduration": stim["step"]["totduration"],
-                    "holding_amp": stim["holding"]["amp"],
-                    "holding_delay": stim["holding"]["delay"],
-                    "holding_duration": stim["holding"]["duration"],
-                    "holding_totduration": stim["holding"]["totduration"],
+                    "definition": {"step": stim["step"], "holding": stim["holding"]},
                 }
             )
 
@@ -336,7 +417,7 @@ class PostgreSQL_API(DatabaseAPI):
             replace_keys=replace_keys,
         )
 
-    def store_model(
+    def store_model_from_pickle(
         self,
         emodel,
         species,
@@ -378,9 +459,16 @@ class PostgreSQL_API(DatabaseAPI):
         if "seed" in opt_params:
             entry["seed"] = int(opt_params["seed"])
 
-        replace_keys = ["emodel", "species", "fitness", "optimizer", "seed"]
+        replace_keys = ["emodel", "species", "parameters", "optimizer", "seed"]
         self.fill(
             table="models", entries=[entry], replace=True, replace_keys=replace_keys
+        )
+
+    def update_model(self, model):
+        """Update a model"""
+        replace_keys = ["emodel", "species", "parameters", "optimizer", "seed"]
+        self.fill(
+            table="models", entries=[model], replace=True, replace_keys=replace_keys
         )
 
     def get_models(
@@ -545,6 +633,7 @@ class PostgreSQL_API(DatabaseAPI):
                     "name": f"{target['ecode']}_{target['target']}",
                 },
             )
+
             if protocols.empty:
                 logger.warning(
                     "PostgreSQL warning: could not get the protocols for emodel %s",
@@ -553,25 +642,27 @@ class PostgreSQL_API(DatabaseAPI):
                 return None
 
             for prot in protocols.to_dict(orient="records"):
-                print(prot)
-
                 if target["type"] == "RinHoldCurrent":
 
                     protocols_out["RinHoldCurrent"] = {
                         "type": "RinHoldCurrent",
                         "stimuli": {
                             "step": {
-                                "delay": delay + prot["stimulus_delay"],
-                                "amp": prot["stimulus_amp"],
-                                "thresh_perc": prot["stimulus_thresh_perc"],
-                                "duration": prot["stimulus_duration"],
-                                "totduration": delay + prot["stimulus_totduration"],
+                                "delay": delay + prot["definition"]["step"]["delay"],
+                                "amp": prot["definition"]["step"]["amp"],
+                                "thresh_perc": prot["definition"]["step"][
+                                    "thresh_perc"
+                                ],
+                                "duration": prot["definition"]["step"]["duration"],
+                                "totduration": delay
+                                + prot["definition"]["step"]["totduration"],
                             },
                             "holding": {
                                 "delay": 0,
                                 "amp": None,
-                                "duration": prot["holding_duration"],
-                                "totduration": delay + prot["holding_totduration"],
+                                "duration": prot["definition"]["holding"]["duration"],
+                                "totduration": delay
+                                + prot["definition"]["holding"]["totduration"],
                             },
                         },
                     }
@@ -601,16 +692,21 @@ class PostgreSQL_API(DatabaseAPI):
 
                     protocols_out[prot["name"]] = {
                         "type": "StepThresholdProtocol",
-                        "stimuli": {
-                            "step": {
-                                "delay": delay + prot["stimulus_delay"],
-                                "amp": None,
-                                "thresh_perc": prot["stimulus_thresh_perc"],
-                                "duration": prot["stimulus_duration"],
-                                "totduration": delay + prot["stimulus_totduration"],
-                            }
-                        },
+                        "stimuli": prot["definition"],
                     }
+
+                    if "step" in protocols_out[prot["name"]]["stimuli"]:
+                        if "delay" in protocols_out[prot["name"]]["stimuli"]["step"]:
+                            protocols_out[prot["name"]]["stimuli"]["step"][
+                                "delay"
+                            ] += delay
+                            protocols_out[prot["name"]]["stimuli"]["step"][
+                                "totduration"
+                            ] += delay
+                            protocols_out[prot["name"]]["stimuli"]["holding"][
+                                "totduration"
+                            ] += delay
+
         return protocols_out
 
     def get_features(
@@ -679,6 +775,15 @@ class PostgreSQL_API(DatabaseAPI):
                                 }
                             )
 
+                            # Check if there is a stim_start and stim_end for this feature
+                            if len(target["efeatures"][feat]) > 0:
+                                efeatures_out["RMP"]["soma.v"][-1]["stim_start"] = target[
+                                    "efeatures"
+                                ][feat][0]
+                                efeatures_out["RMP"]["soma.v"][-1]["stim_end"] = target[
+                                    "efeatures"
+                                ][feat][1]
+
                     elif target["type"] == "RinHoldCurrent":
                         if efeat["name"] in (
                             "voltage_base",
@@ -692,6 +797,15 @@ class PostgreSQL_API(DatabaseAPI):
                                 }
                             )
 
+                            # Check if there is a stim_start and stim_end for this feature
+                            if len(target["efeatures"][feat]) > 0:
+                                efeatures_out["RinHoldCurrent"]["soma.v"][-1][
+                                    "stim_start"
+                                ] = target["efeatures"][feat][0]
+                                efeatures_out["RinHoldCurrent"]["soma.v"][-1][
+                                    "stim_end"
+                                ] = target["efeatures"][feat][1]
+
                     else:
                         if efeat["protocol"] not in efeatures_out:
                             efeatures_out[efeat["protocol"]] = {"soma.v": []}
@@ -703,6 +817,15 @@ class PostgreSQL_API(DatabaseAPI):
                                 "strict_stim": True,
                             }
                         )
+
+                        # Check if there is a stim_start and stim_end for this feature
+                        if len(target["efeatures"][feat]) > 0:
+                            efeatures_out[efeat["protocol"]]["soma.v"][-1][
+                                "stim_start"
+                            ] = target["efeatures"][feat][0]
+                            efeatures_out[efeat["protocol"]]["soma.v"][-1][
+                                "stim_end"
+                            ] = target["efeatures"][feat][1]
 
         # Get the hypamp and thresh currents
         efeatures = self.fetch(
@@ -733,6 +856,155 @@ class PostgreSQL_API(DatabaseAPI):
                 )
 
         return efeatures_out
+
+    def get_features_validation(
+        self,
+        emodel,
+        species,
+    ):
+        """Get the efeatures used for validation and put them in a format that fits
+         the MainProtocol needs.
+
+        Args:
+            emodel (str): name of the emodel
+            species (str): name of the species (rat, human, mouse)
+
+        Returns:
+            efeatures_out (dict): efeatures definitions
+
+        """
+        # Get the optimization targets
+        targets = self.fetch(
+            table="validation_targets",
+            conditions={"emodel": emodel, "species": species},
+        )
+        if targets.empty:
+            logger.warning(
+                "PostgreSQL warning: could not get the validation targets for emodel %s",
+                emodel,
+            )
+            return None
+
+        efeatures_out = {}
+
+        # Get the values for the efeatures matching the targets
+        for target in targets.to_dict(orient="records"):
+
+            for feat in target["efeatures"]:
+
+                efeatures = self.fetch(
+                    table="extraction_efeatures",
+                    conditions={
+                        "emodel": emodel,
+                        "species": species,
+                        "protocol": f"{target['ecode']}_{target['target']}",
+                        "name": feat,
+                    },
+                )
+                if efeatures.empty:
+                    logger.warning(
+                        "PostgreSQL warning: could not get the validation efeatures "
+                        "%s for emodel %s",
+                        feat,
+                        emodel,
+                    )
+                    continue
+
+                for efeat in efeatures.to_dict(orient="records"):
+
+                    if efeat["protocol"] not in efeatures_out:
+                        efeatures_out[efeat["protocol"]] = {"soma.v": []}
+
+                    efeatures_out[efeat["protocol"]]["soma.v"].append(
+                        {
+                            "feature": efeat["name"],
+                            "val": [efeat["mean"], efeat["std"]],
+                            "strict_stim": True,
+                        }
+                    )
+
+                    # Check if there is a stim_start and stim_end for this feature
+                    if len(target["efeatures"][feat]) > 0:
+                        efeatures_out[efeat["protocol"]]["soma.v"][-1][
+                            "stim_start"
+                        ] = target["efeatures"][feat][0]
+                        efeatures_out[efeat["protocol"]]["soma.v"][-1][
+                            "stim_end"
+                        ] = target["efeatures"][feat][1]
+
+        return efeatures_out
+
+    def get_protocols_validation(
+        self,
+        emodel,
+        species,
+        delay=0.0,
+    ):
+        """Get the protocols used for validation and put them in a format that fits
+         the MainProtocol needs.
+
+        Args:
+            emodel (str): name of the emodel
+            species (str): name of the species (rat, human, mouse)
+            delay (float): additional delay in ms to add at the start of
+                the protocols.
+
+        Returns:
+            protocols_out (dict): protocols definitions
+
+        """
+        # TODO: handle extra recordings
+
+        # Get the optimization targets
+        targets = self.fetch(
+            table="validation_targets",
+            conditions={"emodel": emodel, "species": species},
+        )
+        if targets.empty:
+            logger.warning(
+                "PostgreSQL warning: could not get the validation targets for emodel %s",
+                emodel,
+            )
+            return None
+
+        # Get the matching protocols
+        protocols_out = {}
+        for target in targets.to_dict(orient="records"):
+
+            protocols = self.fetch(
+                table="extraction_protocols",
+                conditions={
+                    "emodel": emodel,
+                    "species": species,
+                    "name": f"{target['ecode']}_{target['target']}",
+                },
+            )
+
+            for prot in protocols.to_dict(orient="records"):
+
+                if protocols.empty:
+                    logger.warning(
+                        "PostgreSQL warning: could not get the validation protocols for emodel %s",
+                        emodel,
+                    )
+                    return None
+
+                protocols_out[prot["name"]] = {
+                    "type": "StepThresholdProtocol",
+                    "stimuli": prot["definition"],
+                }
+
+                if "step" in protocols_out[prot["name"]]["stimuli"]:
+                    if "delay" in protocols_out[prot["name"]]["stimuli"]["step"]:
+                        protocols_out[prot["name"]]["stimuli"]["step"]["delay"] += delay
+                        protocols_out[prot["name"]]["stimuli"]["step"][
+                            "totduration"
+                        ] += delay
+                        protocols_out[prot["name"]]["stimuli"]["holding"][
+                            "totduration"
+                        ] += delay
+
+        return protocols_out
 
     def get_morphologies(self, emodel, species):
         """Get the name and path to the morphologies.

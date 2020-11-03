@@ -12,7 +12,9 @@ from bluepyemodel.feature_extraction import extract
 logger = logging.getLogger(__name__)
 
 
-def connect_db(db_api, recipe_path=None, working_dir=None, forge_path=None):
+def connect_db(
+    db_api, recipe_path=None, working_dir=None, project_name=None, forge_path=None
+):
     """Returns a DatabaseAPI object.
 
     Args:
@@ -23,6 +25,8 @@ def connect_db(db_api, recipe_path=None, working_dir=None, forge_path=None):
         working_dir (str): path of directory containing the parameters,
             features and parameters config files. Only needed when working
             with db_api='singlecell'.
+        project_name (str): name of the project. Used as prefix to create the tables
+            of the postgreSQL database.
 
     Returns:
         Database
@@ -31,7 +35,7 @@ def connect_db(db_api, recipe_path=None, working_dir=None, forge_path=None):
     if db_api == "sql":
         from bluepyemodel.api.postgreSQL import PostgreSQL_API
 
-        return PostgreSQL_API()
+        return PostgreSQL_API(project_name=project_name)
 
     if db_api == "nexus":
         from bluepyemodel.api.nexus import Nexus_API
@@ -52,6 +56,7 @@ def extract_efeatures(  # pylint: disable=dangerous-default-value
     db_api,
     file_format="axon",
     threshold_nvalue_save=1,
+    project_name="",
 ):
     """
 
@@ -67,7 +72,7 @@ def extract_efeatures(  # pylint: disable=dangerous-default-value
         stimuli (dict): definition of the mean stimuli
         current (dict): threshold and holding current
     """
-    db = connect_db(db_api)
+    db = connect_db(db_api, project_name=project_name)
 
     map_function = optimisation.ipyparallel_map_function("USEIPYP")
 
@@ -116,6 +121,9 @@ def get_evaluator(  # pylint: disable=too-many-arguments
     mechanisms_dir,
     stochasticity=False,
     copy_mechanisms=False,
+    compile_mechanisms=False,
+    include_validation_protocols=False,
+    project_name="",
 ):
     """Create an evaluator for a cell model name and database access.
 
@@ -131,11 +139,13 @@ def get_evaluator(  # pylint: disable=too-many-arguments
             if they  can.
         copy_mechanisms (bool): should the mod files be copied in the working
             directory.
+        include_validation_protocols (bool): should the validation protocols
+            and efeatures be added to the evaluator
 
     Returns:
         MultiEvaluator
     """
-    db = connect_db(db_api)
+    db = connect_db(db_api, project_name=project_name)
 
     # Get the data
     parameters, mechanisms, mechanism_names = db.get_parameters(emodel, species)
@@ -158,6 +168,17 @@ def get_evaluator(  # pylint: disable=too-many-arguments
     if not (protocols):
         raise Exception("No protocols for emodel %s" % emodel)
 
+    if include_validation_protocols:
+        efeatures_validation = db.get_features_validation(emodel, species)
+        if not (efeatures_validation):
+            raise Exception("No efeatures_validation for emodel %s" % emodel)
+        efeatures.update(efeatures_validation)
+
+        protocols_validation = db.get_protocols_validation(emodel, species)
+        if not (protocols_validation):
+            raise Exception("No protocols_validation for emodel %s" % emodel)
+        protocols.update(protocols_validation)
+
     db.close()
 
     # Copy the mechanisms and compile them
@@ -169,8 +190,9 @@ def get_evaluator(  # pylint: disable=too-many-arguments
                 "Trying to copy mod files locally but " "'mechanism_paths' is missing."
             )
 
-    os.popen("rm -rf x86_64").read()
-    os.popen("nrnivmodl {}".format(mechanisms_dir)).read()
+    if compile_mechanisms:
+        os.popen("rm -rf x86_64").read()
+        os.popen("nrnivmodl {}".format(mechanisms_dir)).read()
 
     # Create the cell models
     cell_models = model.create_cell_models(
@@ -202,6 +224,8 @@ def optimize(  # pylint: disable=too-many-arguments
     opt_params=None,
     optimizer="MO-CMA",
     checkpoint_path="./checkpoint.pkl",
+    continue_opt=False,
+    project_name="",
 ):
     """
     Run optimisation
@@ -223,6 +247,7 @@ def optimize(  # pylint: disable=too-many-arguments
         optimizer (str): algorithm used for optimization, can be "IBEA",
             "SO-CMA", "MO-CMA"
         checkpoint_path (str): path to the checkpoint file.
+        continue_opt (bool): should the optimization restart from a checkpoint .pkl.
     """
     if opt_params is None:
         opt_params = {}
@@ -237,18 +262,28 @@ def optimize(  # pylint: disable=too-many-arguments
         mechanisms_dir,
         stochasticity=stochasticity,
         copy_mechanisms=copy_mechanisms,
+        project_name=project_name,
     )
+
+    if continue_opt and not (os.path.isfile(checkpoint_path)):
+        raise Exception(
+            "Continue_opt is True but the path specified in "
+            "checkpoint_path does not exist."
+        )
 
     opt = optimisation.setup_optimizer(
         _evaluator, map_function, opt_params, optimizer=optimizer
     )
 
-    optimisation.run_optimization(
-        optimizer=opt, checkpoint_path=checkpoint_path, max_ngen=max_ngen
+    return optimisation.run_optimization(
+        optimizer=opt,
+        checkpoint_path=checkpoint_path,
+        max_ngen=max_ngen,
+        continue_opt=continue_opt,
     )
 
 
-def store_optimize(  # pylint: disable=too-many-arguments
+def store_model(  # pylint: disable=too-many-arguments
     emodel,
     species,
     db_api,
@@ -258,6 +293,7 @@ def store_optimize(  # pylint: disable=too-many-arguments
     opt_params=None,
     optimizer="MO-CMA",
     checkpoint_path="./checkpoint.pkl",
+    project_name="",
 ):
     """
     Store the results of an optimization
@@ -289,15 +325,16 @@ def store_optimize(  # pylint: disable=too-many-arguments
         mechanisms_dir,
         stochasticity=stochasticity,
         copy_mechanisms=False,
+        project_name=project_name,
     )
-    db = connect_db(db_api)
+    db = connect_db(db_api, project_name=project_name)
 
     feature_names = [
         obj.name for obj in _evaluator.evaluators[0].fitness_calculator.objectives
     ]
     param_names = list(_evaluator.param_names)
 
-    db.store_model(
+    db.store_model_from_pickle(
         emodel=emodel,
         species=species,
         checkpoint_path=checkpoint_path,
@@ -309,3 +346,108 @@ def store_optimize(  # pylint: disable=too-many-arguments
     )
 
     db.close()
+
+
+def compute_scores(
+    emodel,
+    species,
+    db_api,
+    working_dir,
+    mechanisms_dir,
+    stochasticity=False,
+    copy_mechanisms=True,
+    validation_function=None,
+    project_name="",
+):
+    """Compute all the scores and traces for the optimisation protocols
+    as well as for the validation protocols
+    """
+
+    map_function = optimisation.ipyparallel_map_function("USEIPYP")
+
+    # Instantiate the evaluator
+    _evaluator = get_evaluator(  # pylint: disable=too-many-arguments
+        emodel,
+        species,
+        db_api,
+        working_dir,
+        mechanisms_dir,
+        stochasticity=stochasticity,
+        copy_mechanisms=copy_mechanisms,
+        include_validation_protocols=True,
+        project_name=project_name,
+    )
+
+    # Get the emodels:
+    db = connect_db(db_api, project_name=project_name)
+    emodels = db.get_models(emodel, species)
+
+    if emodels:
+
+        parameters = [
+            emodel["parameters"] for emodel in emodels if emodel["validated"] is False
+        ]
+        scores = map_function(_evaluator.evaluate_with_dicts, parameters)
+        scores = list(scores)
+
+        for mo, s in zip(emodels, scores):
+            mo["scores"] = dict(s)
+            if validation_function:
+                mo["validated"] = validation_function(mo)
+            db.update_model(mo)
+
+    else:
+        logger.warning("In compute_scores, no emodel for %s %s", emodel, species)
+
+    return emodels
+
+
+def compute_responses(
+    emodel,
+    species,
+    db_api,
+    working_dir,
+    mechanisms_dir,
+    stochasticity=False,
+    copy_mechanisms=True,
+    project_name="",
+):
+    """Return the traces for the optimisation protocols
+    as well as for the validation protocols
+    """
+
+    # Instantiate the evaluator
+    _evaluator = get_evaluator(  # pylint: disable=too-many-arguments
+        emodel,
+        species,
+        db_api,
+        working_dir,
+        mechanisms_dir,
+        stochasticity=stochasticity,
+        copy_mechanisms=copy_mechanisms,
+        include_validation_protocols=True,
+        project_name=project_name,
+    )
+
+    # Get the emodels:
+    db = connect_db(db_api, project_name=project_name)
+    emodels = db.get_models(emodel, species)
+
+    responses = {}
+    if emodels:
+
+        parameters = [emodel["parameters"] for emodel in emodels]
+        protocols = [_evaluator.evaluators[0].fitness_protocols.values()] * len(
+            parameters
+        )
+        responses = map(_evaluator.evaluators[0].run_protocols, protocols, parameters)
+        # responses =  map_function(_evaluator.evaluators[0].run_protocols, protocols, parameters)
+        responses = list(responses)
+
+        for mo, r in zip(emodels, responses):
+            mo["responses"] = r
+
+    else:
+        logger.warning("In compute_responses, no emodel for %s %s", emodel, species)
+
+    return emodels

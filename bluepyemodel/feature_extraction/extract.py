@@ -24,7 +24,7 @@ def get_config(
 
 
 def extract_efeatures(
-    config, emodel, trace_reader=None, map_function=None, write_files=False
+    config, emodel, trace_reader=None, map_function=None, write_files=False, plot=False
 ):
     """Extract efeatures."""
     extractor = bluepyefe.Extractor(
@@ -32,6 +32,7 @@ def extract_efeatures(
     )
     extractor.extract_efeatures()
     extractor.analyse_threshold()
+
     for j, cell in enumerate(extractor.cells):
 
         # Remove the IV traces containing spikes
@@ -51,6 +52,9 @@ def extract_efeatures(
     efeatures, stimuli, current = extractor.create_feature_protocol_files(
         write_files=write_files
     )
+
+    if plot:
+        plot_efeatures_and_traces(extractor)
 
     return efeatures, stimuli, current
 

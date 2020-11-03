@@ -93,7 +93,9 @@ class DaskFactory(ParallelFactory):
                 iterable = list(iterable)
             # map is less efficient than dask.bag, but yields results as soon as they are ready
             futures = self.client.map(func, iterable, batch_size=batch_size)
-            for _future, result in dask.distributed.as_completed(futures, with_results=True):
+            for _future, result in dask.distributed.as_completed(
+                futures, with_results=True
+            ):
                 yield result
 
         return _mapper

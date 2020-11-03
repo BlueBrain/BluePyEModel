@@ -16,6 +16,8 @@ from .protocols import (
     RMPProtocol,
 )
 
+from .stimuli import NrnHDPulse
+
 logger = logging.getLogger(__name__)
 
 soma_loc = ephys.locations.NrnSeclistCompLocation(
@@ -561,19 +563,36 @@ def define_protocol(
         total_duration=holding_def["totduration"],
     )
 
-    step_def = protocol_definition["stimuli"]["step"]
-    step_stimulus = ephys.stimuli.NrnSquarePulse(
-        step_amplitude=step_def["amp"],
-        step_delay=step_def["delay"],
-        step_duration=step_def["duration"],
-        location=soma_loc,
-        total_duration=step_def["totduration"],
-    )
+    if "IDhyperpol" in name:
+        step_def = protocol_definition["stimuli"]["step"]
+        step_stimulus = NrnHDPulse(
+            amp=step_def["amp2"],
+            amp2=step_def["amp"],
+            ton=step_def["ton"],
+            tmid=step_def["tmid"],
+            tmid2=step_def["tmid2"],
+            toff=step_def["toff"],
+            total_duration=step_def["tend"],
+            location=soma_loc,
+        )
+        if protocol_definition["type"] == "StepThresholdProtocol":
+            thresh_perc = step_def["amp2_rel"]
+    else:
+        step_def = protocol_definition["stimuli"]["step"]
+        step_stimulus = ephys.stimuli.NrnSquarePulse(
+            step_amplitude=step_def["amp"],
+            step_delay=step_def["delay"],
+            step_duration=step_def["duration"],
+            location=soma_loc,
+            total_duration=step_def["totduration"],
+        )
+        if protocol_definition["type"] == "StepThresholdProtocol":
+            thresh_perc = step_def["thresh_perc"]
 
     if protocol_definition["type"] == "StepThresholdProtocol":
         return StepThresholdProtocol(
             name=name,
-            thresh_perc=protocol_definition["stimuli"]["step"]["thresh_perc"],
+            thresh_perc=thresh_perc,
             step_stimulus=step_stimulus,
             holding_stimulus=holding_stimulus,
             recordings=recordings,
@@ -665,12 +684,15 @@ def define_main_protocol_features(
                         {
                             "feature": "Spikecount",
                             "val": [1.64, 0.71],
-                            "strict_stim":True
+                            "strict_stim":True,
+                            ""
                         },
                         {
                             "feature": "AHP_depth",
                             "val": [19.67, 4.74],
-                            "strict_stim": true
+                            "strict_stim": true,
+                            "stim_start": 100.,
+                            "stim_end": 200.
                         }
                 }
             }
@@ -692,7 +714,10 @@ def define_main_protocol_features(
     for name, definition in protocols_definition.items():
 
         # Define holding for the protocols that do not have it
-        if "holding" not in definition:
+        if (
+            "holding" not in definition
+            and "totduration" in definition["stimuli"]["step"]
+        ):
             dur = definition["stimuli"]["step"]["totduration"]
             holding = {"delay": 0, "amp": None, "duration": dur, "totduration": dur}
             definition["stimuli"]["holding"] = holding
@@ -725,11 +750,14 @@ def define_main_protocol_features(
                         stim_end = protocol.total_duration
                     else:
                         stim_end = protocol.stim_end
-
                 else:
                     stim_amp = None
                     stim_start = None
                     stim_end = None
+
+                if "stim_start" and "stim_end" in f:
+                    stim_start = f["stim_start"]
+                    stim_end = f["stim_end"]
 
                 feature = define_feature(
                     f, stim_start, stim_end, stim_amp, protocol.name, recording_name
