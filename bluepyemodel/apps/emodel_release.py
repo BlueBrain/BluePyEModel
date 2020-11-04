@@ -1,20 +1,27 @@
 """Cli for emodel release with ais_synthesis module."""
+import json
 import logging
 import shutil
+from copy import copy
+from functools import partial
 from pathlib import Path
 
 import click
+import morphio
+import numpy as np
 import pandas as pd
 import sh
 import yaml
+from morphio.mut import Morphology
+from tqdm import tqdm
 
 from bluepy.v2 import Circuit
-from bluepyemodel.evaluation.model import create_cell_model
-from bluepyemodel.evaluation.modifiers import get_synth_axon_hoc
-from bluepyemodel.api.singlecell import Singlecell_API
 from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
 from bluepyemodel.ais_synthesis.evaluators import evaluate_currents
-from bluepyemodel.ais_synthesis.tools import init_parallel_factory
+from bluepyemodel.ais_synthesis.tools import InitParallelFactory
+from bluepyemodel.api.singlecell import Singlecell_API
+from bluepyemodel.evaluation.model import create_cell_model
+from bluepyemodel.evaluation.modifiers import get_synth_axon_hoc
 
 L = logging.getLogger(__name__)
 
@@ -175,6 +182,29 @@ def _create_emodel_column(cells, etype_emodel_map):
     return cells
 
 
+def _save_mecombos(results_df, output, with_scaler=True):
+    """Save dataframe to mecombo_emodel.tsv file"""
+    Path(output).parent.mkdir(parents=True, exist_ok=True)
+    columns = [
+        "morph_name",
+        "layer",
+        "fullmtype",
+        "etype",
+        "emodel",
+        "combo_name",
+        "threshold_current",
+        "holding_current",
+    ]
+    if with_scaler:
+        columns.append("AIS_scaler")
+    results_df.to_csv(
+        output,
+        columns=columns,
+        index=False,
+        sep="\t",
+    )
+
+
 @cli.command("get_me_combos_parameters")
 @click.option("--circuit-config", type=click.Path(exists=True), required=True)
 @click.option(
@@ -216,7 +246,7 @@ def get_me_combos_parameters(
     """
 
     # Initialize the parallel library. If using dask, it must be called at the beginning.
-    parallel_factory = init_parallel_factory(parallel_lib)
+    parallel_factory = InitParallelFactory(parallel_lib).parallel_factory
 
     # 1) load release data, cells and compile mechanisms
     L.info("Load release data, cells and compile mechanisms.")
@@ -274,27 +304,146 @@ def get_me_combos_parameters(
         }
     )
     results_df["combo_name"] = results_df.apply(
-        lambda x: "%s_%s_%s_%s"
-        % (x["emodel"], x["fullmtype"], x["layer"], x["morph_name"]),
+        lambda x: "%s_%s_%s_%s" % (x["emodel"], x["fullmtype"], x["layer"], x["morph_name"]),
         axis=1,
     )
 
-    Path(output).parent.mkdir(parents=True, exist_ok=True)
-    results_df.to_csv(
-        output,
-        columns=[
-            "morph_name",
-            "layer",
-            "fullmtype",
-            "etype",
-            "emodel",
-            "combo_name",
-            "threshold_current",
-            "holding_current",
-            "AIS_scaler",
-        ],
-        index=False,
-        sep="\t",
+    _save_mecombos(results_df, output)
+
+    # clean up the parallel library, if needed
+    parallel_factory.shutdown()
+
+
+def fix_ais(combo, out_path="fixed_cells_test"):
+    """Modify morphology first axon section in place from combo data."""
+    if combo.AIS_model is None:
+        morphology = Morphology(combo.morphology_path)
+        morphology.write(str(Path(out_path) / Path(combo.morphology_path).name))
+        return combo["name"], 1.0
+
+    ais_model = json.loads(combo.AIS_model)["popt"]
+    _taper_func = partial(
+        taper_function,
+        strength=ais_model[1],
+        taper_scale=ais_model[2],
+        terminal_diameter=ais_model[3],
+        scale=combo.AIS_scale,
     )
+
+    morphology = Morphology(combo.morphology_path)
+    modify_ais(morphology, _taper_func)
+    morphology = Morphology(morphology, morphio.Option.nrn_order)  # ensure NEURON order
+    morphology.write(str(Path(out_path) / Path(combo.morphology_path).name))
+    return combo["name"], combo.AIS_scale
+
+
+def taper_function(distance, strength, taper_scale, terminal_diameter, scale=1.0):
+    """Function to model tappered AIS."""
+    return strength * np.exp(-distance / taper_scale) + terminal_diameter * scale
+
+
+def modify_ais(morphology, taper_func):
+    """Modify morphology first axon section in place using taper_func."""
+    L_target = 60
+    for root_section in morphology.root_sections:
+        if root_section.type == morphio.SectionType.axon:
+            dist = 0
+            prev_point = root_section.points[0]
+            for section in root_section.iter():
+                for i, point in enumerate(section.points):
+                    dist += np.linalg.norm(point - prev_point)
+                    prev_point = copy(point)
+                    section.diameters[i] = taper_func(dist)
+                    if dist >= L_target:
+                        return
+
+
+@cli.command("fix_ais_inplace")
+@click.option("--mecombos-path", type=click.Path(exists=True), required=True)
+@click.option("--to-fix-combos-path", type=click.Path(exists=True), required=False)
+@click.option(
+    "--release-path",
+    type=click.Path(exists=True),
+    default="emodel_release",
+    required=True,
+)
+@click.option("--morphology-path", type=click.Path(exists=True), required=False)
+@click.option("--applied-scales-path", default="scale_results.yaml", type=str, show_default=True)
+@click.option("--fixed-morphology-path", default="fixed_morphologies", type=str, show_default=True)
+@click.option("--output", default="mecombo_emodel.tsv", type=str, show_default=True)
+@click.option("--emodel-api", default="singlecell", type=str, show_default=True)
+@click.option("--sql-tmp-path", default="tmp", type=str, show_default=True)
+@click.option("--parallel-lib", default="multiprocessing", show_default=True)
+@click.option("--continu", is_flag=True)
+def fix_ais_inplace(  # pylint: disable=too-many-locals
+    mecombos_path,
+    to_fix_combos_path,
+    release_path,
+    morphology_path,
+    applied_scales_path,
+    fixed_morphology_path,
+    output,
+    emodel_api,
+    sql_tmp_path,
+    parallel_lib,
+    continu,
+):
+    """fix AIS size"""
+    # Initialize the parallel library. If using dask, it must be called at the beginning.
+    parallel_factory = InitParallelFactory(parallel_lib).parallel_factory
+
+    # 1) load release data, cells and compile mechanisms
+    L.info("Load release data, cells and compile mechanisms.")
+    all_morphs_combos_df = pd.read_csv(mecombos_path, sep="\t")
+    to_fix_combos_df = pd.read_csv(to_fix_combos_path, header=None, names=["combo_name"])
+    morphs_combos_df = all_morphs_combos_df[
+        all_morphs_combos_df.combo_name.isin(to_fix_combos_df.combo_name)
+    ].copy()
+
+    assert len(morphs_combos_df.index) == len(to_fix_combos_df.index)
+
+    morphs_combos_df["mtype"] = morphs_combos_df["fullmtype"]
+    morphs_combos_df["name"] = morphs_combos_df["morph_name"]
+    morphs_combos_df["morphology_path"] = morphs_combos_df["name"].apply(
+        lambda name: str(Path(morphology_path) / name) + ".asc"
+    )
+
+    release_paths = get_release_paths(release_path)
+    with open(release_paths["ais_model_path"], "r") as ais_file:
+        ais_models = yaml.full_load(ais_file)
+    with open(release_paths["target_rho_path"], "r") as rho_file:
+        target_rhos = yaml.full_load(rho_file)
+    sh.nrnivmodl(release_paths["mechanisms"])  # pylint: disable=no-member
+    emodel_db = _get_database(emodel_api, release_paths["emodel_path"])
+
+    # 2) Compute AIS scales
+    L.info("Compute AIS scales.")
+    Path(sql_tmp_path).mkdir(parents=True, exist_ok=True)
+    results_df = synthesize_ais(
+        morphs_combos_df,
+        emodel_db,
+        ais_models["mtype"],
+        target_rhos,
+        parallel_factory=parallel_factory,
+        scales_params=ais_models["scales_params"],
+        combos_db_filename=Path(sql_tmp_path) / "synth_db.sql",
+        continu=continu,
+    )
+
+    # 3) Modify morphologies
+    if Path(fixed_morphology_path).exists():
+        shutil.rmtree(fixed_morphology_path)
+    Path(fixed_morphology_path).mkdir()
+
+    results = {}
+    for gid in tqdm(results_df.index):
+        name, scale = fix_ais(results_df.loc[gid], fixed_morphology_path)
+        results[str(name)] = float(scale)
+    yaml.dump(results, open(applied_scales_path, "w"))
+
+    # 4) save new mecombos_emodel.tsv file with updated entries
+    all_morphs_combos_df.update(results_df)
+    _save_mecombos(all_morphs_combos_df, output, with_scaler=False)
+
     # clean up the parallel library, if needed
     parallel_factory.shutdown()

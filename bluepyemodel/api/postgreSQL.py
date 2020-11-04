@@ -1,13 +1,15 @@
 """API using sql"""
 import logging
+
 import pandas
 import psycopg2
 from psycopg2.extras import Json
 
+from bluepyemodel.api.databaseAPI import DatabaseAPI
+import bluepyemodel.api.postgreSQL_tables as sql_tables
+
 # pylint: disable=W0231,W0401,W0703,R1702,R0912
 
-from bluepyemodel.api.databaseAPI import DatabaseAPI
-from bluepyemodel.api.postgreSQL_tables import *
 
 logger = logging.getLogger("__main__")
 
@@ -75,18 +77,18 @@ class PostgreSQL_API(DatabaseAPI):
     def create_project(self):
         """Create all tables neede for a project."""
         for def_table in [
-            def_extraction_targets,
-            def_extraction_files,
-            def_extraction_efeatures,
-            def_extraction_protocols,
-            def_optimisation_targets,
-            def_morphologies,
-            def_optimisation_morphology,
-            def_optimisation_parameters,
-            def_optimisation_distributions,
-            def_mechanisms_path,
-            def_models,
-            def_validation_targets,
+            sql_tables.def_extraction_targets,
+            sql_tables.def_extraction_files,
+            sql_tables.def_extraction_efeatures,
+            sql_tables.def_extraction_protocols,
+            sql_tables.def_optimisation_targets,
+            sql_tables.def_morphologies,
+            sql_tables.def_optimisation_morphology,
+            sql_tables.def_optimisation_parameters,
+            sql_tables.def_optimisation_distributions,
+            sql_tables.def_mechanisms_path,
+            sql_tables.def_models,
+            sql_tables.def_validation_targets,
         ]:
             self.execute_no_error(def_table.format(self.project_name))
 
@@ -420,7 +422,7 @@ class PostgreSQL_API(DatabaseAPI):
             replace_keys=replace_keys,
         )
 
-    def store_model(
+    def store_emodel(
         self,
         emodel,
         scores,
@@ -430,7 +432,7 @@ class PostgreSQL_API(DatabaseAPI):
         validated=False,
         species=None,
     ):
-        """ Save a model obtained from BluePyOpt"""
+        """ Save an emodel obtained from BluePyOpt"""
 
         entry = {
             "emodel": emodel,
@@ -447,25 +449,25 @@ class PostgreSQL_API(DatabaseAPI):
             entry["seed"] = int(seed)
 
         replace_keys = ["emodel", "species", "optimizer", "seed"]
-        self.fill(
-            table="models", entries=[entry], replace=True, replace_keys=replace_keys
-        )
+        self.fill(table="models", entries=[entry], replace=True, replace_keys=replace_keys)
 
-    def get_models(
-        self,
-        emodel,
-        species,
-    ):
-        """ Get the models obtained from BluePyopt"""
+    def get_emodels(self, emodels, species):
+        """Get the list of emodels dictionaries.
 
-        models = self.fetch("models", {"emodel": emodel, "species": species})
-        if models.empty:
+        Args:
+            emodels (list): list of names of the emodels
+            species (str): name of the species (rat, human, mouse)
+        """
+
+        emodels_data = self.fetch("models", {"emodel": tuple(emodels), "species": species})
+        if emodels_data.empty:
             logger.warning(
-                "PostgreSQL warning: could not get the models for emodel %s", emodel
+                "PostgreSQL warning: could not get the models for emodel %s",
+                emodels,
             )
             return None
 
-        return models.to_dict(orient="records")
+        return emodels_data.to_dict(orient="records")
 
     def get_parameters(self, emodel, species):
         """Get the definition of the parameters to optimize as well as the
@@ -485,13 +487,9 @@ class PostgreSQL_API(DatabaseAPI):
         params_definition = {"distributions": {}, "parameters": {}}
 
         # Get parameters
-        params = self.fetch(
-            "optimisation_parameters", {"emodel": emodel, "species": species}
-        )
+        params = self.fetch("optimisation_parameters", {"emodel": emodel, "species": species})
         if params.empty:
-            logger.warning(
-                "PostgreSQL warning: could not get the parameters for emodel %s", emodel
-            )
+            logger.warning("PostgreSQL warning: could not get the parameters for emodel %s", emodel)
             return None, None, None
 
         # Put the definition in the correct format (as described on top of the
@@ -544,11 +542,7 @@ class PostgreSQL_API(DatabaseAPI):
             stoch = []
             for m in mech_definition[loc]["mech"]:
                 is_stock = next(
-                    (
-                        item["stochastic"]
-                        for item in mechanism_paths
-                        if item["name"] == m
-                    ),
+                    (item["stochastic"] for item in mechanism_paths if item["name"] == m),
                     False,
                 )
                 stoch.append(is_stock)
@@ -556,9 +550,7 @@ class PostgreSQL_API(DatabaseAPI):
 
         # Get the functions matching the distributions
         dists = set(dists)
-        dist_def = self.fetch(
-            table="optimisation_distributions", conditions={"name": tuple(dists)}
-        )
+        dist_def = self.fetch(table="optimisation_distributions", conditions={"name": tuple(dists)})
         if dist_def.empty:
             logger.warning(
                 "PostgreSQL warning: could not get the distributions for emodel %s",
@@ -598,9 +590,7 @@ class PostgreSQL_API(DatabaseAPI):
             conditions={"emodel": emodel, "species": species},
         )
         if targets.empty:
-            logger.warning(
-                "PostgreSQL warning: could not get the targets for emodel %s", emodel
-            )
+            logger.warning("PostgreSQL warning: could not get the targets for emodel %s", emodel)
             return None
         targets = targets.to_dict(orient="records")
 
@@ -612,8 +602,7 @@ class PostgreSQL_API(DatabaseAPI):
             )
             if validation_targets.empty:
                 logger.warning(
-                    "PostgreSQL warning: could not get the validation targets"
-                    " for emodel %s",
+                    "PostgreSQL warning: could not get the validation targets" " for emodel %s",
                     emodel,
                 )
                 return None
@@ -650,19 +639,15 @@ class PostgreSQL_API(DatabaseAPI):
                             "step": {
                                 "delay": delay + prot["definition"]["step"]["delay"],
                                 "amp": prot["definition"]["step"]["amp"],
-                                "thresh_perc": prot["definition"]["step"][
-                                    "thresh_perc"
-                                ],
+                                "thresh_perc": prot["definition"]["step"]["thresh_perc"],
                                 "duration": prot["definition"]["step"]["duration"],
-                                "totduration": delay
-                                + prot["definition"]["step"]["totduration"],
+                                "totduration": delay + prot["definition"]["step"]["totduration"],
                             },
                             "holding": {
                                 "delay": 0,
                                 "amp": None,
                                 "duration": prot["definition"]["holding"]["duration"],
-                                "totduration": delay
-                                + prot["definition"]["holding"]["totduration"],
+                                "totduration": delay + prot["definition"]["holding"]["totduration"],
                             },
                         },
                     }
@@ -700,12 +685,8 @@ class PostgreSQL_API(DatabaseAPI):
                         and "delay" in protocols_out[prot["name"]]["stimuli"]["step"]
                     ):
                         protocols_out[prot["name"]]["stimuli"]["step"]["delay"] += delay
-                        protocols_out[prot["name"]]["stimuli"]["step"][
-                            "totduration"
-                        ] += delay
-                        protocols_out[prot["name"]]["stimuli"]["holding"][
-                            "totduration"
-                        ] += delay
+                        protocols_out[prot["name"]]["stimuli"]["step"]["totduration"] += delay
+                        protocols_out[prot["name"]]["stimuli"]["holding"]["totduration"] += delay
 
         return protocols_out
 
@@ -736,9 +717,7 @@ class PostgreSQL_API(DatabaseAPI):
             conditions={"emodel": emodel, "species": species},
         )
         if targets.empty:
-            logger.warning(
-                "PostgreSQL warning: could not get the featurees for emodel %s", emodel
-            )
+            logger.warning("PostgreSQL warning: could not get the featurees for emodel %s", emodel)
             return None
         targets = targets.to_dict(orient="records")
 
@@ -750,8 +729,7 @@ class PostgreSQL_API(DatabaseAPI):
             )
             if validation_targets.empty:
                 logger.warning(
-                    "PostgreSQL warning: could not get the validation features"
-                    " for emodel %s",
+                    "PostgreSQL warning: could not get the validation features" " for emodel %s",
                     emodel,
                 )
                 return None
@@ -831,9 +809,9 @@ class PostgreSQL_API(DatabaseAPI):
 
                     # Check if there is a stim_start and stim_end for this feature
                     if len(target["efeatures"][feat]) > 0:
-                        efeatures_out[protocol_name]["soma.v"][-1][
-                            "stim_start"
-                        ] = target["efeatures"][feat][0]
+                        efeatures_out[protocol_name]["soma.v"][-1]["stim_start"] = target[
+                            "efeatures"
+                        ][feat][0]
                         efeatures_out[protocol_name]["soma.v"][-1]["stim_end"] = target[
                             "efeatures"
                         ][feat][1]
@@ -905,11 +883,7 @@ class PostgreSQL_API(DatabaseAPI):
 
         morphology_definition = self.fetch(
             table="morphologies",
-            conditions={
-                "name": tuple(
-                    [m["name"] for m in morphologies.to_dict(orient="records")]
-                )
-            },
+            conditions={"name": tuple([m["name"] for m in morphologies.to_dict(orient="records")])},
         )
         morphology_definition = morphology_definition.to_dict(orient="records")
 

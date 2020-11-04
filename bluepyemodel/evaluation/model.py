@@ -7,7 +7,7 @@ from pathlib import Path
 import bluepyopt.ephys as ephys
 from bluepyopt.ephys.morphologies import NrnFileMorphology
 
-from .modifiers import replace_axon_with_taper, replace_axon_hoc
+from .modifiers import replace_axon_hoc, replace_axon_with_taper
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,7 @@ def multi_locations(section_name):
             ephys.locations.NrnSeclistLocation("axonal", seclist_name="axonal"),
         ]
     else:
-        seclist_locs = [
-            ephys.locations.NrnSeclistLocation(section_name, seclist_name=section_name)
-        ]
+        seclist_locs = [ephys.locations.NrnSeclistLocation(section_name, seclist_name=section_name)]
 
     return seclist_locs
 
@@ -91,9 +89,7 @@ def define_parameters(definitions):
             dist_param_names = definition["parameters"]
         else:
             dist_param_names = None
-        distributions[
-            distribution
-        ] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
+        distributions[distribution] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
             name=distribution,
             distribution=definition["fun"],
             dist_param_names=dist_param_names,
@@ -277,7 +273,6 @@ def create_cell_model(
     morph_path,
     mechanisms,
     parameters,
-    do_replace_axon=True,
     morph_modifiers=None,
     morph_modifiers_hoc=None,
 ):
@@ -290,7 +285,6 @@ def create_cell_model(
             format
         parameters (dict):  see docstring of function define_parameters for the
             format
-        do_replace_axon (bool): replace axon with taper
         morph_modifiers (list): list of functions to modify morphologies
         morph_modifiers_hoc (list): list of hoc functions to modify morphologies
 
@@ -316,15 +310,12 @@ def create_cell_model(
     )
 
 
-def create_cell_models(
-    emodel, working_dir, morphologies, mechanisms, parameters, morph_modifiers=None
-):
+def create_cell_models(emodel, morphologies, mechanisms, parameters, morph_modifiers=None):
     """Create cell models based on morphologies. The same mechanisms and
     parameters will be used for all morphologies
 
     Args:
         emodel (str): name of the e-model
-        working_dir (str): path to the cwd
         morphologies (list): list of morphologies of the format
             morphologies = [{'name': morph_name, 'path': morph_path}]
         mechanisms (dict): see docstring of function define_mechanisms for the

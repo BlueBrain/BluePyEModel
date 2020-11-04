@@ -93,8 +93,7 @@ def compile_mechs(mechanisms_dir):
 
     else:
         raise Exception(
-            "Cannot compile the mechanisms because 'mechanisms_dir'"
-            " {} does not exist.".format(p)
+            "Cannot compile the mechanisms because 'mechanisms_dir'" " {} does not exist.".format(p)
         )
 
 
@@ -145,21 +144,13 @@ class EModel_pipeline:
         self.db_api = db_api
 
         if recipes_path is None and self.db_api == "singlecell":
-            raise Exception(
-                "If using DB API 'singlecell', argument recipe_path has to be defined."
-            )
+            raise Exception("If using DB API 'singlecell', argument recipe_path has to be defined.")
         if working_dir is None and self.db_api == "singlecell":
-            raise Exception(
-                "If using DB API 'singlecell', argument working_dir has to be defined."
-            )
+            raise Exception("If using DB API 'singlecell', argument working_dir has to be defined.")
         if project_name is None and self.db_api == "sql":
-            raise Exception(
-                "If using DB API 'sql', argument project_name has to be defined."
-            )
+            raise Exception("If using DB API 'sql', argument project_name has to be defined.")
         if forge_path is None and self.db_api == "nexus":
-            raise Exception(
-                "If using DB API 'sqnexusl', argument forge_path has to be defined."
-            )
+            raise Exception("If using DB API 'sqnexusl', argument forge_path has to be defined.")
 
         self.mechanisms_dir = mechanisms_dir
         self.recipes_path = recipes_path
@@ -202,9 +193,7 @@ class EModel_pipeline:
         db = self.connect_db()
 
         # Get the data
-        parameters, mechanisms, mechanism_names = db.get_parameters(
-            self.emodel, self.species
-        )
+        parameters, mechanisms, mechanism_names = db.get_parameters(self.emodel, self.species)
         if not (parameters) or not (mechanisms):
             raise Exception("No parameters for emodel %s" % self.emodel)
 
@@ -212,15 +201,11 @@ class EModel_pipeline:
         if not (morphologies):
             raise Exception("No morphologies for emodel %s" % self.emodel)
 
-        efeatures = db.get_features(
-            self.emodel, self.species, include_validation_protocols
-        )
+        efeatures = db.get_features(self.emodel, self.species, include_validation_protocols)
         if not (efeatures):
             raise Exception("No efeatures for emodel %s" % self.emodel)
 
-        protocols = db.get_protocols(
-            self.emodel, self.species, include_validation_protocols
-        )
+        protocols = db.get_protocols(self.emodel, self.species, include_validation_protocols)
         if not (protocols):
             raise Exception("No protocols for emodel %s" % self.emodel)
 
@@ -237,7 +222,6 @@ class EModel_pipeline:
 
         cell_models = model.create_cell_models(
             emodel=self.emodel,
-            working_dir=Path(self.working_dir),
             morphologies=morphologies,
             mechanisms=mechanisms,
             parameters=parameters,
@@ -337,8 +321,7 @@ class EModel_pipeline:
         p = p.parents[0].mkdir(parents=True, exist_ok=True)
         if continue_opt and not (p.is_file()):
             raise Exception(
-                "Continue_opt is True but the path specified in "
-                "checkpoint_path does not exist."
+                "Continue_opt is True but the path specified in " "checkpoint_path does not exist."
             )
 
         opt = optimisation.setup_optimizer(
@@ -388,9 +371,7 @@ class EModel_pipeline:
         run = read_checkpoint(checkpoint_path)
 
         best_model = run["halloffame"][0]
-        feature_names = [
-            obj.name for obj in _evaluator.evaluators[0].fitness_calculator.objectives
-        ]
+        feature_names = [obj.name for obj in _evaluator.evaluators[0].fitness_calculator.objectives]
         param_names = list(_evaluator.param_names)
 
         scores = dict(zip(feature_names, best_model.fitness.values))
@@ -429,16 +410,12 @@ class EModel_pipeline:
 
         db = self.connect_db()
 
-        emodels = db.get_models(self.emodel, self.species)
+        emodels = db.get_emodels([self.emodel], self.species)
         if emodels:
 
-            logger.info(
-                "In compute_scores, %s emodels found to evaluate.", len(emodels)
-            )
+            logger.info("In compute_scores, %s emodels found to evaluate.", len(emodels))
 
-            parameters = [
-                mod["parameters"] for mod in emodels if mod["validated"] is False
-            ]
+            parameters = [mod["parameters"] for mod in emodels if mod["validated"] is False]
             scores = map_function(_evaluator.evaluate_with_dicts, parameters)
             scores = list(scores)
 
@@ -458,9 +435,7 @@ class EModel_pipeline:
                 )
 
         else:
-            logger.warning(
-                "In compute_scores, no emodel for %s %s", self.emodel, self.species
-            )
+            logger.warning("In compute_scores, no emodel for %s %s", self.emodel, self.species)
 
     def compute_responses(
         self,
@@ -480,12 +455,10 @@ class EModel_pipeline:
 
         db = self.connect_db()
 
-        emodels = db.get_models(self.emodel, self.species)
+        emodels = db.get_emodels([self.emodel], self.species)
         if emodels:
 
-            logger.info(
-                "In compute_responses, %s emodels found to evaluate.", len(emodels)
-            )
+            logger.info("In compute_responses, %s emodels found to evaluate.", len(emodels))
 
             to_run = []
             for mo in emodels:
@@ -503,9 +476,7 @@ class EModel_pipeline:
                 mo["responses"] = r
 
         else:
-            logger.warning(
-                "In compute_responses, no emodel for %s %s", self.emodel, self.species
-            )
+            logger.warning("In compute_responses, no emodel for %s %s", self.emodel, self.species)
 
         return emodels
 
@@ -530,9 +501,7 @@ class EModel_pipeline:
             compile_mechanisms=compile_mechanisms,
         )
 
-        stimuli = (
-            _evaluator.evaluators[0].fitness_protocols["main_protocol"].subprotocols()
-        )
+        stimuli = _evaluator.evaluators[0].fitness_protocols["main_protocol"].subprotocols()
 
         if emodels:
 
@@ -559,6 +528,4 @@ class EModel_pipeline:
                 plotting.traces(mo, mo["responses"], stimuli, figures_dir)
 
         else:
-            logger.warning(
-                "In plot_models, no emodel for %s %s", self.emodel, self.species
-            )
+            logger.warning("In plot_models, no emodel for %s %s", self.emodel, self.species)

@@ -1,6 +1,7 @@
 """Functions for morphology modifications in evaluator."""
-import numpy as np
 import logging
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 ZERO = 1e-6
@@ -27,9 +28,7 @@ def synth_axon(sim=None, icell=None, params=None, scale=1.0):
 
     nseg_total = 10
     L_target = params[0]
-    diameters = taper_function(
-        np.linspace(0, L_target, nseg_total), *params[1:], scale=scale
-    )
+    diameters = taper_function(np.linspace(0, L_target, nseg_total), *params[1:], scale=scale)
     count = 0
     for section in icell.axon:
         section.nseg = nseg_total // 2
@@ -160,12 +159,13 @@ def replace_axon_with_taper(sim=None, icell=None):
 
     L_real = 0
     count = 0
-
     for _, section in enumerate(icell.axon):
         section.nseg = nseg_total // 2
         section.L = L_target / 2
 
         for seg in section:
+            if count >= len(diams):
+                break
             seg.diam = diams[count]
             L_real = L_real + lens[count]
             count = count + 1
@@ -173,6 +173,8 @@ def replace_axon_with_taper(sim=None, icell=None):
         icell.axonal.append(sec=section)
         icell.all.append(sec=section)
 
+        if count >= len(diams):
+            break
     # childsec.connect(parentsec, parentx, childx)
     icell.axon[0].connect(icell.soma[0], 1.0, 0.0)
     icell.axon[1].connect(icell.axon[0], 1.0, 0.0)
@@ -186,8 +188,7 @@ def replace_axon_with_taper(sim=None, icell=None):
     icell.myelin[0].connect(icell.axon[1], 1.0, 0.0)
 
     logger.debug(
-        "Replace axon with tapered AIS of length %f, "
-        "target length was %f, diameters are %s",
+        "Replace axon with tapered AIS of length %f, " "target length was %f, diameters are %s",
         L_real,
         L_target,
         diams,
@@ -250,6 +251,7 @@ def isolate_axon(sim=None, icell=None):
     for section in icell.apical:
         sim.neuron.h.delete_section(sec=section)
     for section in icell.soma:
+        #  a smaller number does not work here (similar size to AIS diameter)
         section.diam = 0.5
 
 

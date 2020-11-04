@@ -2,6 +2,7 @@
 import json
 import logging
 
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from scipy.ndimage.filters import gaussian_filter
@@ -15,6 +16,13 @@ from .utils import get_mtypes, get_scores
 
 logger = logging.getLogger(__name__)
 POLYFIT_DEGREE = 10
+RHO_FACTOR_FEATURES = [
+    "voltage_base",
+    "Spikecount",
+    #        'mean_frequency',
+    #        'AHP_depth',
+    #        'ISI_CV'
+]
 
 
 def get_ais(neuron):
@@ -117,12 +125,8 @@ def build_ais_diameter_models(
     if not mtype_dependent:
         return models
 
-    for mtype in mtypes:
-        logger.info("Extracting %s", mtype)
-
-        morphologies = morphs_df.loc[
-            morphs_df.mtype == mtype, morphology_path
-        ].to_list()
+    for mtype in tqdm(mtypes):
+        morphologies = morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
         if len(morphologies) > 5:
             model = build_ais_diameter_model(morphologies)
             if model["AIS"]["popt"][0] > 0.0:
@@ -133,9 +137,7 @@ def build_ais_diameter_models(
                 models[mtype] = models["all"]
                 models[mtype]["used_all_data"] = True
         else:
-            logger.info(
-                "m-type not used because of less than 5 cells, we use all the data instead"
-            )
+            logger.info("m-type not used because of less than 5 cells, we use all the data instead")
             models[mtype] = models["all"]
             models[mtype]["used_all_data"] = True
 
@@ -145,22 +147,16 @@ def build_ais_diameter_models(
 def _get_scales(scales_params, with_unity=False):
     """Create scale array from parameters."""
     if scales_params["lin"]:
-        scales = np.linspace(
-            scales_params["min"], scales_params["max"], scales_params["n"]
-        )
+        scales = np.linspace(scales_params["min"], scales_params["max"], scales_params["n"])
     else:
-        scales = np.logspace(
-            scales_params["min"], scales_params["max"], scales_params["n"]
-        )
+        scales = np.logspace(scales_params["min"], scales_params["max"], scales_params["n"])
 
     if with_unity:
         return np.insert(scales, 0, 1)
     return scales
 
 
-def _prepare_scaled_combos(
-    morphs_combos_df, ais_models, scales_params, emodel, mtypes="all"
-):
+def _prepare_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel, mtypes="all"):
     """Prepare combos with scaled AIS."""
     scales = _get_scales(scales_params)
     mtypes = get_mtypes(morphs_combos_df, mtypes)
@@ -169,11 +165,10 @@ def _prepare_scaled_combos(
         mtypes = ["all"]
 
     fit_df = pd.DataFrame()
+    me_mask = morphs_combos_df.emodel == emodel
     for mtype in mtypes:
-        me_mask = morphs_combos_df.emodel == emodel
         if mtypes[0] != "all":
             me_mask = me_mask & (morphs_combos_df.mtype == mtype)
-
         if len(morphs_combos_df[me_mask]) > 0:
             logger.info("Creating combos for %s, %s", emodel, mtype)
             df_tmp = morphs_combos_df[me_mask & morphs_combos_df.use_axon].iloc[0]
@@ -182,7 +177,7 @@ def _prepare_scaled_combos(
                 df_tmp["AIS_model"] = json.dumps(ais_models[mtype]["AIS"])
                 df_tmp["for_optimisation"] = False
                 fit_df = fit_df.append(df_tmp.copy())
-    return fit_df.reset_index()
+    return fit_df.reset_index(drop=True)
 
 
 def build_ais_resistance_models(
@@ -192,7 +187,7 @@ def build_ais_resistance_models(
     ais_models,
     scales_params,
     morphology_path="morphology_path",
-    ipyp_profile=None,
+    parallel_factory=None,
     continu=False,
     combos_db_filename="eval_db.sql",
 ):
@@ -215,7 +210,7 @@ def build_ais_resistance_models(
         continu=continu,
         combos_db_filename=combos_db_filename,
         morphology_path=morphology_path,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
     )
 
     mtypes = get_mtypes(morphs_combos_df, "all")
@@ -229,10 +224,16 @@ def build_ais_resistance_models(
         if len(fit_df[mask]) > 0:
             if "resistance" not in ais_models[mtype]:
                 ais_models[mtype]["resistance"] = {}
+            AIS_scale = fit_df[mask].AIS_scale.to_numpy()
+            rin_ais = fit_df[mask].rin_ais.to_numpy()
+            AIS_scale = AIS_scale[rin_ais > 0]
+            rin_ais = rin_ais[rin_ais > 0]
+            if len(rin_ais) != len(fit_df[mask].AIS_scale.to_numpy()):
+                logger.warning("Some AIS Rin are < 0, we will drop these!")
             ais_models[mtype]["resistance"][emodel] = {
                 "polyfit_params": np.polyfit(
-                    np.log10(fit_df[mask].AIS_scale.to_numpy()),
-                    np.log10(fit_df[mask].rin_ais.to_numpy()),
+                    np.log10(AIS_scale),
+                    np.log10(rin_ais),
                     POLYFIT_DEGREE,
                 ).tolist()
             }
@@ -240,9 +241,7 @@ def build_ais_resistance_models(
     return fit_df, ais_models
 
 
-def _prepare_scan_rho_combos(
-    morphs_combos_df, ais_models, scales_params, emodel, mtypes="all"
-):
+def _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel, mtypes="all"):
     """Prepare the combos for scaning rho."""
     scales = _get_scales(scales_params, with_unity=True)
 
@@ -280,7 +279,7 @@ def _prepare_scan_rho_combos(
             else:
                 logger.info("no cell for %s, %s", emodel, mtype)
 
-    return rho_scan_df.reset_index()
+    return rho_scan_df.reset_index(drop=True)
 
 
 def get_rho_targets(final):
@@ -302,13 +301,9 @@ def get_rho_targets(final):
 
     df = (df - df.min()) / (df.max() - df.min())
     df["mean_axon"] = df.mean(axis=1)
-    df["target"] = fit_params["target_max"] * (
-        df["mean_axon"] - fit_params["param_min"]
-    ) / (fit_params["param_max"] - fit_params["param_min"]) + fit_params[
-        "target_min"
-    ] * (
-        df["mean_axon"] - fit_params["param_max"]
-    ) / (
+    df["target"] = fit_params["target_max"] * (df["mean_axon"] - fit_params["param_min"]) / (
+        fit_params["param_max"] - fit_params["param_min"]
+    ) + fit_params["target_min"] * (df["mean_axon"] - fit_params["param_max"]) / (
         fit_params["param_min"] - fit_params["param_max"]
     )
     return df["target"]
@@ -322,8 +317,8 @@ def find_target_rho_axon(
     scales_params,
     morphology_path="morphology_path",
     continu=False,
-    ipyp_profile=None,
-    filter_sigma=1,
+    parallel_factory=None,
+    filter_sigma=2.0,
     combos_db_filename="rho_scan_db.sql",
 ):
     """Find the target rho axons for an emodel.
@@ -341,16 +336,14 @@ def find_target_rho_axon(
     Returns:
         (dataframe, dict): dataframe with results and dict target rhos for plots
     """
-    rho_scan_df = _prepare_scan_rho_combos(
-        morphs_combos_df, ais_models, scales_params, emodel
-    )
+    rho_scan_df = _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel)
     rho_scan_df = evaluate_rho_axon(
         rho_scan_df,
         emodel_db,
         morphology_path=morphology_path,
         continu=continu,
         combos_db_filename=combos_db_filename + ".rho",
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
     )
 
     rho_scan_df = evaluate_scores(
@@ -360,10 +353,10 @@ def find_target_rho_axon(
         continu=continu,
         combos_db_filename=combos_db_filename + ".scores",
         morphology_path=morphology_path,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
     )
 
-    rho_scan_df = get_scores(rho_scan_df)
+    rho_scan_df = get_scores(rho_scan_df, features_to_keep=RHO_FACTOR_FEATURES, clip=5)
     mtypes = get_mtypes(morphs_combos_df, "all")
 
     if mtypes[0] not in ais_models:
@@ -383,8 +376,6 @@ def find_target_rho_axon(
 
             if emodel not in target_rhos:
                 target_rhos[emodel] = {}
-            target_rhos[emodel][mtype] = float(
-                rho_scan_df.loc[best_score_id, "rho_axon"]
-            )
+            target_rhos[emodel][mtype] = float(rho_scan_df.loc[best_score_id, "rho_axon"])
 
     return rho_scan_df, target_rhos

@@ -1,13 +1,14 @@
 """API using Nexus Forge"""
 
 import logging
-import pandas
 
+import pandas
 from kgforge.core import KnowledgeGraphForge  # , Resource
+
+from bluepyemodel.api.databaseAPI import DatabaseAPI
 
 # from kgforge.specializations.resources import Dataset
 
-from bluepyemodel.api.databaseAPI import DatabaseAPI
 
 logger = logging.getLogger("__main__")
 
@@ -89,11 +90,7 @@ class Nexus_API(DatabaseAPI):
             }
 
             for opt_key in ["ton", "toff", "i_unit", "v_unit", "t_unit"]:
-                if (
-                    opt_key in vars(p)
-                    and getattr(p, opt_key)
-                    and not (pandas.isnull(p[opt_key]))
-                ):
+                if opt_key in vars(p) and getattr(p, opt_key) and not (pandas.isnull(p[opt_key])):
                     trace_metadata[opt_key] = p[opt_key]
 
             cells[p["cell_id"]][p["ecode"]].append(trace_metadata)

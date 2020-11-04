@@ -7,7 +7,12 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from functools import partial
 
-import dask_mpi
+
+try:
+    import dask_mpi
+except ModuleNotFoundError:
+    pass
+
 import dask.distributed
 import ipyparallel
 
@@ -47,9 +52,21 @@ class NestedPool(multiprocessing.pool.Pool):  # pylint: disable=abstract-method
 class MultiprocessingFactory(ParallelFactory):
     """Parallel helper class using multiprocessing."""
 
+    _CHUNKSIZE = "PARALLEL_CHUNKSIZE"
+
+    def __init__(self):
+        """Initialize multiprocessing factory."""
+        self.pool = NestedPool()
+
     def get_mapper(self):
         """Get a NestedPool."""
-        return partial(NestedPool(maxtasksperchild=1).imap_unordered, chunksize=1)
+        chunksize = int(os.getenv(self._CHUNKSIZE, "1"))
+        L.debug("Using %s=%s", self._CHUNKSIZE, chunksize)
+        return partial(self.pool.imap_unordered, chunksize=chunksize)
+
+    def shutdown(self):
+        """Close the pool."""
+        self.pool.close()
 
 
 class IPyParallelFactory(ParallelFactory):
@@ -57,35 +74,54 @@ class IPyParallelFactory(ParallelFactory):
 
     _IPYTHON_PROFILE = "IPYTHON_PROFILE"
 
+    def __init__(self):
+        """Initialize the ipyparallel factory."""
+        self.rc = None
+
     def get_mapper(self):
         """Get an ipyparallel mapper using the profile name provided."""
         profile = os.getenv(self._IPYTHON_PROFILE, "DEFAULT_IPYTHON_PROFILE")
         L.debug("Using %s=%s", self._IPYTHON_PROFILE, profile)
-        rc = ipyparallel.Client(profile=profile)
-        lview = rc.load_balanced_view()
+        self.rc = ipyparallel.Client(profile=profile)
+        lview = self.rc.load_balanced_view()
         return partial(lview.imap, ordered=False)
+
+    def shutdown(self):
+        """Remove zmq."""
+        if self.rc is not None:
+            self.rc.close()
 
 
 class DaskFactory(ParallelFactory):
     """Parallel helper class using dask."""
 
-    _PARALLEL_BATCH_SIZE = "PARALLEL_BATCH_SIZE"
+    _BATCH_SIZE = "PARALLEL_DASK_BATCH_SIZE"
+    _SCHEDULER_PATH = "PARALLEL_DASK_SCHEDULER_PATH"
 
     def __init__(self):
         """Initialize the dask factory."""
-        dask_mpi.initialize()
-        self.client = dask.distributed.Client()
+        dask_scheduler_path = os.getenv(self._SCHEDULER_PATH)
+        if dask_scheduler_path:
+            self.interactive = True
+            L.info("Connecting dask_mpi with scheduler %s", dask_scheduler_path)
+            self.client = dask.distributed.Client(scheduler_file=dask_scheduler_path)
+        else:
+            self.interactive = False
+            dask_mpi.initialize()
+            L.info("Starting dask_mpi...")
+            self.client = dask.distributed.Client()
 
     def shutdown(self):
         """Retire the workers on the scheduler."""
-        time.sleep(1)
-        self.client.retire_workers()
-        self.client = None
+        if not self.interactive:
+            time.sleep(1)
+            self.client.retire_workers()
+            self.client = None
 
     def get_mapper(self):
         """Get a Dask mapper."""
-        batch_size = int(os.getenv(self._PARALLEL_BATCH_SIZE, "0")) or None
-        L.debug("Using %s=%s", self._PARALLEL_BATCH_SIZE, batch_size)
+        batch_size = int(os.getenv(self._BATCH_SIZE, "0")) or None
+        L.debug("Using %s=%s", self._BATCH_SIZE, batch_size)
 
         def _mapper(func, iterable):
             if isinstance(iterable, Iterator):
@@ -93,20 +129,28 @@ class DaskFactory(ParallelFactory):
                 iterable = list(iterable)
             # map is less efficient than dask.bag, but yields results as soon as they are ready
             futures = self.client.map(func, iterable, batch_size=batch_size)
-            for _future, result in dask.distributed.as_completed(
-                futures, with_results=True
-            ):
+            for _future, result in dask.distributed.as_completed(futures, with_results=True):
                 yield result
 
         return _mapper
 
 
-def init_parallel_factory(parallel_lib):
-    """Return the desired instance of the parallel factory."""
-    parallel_factory = {
-        "dask": DaskFactory,
-        "ipyparallel": IPyParallelFactory,
-        "multiprocessing": MultiprocessingFactory,
-    }[parallel_lib]()
-    L.info("Initialized %s factory", parallel_lib)
-    return parallel_factory
+class InitParallelFactory:
+    """Context manager of parallel factories."""
+
+    def __init__(self, parallel_lib):
+        """Instantiate a parallel factory."""
+        self.parallel_factory = {
+            "dask": DaskFactory,
+            "ipyparallel": IPyParallelFactory,
+            "multiprocessing": MultiprocessingFactory,
+        }[parallel_lib]()
+        L.info("Initialized %s factory", parallel_lib)
+
+    def __enter__(self):
+        """Return instance of parallel factory."""
+        return self.parallel_factory
+
+    def __exit__(self, type, value, traceback):
+        """Call shutdown method."""
+        self.parallel_factory.shutdown()

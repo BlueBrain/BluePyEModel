@@ -10,21 +10,10 @@ from ...ais_synthesis.plotting import (
     plot_synth_ais_evaluations,
     plot_target_rho_axon,
 )
-
-from .evaluations import (
-    EvaluateGeneric,
-    EvaluateSynthesis,
-)
-from .ais_model import (
-    AisShapeModel,
-    AisResistanceModel,
-    TargetRhoAxon,
-)
+from .ais_model import AisResistanceModel, AisShapeModel, TargetRhoAxon
 from .base_task import BaseTask
-from .utils import (
-    add_emodel,
-    ensure_dir,
-)
+from .evaluations import EvaluateGeneric, EvaluateSynthesis
+from .utils import add_emodel, ensure_dir
 
 
 class PlotAisShapeModel(BaseTask):
@@ -77,9 +66,7 @@ class PlotTargetRhoAxon(BaseTask):
         """Run."""
         try:
             rho_scan_df = pd.read_csv(
-                add_emodel(
-                    TargetRhoAxon(emodel=self.emodel).rho_scan_df_path, self.emodel
-                )
+                add_emodel(TargetRhoAxon(emodel=self.emodel).rho_scan_df_path, self.emodel)
             )
 
             ensure_dir(self.output().path)

@@ -13,7 +13,7 @@ class DatabaseAPI:
     def store_protocols(self, emodel, species, stimuli):
         """ Save the protocols obtained from BluePyEfe"""
 
-    def store_model(
+    def store_emodel(
         self,
         emodel,
         scores,
@@ -37,6 +37,22 @@ class DatabaseAPI:
             cells (dict): return the cells recordings metadata
             protocols (dict): return the protocols metadata
 
+        """
+
+    def get_emodel(self, emodel, species=None):
+        """Get dict with parameter of single emodel (including seed if any)
+
+        Args:
+            emodel (str): name of the emodels
+            species (str): name of the species (rat, human, mouse)
+        """
+
+    def get_emodels(self, emodels, species):
+        """Get the list of emodels dictionaries.
+
+        Args:
+            emodels (list): list of names of the emodels
+            species (str): name of the species (rat, human, mouse)
         """
 
     def get_parameters(self, emodel, species):
@@ -104,6 +120,13 @@ class DatabaseAPI:
         Returns:
             mechanism_paths (dict): {'mech_name': 'mech_path'}
 
+        """
+
+    def get_emodel_names(self):
+        """Get the list of all the names of emodels
+
+        Returns:
+            dict: keys are emodel names with seed, values are names without seed.
         """
 
     def close(self):

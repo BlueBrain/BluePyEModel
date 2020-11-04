@@ -3,22 +3,15 @@ import pandas as pd
 
 import luigi
 
+from .base_task import BaseTask
+from .evaluations import EvaluateGeneric
 from .gather import (
     GatherAisModels,
     GatherGenericEvaluations,
     GatherSynthAis,
-    GatherSynthEvaluations,
     GatherTargetRhoAxon,
 )
-from .evaluations import (
-    EvaluateSynthesis,
-    SynthesizeAis,
-)
-
-from .ais_model import (
-    AisResistanceModel,
-    TargetRhoAxon,
-)
+from .morph_combos import CreateMorphCombosDF
 from .plotting import (
     PlotAisResistanceModel,
     PlotAisShapeModel,
@@ -26,101 +19,65 @@ from .plotting import (
     PlotSynthesisEvaluation,
     PlotTargetRhoAxon,
 )
-from .select import (
-    PlotGenericSelected,
-    PlotSelected,
-    SelectCombos,
-    SelectGenericCombos,
-)
-from .config import morphologyconfigs
+from .select import PlotGenericSelected, PlotSelected, SelectGenericCombos
 
 
-class RunPlotting(luigi.WrapperTask):
-    """Collect all the plotting tasks."""
-
-    emodels = luigi.ListParameter(default=["all"])
-
-    def requires(self):
-        """Requires."""
-        tasks = [PlotAisShapeModel()]
-        for emodel in self.emodels:
-            tasks.append(PlotAisResistanceModel(emodel=emodel))
-            tasks.append(PlotTargetRhoAxon(emodel=emodel))
-            tasks.append(PlotSynthesisEvaluation(emodel=emodel))
-        tasks.append(PlotSelected(emodels=self.emodels))
-
-        return tasks
-
-
-class RunAll(luigi.WrapperTask):
+class RunAll(BaseTask):
     """Main task to run the workflow."""
 
-    emodels = luigi.ListParameter(default=["all"])
-    with_plots = luigi.BoolParameter()
+    _all_completed = luigi.BoolParameter(default=False)
 
-    def __init__(self, *args, **kwargs):
-        """Init."""
-        super().__init__(*args, **kwargs)
+    def run(self):
+        """"""
 
-        if self.emodels[0] == "all":  # pylint: disable=unsubscriptable-object
-            self.all_emodels = sorted(
-                list(set(pd.read_csv(morphologyconfigs().morphs_combos_df_path).emodel))
-            )
-        else:
-            self.all_emodels = self.emodels
+        morph_combos_task = yield CreateMorphCombosDF()
+        all_emodels = list(pd.read_csv(morph_combos_task.path).emodel.unique())
 
-    def requires(self):
-        """Requires."""
-        tasks = []
-        for emodel in self.all_emodels:
-            tasks += [
-                AisResistanceModel(emodel=emodel),
-                TargetRhoAxon(emodel=emodel),
-                SynthesizeAis(emodel=emodel),
-                EvaluateSynthesis(emodel=emodel),
-            ]
+        yield PlotAisShapeModel()
 
-        tasks += [
-            GatherAisModels(emodels=self.all_emodels),
-            GatherTargetRhoAxon(emodels=self.all_emodels),
-            GatherSynthAis(emodels=self.all_emodels),
-            GatherSynthEvaluations(emodels=self.all_emodels),
-            SelectCombos(emodels=self.all_emodels),
-        ]
+        for emodel in all_emodels:
+            yield PlotAisResistanceModel(emodel=emodel)
+            yield PlotTargetRhoAxon(emodel=emodel)
+            yield PlotSynthesisEvaluation(emodel=emodel)
 
-        if self.with_plots:
-            tasks.append(RunPlotting(emodels=self.all_emodels))
+        yield GatherAisModels(emodels=all_emodels)
+        yield GatherTargetRhoAxon(emodels=all_emodels)
+        yield GatherSynthAis(emodels=all_emodels)
+        yield PlotSelected(emodels=all_emodels)
 
-        return tasks
+        self._all_completed = True
+
+    def on_success(self):
+        """"""
+
+    def complete(self):
+        """"""
+        return self._all_completed
 
 
-class RunGenericEvaluations(luigi.WrapperTask):
+class RunGenericEvaluations(BaseTask):
     """Main task to run the evaluation of emodels."""
 
-    emodels = luigi.ListParameter(default=["all"])
-    with_plots = luigi.BoolParameter()
+    _all_completed = luigi.BoolParameter(default=False)
 
-    def __init__(self, *args, **kwargs):
-        """Init."""
-        super().__init__(*args, **kwargs)
+    def run(self):
+        """"""
+        morph_combos_task = yield CreateMorphCombosDF()
+        all_emodels = pd.read_csv(morph_combos_task.path).emodel.unique()
 
-        if self.emodels[0] == "all":  # pylint: disable=unsubscriptable-object
-            self.all_emodels = sorted(
-                list(set(pd.read_csv(morphologyconfigs().morphs_combos_df_path).emodel))
-            )
-        else:
-            self.all_emodels = self.emodels
+        yield GatherGenericEvaluations(emodels=all_emodels)
+        yield SelectGenericCombos(emodels=all_emodels)
 
-    def requires(self):
-        """Requires."""
+        for emodel in all_emodels:
+            yield EvaluateGeneric(emodel=emodel)
+            yield PlotGenericEvaluation(emodel=emodel)
+        yield PlotGenericSelected(emodels=all_emodels)
 
-        tasks = []
-        tasks.append(GatherGenericEvaluations(emodels=self.all_emodels))
-        tasks.append(SelectGenericCombos(emodels=self.all_emodels))
+        self._all_completed = True
 
-        if self.with_plots:
-            for emodel in self.all_emodels:
-                tasks.append(PlotGenericEvaluation(emodel=emodel))
-            tasks.append(PlotGenericSelected(emodels=self.all_emodels))
+    def on_success(self):
+        """"""
 
-        return tasks
+    def complete(self):
+        """"""
+        return self._all_completed

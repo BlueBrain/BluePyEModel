@@ -35,9 +35,7 @@ def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures"):
 
     fig, axs = plt.subplots(1, figsize=(8, 8), squeeze=False)
 
-    axs[0, 0].plot(
-        nevals, run["logbook"].select("min"), label="Minimum", ls="--", c="gray"
-    )
+    axs[0, 0].plot(nevals, run["logbook"].select("min"), label="Minimum", ls="--", c="gray")
 
     axs[0, 0].plot(nevals, run["logbook"].select("avg"), label="Average", c="gray")
 
@@ -66,9 +64,7 @@ def scores(model, figures_dir="./figures"):
 
     for p, s in zip(pos, score):
         if s > 5.0:
-            axs[0, 0].text(
-                5.15, p - 0.25, s="{:.1f}".format(s), color="red", fontsize=8
-            )
+            axs[0, 0].text(5.15, p - 0.25, s="{:.1f}".format(s), color="red", fontsize=8)
 
     axs[0, 0].set_xlabel("z-score")
 
@@ -140,9 +136,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
                 axs_c[-1].plot([ton, ton], [holding, amp], color="gray", alpha=0.6)
                 axs_c[-1].plot([ton, toff], [amp, amp], color="gray", alpha=0.6)
                 axs_c[-1].plot([toff, toff], [amp, holding], color="gray", alpha=0.6)
-                axs_c[-1].plot(
-                    [toff, tend], [holding, holding], color="gray", alpha=0.6
-                )
+                axs_c[-1].plot([toff, tend], [holding, holding], color="gray", alpha=0.6)
 
                 axs_c[-1].set_ylim(min(holding, amp) - 0.2, max(holding, amp) + 0.2)
 
@@ -201,12 +195,8 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
     axs[0, 0].set_xticks(ticks=range(1, 1 + len(ubounds)))
     axs[0, 0].set_xticklabels(labels=list(ubounds.keys()), rotation=90)
 
-    axs[0, 0].plot(
-        [0, 1 + len(ubounds)], [-1, -1], c="black", ls="--", alpha=0.6, zorder=1
-    )
-    axs[0, 0].plot(
-        [0, 1 + len(ubounds)], [1, 1], c="black", ls="--", alpha=0.6, zorder=1
-    )
+    axs[0, 0].plot([0, 1 + len(ubounds)], [-1, -1], c="black", ls="--", alpha=0.6, zorder=1)
+    axs[0, 0].plot([0, 1 + len(ubounds)], [1, 1], c="black", ls="--", alpha=0.6, zorder=1)
 
     axs[0, 0].set_yticks(ticks=[-1, 1])
     axs[0, 0].set_yticklabels(labels=["Lower bounds", "Upper bounds"])

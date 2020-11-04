@@ -1,6 +1,8 @@
+"""Module with protocoal classes."""
 import copy
-import time
 import logging
+import time
+
 import numpy
 
 import bluepyopt.ephys as ephys
@@ -37,7 +39,7 @@ class StepProtocol(ephys.protocols.SweepProtocol):
                 stochastic
         """
 
-        super(StepProtocol, self).__init__(
+        super().__init__(
             name,
             stimuli=[step_stimulus, holding_stimulus]
             if holding_stimulus is not None
@@ -69,14 +71,20 @@ class StepProtocol(ephys.protocols.SweepProtocol):
         if self.stochasticity:
             for mechanism in cell_model.mechanisms:
                 if not mechanism.deterministic:
+                    if "Stoch" not in mechanism.suffix:
+                        logger.warning(
+                            """You are trying to set a mechanism to stochastic mode
+                                       without 'Stoch' in the mechanism prefix, this may not work
+                                       with current version of BluePyOpt."""
+                        )
+
                     self.cvode_active = False
+        else:
+            for mechanism in cell_model.mechanisms:
+                if not mechanism.deterministic:
+                    mechanism.deterministic = True
 
-        responses = super(StepProtocol, self).run(
-            cell_model, param_values, sim=sim, timeout=timeout
-        )
-        self.cvode_active = True
-
-        return responses
+        return super().run(cell_model, param_values, sim=sim, timeout=timeout)
 
 
 class StepThresholdProtocol(StepProtocol):
@@ -108,7 +116,7 @@ class StepThresholdProtocol(StepProtocol):
                 stochastic
         """
 
-        super(StepThresholdProtocol, self).__init__(
+        super().__init__(
             name,
             step_stimulus=step_stimulus,
             holding_stimulus=holding_stimulus,
@@ -118,7 +126,7 @@ class StepThresholdProtocol(StepProtocol):
 
         self.thresh_perc = thresh_perc
 
-    def run(
+    def run(  # pylint: disable=arguments-differ
         self,
         cell_model,
         param_values,
@@ -130,23 +138,12 @@ class StepThresholdProtocol(StepProtocol):
     ):
         """Run protocol"""
         if holding_current is None or threshold_current is None:
-            raise Exception(
-                "StepThresholdProtocol: missing holding or threshold current " "value"
-            )
+            raise Exception("StepThresholdProtocol: missing holding or threshold current " "value")
 
-        self.step_stimulus.step_amplitude = threshold_current * (
-            float(self.thresh_perc) / 100.0
-        )
+        self.step_stimulus.step_amplitude = threshold_current * (float(self.thresh_perc) / 100.0)
         self.holding_stimulus.step_amplitude = holding_current
 
-        responses = {}
-        responses.update(
-            super(StepThresholdProtocol, self).run(
-                cell_model, param_values, sim=sim, timeout=timeout
-            )
-        )
-
-        return responses
+        return super().run(cell_model, param_values, sim=sim, timeout=timeout)
 
 
 class RMPProtocol(StepProtocol):
@@ -173,7 +170,7 @@ class RMPProtocol(StepProtocol):
                 stochastic
         """
 
-        super(RMPProtocol, self).__init__(
+        super().__init__(
             name=name,
             step_stimulus=step_stimulus,
             holding_stimulus=holding_stimulus,
@@ -312,42 +309,40 @@ class SearchRinHoldingCurrent:
         """Do bisection search to find holding current"""
 
         logger.debug(
-            "Bisection search for SearchRinHoldingCurrent. Depth = {"
-            "}/{}.".format(depth, self.max_depth)
+            "Bisection search for SearchRinHoldingCurrent. Depth = %s / %s ",
+            depth,
+            self.max_depth,
         )
 
         mid_bound = upper_bound - abs(upper_bound - lower_bound) / 2
 
         if depth >= self.max_depth:
             return mid_bound
-        else:
-            middle_voltage = self.get_voltage_base(
-                mid_bound, cell_model, param_values, sim, isolate
+
+        middle_voltage = self.get_voltage_base(mid_bound, cell_model, param_values, sim, isolate)
+        if abs(middle_voltage - self.target_voltage.exp_mean) < self.atol:
+            return mid_bound
+        if middle_voltage > self.target_voltage.exp_mean:
+            return self.bisection_search(
+                cell_model,
+                param_values,
+                sim=sim,
+                isolate=isolate,
+                lower_bound=lower_bound,
+                upper_bound=mid_bound,
+                depth=depth + 1,
             )
-            if abs(middle_voltage - self.target_voltage.exp_mean) < self.atol:
-                return mid_bound
-            elif middle_voltage > self.target_voltage.exp_mean:
-                return self.bisection_search(
-                    cell_model,
-                    param_values,
-                    sim=sim,
-                    isolate=isolate,
-                    lower_bound=lower_bound,
-                    upper_bound=mid_bound,
-                    depth=depth + 1,
-                )
-            elif middle_voltage < self.target_voltage.exp_mean:
-                return self.bisection_search(
-                    cell_model,
-                    param_values,
-                    sim=sim,
-                    isolate=isolate,
-                    lower_bound=mid_bound,
-                    upper_bound=upper_bound,
-                    depth=depth + 1,
-                )
-            else:
-                return None
+        if middle_voltage < self.target_voltage.exp_mean:
+            return self.bisection_search(
+                cell_model,
+                param_values,
+                sim=sim,
+                isolate=isolate,
+                lower_bound=mid_bound,
+                upper_bound=upper_bound,
+                depth=depth + 1,
+            )
+        return None
 
 
 class SearchThresholdCurrent:
@@ -390,9 +385,7 @@ class SearchThresholdCurrent:
         self.spike_feature = ephys.efeatures.eFELFeature(
             name="ThresholdCurrentSearch.Spikecount",
             efel_feature_name="Spikecount",
-            recording_names={
-                "": "ThresholdCurrentSearch.{}.v".format(self.location.name)
-            },
+            recording_names={"": "ThresholdCurrentSearch.{}.v".format(self.location.name)},
             stim_start=200.0,
             stim_end=200.0 + self.step_duration,
             exp_mean=1,
@@ -466,7 +459,7 @@ class SearchThresholdCurrent:
     def max_threshold_current(self, rin, rmp):
         """Find the current necessary to get to max_threshold_voltage"""
         max_threshold_current = (self.max_threshold_voltage - rmp) / rin
-        logger.debug("Max threshold current: %.6g" % max_threshold_current)
+        logger.debug("Max threshold current: %.6g", max_threshold_current)
         return max_threshold_current
 
     def is_spike(
@@ -522,8 +515,7 @@ class SearchThresholdCurrent:
                     lower_bound=step_currents[i - 1],
                     timeout=timeout,
                 )
-        else:
-            return None
+        return None
 
     def bisection_search(
         self,
@@ -539,8 +531,9 @@ class SearchThresholdCurrent:
     ):
         """Do bisection search to find threshold current"""
         logger.debug(
-            "Bisection search for Threshold current. Depth = {"
-            "}/{}.".format(depth, self.max_depth)
+            "Bisection search for Threshold current. Depth = %s / %s",
+            depth,
+            self.max_depth,
         )
         mid_bound = (upper_bound + lower_bound) * 0.5
         if depth >= self.max_depth:
@@ -578,6 +571,7 @@ class SearchThresholdCurrent:
                 depth=depth + 1,
                 timeout=timeout,
             )
+        return None
 
 
 class MainProtocol(ephys.protocols.Protocol):
@@ -602,8 +596,8 @@ class MainProtocol(ephys.protocols.Protocol):
         rmp_protocol,
         holding_rin_protocol,
         search_threshold_protocol,
-        threshold_protocols={},
-        other_protocols={},
+        threshold_protocols=None,
+        other_protocols=None,
         score_threshold=None,
     ):
         """Constructor
@@ -624,7 +618,7 @@ class MainProtocol(ephys.protocols.Protocol):
                 if None, the computations will proceed without this check
         """
 
-        super(MainProtocol, self).__init__(name=name)
+        super().__init__(name=name)
 
         self.name = name
 
@@ -674,9 +668,7 @@ class MainProtocol(ephys.protocols.Protocol):
 
             # Find the holding current and input resistance
             t1 = time.time()
-            rin_response = self.Rin_protocol.run(
-                cell_model, {}, sim=sim, rmp=rmp, timeout=timeout
-            )
+            rin_response = self.Rin_protocol.run(cell_model, {}, sim=sim, rmp=rmp, timeout=timeout)
             responses.update(rin_response)
             rin = self.Rin_protocol.target_Rin.calculate_feature(rin_response)
             rin_score = self.Rin_protocol.target_Rin.calculate_score(rin_response)
@@ -706,9 +698,7 @@ class MainProtocol(ephys.protocols.Protocol):
                 if responses["bpo_threshold_current"] is not None:
 
                     threshold_score = (
-                        self.search_threshold_protocol.target_threshold.calculate_score(
-                            responses
-                        )
+                        self.search_threshold_protocol.target_threshold.calculate_score(responses)
                     )
 
                     logger.debug(
@@ -736,18 +726,14 @@ class MainProtocol(ephys.protocols.Protocol):
                         )
 
                 else:
-                    logger.debug(
-                        "Threshold_current is None. Stopping " "MainProtocol run."
-                    )
+                    logger.debug("Threshold_current is None. Stopping " "MainProtocol run.")
             else:
                 logger.debug(
                     "SearchRinHoldingCurrent score higher than score_threshold. Stopping "
                     "MainProtocol run."
                 )
         else:
-            logger.debug(
-                "RMP score lower than score_threshold. Stopping " "MainProtocol run."
-            )
+            logger.debug("RMP score lower than score_threshold. Stopping " "MainProtocol run.")
 
         return responses
 
@@ -763,7 +749,7 @@ class MainProtocol(ephys.protocols.Protocol):
             responses.update(self.run_threshold(cell_model, sim, isolate, timeout))
 
         # Run protocols that are not based on holding/threshold detection
-        for protocol_name, protocol in self.other_protocols.items():
+        for protocol in self.other_protocols.values():
             responses.update(protocol.run(cell_model, {}, sim, isolate, timeout))
 
         cell_model.unfreeze(param_values.keys())

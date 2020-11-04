@@ -17,7 +17,6 @@ from ..evaluation.modifiers import (
     synth_axon,
 )
 from .tools.evaluator import evaluate_combos
-from .utils import get_scores
 
 logger = logging.getLogger(__name__)
 RIN_RESPONSE = "rin_noholding"  # "rin_holding" or "rin_noholding"
@@ -51,7 +50,8 @@ def _single_evaluation(
     morphology_path="morphology_path",
     save_traces=False,
     trace_folder="traces",
-    stochasticity=True,
+    stochasticity=False,
+    timeout=1000,
 ):
     """Evaluating single protocol."""
 
@@ -63,6 +63,7 @@ def _single_evaluation(
         protocols_definition=protocols,
         features_definition=features,
         stochasticity=stochasticity,
+        timeout=timeout,
     )
 
     responses = _evaluator.run_protocols(
@@ -102,7 +103,7 @@ def evaluate_scores(
     trace_folder="traces",
     continu=False,
     combos_db_filename="scores_db.sql",
-    ipyp_profile=None,
+    parallel_factory=None,
 ):
     """Compute the scores on the combos dataframe.
 
@@ -116,7 +117,7 @@ def evaluate_scores(
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
         combos_db_filename (str): filename for the combos sqlite database
-        ipyp_profile (str): name of ipyparallel profile
+        parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
         pandas.DataFrame: original combos with computed scores
@@ -135,7 +136,7 @@ def evaluate_scores(
         new_columns=[["scores", ""]],
         task_ids=task_ids,
         continu=continu,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
         combos_db_filename=combos_db_filename,
     )
 
@@ -162,22 +163,20 @@ def get_emodel_data(
     return cell, protocols, features, emodel_params
 
 
-def run_custom(self, cell_model, param_values, rmp, sim=None, isolate=None):
+def run_custom(self, cell_model, param_values, rmp, sim=None, isolate=None, timeout=None):
     """Run function for SearchRinHoldingCurrent that saves rin_holding and rin_noholding."""
     # Calculate Rin without holding current
     protocol = self.create_protocol(holding_current=0.0)
-    response = protocol.run(cell_model, param_values, sim, isolate)
+    response = protocol.run(cell_model, param_values, sim, isolate, timeout=timeout)
     rin = self.target_Rin.calculate_feature(response)
 
-    holding_current = self.search_holding_current(
-        cell_model, param_values, rmp, rin, sim, isolate
-    )
+    holding_current = self.search_holding_current(cell_model, param_values, rmp, rin, sim, isolate)
     if holding_current is None:
         return None
 
     # Return the response of the final estimate of the holding current
     protocol = self.create_protocol(holding_current=holding_current)
-    response = protocol.run(cell_model, param_values, sim, isolate)
+    response = protocol.run(cell_model, param_values, sim, isolate, timeout=timeout)
     rin_holding = self.target_Rin.calculate_feature(response)
     response["bpo_holding_current"] = holding_current
     response["rin_noholding"] = rin
@@ -193,7 +192,8 @@ def _rin_evaluation(
     key="rin",
     morphology_path="morphology_path",
     with_currents=False,
-    stochasticity=True,
+    stochasticity=False,
+    timeout=1000,
 ):
     """Evaluating rin protocol."""
 
@@ -203,11 +203,10 @@ def _rin_evaluation(
 
     _evaluator = create_evaluator(
         cell_model=cell,
-        protocols_definition={
-            prot: protocols[prot] for prot in ["RMP", "RinHoldCurrent"]
-        },
+        protocols_definition={prot: protocols[prot] for prot in ["RMP", "RinHoldCurrent"]},
         features_definition=features,
         stochasticity=stochasticity,
+        timeout=timeout,
     )
     _evaluator.fitness_protocols[
         "main_protocol"
@@ -215,9 +214,7 @@ def _rin_evaluation(
         _evaluator.fitness_protocols["main_protocol"].Rin_protocol,
         SearchRinHoldingCurrent,
     )
-    responses = _evaluator.run_protocols(
-        _evaluator.fitness_protocols.values(), emodel_params
-    )
+    responses = _evaluator.run_protocols(_evaluator.fitness_protocols.values(), emodel_params)
     if with_currents:
         return {
             key + "holding_current": responses["bpo_holding_current"],
@@ -233,7 +230,7 @@ def evaluate_ais_rin(
     morphology_path="morphology_path",
     continu=False,
     combos_db_filename="eval_db.sql",
-    ipyp_profile=None,
+    parallel_factory=None,
 ):
     """Compute the input resistance of the ais (axon).
 
@@ -245,7 +242,7 @@ def evaluate_ais_rin(
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
         combos_db_filename (str): filename for the combos sqlite database
-        ipyp_profile (str): name of ipyparallel profile
+        parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
         pandas.DataFrame: original combos with computed rin of ais
@@ -259,14 +256,13 @@ def evaluate_ais_rin(
         key=key,
         morphology_path=morphology_path,
     )
-
     return evaluate_combos(
         morphs_combos_df,
         rin_ais_evaluation,
         new_columns=[[key, 0.0]],
         task_ids=task_ids,
         continu=continu,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
         combos_db_filename=combos_db_filename,
     )
 
@@ -278,7 +274,6 @@ def evaluate_somadend_rin(
     morphology_path="morphology_path",
     continu=False,
     combos_db_filename="eval_db.sql",
-    ipyp_profile=None,
     parallel_factory=None,
 ):
     """Compute the input resistance of the soma and dentrites.
@@ -291,8 +286,7 @@ def evaluate_somadend_rin(
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
         combos_db_filename (str): filename for the combos sqlite database
-        ipyp_profile (str): name of ipyparallel profile
-        parallel_factory (ParallelFactory): parallel factory instance (alternative to ipyp_profile)
+        parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
         pandas.DataFrame: original combos with computed rin or soma+dendrite
@@ -311,7 +305,6 @@ def evaluate_somadend_rin(
         new_columns=[[key, 0.0]],
         task_ids=task_ids,
         continu=continu,
-        ipyp_profile=ipyp_profile,
         parallel_factory=parallel_factory,
         combos_db_filename=combos_db_filename,
     )
@@ -324,7 +317,7 @@ def evaluate_rho_axon(
     morphology_path="morphology_path",
     continu=False,
     combos_db_filename="eval_db.sql",
-    ipyp_profile=None,
+    parallel_factory=None,
 ):
     """Compute the input resistances and rho factor.
 
@@ -336,7 +329,7 @@ def evaluate_rho_axon(
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
         combos_db_filename (str): filename for the combos sqlite database
-        ipyp_profile (str): name of ipyparallel profile
+        parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
         pandas.DataFrame: original combos with computed rho axon
@@ -348,7 +341,7 @@ def evaluate_rho_axon(
         morphology_path=morphology_path,
         continu=continu,
         combos_db_filename=combos_db_filename,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
     )
 
     morphs_combos_df = evaluate_ais_rin(
@@ -358,27 +351,25 @@ def evaluate_rho_axon(
         morphology_path=morphology_path,
         continu=continu,
         combos_db_filename=combos_db_filename,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
     )
 
-    morphs_combos_df["rho_axon"] = (
-        morphs_combos_df.rin_ais / morphs_combos_df.rin_no_axon
-    )
+    morphs_combos_df["rho_axon"] = morphs_combos_df.rin_ais / morphs_combos_df.rin_no_axon
     return morphs_combos_df
 
 
-def evaluate_combos_rho_scores(
+def evaluate_combos_rho(
     morphs_combos_df,
     emodel_db,
-    emodels="all",
+    emodels=None,
     morphology_path="morphology_path",
     save_traces=False,
     trace_folder="traces",
     continu=False,
     combos_db_filename="eval_db.sql",
-    ipyp_profile=None,
+    parallel_factory=None,
 ):
-    """Evaluate me-combos and record scores and rho axons.
+    """Evaluate me-combos and rho axons.
 
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
@@ -389,16 +380,15 @@ def evaluate_combos_rho_scores(
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
         combos_db_filename (str): filename for the combos sqlite database
-        ipyp_profile (str): name of ipyparallel profile
+        parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
         pandas.DataFrame: original combos with computed scores
     """
-    if emodels[0] == "all" or emodels == "all":
+    if emodels is None:
         task_ids = morphs_combos_df.index
     else:
         task_ids = morphs_combos_df[morphs_combos_df.emodel.isin(emodels)].index
-
     morphs_combos_df = evaluate_rho_axon(
         morphs_combos_df,
         emodel_db,
@@ -406,7 +396,7 @@ def evaluate_combos_rho_scores(
         continu=continu,
         morphology_path=morphology_path,
         combos_db_filename=combos_db_filename + ".rho",
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
     )
 
     morphs_combos_df = evaluate_scores(
@@ -418,10 +408,10 @@ def evaluate_combos_rho_scores(
         continu=continu,
         combos_db_filename=combos_db_filename + ".scores",
         morphology_path=morphology_path,
-        ipyp_profile=ipyp_profile,
+        parallel_factory=parallel_factory,
     )
 
-    return get_scores(morphs_combos_df)
+    return morphs_combos_df
 
 
 def evaluate_currents(
@@ -431,7 +421,6 @@ def evaluate_currents(
     morphology_path="morphology_path",
     continu=False,
     combos_db_filename="eval_db.sql",
-    ipyp_profile=None,
     parallel_factory=None,
 ):
     """Compute the threshold and holding currents.
@@ -444,8 +433,7 @@ def evaluate_currents(
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
         combos_db_filename (str): filename for the combos sqlite database
-        ipyp_profile (str): name of ipyparallel profile
-        parallel_factory (ParallelFactory): parallel factory instance (alternative to ipyp_profile)
+        parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
         pandas.DataFrame: original combos with computed rin of ais
@@ -464,7 +452,6 @@ def evaluate_currents(
         new_columns=[[key + "holding_current", 0.0], [key + "threshold_current", 0.0]],
         task_ids=task_ids,
         continu=continu,
-        ipyp_profile=ipyp_profile,
         parallel_factory=parallel_factory,
         combos_db_filename=combos_db_filename,
     )

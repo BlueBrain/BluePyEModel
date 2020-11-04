@@ -5,9 +5,7 @@ import bluepyefe
 logger = logging.getLogger(__name__)
 
 
-def get_config(
-    cells, protocols, file_format, protocols_threshold=None, threshold_nvalue_save=1
-):
+def get_config(cells, protocols, file_format, protocols_threshold=None, threshold_nvalue_save=1):
     """Create configuration dictionnary."""
     if protocols_threshold is None:
         protocols_threshold = []
@@ -49,9 +47,7 @@ def extract_efeatures(
         ]
 
     extractor.mean_efeatures()
-    efeatures, stimuli, current = extractor.create_feature_protocol_files(
-        write_files=write_files
-    )
+    efeatures, stimuli, current = extractor.create_feature_protocol_files(write_files=write_files)
 
     if plot:
         plot_efeatures_and_traces(extractor)
@@ -61,9 +57,7 @@ def extract_efeatures(
 
 def plot_efeatures_and_traces(extractor):
     """Plot features and traces."""
-    plotter = bluepyefe.Plotter(
-        extractor.cells, extractor.maindirname, plot_per_column=5
-    )
+    plotter = bluepyefe.Plotter(extractor.cells, extractor.maindirname, plot_per_column=5)
     plot_efeatures(extractor, plotter)
     plot_traces(extractor, plotter)
 
@@ -71,9 +65,7 @@ def plot_efeatures_and_traces(extractor):
 def plot_efeatures(extractor, plotter=None):
     """Plot efeatures."""
     if plotter is None:
-        plotter = bluepyefe.Plotter(
-            extractor.cells, extractor.maindirname, plot_per_column=5
-        )
+        plotter = bluepyefe.Plotter(extractor.cells, extractor.maindirname, plot_per_column=5)
 
     for cell in extractor.cells:
         for prot_name in cell.get_protocol_names():
@@ -97,9 +89,7 @@ def plot_efeatures(extractor, plotter=None):
 def plot_traces(extractor, plotter=None):
     """Plot traces."""
     if plotter is None:
-        plotter = bluepyefe.Plotter(
-            extractor.cells, extractor.maindirname, plot_per_column=5
-        )
+        plotter = bluepyefe.Plotter(extractor.cells, extractor.maindirname, plot_per_column=5)
 
     # Warning: slow due to tight_layout
     for cell in extractor.cells:

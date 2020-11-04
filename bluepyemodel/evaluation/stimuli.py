@@ -1,10 +1,14 @@
+"""Classes to represent stimuli protocols."""
 import logging
+
 from bluepyopt.ephys.stimuli import Stimulus
 
 logger = logging.getLogger(__name__)
 
 
 class NrnHDPulse(Stimulus):
+    """HD pulse protocol."""
+
     def __init__(
         self,
         amp=None,
@@ -22,7 +26,7 @@ class NrnHDPulse(Stimulus):
             location (Location): stimulus Location
         """
 
-        super(NrnHDPulse, self).__init__()
+        super().__init__()
 
         self.ton = ton
         self.step_amplitude = amp
@@ -44,8 +48,7 @@ class NrnHDPulse(Stimulus):
 
         icomp = self.location.instantiate(sim=sim, icell=icell)
         logger.debug(
-            "Adding HyperDepol stimulus to %s with delay %f, "
-            "duration %f, and amplitude %f",
+            "Adding HyperDepol stimulus to %s with delay %f, " "duration %f, and amplitude %f",
             str(self.location),
             self.step_delay,
             self.step_duration,
@@ -96,7 +99,7 @@ class NrnHDPulse(Stimulus):
             sec=icomp.sec,
         )
 
-    def destroy(self, sim=None):
+    def destroy(self, sim=None):  # pylint:disable=unused-argument
         """Destroy stimulus"""
         self.iclamp = None
         self.time_vec = None

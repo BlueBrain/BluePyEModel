@@ -7,6 +7,7 @@ class databaseconfigs(luigi.Config):
 
     api = luigi.Parameter(default="singlecell")
     working_dir = luigi.Parameter(default="config")
+    final_path = luigi.Parameter(default=None)
 
 
 class finalconfigs(luigi.Config):
@@ -25,21 +26,15 @@ class selectconfigs(luigi.Config):
     exemplar_morphs_combos_df_path = luigi.Parameter(default="morphs_combos_df.csv")
     exemplar_evaluations_path = luigi.Parameter(default="exemplar_evaluations.csv")
     megated_scores_df_path = luigi.Parameter(default="megated_scores_df.csv")
-
-
-class morphologyconfigs(luigi.Config):
-    """Class to collectt the paths to morphology release .csv."""
-
-    morphs_df_path = luigi.Parameter(default="morphs_df.csv")
-    morphs_combos_df_path = luigi.Parameter(default="morphs_combos_df.csv")
+    megate_thresholds_path = luigi.Parameter(default="megate_thresholds.yaml")
 
 
 class scaleconfigs(luigi.Config):
     """Scales configuration."""
 
-    scale_min = luigi.FloatParameter(default=-1)
-    scale_max = luigi.FloatParameter(default=1)
-    scale_n = luigi.IntParameter(default=10)
+    scale_min = luigi.FloatParameter(default=-0.8)
+    scale_max = luigi.FloatParameter(default=0.8)
+    scale_n = luigi.IntParameter(default=50)
     scale_lin = luigi.BoolParameter(default=False)
 
     def __init__(self, *args, **kwargs):

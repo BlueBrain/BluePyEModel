@@ -1,21 +1,22 @@
-import numpy
+"""Evaluator module."""
 import logging
-import bluepyopt
 from collections import defaultdict
 
+import numpy
+
+import bluepyopt
 import bluepyopt.ephys as ephys
 from bluepyopt.ephys.efeatures import eFELFeature
 from bluepyopt.ephys.objectives import EFeatureObjective
 
 from .protocols import (
     MainProtocol,
-    StepProtocol,
-    StepThresholdProtocol,
+    RMPProtocol,
     SearchRinHoldingCurrent,
     SearchThresholdCurrent,
-    RMPProtocol,
+    StepProtocol,
+    StepThresholdProtocol,
 )
-
 from .stimuli import NrnHDPulse
 
 logger = logging.getLogger(__name__)
@@ -26,17 +27,7 @@ soma_loc = ephys.locations.NrnSeclistCompLocation(
 
 
 class NrnSomaDistanceCompLocation(ephys.locations.NrnSomaDistanceCompLocation):
-    def __init__(
-        self,
-        name,
-        soma_distance=None,
-        seclist_name=None,
-        comment="",
-    ):
-
-        super(NrnSomaDistanceCompLocation, self).__init__(
-            name, soma_distance, seclist_name, comment
-        )
+    """Custom class for distance to soma computation."""
 
     def instantiate(self, sim=None, icell=None):
         """Find the instantiate compartment"""
@@ -57,9 +48,7 @@ class NrnSomaDistanceCompLocation(ephys.locations.NrnSomaDistanceCompLocation):
             max_distance = max(start_distance, end_distance)
 
             if min_distance <= self.soma_distance <= end_distance:
-                comp_x = float(self.soma_distance - min_distance) / (
-                    max_distance - min_distance
-                )
+                comp_x = float(self.soma_distance - min_distance) / (max_distance - min_distance)
 
                 icomp = isec(comp_x)
                 seccomp = isec
@@ -71,19 +60,19 @@ class NrnSomaDistanceCompLocation(ephys.locations.NrnSomaDistanceCompLocation):
             )
 
         logger.debug(
-            "Using %s at distance %f, nseg %f, length %f"
-            % (
-                icomp,
-                sim.neuron.h.distance(1, comp_x, sec=seccomp),
-                seccomp.nseg,
-                end_distance - start_distance,
-            )
+            "Using %s at distance %f, nseg %f, length %f",
+            icomp,
+            sim.neuron.h.distance(1, comp_x, sec=seccomp),
+            seccomp.nseg,
+            end_distance - start_distance,
         )
 
         return icomp
 
 
 class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocation):
+    """Custom class for distance to soma computation with apical point."""
+
     def __init__(
         self,
         name,
@@ -93,23 +82,19 @@ class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocat
         apical_point_isec=None,
     ):
 
-        super(NrnSomaDistanceCompLocationApical, self).__init__(
-            name, soma_distance, seclist_name, comment
-        )
+        super().__init__(name, soma_distance, seclist_name, comment)
         self.apical_point_isec = apical_point_isec
 
     def instantiate(self, sim=None, icell=None):
         """Find the instantiate compartment"""
         if self.apical_point_isec is None:
-            raise ephys.locations.EPhysLocInstantiateException(
-                "No apical point was given"
-            )
+            raise ephys.locations.EPhysLocInstantiateException("No apical point was given")
 
         apical_branch = []
         section = icell.apic[self.apical_point_isec]
         while True:
             name = str(section.name()).split(".")[-1]
-            if "soma[0]" == name:
+            if name == "soma[0]":
                 break
             apical_branch.append(section)
 
@@ -134,9 +119,7 @@ class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocat
             max_distance = max(start_distance, end_distance)
 
             if min_distance <= self.soma_distance <= end_distance:
-                comp_x = float(self.soma_distance - min_distance) / (
-                    max_distance - min_distance
-                )
+                comp_x = float(self.soma_distance - min_distance) / (max_distance - min_distance)
 
                 icomp = isec(comp_x)
                 seccomp = isec
@@ -147,8 +130,9 @@ class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocat
             )
 
         logger.debug(
-            "Using %s at distance %f"
-            % (icomp, sim.neuron.h.distance(1, comp_x, sec=seccomp))
+            "Using %s at distance %f",
+            icomp,
+            sim.neuron.h.distance(1, comp_x, sec=seccomp),
         )
 
         return icomp
@@ -174,7 +158,7 @@ class MultiEvaluator(bluepyopt.evaluators.Evaluator):
         self.evaluators = evaluators
         objectives = []
         # loop objectives for all evaluators, rename based on evaluators
-        for i, evaluator in enumerate(self.evaluators):
+        for evaluator in self.evaluators:
             for objective in evaluator.objectives:
                 objectives.append(objective)
 
@@ -182,7 +166,7 @@ class MultiEvaluator(bluepyopt.evaluators.Evaluator):
         self.param_names = self.evaluators[0].param_names
         params = self.evaluators[0].cell_model.params_by_names(self.param_names)
 
-        super(MultiEvaluator, self).__init__(objectives, params)
+        super().__init__(objectives, params)
 
     def param_dict(self, param_array):
         """Convert param_array in param_dict"""
@@ -199,8 +183,7 @@ class MultiEvaluator(bluepyopt.evaluators.Evaluator):
 
         if len(objective_names) != len(objective_array):
             raise Exception(
-                "MultiEvaluator: list given to objective_dict() "
-                "has wrong number of objectives"
+                "MultiEvaluator: list given to objective_dict() " "has wrong number of objectives"
             )
 
         for objective_name, objective_value in zip(objective_names, objective_array):
@@ -225,9 +208,9 @@ class MultiEvaluator(bluepyopt.evaluators.Evaluator):
                 scores[score_name] += score[score_name]
         return scores
 
-    def evaluate_with_lists(self, param_list=None):
+    def evaluate_with_lists(self, params=None):
         """Run evaluation with lists as input and outputs"""
-        param_dict = self.param_dict(param_list)
+        param_dict = self.param_dict(params)
         obj_dict = self.evaluate_with_dicts(param_dict=param_dict)
         return self.objective_list(obj_dict)
 
@@ -292,7 +275,7 @@ class eFELFeatureExtra(eFELFeature):
             comment (str): comment
         """
 
-        super(eFELFeatureExtra, self).__init__(
+        super().__init__(
             name,
             efel_feature_name,
             recording_names,
@@ -328,18 +311,15 @@ class eFELFeatureExtra(eFELFeature):
 
         if self.efel_feature_name not in responses:
             return None
-        else:
-            return responses[self.efel_feature_name]
+        return responses[self.efel_feature_name]
 
     def get_bpo_score(self, responses):
         """Return internal score which is directly passed as a response"""
 
         feature_value = self.get_bpo_feature(responses)
         if feature_value is None:
-            score = 250.0
-        else:
-            score = abs(feature_value - self.exp_mean) / self.exp_std
-        return score
+            return 250.0
+        return abs(feature_value - self.exp_mean) / self.exp_std
 
     def calculate_features(self, responses, raise_warnings=False):
         """Calculate feature value"""
@@ -410,7 +390,7 @@ class SingletonWeightObjective(EFeatureObjective):
             weight ():
         """
 
-        super(SingletonWeightObjective, self).__init__(name, [feature])
+        super().__init__(name, [feature])
         self.weight = weight
 
     def calculate_score(self, responses):
@@ -425,9 +405,11 @@ class SingletonWeightObjective(EFeatureObjective):
 
 
 def get_features_by_name(list_features, name):
+    """Get a feature from its name/"""
     for feature in list_features:
         if feature["feature"] == name:
             return feature
+    return None
 
 
 def define_feature(
@@ -542,9 +524,7 @@ def define_protocol(
                 )
 
             else:
-                raise Exception(
-                    "Recording type %s not supported" % recording_definition["type"]
-                )
+                raise Exception("Recording type %s not supported" % recording_definition["type"])
 
             var = recording_definition["var"]
             recording = ephys.recordings.CompRecording(
@@ -600,7 +580,7 @@ def define_protocol(
             stochasticity=stochasticity,
         )
 
-    elif protocol_definition["type"] == "StepProtocol":
+    if protocol_definition["type"] == "StepProtocol":
         return StepProtocol(
             name=name,
             step_stimulus=step_stimulus,
@@ -609,7 +589,7 @@ def define_protocol(
             stochasticity=stochasticity,
         )
 
-    elif protocol_definition["type"] == "RMP":
+    if protocol_definition["type"] == "RMP":
         protocol = RMPProtocol(
             name=name,
             step_stimulus=step_stimulus,
@@ -620,7 +600,7 @@ def define_protocol(
         protocol.holding_stimulus.step_amplitude = 0.0
         return protocol
 
-    elif protocol_definition["type"] == "RinHoldCurrent":
+    if protocol_definition["type"] == "RinHoldCurrent":
         protocol = StepProtocol(
             name=name,
             step_stimulus=step_stimulus,
@@ -628,21 +608,12 @@ def define_protocol(
             recordings=recordings,
             stochasticity=stochasticity,
         )
-        tot_dur = (
-            protocol.step_stimulus.step_delay
-            + protocol.step_stimulus.step_duration
-            + 100.0
-        )
+        tot_dur = protocol.step_stimulus.step_delay + protocol.step_stimulus.step_duration + 100.0
         protocol.holding_stimulus.total_duration = tot_dur
         protocol.step_stimulus.total_duration = tot_dur
-        return SearchRinHoldingCurrent(
-            name="SearchRinHoldingCurrent", protocol=protocol
-        )
+        return SearchRinHoldingCurrent(name="SearchRinHoldingCurrent", protocol=protocol)
 
-    else:
-        raise Exception(
-            'Protocol type "{}" unknown.'.format(protocol_definition["type"])
-        )
+    raise Exception('Protocol type "{}" unknown.'.format(protocol_definition["type"]))
 
 
 def define_main_protocol(protocols_definition, features_definition, stochasticity=True):
@@ -706,8 +677,7 @@ def define_main_protocol(protocols_definition, features_definition, stochasticit
 
         if definition["type"] in ["StepThresholdProtocol", "RMP", "RinHoldCurrent"]:
             logger.warning(
-                "Protocol of type %s in none-threshold"
-                " based evaluator will be ignored",
+                "Protocol of type %s in none-threshold" " based evaluator will be ignored",
                 definition["type"],
             )
         elif definition["type"] == "StepProtocol":
@@ -757,7 +727,7 @@ def define_main_protocol(protocols_definition, features_definition, stochasticit
     return main_protocol, features
 
 
-def define_threshold_main_protocol(
+def define_threshold_main_protocol(  # pylint: disable=R0912,R0915
     protocols_definition, features_definition, stochasticity=True
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
@@ -787,10 +757,7 @@ def define_threshold_main_protocol(
     for name, definition in protocols_definition.items():
 
         # Define holding for the protocols that do not have it
-        if (
-            "holding" not in definition
-            and "totduration" in definition["stimuli"]["step"]
-        ):
+        if "holding" not in definition and "totduration" in definition["stimuli"]["step"]:
             dur = definition["stimuli"]["step"]["totduration"]
             holding = {"delay": 0, "amp": None, "duration": dur, "totduration": dur}
             definition["stimuli"]["holding"] = holding
@@ -927,6 +894,7 @@ def create_evaluator(
     features_definition,
     simulator=None,
     stochasticity=True,
+    timeout=None,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -943,9 +911,7 @@ def create_evaluator(
     """
 
     if "RMP" in protocols_definition and "RinHoldCurrent" in protocols_definition:
-        logger.info(
-            "RMP and RinHoldCurrent protocols present, creating threshold based evaluator"
-        )
+        logger.info("RMP and RinHoldCurrent protocols present, creating threshold based evaluator")
         main_protocol, features = define_threshold_main_protocol(
             protocols_definition,
             features_definition,
@@ -965,9 +931,7 @@ def create_evaluator(
     fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}
 
-    param_names = [
-        param.name for param in cell_model.params.values() if not param.frozen
-    ]
+    param_names = [param.name for param in cell_model.params.values() if not param.frozen]
 
     if simulator is None:
         simulator = get_simulator(stochasticity, [cell_model])
@@ -979,15 +943,14 @@ def create_evaluator(
         fitness_calculator=fitness_calculator,
         sim=simulator,
         use_params_for_seed=True,
+        timeout=timeout,
     )
     cell_eval.prefix = cell_model.name
 
     return cell_eval
 
 
-def create_evaluators(
-    cell_models, protocols_definition, features_definition, stochasticity=False
-):
+def create_evaluators(cell_models, protocols_definition, features_definition, stochasticity=False):
     """Create a multi-evaluator built from a list of evaluators (one for each
     cell model). The protocols and e-features will be the same for all the
     cell models.

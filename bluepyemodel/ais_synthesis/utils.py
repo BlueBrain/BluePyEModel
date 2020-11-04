@@ -5,8 +5,6 @@ from functools import partial
 
 import numpy as np
 
-FEATURES_TO_REMOVE = ["bAP", "bpo_", "decay_time_constant_after_stim", "AP2_amp"]
-
 
 def get_emodels(morphs_combos_df, emodels):
     """Convert emodel from 'all' to list of emodels."""
@@ -26,27 +24,39 @@ def get_mtypes(morphs_combos_df, mtypes):
     return mtypes
 
 
-def _filter_features(combo, features_to_remove=None):
-    """delete features from list of unwanted features."""
-    if features_to_remove is None:
-        return combo
+def _filter_features(combo, features=None, method="ignore"):
+    """delete or keep features if method==ignore, resp. method==keep."""
     if isinstance(combo["scores"], dict):
         keys = deepcopy(list(combo["scores"].keys()))
         for key in keys:
-            for feat in features_to_remove:
-                if feat in key.split("."):
-                    del combo["scores"][key]
+            if method == "ignore":
+                for feat in features:
+                    if feat in key.split("."):
+                        del combo["scores"][key]
+            elif method == "keep":
+                if not any([feat in key.split(".") for feat in features]):
+                    if key in combo["scores"]:
+                        del combo["scores"][key]
     return combo
 
 
-def get_scores(morphs_combos_df, clip=250):
+def get_scores(morphs_combos_df, features_to_ignore=None, features_to_keep=None, clip=250):
     """compute the median and max scores from computations on filtered features."""
     morphs_combos_df["scores_raw"] = morphs_combos_df["scores"]
     morphs_combos_df["scores"] = morphs_combos_df["scores_raw"].apply(
         lambda s: json.loads(s) if isinstance(s, str) and len(s) > 0 else s
     )
 
-    filter_features = partial(_filter_features, features_to_remove=FEATURES_TO_REMOVE)
+    if features_to_ignore is not None:
+        if features_to_keep is not None:
+            raise Exception("please provide only a list of features to ignore or to keep")
+        filter_features = partial(_filter_features, features=features_to_ignore, method="ignore")
+
+    if features_to_keep is not None:
+        if features_to_ignore is not None:
+            raise Exception("please provide only a list of features to ignore or to keep")
+        filter_features = partial(_filter_features, features=features_to_keep, method="keep")
+
     morphs_combos_df.apply(filter_features, axis=1)
     morphs_combos_df["median_score"] = morphs_combos_df["scores"].apply(
         lambda score: np.clip(np.median(list(score.values())), 0, clip)

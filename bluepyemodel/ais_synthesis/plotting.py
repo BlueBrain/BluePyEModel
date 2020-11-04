@@ -32,17 +32,13 @@ def plot_traces(trace_df, trace_path="traces", pdf_filename="traces.pdf"):
     COLORS = cycle(["C{}".format(i) for i in range(10)])
 
     if "trace_highlight" not in trace_df.columns:
-        print("All traces will be highlighted")
-
         trace_df["trace_highlight"] = True
     for index in trace_df.index:
         if trace_df.loc[index, "trace_highlight"]:
             c = next(COLORS)
 
         combo_hash = get_combo_hash(trace_df.loc[index])
-        with open(
-            Path(trace_path) / ("trace_id_" + str(combo_hash) + ".pkl"), "rb"
-        ) as f:
+        with open(Path(trace_path) / ("trace_id_" + str(combo_hash) + ".pkl"), "rb") as f:
             trace = pickle.load(f)
             for protocol, response in trace.items():
                 if isinstance(response, TimeVoltageResponse):
@@ -160,9 +156,9 @@ def plot_ais_resistance_models(fit_df, ais_models, pdf_filename="scan_scales.pdf
                 plt.plot(
                     fit_df[me_mask].AIS_scale,
                     10
-                    ** np.poly1d(
-                        ais_models[mtype]["resistance"][emodel]["polyfit_params"]
-                    )(np.log10(fit_df[me_mask].AIS_scale)),
+                    ** np.poly1d(ais_models[mtype]["resistance"][emodel]["polyfit_params"])(
+                        np.log10(fit_df[me_mask].AIS_scale)
+                    ),
                     "-o",
                     ms=0.5,
                     label="fit",
@@ -233,7 +229,7 @@ def plot_target_rho_axon(
                         )
 
                     plt.suptitle(emodel + "  " + mtype)
-                    ax.set_ylim(0, 11)
+                    ax.set_ylim(0, 6)
                     plt.legend()
                     plt.ylabel("mean z-score of e-features")
                     pdf.savefig()
@@ -249,9 +245,7 @@ def plot_synth_ais_evaluations(
     """Plot the results of ais synthesis evalutions."""
     mtypes = get_mtypes(morphs_combos_df, "all")
     emodels = get_emodels(morphs_combos_df, emodels)
-    morphs_combos_df["median_score"] = morphs_combos_df["median_score"].clip(
-        0.0, 2 * threshold
-    )
+    morphs_combos_df["median_score"] = morphs_combos_df["median_score"].clip(0.0, 2 * threshold)
 
     with PdfPages(pdf_filename) as pdf:
         for emodel in emodels:
@@ -271,9 +265,7 @@ def plot_synth_ais_evaluations(
             )
 
             for mtype in mtypes:
-                me_mask = (morphs_combos_df.emodel == emodel) & (
-                    morphs_combos_df.mtype == mtype
-                )
+                me_mask = (morphs_combos_df.emodel == emodel) & (morphs_combos_df.mtype == mtype)
                 if len(morphs_combos_df[me_mask]) > 0:
                     if "ais_failed" in morphs_combos_df:
                         me_mask_no_failed = me_mask & (morphs_combos_df.ais_failed == 0)
@@ -301,17 +293,13 @@ def plot_synth_ais_evaluations(
                         )
             try:
                 frac_pass_mean = len(
-                    morphs_combos_df[mask][
-                        morphs_combos_df[mask].median_score < threshold
-                    ].index
+                    morphs_combos_df[mask][morphs_combos_df[mask].median_score < threshold].index
                 ) / len(morphs_combos_df[mask].index)
             except ZeroDivisionError:
                 frac_pass_mean = -1
             try:
                 frac_pass_max = len(
-                    morphs_combos_df[mask][
-                        morphs_combos_df[mask].max_score < threshold
-                    ].index
+                    morphs_combos_df[mask][morphs_combos_df[mask].max_score < threshold].index
                 ) / len(morphs_combos_df[mask].index)
             except ZeroDivisionError:
                 frac_pass_max = -1
@@ -331,9 +319,7 @@ def plot_synth_ais_evaluations(
             plt.close()
 
 
-def _plot_neuron(
-    selected_combos_df, cell_id, ax, color="k", morphology_path="morphology_path"
-):
+def _plot_neuron(selected_combos_df, cell_id, ax, color="k", morphology_path="morphology_path"):
     neuron = load_neuron(selected_combos_df.loc[cell_id, morphology_path])
     viewer.plot_neuron(ax, neuron, realistic_diameters=True)
 
@@ -381,12 +367,10 @@ def plot_non_selected_cells(
 
         for mtype in mtypes:
             mask = emodel_mask & (selected_combos_df.mtype == mtype)
-            non_selected_cells = selected_combos_df[
-                mask & ~selected_combos_df.selected
-            ].index
-            selected_cells = selected_combos_df[
-                mask & selected_combos_df.selected
-            ].index[: len(non_selected_cells)]
+            non_selected_cells = selected_combos_df[mask & ~selected_combos_df.selected].index
+            selected_cells = selected_combos_df[mask & selected_combos_df.selected].index[
+                : len(non_selected_cells)
+            ]
             if len(non_selected_cells) > 0:
 
                 _, axs = plt.subplots(
@@ -416,9 +400,7 @@ def plot_non_selected_cells(
                     )
 
                 if len(selected_cells) > 1:
-                    for cell_id, ax in tqdm(
-                        zip(selected_cells, axs[1]), total=len(selected_cells)
-                    ):
+                    for cell_id, ax in tqdm(zip(selected_cells, axs[1]), total=len(selected_cells)):
                         _plot_neuron(
                             selected_combos_df,
                             cell_id,
@@ -455,10 +437,7 @@ def plot_summary_select(select_df, e_column="etype", select_column="selected"):
     if e_column == "emodel":
         select_plot_df = select_plot_df.drop("etype", axis=1)
 
-    select_plot_df = select_plot_df.pivot(
-        index="mtype", columns=e_column, values=select_column
-    )
-
+    select_plot_df = select_plot_df.pivot(index="mtype", columns=e_column, values=select_column)
     plt.figure(figsize=(20, 15))
     sns.heatmap(select_plot_df * 100, annot=True, fmt="3.0f")
 
@@ -492,8 +471,6 @@ def plot_feature_select(select_df, megate_df, pdf, e_column="etype"):
 def plot_frac_exceptions(select_df, e_column="emodel"):
     """Plot number of failed scores computations, when exceptions were raised."""
     select_plot_df = (
-        select_df[[e_column, "scores_raw"]][select_df.scores_raw.isna()]
-        .groupby(e_column)
-        .size()
+        select_df[[e_column, "scores_raw"]][select_df.scores_raw.isna()].groupby(e_column).size()
     )
     select_plot_df.T.plot(kind="barh", x=e_column)

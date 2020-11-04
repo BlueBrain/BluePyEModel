@@ -1,14 +1,13 @@
 """Generic tasks base don luigi.Task."""
-import os
 import shutil
 from hashlib import sha256
 from pathlib import Path
 
 import luigi
-
 from bluepyemodel.api.singlecell import Singlecell_API
+
 from .config import databaseconfigs
-from .utils import ensure_dir, add_emodel
+from .utils import add_emodel, ensure_dir
 
 
 class HashedTask(luigi.Task):
@@ -52,9 +51,7 @@ class HashedTask(luigi.Task):
 
     def get_full_id(self):
         """Get the full id of a task, including required tasks and significant parameters."""
-        msg = ",".join(
-            [req.get_full_id() for req in luigi.task.flatten(self.requires())]
-        )
+        msg = ",".join([req.get_full_id() for req in luigi.task.flatten(self.requires())])
         msg += ",".join(
             [self.__class__.__name__]
             + [
@@ -83,55 +80,36 @@ class BaseTask(HashedTask):  # luigi.Task):
     """
 
     rerun = luigi.BoolParameter(
-        config_path={"section": "DEFAULT", "name": "rerun"},
         default=False,
         significant=False,
     )
     continu = luigi.BoolParameter(
-        config_path={"section": "DEFAULT", "name": "continu"},
         default=False,
         significant=False,
     )
-    dask = luigi.BoolParameter(
-        config_path={"section": "DEFAULT", "name": "dask"},
-        default=False,
-        significant=False,
-    )
-    ipyp_profile = luigi.Parameter(
-        config_path={"section": "DEFAULT", "name": "ipyp_profile"},
-        default=os.environ.get("IPYP_PROFILE"),
+    parallel_lib = luigi.Parameter(
+        config_path={"section": "PARALLEL", "name": "parallel_lib"},
+        default="multiprocessing",
         significant=False,
     )
 
-    def _get_database(self):
+    def get_database(self):
         if databaseconfigs().api == "singlecell":
-            return Singlecell_API(databaseconfigs().working_dir)
+            return Singlecell_API(
+                working_dir=databaseconfigs().working_dir,
+                final_path=databaseconfigs().final_path,
+                legacy_dir_structure=True,
+            )
         raise NotImplementedError(f"api {databaseconfigs().api} is not implemented")
 
     def __init__(self, *args, **kwargs):
         """Init."""
         super().__init__(*args, **kwargs)
 
-        self.emodel_db = self._get_database()
+        self.emodel_db = self.get_database()
 
         if self.rerun is True:
             targets = luigi.task.flatten(self.output())
             for target in targets:
-                if target.exists() and isinstance(
-                    target, luigi.target.FileSystemTarget
-                ):
+                if target.exists() and isinstance(target, luigi.target.FileSystemTarget):
                     target.fs.remove(target.path, recursive=True)
-
-    def get_dask_client(self):
-        """Get the dask client."""
-        if "dask" in self.input():
-            return self.input()["dask"].client
-        return None
-
-    def add_dask_task(self, tasks):
-        """Add dask cluster task."""
-        if self.dask:
-            from bbp_workflow.dask.task import LookupDaskCluster
-
-            tasks["dask"] = LookupDaskCluster()
-        return tasks

@@ -1,14 +1,12 @@
 """Module to evaluate generic functions on rows of combos dataframe (similar to BluePyMMM)."""
 import logging
-import os
 import sqlite3
+from pathlib import Path
 import sys
 import traceback
 from functools import partial
 from tqdm import tqdm
 import pandas as pd
-
-from .parallel import init_parallel_factory
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +61,6 @@ def evaluate_combos(
     new_columns,
     task_ids=None,
     continu=False,
-    ipyp_profile=None,
     parallel_factory=None,
     combos_db_filename="combos_db.sql",
 ):
@@ -79,32 +76,26 @@ def evaluate_combos(
         task_ids (int): index of combos_original to compute, if None, all will be computed
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
-        ipyp_profile (str): name of ipyparallel profile
-        parallel_factory (ParallelFactory): parallel factory instance (alternative to ipyp_profile)
+        parallel_factory (ParallelFactory): parallel factory instance
         combos_db_filename (str): filename for the combos sqlite database
     Return:
         pandas.DataFrame: combos_df dataframe with new columns containing computed results
     """
-
-    # FIXME: remove this code when ipyp_profile is not used anymore.
-    if ipyp_profile and ipyp_profile != "None":
-        os.environ["IPYTHON_PROFILE"] = ipyp_profile
-        parallel_factory = init_parallel_factory("ipyparallel")
-    elif parallel_factory is None:
-        parallel_factory = init_parallel_factory("multiprocessing")
-
     if task_ids is None:
         task_ids = combos_df.index
     else:
         combos_df = combos_df.loc[task_ids]
 
     if continu:
-        combos_to_evaluate = _load_database_to_dataframe(
-            combos_db_filename=combos_db_filename
-        )
+        if Path(combos_db_filename).exists():
+            combos_to_evaluate = _load_database_to_dataframe(combos_db_filename=combos_db_filename)
+        else:
+            combos_to_evaluate = _create_database(
+                combos_df, new_columns, combos_db_filename=combos_db_filename
+            )
         for new_column in new_columns:
             task_ids = task_ids[
-                combos_df.loc[task_ids, "to_run_" + new_column[0]].to_numpy() == 1
+                combos_to_evaluate.loc[task_ids, "to_run_" + new_column[0]].to_numpy() == 1
             ]
     else:
         combos_to_evaluate = _create_database(
@@ -122,11 +113,16 @@ def evaluate_combos(
     else:
         logger.warning("WARNING: No combos to compute, something may be wrong")
 
-    mapper = parallel_factory.get_mapper()
+    if parallel_factory is None:
+        mapper = map
+    else:
+        mapper = parallel_factory.get_mapper()
+
     eval_func = partial(_try_evaluation, evaluation_function=evaluation_function)
     try:
         for task_id, results, exception in tqdm(
-            mapper(eval_func, combos_to_evaluate.iterrows()), total=len(task_ids)
+            mapper(eval_func, combos_to_evaluate.loc[task_ids].iterrows()),
+            total=len(task_ids),
         ):
             _write_to_sql(
                 combos_db_filename,
@@ -138,4 +134,5 @@ def evaluate_combos(
     # to save dataframe even if program is killed
     except (KeyboardInterrupt, SystemExit) as ex:
         logger.warning("Stopping mapper loop. Reason: %r", ex)
+
     return _load_database_to_dataframe(combos_db_filename)
