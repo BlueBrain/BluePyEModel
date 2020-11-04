@@ -10,7 +10,6 @@ if sys.version_info < (3, 6):
 
 VERSION = imp.load_source("", "bluepyemodel/version.py").__version__
 
-
 setup(
     name="BluePyEModel",
     author="BlueBrain cells",

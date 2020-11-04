@@ -488,7 +488,7 @@ def define_feature(
 def define_protocol(
     name,
     protocol_definition,
-    stochasticity=False,
+    stochasticity=True,
     apical_point_isec=None,
 ):
     """Create the protocol.
@@ -626,7 +626,7 @@ def define_protocol(
 
 
 def define_main_protocol_features(
-    protocols_definition, features_definition, stochasticity=False
+    protocols_definition, features_definition, stochasticity=True
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
 
@@ -804,10 +804,18 @@ def define_fitness_calculator(features):
     return ephys.objectivescalculators.ObjectivesCalculator(objectives)
 
 
-def get_simulator(stochasticity):
-    """Get NrnSimulator."""
+def get_simulator(stochasticity, cell_models):
+    """Get NrnSimulator
+
+    Args:
+        stochasticity (Bool): allow the use of simulator for stochastic channels
+        cell_models (list): List of CellModel to detect if any stochastic channels are present
+    """
     if stochasticity:
-        return ephys.simulators.NrnSimulator(dt=0.025, cvode_active=False)
+        for cell_model in cell_models:
+            for mechanism in cell_model.mechanisms:
+                if not mechanism.deterministic:
+                    return ephys.simulators.NrnSimulator(dt=0.025, cvode_active=False)
     return ephys.simulators.NrnSimulator()
 
 
@@ -816,7 +824,7 @@ def create_evaluator(
     protocols_definition,
     features_definition,
     simulator=None,
-    stochasticity=False,
+    stochasticity=True,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -845,7 +853,7 @@ def create_evaluator(
     ]
 
     if simulator is None:
-        simulator = get_simulator(stochasticity)
+        simulator = get_simulator(stochasticity, [cell_model])
 
     cell_eval = ephys.evaluators.CellEvaluator(
         cell_model=cell_model,
@@ -877,7 +885,7 @@ def create_evaluators(
     Returns:
         MultiEvaluator
     """
-    simulator = get_simulator(stochasticity)
+    simulator = get_simulator(stochasticity, cell_models)
     cell_evals = [
         create_evaluator(
             cell_model,

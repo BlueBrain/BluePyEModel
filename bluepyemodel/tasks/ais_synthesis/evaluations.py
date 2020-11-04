@@ -56,7 +56,6 @@ class EvaluateGeneric(BaseTask):
         """Run."""
 
         morphs_combos_df = pd.read_csv(morphologyconfigs().morphs_combos_df_path)
-
         morphs_combos_with_scores_df = evaluate_combos_rho_scores(
             morphs_combos_df,
             self.emodel_db,
