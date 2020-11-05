@@ -1,6 +1,5 @@
 """API using sql"""
 import logging
-import pickle
 import pandas
 import psycopg2
 from psycopg2.extras import Json
@@ -243,7 +242,7 @@ class PostgreSQL_API(DatabaseAPI):
 
     def fetch(self, table, conditions):
         """
-        Retrieve entries from a talbe based on conditions.
+        Retrieve entries from a table based on conditions.
 
         Args:
             table (str): name of the table
@@ -293,7 +292,6 @@ class PostgreSQL_API(DatabaseAPI):
             protocols (dict): return the protocols metadata
 
         """
-
         targets_metadata = self.fetch("extraction_targets", {"emodel": emodel})
         targets_metadata = targets_metadata.to_dict("records")
 
@@ -417,58 +415,34 @@ class PostgreSQL_API(DatabaseAPI):
             replace_keys=replace_keys,
         )
 
-    def store_model_from_pickle(
+    def store_model(
         self,
         emodel,
         species,
-        checkpoint_path,
-        param_names,
-        feature_names,
+        scores,
+        params,
         optimizer_name,
-        opt_params,
+        seed=None,
         validated=False,
     ):
         """ Save a model obtained from BluePyOpt"""
 
-        # Try to read the checkpoint
-        try:
-            run = pickle.load(open(checkpoint_path, "rb"))
-        except BaseException:  # pylint: disable=W0703
-
-            # If we can't read the checkpoint, tries to read the temporary one
-            try:
-                run = pickle.load(open(checkpoint_path + ".tmp", "rb"))
-            except BaseException:  # pylint: disable=W0703
-                logger.info(
-                    "Couldn't open file %s to store the model in the SQL database",
-                    checkpoint_path,
-                )
-
-        model = run["halloffame"][0]
-
         entry = {
             "emodel": emodel,
             "species": species,
-            "fitness": sum(model.fitness.wvalues),
-            "parameters": dict(zip(param_names, model)),
-            "scores": dict(zip(feature_names, model.fitness.wvalues)),
+            "fitness": sum(list(scores.values())),
+            "parameters": params,
+            "scores": scores,
             "validated": validated,
             "optimizer": str(optimizer_name),
         }
 
-        if "seed" in opt_params:
-            entry["seed"] = int(opt_params["seed"])
+        if seed is not None:
+            entry["seed"] = int(seed)
 
         replace_keys = ["emodel", "species", "parameters", "optimizer", "seed"]
         self.fill(
             table="models", entries=[entry], replace=True, replace_keys=replace_keys
-        )
-
-    def update_model(self, model):
-        """Update a model"""
-        replace_keys = ["emodel", "species", "parameters", "optimizer", "seed"]
-        self.fill(
-            table="models", entries=[model], replace=True, replace_keys=replace_keys
         )
 
     def get_models(
@@ -557,14 +531,19 @@ class PostgreSQL_API(DatabaseAPI):
         )
         if mechanism_paths.empty:
             logger.warning("PostgreSQL warning: could not get the mechanism paths")
-            return None
+            return None, None, None
         mechanism_paths = mechanism_paths.to_dict(orient="records")
 
         for loc in mech_definition:
             stoch = []
             for m in mech_definition[loc]["mech"]:
                 is_stock = next(
-                    item["stochastic"] for item in mechanism_paths if item["name"] == m
+                    (
+                        item["stochastic"]
+                        for item in mechanism_paths
+                        if item["name"] == m
+                    ),
+                    False,
                 )
                 stoch.append(is_stock)
                 mech_definition[loc]["stoch"] = stoch
@@ -589,12 +568,7 @@ class PostgreSQL_API(DatabaseAPI):
 
         return params_definition, mech_definition, mech_names
 
-    def get_protocols(
-        self,
-        emodel,
-        species,
-        delay=0.0,
-    ):
+    def get_protocols(self, emodel, species, delay=0.0, include_validation=False):
         """Get the protocols from the database and put in a format that fits
          the MainProtocol needs.
 
@@ -603,12 +577,14 @@ class PostgreSQL_API(DatabaseAPI):
             species (str): name of the species (rat, human, mouse)
             delay (float): additional delay in ms to add at the start of
                 the protocols.
+            include_validation (bool): if True, returns the protocols for validation as well
 
         Returns:
             protocols_out (dict): protocols definitions
 
         """
         # TODO: handle extra recordings
+        protocols_out = {}
 
         # Get the optimization targets
         targets = self.fetch(
@@ -617,13 +593,30 @@ class PostgreSQL_API(DatabaseAPI):
         )
         if targets.empty:
             logger.warning(
-                "PostgreSQL warning: could not get the protocols for emodel %s", emodel
+                "PostgreSQL warning: could not get the targets for emodel %s", emodel
             )
             return None
+        targets = targets.to_dict(orient="records")
+
+        # Get the validation targets
+        if include_validation:
+            validation_targets = self.fetch(
+                table="validation_targets",
+                conditions={"emodel": emodel, "species": species},
+            )
+            if validation_targets.empty:
+                logger.warning(
+                    "PostgreSQL warning: could not get the validation targets"
+                    " for emodel %s",
+                    emodel,
+                )
+                return None
+            validation_targets = validation_targets.to_dict(orient="records")
+        else:
+            validation_targets = []
 
         # Get the matching protocols
-        protocols_out = {}
-        for target in targets.to_dict(orient="records"):
+        for target in targets + validation_targets:
 
             protocols = self.fetch(
                 table="extraction_protocols",
@@ -642,6 +635,7 @@ class PostgreSQL_API(DatabaseAPI):
                 return None
 
             for prot in protocols.to_dict(orient="records"):
+
                 if target["type"] == "RinHoldCurrent":
 
                     protocols_out["RinHoldCurrent"] = {
@@ -713,6 +707,7 @@ class PostgreSQL_API(DatabaseAPI):
         self,
         emodel,
         species,
+        include_validation=False,
     ):
         """Get the efeatures from the database and put in a format that fits
          the MainProtocol needs.
@@ -720,21 +715,12 @@ class PostgreSQL_API(DatabaseAPI):
         Args:
             emodel (str): name of the emodel
             species (str): name of the species (rat, human, mouse)
+            include_validation (bool): should the features for validation be returned as well
 
         Returns:
             efeatures_out (dict): efeatures definitions
 
         """
-        # Get the optimization targets
-        targets = self.fetch(
-            table="optimisation_targets",
-            conditions={"emodel": emodel, "species": species},
-        )
-        if targets.empty:
-            logger.warning(
-                "PostgreSQL warning: could not get the protocols for emodel %s", emodel
-            )
-            return None
 
         efeatures_out = {
             "RMP": {"soma.v": []},
@@ -742,8 +728,37 @@ class PostgreSQL_API(DatabaseAPI):
             "Threshold": {"soma.v": []},
         }
 
+        # Get the optimization targets
+        targets = self.fetch(
+            table="optimisation_targets",
+            conditions={"emodel": emodel, "species": species},
+        )
+        if targets.empty:
+            logger.warning(
+                "PostgreSQL warning: could not get the featurees for emodel %s", emodel
+            )
+            return None
+        targets = targets.to_dict(orient="records")
+
+        # Get the validation targets
+        if include_validation:
+            validation_targets = self.fetch(
+                table="validation_targets",
+                conditions={"emodel": emodel, "species": species},
+            )
+            if validation_targets.empty:
+                logger.warning(
+                    "PostgreSQL warning: could not get the validation features"
+                    " for emodel %s",
+                    emodel,
+                )
+                return None
+            validation_targets = validation_targets.to_dict(orient="records")
+        else:
+            validation_targets = []
+
         # Get the values for the efeatures matching the targets
-        for target in targets.to_dict(orient="records"):
+        for target in targets + validation_targets:
 
             for feat in target["efeatures"]:
 
@@ -765,9 +780,11 @@ class PostgreSQL_API(DatabaseAPI):
                     continue
 
                 for efeat in efeatures.to_dict(orient="records"):
+
                     if target["type"] == "RMP":
+                        protocol_name = "RMP"
                         if efeat["name"] == "steady_state_voltage_stimend":
-                            efeatures_out["RMP"]["soma.v"].append(
+                            efeatures_out[protocol_name]["soma.v"].append(
                                 {
                                     "feature": "voltage_base",
                                     "val": [efeat["mean"], efeat["std"]],
@@ -775,16 +792,8 @@ class PostgreSQL_API(DatabaseAPI):
                                 }
                             )
 
-                            # Check if there is a stim_start and stim_end for this feature
-                            if len(target["efeatures"][feat]) > 0:
-                                efeatures_out["RMP"]["soma.v"][-1]["stim_start"] = target[
-                                    "efeatures"
-                                ][feat][0]
-                                efeatures_out["RMP"]["soma.v"][-1]["stim_end"] = target[
-                                    "efeatures"
-                                ][feat][1]
-
                     elif target["type"] == "RinHoldCurrent":
+                        protocol_name = "RinHoldCurrent"
                         if efeat["name"] in (
                             "voltage_base",
                             "ohmic_input_resistance_vb_ssse",
@@ -797,20 +806,12 @@ class PostgreSQL_API(DatabaseAPI):
                                 }
                             )
 
-                            # Check if there is a stim_start and stim_end for this feature
-                            if len(target["efeatures"][feat]) > 0:
-                                efeatures_out["RinHoldCurrent"]["soma.v"][-1][
-                                    "stim_start"
-                                ] = target["efeatures"][feat][0]
-                                efeatures_out["RinHoldCurrent"]["soma.v"][-1][
-                                    "stim_end"
-                                ] = target["efeatures"][feat][1]
-
                     else:
-                        if efeat["protocol"] not in efeatures_out:
-                            efeatures_out[efeat["protocol"]] = {"soma.v": []}
+                        protocol_name = efeat["protocol"]
+                        if protocol_name not in efeatures_out:
+                            efeatures_out[protocol_name] = {"soma.v": []}
 
-                        efeatures_out[efeat["protocol"]]["soma.v"].append(
+                        efeatures_out[protocol_name]["soma.v"].append(
                             {
                                 "feature": efeat["name"],
                                 "val": [efeat["mean"], efeat["std"]],
@@ -818,14 +819,14 @@ class PostgreSQL_API(DatabaseAPI):
                             }
                         )
 
-                        # Check if there is a stim_start and stim_end for this feature
-                        if len(target["efeatures"][feat]) > 0:
-                            efeatures_out[efeat["protocol"]]["soma.v"][-1][
-                                "stim_start"
-                            ] = target["efeatures"][feat][0]
-                            efeatures_out[efeat["protocol"]]["soma.v"][-1][
-                                "stim_end"
-                            ] = target["efeatures"][feat][1]
+                    # Check if there is a stim_start and stim_end for this feature
+                    if len(target["efeatures"][feat]) > 0:
+                        efeatures_out[protocol_name]["soma.v"][-1][
+                            "stim_start"
+                        ] = target["efeatures"][feat][0]
+                        efeatures_out[protocol_name]["soma.v"][-1]["stim_end"] = target[
+                            "efeatures"
+                        ][feat][1]
 
         # Get the hypamp and thresh currents
         efeatures = self.fetch(
@@ -856,155 +857,6 @@ class PostgreSQL_API(DatabaseAPI):
                 )
 
         return efeatures_out
-
-    def get_features_validation(
-        self,
-        emodel,
-        species,
-    ):
-        """Get the efeatures used for validation and put them in a format that fits
-         the MainProtocol needs.
-
-        Args:
-            emodel (str): name of the emodel
-            species (str): name of the species (rat, human, mouse)
-
-        Returns:
-            efeatures_out (dict): efeatures definitions
-
-        """
-        # Get the optimization targets
-        targets = self.fetch(
-            table="validation_targets",
-            conditions={"emodel": emodel, "species": species},
-        )
-        if targets.empty:
-            logger.warning(
-                "PostgreSQL warning: could not get the validation targets for emodel %s",
-                emodel,
-            )
-            return None
-
-        efeatures_out = {}
-
-        # Get the values for the efeatures matching the targets
-        for target in targets.to_dict(orient="records"):
-
-            for feat in target["efeatures"]:
-
-                efeatures = self.fetch(
-                    table="extraction_efeatures",
-                    conditions={
-                        "emodel": emodel,
-                        "species": species,
-                        "protocol": f"{target['ecode']}_{target['target']}",
-                        "name": feat,
-                    },
-                )
-                if efeatures.empty:
-                    logger.warning(
-                        "PostgreSQL warning: could not get the validation efeatures "
-                        "%s for emodel %s",
-                        feat,
-                        emodel,
-                    )
-                    continue
-
-                for efeat in efeatures.to_dict(orient="records"):
-
-                    if efeat["protocol"] not in efeatures_out:
-                        efeatures_out[efeat["protocol"]] = {"soma.v": []}
-
-                    efeatures_out[efeat["protocol"]]["soma.v"].append(
-                        {
-                            "feature": efeat["name"],
-                            "val": [efeat["mean"], efeat["std"]],
-                            "strict_stim": True,
-                        }
-                    )
-
-                    # Check if there is a stim_start and stim_end for this feature
-                    if len(target["efeatures"][feat]) > 0:
-                        efeatures_out[efeat["protocol"]]["soma.v"][-1][
-                            "stim_start"
-                        ] = target["efeatures"][feat][0]
-                        efeatures_out[efeat["protocol"]]["soma.v"][-1][
-                            "stim_end"
-                        ] = target["efeatures"][feat][1]
-
-        return efeatures_out
-
-    def get_protocols_validation(
-        self,
-        emodel,
-        species,
-        delay=0.0,
-    ):
-        """Get the protocols used for validation and put them in a format that fits
-         the MainProtocol needs.
-
-        Args:
-            emodel (str): name of the emodel
-            species (str): name of the species (rat, human, mouse)
-            delay (float): additional delay in ms to add at the start of
-                the protocols.
-
-        Returns:
-            protocols_out (dict): protocols definitions
-
-        """
-        # TODO: handle extra recordings
-
-        # Get the optimization targets
-        targets = self.fetch(
-            table="validation_targets",
-            conditions={"emodel": emodel, "species": species},
-        )
-        if targets.empty:
-            logger.warning(
-                "PostgreSQL warning: could not get the validation targets for emodel %s",
-                emodel,
-            )
-            return None
-
-        # Get the matching protocols
-        protocols_out = {}
-        for target in targets.to_dict(orient="records"):
-
-            protocols = self.fetch(
-                table="extraction_protocols",
-                conditions={
-                    "emodel": emodel,
-                    "species": species,
-                    "name": f"{target['ecode']}_{target['target']}",
-                },
-            )
-
-            for prot in protocols.to_dict(orient="records"):
-
-                if protocols.empty:
-                    logger.warning(
-                        "PostgreSQL warning: could not get the validation protocols for emodel %s",
-                        emodel,
-                    )
-                    return None
-
-                protocols_out[prot["name"]] = {
-                    "type": "StepThresholdProtocol",
-                    "stimuli": prot["definition"],
-                }
-
-                if "step" in protocols_out[prot["name"]]["stimuli"]:
-                    if "delay" in protocols_out[prot["name"]]["stimuli"]["step"]:
-                        protocols_out[prot["name"]]["stimuli"]["step"]["delay"] += delay
-                        protocols_out[prot["name"]]["stimuli"]["step"][
-                            "totduration"
-                        ] += delay
-                        protocols_out[prot["name"]]["stimuli"]["holding"][
-                            "totduration"
-                        ] += delay
-
-        return protocols_out
 
     def get_morphologies(self, emodel, species):
         """Get the name and path to the morphologies.
@@ -1051,7 +903,6 @@ class PostgreSQL_API(DatabaseAPI):
             mechanism_paths (dict): {'mech_name': 'mech_path'}
 
         """
-
         mechanism_paths = self.fetch(
             table="mechanisms_path", conditions={"name": tuple(mechanism_names)}
         )

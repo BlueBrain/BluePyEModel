@@ -114,6 +114,7 @@ class Singlecell_API(DatabaseAPI):
         name_rmp_protocol="RMP",
         exclude_protocol=None,
         delay=0.0,
+        include_validation=False
     ):
         """Get the protocols from the database and put in a format that fits
          the MainProtocol needs.
@@ -198,7 +199,7 @@ class Singlecell_API(DatabaseAPI):
 
         return protocols_out
 
-    def get_features(self, emodel):
+    def get_features(self, emodel, include_validation=False):
         """Get the efeatures from the database and put in a format that fits
          the MainProtocol needs.
 

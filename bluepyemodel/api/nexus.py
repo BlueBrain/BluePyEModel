@@ -110,11 +110,10 @@ class Nexus_API(DatabaseAPI):
         self,
         emodel,
         species,
-        checkpoint_path,
-        param_names,
-        feature_names,
+        scores,
+        params,
         optimizer_name,
-        opt_params,
+        seed=None,
         validated=False,
     ):
         """ Save a model obtained from BluePyEfe"""
@@ -139,6 +138,7 @@ class Nexus_API(DatabaseAPI):
         emodel,
         species,
         delay=0.0,
+        include_validation=False
     ):
         """Get the protocols from the database and put in a format that fits
          the MainProtocol needs.
@@ -158,6 +158,7 @@ class Nexus_API(DatabaseAPI):
         self,
         emodel,
         species,
+        include_validation=False
     ):
         """Get the efeatures from the database and put in a format that fits
          the MainProtocol needs.

@@ -72,10 +72,7 @@ class StepProtocol(ephys.protocols.SweepProtocol):
                     self.cvode_active = False
 
         responses = super(StepProtocol, self).run(
-            cell_model,
-            param_values,
-            sim=sim,
-            timeout=timeout
+            cell_model, param_values, sim=sim, timeout=timeout
         )
         self.cvode_active = True
 
