@@ -2,7 +2,6 @@
 import logging
 import shutil
 import os
-import pickle
 import copy
 from pathlib import Path
 
@@ -10,12 +9,19 @@ from bluepyemodel.evaluation import model
 from bluepyemodel.evaluation import evaluator
 from bluepyemodel.optimisation import optimisation
 from bluepyemodel.feature_extraction import extract
+from bluepyemodel.emodel_pipeline.utils import read_checkpoint
+from bluepyemodel.emodel_pipeline import plotting
 
 logger = logging.getLogger(__name__)
 
 
 def connect_db(
-    db_api, recipe_path=None, working_dir=None, project_name=None, forge_path=None
+    db_api,
+    recipes_path=None,
+    final_path=None,
+    working_dir=None,
+    project_name=None,
+    forge_path=None,
 ):
     """Returns a DatabaseAPI object.
 
@@ -47,7 +53,9 @@ def connect_db(
     if db_api == "singlecell":
         from bluepyemodel.api.singlecell import Singlecell_API
 
-        return Singlecell_API(recipe_path, working_dir)
+        return Singlecell_API(
+            working_dir=working_dir, recipes_path=recipes_path, final_path=final_path
+        )
 
     raise Exception(f"Unknown api: {db_api}")
 
@@ -113,8 +121,9 @@ class EModel_pipeline:
         db_api,
         working_dir,
         mechanisms_dir="mechanisms",
-        recipe_path=None,
+        recipes_path=None,
         project_name=None,
+        final_path=None,
         forge_path=None,
     ):
         """Init
@@ -135,7 +144,7 @@ class EModel_pipeline:
             )
         self.db_api = db_api
 
-        if recipe_path is None and self.db_api == "singlecell":
+        if recipes_path is None and self.db_api == "singlecell":
             raise Exception(
                 "If using DB API 'singlecell', argument recipe_path has to be defined."
             )
@@ -153,16 +162,18 @@ class EModel_pipeline:
             )
 
         self.mechanisms_dir = mechanisms_dir
-        self.recipe_path = recipe_path
+        self.recipes_path = recipes_path
         self.working_dir = working_dir
         self.project_name = project_name
+        self.final_path = final_path
         self.forge_path = forge_path
 
     def connect_db(self):
         """To instantiate the api from which to get and store the data."""
         return connect_db(
             self.db_api,
-            recipe_path=self.recipe_path,
+            recipes_path=self.recipes_path,
+            final_path=self.final_path,
             working_dir=self.working_dir,
             project_name=self.project_name,
             forge_path=self.forge_path,
@@ -197,10 +208,6 @@ class EModel_pipeline:
         if not (parameters) or not (mechanisms):
             raise Exception("No parameters for emodel %s" % self.emodel)
 
-        mechanism_paths = db.get_mechanism_paths(mechanism_names)
-        if not (mechanism_paths):
-            raise Exception("No mechanisms paths for emodel %s" % self.emodel)
-
         morphologies = db.get_morphologies(self.emodel, self.species)
         if not (morphologies):
             raise Exception("No morphologies for emodel %s" % self.emodel)
@@ -220,6 +227,9 @@ class EModel_pipeline:
         db.close()
 
         if copy_mechanisms:
+            mechanism_paths = db.get_mechanism_paths(mechanism_names)
+            if not (mechanism_paths):
+                raise Exception("No mechanisms paths for emodel %s" % self.emodel)
             copy_mechs(mechanism_paths, self.mechanisms_dir)
 
         if compile_mechanisms:
@@ -375,17 +385,7 @@ class EModel_pipeline:
 
         db = self.connect_db()
 
-        p = Path(checkpoint_path)
-        p_tmp = Path(checkpoint_path + ".tmp")
-        if p.is_file():
-            run = pickle.load(open(str(p), "rb"))
-        elif p_tmp.is_file():
-            run = pickle.load(open(str(p_tmp), "rb"))
-        else:
-            logger.error(
-                "Cannot store model. Checkpoint file %s does not exist.",
-                checkpoint_path,
-            )
+        run = read_checkpoint(checkpoint_path)
 
         best_model = run["halloffame"][0]
         feature_names = [
@@ -393,17 +393,17 @@ class EModel_pipeline:
         ]
         param_names = list(_evaluator.param_names)
 
-        scores = dict(zip(feature_names, best_model.fitness.wvalues))
+        scores = dict(zip(feature_names, best_model.fitness.values))
         params = dict(zip(param_names, best_model))
 
         db.store_model(
             self.emodel,
-            self.species,
             scores,
             params,
             optimizer_name=optimizer,
             seed=opt_params["seed"],
             validated=False,
+            species=self.species,
         )
 
         db.close()
@@ -432,6 +432,10 @@ class EModel_pipeline:
         emodels = db.get_models(self.emodel, self.species)
         if emodels:
 
+            logger.info(
+                "In compute_scores, %s emodels found to evaluate.", len(emodels)
+            )
+
             parameters = [
                 mod["parameters"] for mod in emodels if mod["validated"] is False
             ]
@@ -444,11 +448,11 @@ class EModel_pipeline:
                 validated = validation_function(mo)
 
                 db.store_model(
-                    self.emodel,
-                    self.species,
-                    mo["scores"],
-                    mo["parameters"],
-                    optimizer_name=mo["parameters"],
+                    emodel=self.emodel,
+                    species=self.species,
+                    scores=mo["scores"],
+                    params=mo["parameters"],
+                    optimizer_name=mo["optimizer"],
                     seed=mo["seed"],
                     validated=validated,
                 )
@@ -479,6 +483,10 @@ class EModel_pipeline:
         emodels = db.get_models(self.emodel, self.species)
         if emodels:
 
+            logger.info(
+                "In compute_responses, %s emodels found to evaluate.", len(emodels)
+            )
+
             to_run = []
             for mo in emodels:
                 to_run.append(
@@ -500,3 +508,38 @@ class EModel_pipeline:
             )
 
         return emodels
+
+    def plot_models(
+        self,
+        figures_dir="./figures",
+        stochasticity=False,
+        copy_mechanisms=False,
+        compile_mechanisms=False,
+    ):
+        """Plot the traces and scores for all the models of this emodel."""
+        _evaluator = self.get_evaluator(
+            stochasticity=stochasticity,
+            copy_mechanisms=copy_mechanisms,
+            compile_mechanisms=compile_mechanisms,
+            include_validation_protocols=True,
+        )
+
+        emodels = self.compute_responses(
+            stochasticity=stochasticity,
+            copy_mechanisms=copy_mechanisms,
+            compile_mechanisms=compile_mechanisms,
+        )
+
+        stimuli = (
+            _evaluator.evaluators[0].fitness_protocols["main_protocol"].subprotocols()
+        )
+
+        if emodels:
+            for mo in emodels:
+                plotting.scores(mo, figures_dir)
+                plotting.traces(mo, mo["responses"], stimuli, figures_dir)
+
+        else:
+            logger.warning(
+                "In plot_models, no emodel for %s %s", self.emodel, self.species
+            )

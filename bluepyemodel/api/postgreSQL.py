@@ -189,6 +189,11 @@ class PostgreSQL_API(DatabaseAPI):
             query_exist = cursor.mogrify(query_exist, replace_keys_values)
             entry_exist = self.execute_fetch(query_exist)
 
+            if len(entry_exist):  # pylint: disable=len-as-condition
+                entry_exist = bool(entry_exist[0])
+            else:
+                entry_exist = False
+
             # Prepare the query to delete the entry if needed
             query_remove = "DELETE FROM {}_{} WHERE ".format(self.project_name, table)
             for i, rk in enumerate(replace_keys):
@@ -418,12 +423,12 @@ class PostgreSQL_API(DatabaseAPI):
     def store_model(
         self,
         emodel,
-        species,
         scores,
         params,
         optimizer_name,
-        seed=None,
+        seed,
         validated=False,
+        species=None,
     ):
         """ Save a model obtained from BluePyOpt"""
 
@@ -435,12 +440,13 @@ class PostgreSQL_API(DatabaseAPI):
             "scores": scores,
             "validated": validated,
             "optimizer": str(optimizer_name),
+            "seed": seed,
         }
 
         if seed is not None:
             entry["seed"] = int(seed)
 
-        replace_keys = ["emodel", "species", "parameters", "optimizer", "seed"]
+        replace_keys = ["emodel", "species", "optimizer", "seed"]
         self.fill(
             table="models", entries=[entry], replace=True, replace_keys=replace_keys
         )

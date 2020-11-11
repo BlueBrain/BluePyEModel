@@ -16,12 +16,12 @@ class DatabaseAPI:
     def store_model(
         self,
         emodel,
-        species,
         scores,
         params,
         optimizer_name,
-        seed=None,
+        seed,
         validated=False,
+        species=None,
     ):
         """ Save a model obtained from BluePyOpt"""
 
@@ -54,13 +54,7 @@ class DatabaseAPI:
 
         """
 
-    def get_protocols(
-        self,
-        emodel,
-        species,
-        delay=0.0,
-        include_validation=False
-    ):
+    def get_protocols(self, emodel, species, delay=0.0, include_validation=False):
         """Get the protocols from the database and put in a format that fits
          the MainProtocol needs.
 
@@ -75,12 +69,7 @@ class DatabaseAPI:
 
         """
 
-    def get_features(
-        self,
-        emodel,
-        species,
-        include_validation=False
-    ):
+    def get_features(self, emodel, species, include_validation=False):
         """Get the efeatures from the database and put in a format that fits
          the MainProtocol needs.
 

@@ -778,7 +778,8 @@ def define_main_protocol_features(
 
     if holding_rin_protocol or rmp_protocol:
         assert rmp_protocol.target_voltage
-        assert holding_rin_protocol and rmp_protocol
+        assert holding_rin_protocol
+        assert rmp_protocol
         assert holding_rin_protocol.target_voltage
         assert holding_rin_protocol.target_Rin
 

@@ -245,8 +245,7 @@ class SearchRinHoldingCurrent:
 
     def subprotocols(self):
         """Return subprotocols"""
-        subprotocols = {self.name: self}
-        subprotocols.update({self.protocol.name: self.protocol})
+        subprotocols = {self.name: self, self.protocol.name: self.protocol}
         return subprotocols
 
     def create_protocol(self, holding_current):
@@ -639,12 +638,19 @@ class MainProtocol(ephys.protocols.Protocol):
 
     def subprotocols(self):
         """ Return all the subprotocols contained in the main protocol """
-        subprotocols = {self.RMP_protocol.name(): self.RMP_protocol}
-        subprotocols.update(self.Rin_protocol.subprotocols())
-        for protocol in self.other_protocols:
-            subprotocols.update({protocol.name, protocol})
-        for protocol in self.threshold_protocols:
-            subprotocols.update({protocol.name, protocol})
+        subprotocols = {}
+
+        if self.RMP_protocol is not None:
+            subprotocols[self.RMP_protocol.name] = self.RMP_protocol
+        if self.Rin_protocol is not None:
+            subprotocols.update(self.Rin_protocol.subprotocols())
+
+        for name, protocol in self.threshold_protocols.items():
+            subprotocols.update({name: protocol})
+
+        for name, protocol in self.other_protocols.items():
+            subprotocols.update({name: protocol})
+
         return subprotocols
 
     def run_threshold(self, cell_model, sim=None, isolate=None, timeout=None):
