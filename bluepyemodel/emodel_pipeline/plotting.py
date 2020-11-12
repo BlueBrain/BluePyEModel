@@ -158,10 +158,9 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
         title += " ; Holding current = {:.4f} pA".format(holding)
     fig.suptitle(title)
 
-    figure_name = "{}_{}_{}_traces.pdf".format(
+    figure_name = "{}_{}_traces.pdf".format(
         model["emodel"],
         model["seed"],
-        model["optimizer"],
     )
     plt.tight_layout()
     save_fig(figures_dir, figure_name)
