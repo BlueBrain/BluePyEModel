@@ -56,7 +56,7 @@ class Singlecell_API(DatabaseAPI):
         scores,
         params,
         optimizer_name,
-        seed=None,
+        seed,
         validated=False,
         species=None,
     ):
@@ -81,17 +81,16 @@ class Singlecell_API(DatabaseAPI):
             "fitness": scores,
             "validated": validated,
             "optimizer": str(optimizer_name),
-            "seed": seed,
+            "seed": int(seed),
         }
 
-        if seed is not None:
-            entry["seed"] = int(seed)
+        model_name = "{}_{}".format(emodel, seed)
 
-        if emodel in final.keys():
-            if final[emodel]["score"] > entry["score"]:
-                final[emodel] = entry
+        if model_name in final.keys():
+            if final[model_name]["score"] > entry["score"]:
+                final[model_name] = entry
         else:
-            final[emodel] = entry
+            final[model_name] = entry
 
         with open(self.final_path, "w") as fp:
             json.dump(final, fp, indent=2)
@@ -287,20 +286,28 @@ class Singlecell_API(DatabaseAPI):
             final = json.load(f)
 
         models = []
-        if emodel in final:
+        for model_name in final:
+            if final[model_name]["emodel"] == emodel:
 
-            model = {
-                "emodel": emodel,
-                "fitness": final[emodel]["score"],
-                "parameters": final[emodel]["params"],
-                "scores": final[emodel]["fitness"],
-                "validated": "False",
-            }
+                model = {
+                    "emodel": emodel,
+                    "fitness": final[model_name]["score"],
+                    "parameters": final[model_name]["params"],
+                    "scores": final[model_name]["fitness"],
+                    "validated": "False",
+                }
 
-            for key in ["seed", "githash", "branch", "rank", "optimiser", "species"]:
-                if key in final[emodel]:
-                    model[key] = final[emodel][key]
+                for key in [
+                    "seed",
+                    "githash",
+                    "branch",
+                    "rank",
+                    "optimiser",
+                    "species",
+                ]:
+                    if key in final[model_name]:
+                        model[key] = final[model_name][key]
 
-            models.append(model)
+                models.append(model)
 
         return models

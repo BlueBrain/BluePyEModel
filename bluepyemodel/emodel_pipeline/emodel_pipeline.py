@@ -535,6 +535,25 @@ class EModel_pipeline:
         )
 
         if emodels:
+
+            lbounds = {
+                p.name: p.bounds[0]
+                for p in _evaluator.evaluators[0].cell_model.params.values()
+                if p.bounds is not None
+            }
+            ubounds = {
+                p.name: p.bounds[1]
+                for p in _evaluator.evaluators[0].cell_model.params.values()
+                if p.bounds is not None
+            }
+
+            plotting.parameters_distribution(
+                models=emodels,
+                lbounds=lbounds,
+                ubounds=ubounds,
+                figures_dir=figures_dir,
+            )
+
             for mo in emodels:
                 plotting.scores(mo, figures_dir)
                 plotting.traces(mo, mo["responses"], stimuli, figures_dir)

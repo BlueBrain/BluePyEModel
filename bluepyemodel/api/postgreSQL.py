@@ -4,7 +4,7 @@ import pandas
 import psycopg2
 from psycopg2.extras import Json
 
-# pylint: disable=W0231,W0401,W0703,R1702
+# pylint: disable=W0231,W0401,W0703,R1702,R0912
 
 from bluepyemodel.api.databaseAPI import DatabaseAPI
 from bluepyemodel.api.postgreSQL_tables import *
@@ -691,21 +691,21 @@ class PostgreSQL_API(DatabaseAPI):
                 elif target["type"] in ("StepThresholdProtocol", "StepProtocol"):
 
                     protocols_out[prot["name"]] = {
-                        "type": "StepThresholdProtocol",
+                        "type": target["type"],
                         "stimuli": prot["definition"],
                     }
 
-                    if "step" in protocols_out[prot["name"]]["stimuli"]:
-                        if "delay" in protocols_out[prot["name"]]["stimuli"]["step"]:
-                            protocols_out[prot["name"]]["stimuli"]["step"][
-                                "delay"
-                            ] += delay
-                            protocols_out[prot["name"]]["stimuli"]["step"][
-                                "totduration"
-                            ] += delay
-                            protocols_out[prot["name"]]["stimuli"]["holding"][
-                                "totduration"
-                            ] += delay
+                    if (
+                        "step" in protocols_out[prot["name"]]["stimuli"]
+                        and "delay" in protocols_out[prot["name"]]["stimuli"]["step"]
+                    ):
+                        protocols_out[prot["name"]]["stimuli"]["step"]["delay"] += delay
+                        protocols_out[prot["name"]]["stimuli"]["step"][
+                            "totduration"
+                        ] += delay
+                        protocols_out[prot["name"]]["stimuli"]["holding"][
+                            "totduration"
+                        ] += delay
 
         return protocols_out
 
@@ -728,11 +728,7 @@ class PostgreSQL_API(DatabaseAPI):
 
         """
 
-        efeatures_out = {
-            "RMP": {"soma.v": []},
-            "RinHoldCurrent": {"soma.v": []},
-            "Threshold": {"soma.v": []},
-        }
+        efeatures_out = {}
 
         # Get the optimization targets
         targets = self.fetch(
@@ -788,6 +784,10 @@ class PostgreSQL_API(DatabaseAPI):
                 for efeat in efeatures.to_dict(orient="records"):
 
                     if target["type"] == "RMP":
+
+                        if "RMP" not in efeatures_out:
+                            efeatures_out["RMP"] = {"soma.v": []}
+
                         protocol_name = "RMP"
                         if efeat["name"] == "steady_state_voltage_stimend":
                             efeatures_out[protocol_name]["soma.v"].append(
@@ -799,6 +799,10 @@ class PostgreSQL_API(DatabaseAPI):
                             )
 
                     elif target["type"] == "RinHoldCurrent":
+
+                        if "RinHoldCurrent" not in efeatures_out:
+                            efeatures_out["RinHoldCurrent"] = {"soma.v": []}
+
                         protocol_name = "RinHoldCurrent"
                         if efeat["name"] in (
                             "voltage_base",
@@ -839,28 +843,40 @@ class PostgreSQL_API(DatabaseAPI):
             table="extraction_efeatures",
             conditions={"emodel": emodel, "species": species, "protocol": "global"},
         )
+
         if efeatures.empty:
             logger.warning(
-                "PostgreSQL warning: could not get the efeatures for emodel %s", emodel
+                "PostgreSQL warning: could not get the holding and threshold currents"
+                " for emodel %s. Will ne be able to perform threshold-based optimization",
+                emodel,
             )
-            return None
 
-        for efeat in efeatures.to_dict(orient="records"):
-            if efeat["name"] == "hypamp":
-                efeatures_out["RinHoldCurrent"]["soma.v"].append(
-                    {
-                        "feature": "bpo_holding_current",
-                        "val": [efeat["mean"], efeat["std"]],
-                    }
-                )
+        else:
 
-            elif efeat["name"] == "thresh":
-                efeatures_out["Threshold"]["soma.v"].append(
-                    {
-                        "feature": "bpo_threshold_current",
-                        "val": [efeat["mean"], efeat["std"]],
-                    }
-                )
+            for efeat in efeatures.to_dict(orient="records"):
+                if efeat["name"] == "hypamp":
+
+                    if "RinHoldCurrent" not in efeatures_out:
+                        efeatures_out["RinHoldCurrent"] = {"soma.v": []}
+
+                    efeatures_out["RinHoldCurrent"]["soma.v"].append(
+                        {
+                            "feature": "bpo_holding_current",
+                            "val": [efeat["mean"], efeat["std"]],
+                        }
+                    )
+
+                elif efeat["name"] == "thresh":
+
+                    if "Threshold" not in efeatures_out:
+                        efeatures_out["Threshold"] = {"soma.v": []}
+
+                    efeatures_out["Threshold"]["soma.v"].append(
+                        {
+                            "feature": "bpo_threshold_current",
+                            "val": [efeat["mean"], efeat["std"]],
+                        }
+                    )
 
         return efeatures_out
 

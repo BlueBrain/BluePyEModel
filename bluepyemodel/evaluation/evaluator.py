@@ -437,7 +437,7 @@ def define_feature(
 
     Args:
         feature_definition (dict): see docstring of function
-            define_main_protocol_features.
+            define_main_protocol.
         stim_start (float): start of the time window on which this efeature
             will be computed.
         stim_end (float): end of the time window on which this efeature
@@ -498,7 +498,7 @@ def define_protocol(
     Args:
         name (str): name of the protocol
         protocol_definition (dict): see docstring of function
-            define_main_protocol_features
+            define_main_protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
         apical_point_isec (isec): dendritic section at which the recordings
@@ -563,6 +563,7 @@ def define_protocol(
         total_duration=holding_def["totduration"],
     )
 
+    # TODO: SEARCH NAME IN eCODE LIKE IN BPE2
     if "IDhyperpol" in name:
         step_def = protocol_definition["stimuli"]["step"]
         step_stimulus = NrnHDPulse(
@@ -644,19 +645,12 @@ def define_protocol(
         )
 
 
-def define_main_protocol_features(
-    protocols_definition, features_definition, stochasticity=True
-):
+def define_main_protocol(protocols_definition, features_definition, stochasticity=True):
     """Create the MainProtocol and the list of efeatures to use as objectives.
-
-    The amplitude of the "threshold_protocols" depend on the computation of
-    the current threshold while the "other_protocols" do not.
 
     Args:
         protocols_definition (dict): in the following format. The "type" field
-            of a protocol can be StepProtocol, StepThresholdProtocol, RMP,
-            RinHoldCurrent. If protocols with type StepThresholdProtocol are
-            present, RMP and RinHoldCurrent should also be present.
+            of a protocol should be "StepProtocol".
             protocols_definition = {
                 "Rin": {
                     "type": "StepProtocol",
@@ -677,7 +671,8 @@ def define_main_protocol_features(
                     }
                 }
             }
-        features_definition (dict): of the form
+
+        (dict): of the form
             features_definition =  {
                 "APWaveform_200": {
                     "soma.v": [
@@ -702,7 +697,85 @@ def define_main_protocol_features(
     Returns:
 
     """
+    other_protocols = {}
+    features = []
 
+    for name, definition in protocols_definition.items():
+
+        protocol = define_protocol(name, definition, stochasticity)
+
+        if definition["type"] in ["StepThresholdProtocol", "RMP", "RinHoldCurrent"]:
+            logger.warning(
+                "Protocol of type %s in none-threshold"
+                " based evaluator will be ignored",
+                definition["type"],
+            )
+        elif definition["type"] == "StepProtocol":
+            other_protocols[name] = protocol
+        else:
+            raise Exception('Protocol type "{}" unknown.'.format(definition["type"]))
+
+        # Define the efeatures associated to the protocol
+        f_definition = features_definition[name]
+        for recording_name, feature_configs in f_definition.items():
+
+            for f in feature_configs:
+
+                if hasattr(protocol, "stim_start"):
+
+                    stim_amp = protocol.step_amplitude
+                    stim_start = protocol.stim_start
+                    if "bAP" in name:
+                        # bAP response can be after stimulus
+                        stim_end = protocol.total_duration
+                    else:
+                        stim_end = protocol.stim_end
+                else:
+                    stim_amp = None
+                    stim_start = None
+                    stim_end = None
+
+                if "stim_start" and "stim_end" in f:
+                    stim_start = f["stim_start"]
+                    stim_end = f["stim_end"]
+
+                feature = define_feature(
+                    f, stim_start, stim_end, stim_amp, protocol.name, recording_name
+                )
+                features.append(feature)
+
+    main_protocol = MainProtocol(
+        name="Main",
+        rmp_protocol=None,
+        holding_rin_protocol=None,
+        search_threshold_protocol=None,
+        threshold_protocols=None,
+        other_protocols=other_protocols,
+        score_threshold=None,
+    )
+
+    return main_protocol, features
+
+
+def define_threshold_main_protocol(
+    protocols_definition, features_definition, stochasticity=True
+):
+    """Create the MainProtocol and the list of efeatures to use as objectives.
+
+    The amplitude of the "threshold_protocols" depend on the computation of
+    the current threshold while the "other_protocols" do not.
+
+    Args:
+        protocols_definition (dict): in the following format. The "type" field
+            of a protocol can be StepProtocol, StepThresholdProtocol, RMP,
+            RinHoldCurrent. If protocols with type StepThresholdProtocol are
+            present, RMP and RinHoldCurrent should also be present.
+        stochasticity (bool): Should the stochastic channels be stochastic or
+            deterministic
+
+    Returns:
+
+    """
     rmp_protocol = None
     holding_rin_protocol = None
     search_threshold_protocol = None
@@ -868,11 +941,26 @@ def create_evaluator(
     Returns:
         CellEvaluator
     """
-    main_protocol, features = define_main_protocol_features(
-        protocols_definition,
-        features_definition,
-        stochasticity,
-    )
+
+    if "RMP" in protocols_definition and "RinHoldCurrent" in protocols_definition:
+        logger.info(
+            "RMP and RinHoldCurrent protocols present, creating threshold based evaluator"
+        )
+        main_protocol, features = define_threshold_main_protocol(
+            protocols_definition,
+            features_definition,
+            stochasticity,
+        )
+
+    else:
+        logger.info(
+            "RMP and RinHoldCurrent protocols not present, creating none-threshold based evaluator"
+        )
+        main_protocol, features = define_main_protocol(
+            protocols_definition,
+            features_definition,
+            stochasticity,
+        )
 
     fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}

@@ -645,11 +645,13 @@ class MainProtocol(ephys.protocols.Protocol):
         if self.Rin_protocol is not None:
             subprotocols.update(self.Rin_protocol.subprotocols())
 
-        for name, protocol in self.threshold_protocols.items():
-            subprotocols.update({name: protocol})
+        if self.threshold_protocols is not None:
+            for name, protocol in self.threshold_protocols.items():
+                subprotocols.update({name: protocol})
 
-        for name, protocol in self.other_protocols.items():
-            subprotocols.update({name: protocol})
+        if self.other_protocols is not None:
+            for name, protocol in self.other_protocols.items():
+                subprotocols.update({name: protocol})
 
         return subprotocols
 
@@ -762,9 +764,7 @@ class MainProtocol(ephys.protocols.Protocol):
 
         # Run protocols that are not based on holding/threshold detection
         for protocol_name, protocol in self.other_protocols.items():
-            responses[protocol_name] = protocol.run(
-                cell_model, {}, sim, isolate, timeout
-            )
+            responses.update(protocol.run(cell_model, {}, sim, isolate, timeout))
 
         cell_model.unfreeze(param_values.keys())
         return responses

@@ -164,3 +164,58 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
     )
     plt.tight_layout()
     save_fig(figures_dir, figure_name)
+
+
+def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
+    """Plot the distribution of the parameters across several models"""
+    make_dir(figures_dir)
+
+    if len({mo["emodel"] for mo in models}) > 1:
+        logger.warning(
+            "More than one e-type passed to the plotting.parameters_distribution function"
+        )
+
+    # Normalizes the parameters and makes sure they are listed in the same order
+    data = []
+    parameters = list(lbounds.keys())
+    for mo in models:
+        _ = []
+        for param in parameters:
+            bm = (ubounds[param] + lbounds[param]) / 2.0
+            br = (ubounds[param] - lbounds[param]) / 2.0
+            _.append((mo["parameters"][param] - bm) / br)
+        data.append(_)
+    data = numpy.array(data)
+
+    fig, axs = plt.subplots(1, figsize=(0.8 + 0.21 * len(ubounds), 5), squeeze=False)
+
+    v = axs[0, 0].violinplot(data)
+
+    for partname in ("cbars", "cmins", "cmaxes", "cmeans", "cmedians"):
+        if partname in v:
+            vp = v[partname]
+            vp.set_edgecolor("black")
+    for pc in v["bodies"]:
+        pc.set_facecolor("black")
+
+    axs[0, 0].set_xticks(ticks=range(1, 1 + len(ubounds)))
+    axs[0, 0].set_xticklabels(labels=list(ubounds.keys()), rotation=90)
+
+    axs[0, 0].plot(
+        [0, 1 + len(ubounds)], [-1, -1], c="black", ls="--", alpha=0.6, zorder=1
+    )
+    axs[0, 0].plot(
+        [0, 1 + len(ubounds)], [1, 1], c="black", ls="--", alpha=0.6, zorder=1
+    )
+
+    axs[0, 0].set_yticks(ticks=[-1, 1])
+    axs[0, 0].set_yticklabels(labels=["Lower bounds", "Upper bounds"])
+
+    axs[0, 0].set_xlim(0, 1 + len(ubounds))
+    axs[0, 0].set_ylim(-1.05, 1.05)
+
+    axs[0, 0].set_title(models[0]["emodel"])
+
+    figure_name = "{}_parameters_distribution.pdf".format(models[0]["emodel"])
+    plt.tight_layout()
+    save_fig(figures_dir, figure_name)
