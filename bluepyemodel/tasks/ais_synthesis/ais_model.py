@@ -16,7 +16,7 @@ from ...ais_synthesis.ais_model import (
 )
 from .base_task import BaseTask
 from .config import scaleconfigs
-from .morph_combos import CreateMorphCombosDF
+from .morph_combos import CreateMorphCombosDF, ApplySubstitutionRules
 from .utils import add_emodel, ensure_dir
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class AisShapeModel(BaseTask):
 
     def run(self):
         """Run."""
-        morphs_df = pd.read_csv(CreateMorphCombosDF().morphs_df_path)
+        morphs_df = pd.read_csv(ApplySubstitutionRules().morphs_df_path)
         morphs_df = morphs_df[morphs_df.use_axon]
 
         models = build_ais_diameter_models(

@@ -63,7 +63,7 @@ class RunGenericEvaluations(BaseTask):
     def run(self):
         """"""
         morph_combos_task = yield CreateMorphCombosDF()
-        all_emodels = pd.read_csv(morph_combos_task.path).emodel.unique()
+        all_emodels = list(pd.read_csv(morph_combos_task.path).emodel.unique())
 
         yield GatherGenericEvaluations(emodels=all_emodels)
         yield SelectGenericCombos(emodels=all_emodels)

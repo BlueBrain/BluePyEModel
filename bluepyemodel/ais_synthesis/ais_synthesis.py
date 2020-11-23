@@ -83,7 +83,7 @@ def synthesize_ais(
     emodel_db,
     ais_models,
     target_rhos,
-    emodels="all",
+    emodels=None,
     morphology_path="morphology_path",
     continu=False,
     parallel_factory=None,
@@ -136,6 +136,6 @@ def synthesize_ais(
         task_ids=task_ids,
         continu=continu,
         parallel_factory=parallel_factory,
-        combos_db_filename="synth_ais_db.sql",
+        combos_db_filename=str(combos_db_filename) + ".synth_ais",
     )
     return morphs_combos_df

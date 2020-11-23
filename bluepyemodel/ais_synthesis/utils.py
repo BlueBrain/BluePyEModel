@@ -7,8 +7,8 @@ import numpy as np
 
 
 def get_emodels(morphs_combos_df, emodels):
-    """Convert emodel from 'all' to list of emodels."""
-    if emodels == "all":
+    """Convert emodel from 'all' or None to list of emodels."""
+    if emodels == "all" or emodels is None:
         return sorted(morphs_combos_df.emodel.unique())
     if not isinstance(emodels, list):
         return [emodels]
@@ -16,8 +16,8 @@ def get_emodels(morphs_combos_df, emodels):
 
 
 def get_mtypes(morphs_combos_df, mtypes):
-    """Convert mtypes from 'all' to list of mtypes."""
-    if mtypes == "all":
+    """Convert mtypes from 'all' or None to list of mtypes."""
+    if mtypes == "all" or mtypes is None:
         return sorted(morphs_combos_df.mtype.unique())
     if not isinstance(mtypes, list):
         return [mtypes]
@@ -70,21 +70,3 @@ def get_scores(morphs_combos_df, features_to_ignore=None, features_to_keep=None,
     )
 
     return morphs_combos_df
-
-
-def get_me_types_map(recipe_path, emodel_etype_path):
-    """Use recipe data and bluepymm to get mtype/etype combos."""
-    from bluepymm.prepare_combos.parse_files import read_mm_recipe
-
-    recipe = read_mm_recipe(recipe_path)
-    emodel_etype_map = json.load(open(emodel_etype_path, "rb"))
-    for i, combos in recipe.iterrows():
-        for emodel, emap in emodel_etype_map.items():
-            if combos.layer in emap["layer"] and combos.etype == emap["etype"]:
-                if "mtype" in emap:
-                    if emap["mtype"] == combos.fullmtype:
-                        recipe.loc[i, "emodel"] = emodel
-                else:
-                    recipe.loc[i, "emodel"] = emodel
-
-    return recipe.rename(columns={"fullmtype": "mtype"})

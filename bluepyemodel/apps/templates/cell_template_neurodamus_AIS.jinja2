@@ -78,7 +78,7 @@ proc connect2target() { //$o1 target point process, $o2 returned NetCon
 }
 
 
-proc init(/* args: morphology_dir, morphology_name, AIS_scaler */) {
+proc init(/* args: gid, morphology_dir, morphology_name, AIS_scaler */) {
   all = new SectionList()
   apical = new SectionList()
   axonal = new SectionList()
@@ -109,7 +109,7 @@ proc init(/* args: morphology_dir, morphology_name, AIS_scaler */) {
   geom_nseg()
   indexSections()
   {%- if replace_axon %}
-    replace_axon($3)
+    replace_axon($4)
   {%- endif %}
   insertChannel()
   biophys()

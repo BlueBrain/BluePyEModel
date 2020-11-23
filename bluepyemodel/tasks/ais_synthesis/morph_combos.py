@@ -10,6 +10,19 @@ from .base_task import BaseTask
 from .utils import ensure_dir
 
 
+def _add_for_optimisation_flag(emodel_db, morphs_combos_df):
+    """Add flag for_optimisation for exemplar cells."""
+    morphs_combos_df["for_optimisation"] = False
+    for emodel in morphs_combos_df.emodel.unique():
+        morphologies = emodel_db.get_morphologies(emodel)
+        morphs_combos_df.loc[
+            (morphs_combos_df["name"] == morphologies[0]["name"])
+            & (morphs_combos_df.emodel == emodel),
+            "for_optimisation",
+        ] = True
+    return morphs_combos_df
+
+
 def _get_me_types_map(recipe, emodel_etype_map):
     """Use recipe data and bluepymm to get mtype/etype combos."""
     me_types_map = pd.DataFrame()
@@ -68,17 +81,44 @@ def _create_morphs_combos_df(morphs_df, me_types_map):
     return morphs_combos_df
 
 
+class ApplySubstitutionRules(BaseTask):
+    """Apply substitution rules to the morphology dataframe.
+
+    Args:
+        substitution_rules (dict): rules to assign duplicated mtypes to morphologies
+    """
+
+    morphs_df_path = luigi.Parameter(default="morphs_df.csv")
+    substitution_rules_path = luigi.Parameter(default="substitution_rules.yaml")
+
+    def run(self):
+        """"""
+        from synthesis_workflow.synthesis import apply_substitutions
+
+        with open(self.substitution_rules_path, "rb") as sub_file:
+            substitution_rules = yaml.full_load(sub_file)
+
+        substituted_morphs_df = apply_substitutions(
+            pd.read_csv(self.morphs_df_path), substitution_rules
+        )
+        ensure_dir(self.output().path)
+        substituted_morphs_df.to_csv(self.output().path, index=False)
+
+
 class CreateMorphCombosDF(BaseTask):
     """Create a dataframe with all combos to run."""
 
-    morphs_df_path = luigi.Parameter(default="morphs_df.csv")
     cell_composition_path = luigi.Parameter()
     emodel_etype_map_path = luigi.Parameter()
     emodels = luigi.ListParameter(default=None)
 
+    def requires(self):
+        """"""
+        return ApplySubstitutionRules()
+
     def run(self):
         """"""
-        morphs_df = pd.read_csv(self.morphs_df_path)
+        morphs_df = pd.read_csv(self.input().path)
         cell_composition = yaml.safe_load(open(self.cell_composition_path, "r"))
         emodel_etype_map = json.load(open(self.emodel_etype_map_path, "rb"))
 
@@ -96,6 +136,7 @@ class CreateMorphCombosDF(BaseTask):
             all_emodels = list(full_emodels.keys())
         me_types_map = _filter_me_types_map(me_types_map, full_emodels, all_emodels)
         morphs_combos_df = _create_morphs_combos_df(morphs_df, me_types_map)
+        morphs_combos_df = _add_for_optimisation_flag(self.emodel_db, morphs_combos_df)
 
         ensure_dir(self.output().path)
         morphs_combos_df.to_csv(self.output().path)

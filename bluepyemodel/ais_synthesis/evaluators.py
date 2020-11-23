@@ -7,7 +7,7 @@ from functools import partial
 from hashlib import sha256
 from pathlib import Path
 
-from ..evaluation.evaluator import create_evaluator, define_main_protocol
+from ..evaluation.evaluator import create_evaluator, define_main_protocol, get_simulator
 from ..evaluation.model import create_cell_model
 from ..evaluation.modifiers import (
     isolate_axon,
@@ -53,7 +53,7 @@ def _single_evaluation(
 ):
     """Evaluating single protocol."""
 
-    cell, protocols, features, emodel_params = get_emodel_data(
+    cell, protocols, features, parameters = get_emodel_data(
         emodel_db, combo, morphology_path, morph_modifiers
     )
     _evaluator = create_evaluator(
@@ -64,10 +64,7 @@ def _single_evaluation(
         timeout=timeout,
     )
 
-    responses = _evaluator.run_protocols(
-        _evaluator.fitness_protocols.values(),
-        emodel_params,
-    )
+    responses = _evaluator.run_protocols(_evaluator.fitness_protocols.values(), parameters)
     scores = _evaluator.fitness_calculator.calculate_scores(responses)
 
     if save_traces:
@@ -172,13 +169,13 @@ def _rin_evaluation(
     timeout=1000,
 ):
     """Evaluating rin protocol."""
-
     cell_model, _, features, emodel_params = get_emodel_data(
         emodel_db, combo, morphology_path, morph_modifiers
     )
     main_protocol, features = define_main_protocol({}, features, stochasticity)
 
     cell_model.freeze(emodel_params)
+    sim = get_simulator(stochasticity, [cell_model])
 
     if with_currents:
         responses = {}
@@ -188,15 +185,14 @@ def _rin_evaluation(
             main_protocol.run_rin,
             main_protocol.run_threshold,
         ]:
-            responses.update(pre_run(cell_model, responses, timeout=timeout)[0])
+            responses.update(pre_run(cell_model, responses, sim=sim, timeout=timeout)[0])
 
         cell_model.unfreeze(emodel_params.keys())
         return {
             key + "holding_current": responses["bpo_holding_current"],
             key + "threshold_current": responses["bpo_threshold_current"],
         }
-
-    responses = main_protocol.run_rin(cell_model, {})[0]
+    responses = main_protocol.run_rin(cell_model, {}, sim=sim, timeout=timeout)[0]
     cell_model.unfreeze(emodel_params.keys())
     return {key: responses["bpo_rin"]}
 

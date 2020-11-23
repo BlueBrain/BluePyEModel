@@ -32,6 +32,8 @@ class EvaluateSynthesis(BaseTask):
         synth_combos_df = pd.read_csv(self.input()["synth_ais"].path)
         synth_combos_df = synth_combos_df[synth_combos_df.emodel == self.emodel]
 
+        eval_db_path = add_emodel(self.eval_db_path, self.emodel)
+        ensure_dir(eval_db_path)
         with InitParallelFactory(self.parallel_lib) as parallel_factory:
             synth_combos_df = evaluate_combos_rho(
                 synth_combos_df,
@@ -41,7 +43,7 @@ class EvaluateSynthesis(BaseTask):
                 continu=self.continu,
                 parallel_factory=parallel_factory,
                 save_traces=self.save_traces,
-                combos_db_filename=add_emodel(self.eval_db_path, self.emodel),
+                combos_db_filename=eval_db_path,
             )
 
         megate_thresholds = yaml.safe_load(open(selectconfigs().megate_thresholds_path, "r"))
@@ -68,6 +70,8 @@ class EvaluateGeneric(BaseTask):
         morphs_combos_df = pd.read_csv(self.input().path)
         morphs_combos_df = morphs_combos_df[morphs_combos_df.emodel == self.emodel]
 
+        eval_db_path = add_emodel(self.eval_db_path, self.emodel)
+        ensure_dir(eval_db_path)
         with InitParallelFactory(self.parallel_lib) as parallel_factory:
             morphs_combos_df = evaluate_combos_rho(
                 morphs_combos_df,
@@ -77,7 +81,7 @@ class EvaluateGeneric(BaseTask):
                 continu=self.continu,
                 parallel_factory=parallel_factory,
                 save_traces=self.save_traces,
-                combos_db_filename=add_emodel(self.eval_db_path, self.emodel),
+                combos_db_filename=eval_db_path,
             )
         megate_thresholds = yaml.safe_load(open(selectconfigs().megate_thresholds_path, "r"))
         morphs_combos_with_scores_df = get_scores(morphs_combos_df, megate_thresholds["ignore"])
@@ -93,9 +97,13 @@ class EvaluateExemplars(BaseTask):
     morphology_path = luigi.Parameter(default="morphology_path")
     eval_db_path = luigi.Parameter(default="eval_db.sql")
 
+    def requires(self):
+        """"""
+        return CreateMorphCombosDF()
+
     def run(self):
         """Run."""
-        morphs_combos_df = pd.read_csv(selectconfigs().exemplar_morphs_combos_df_path)
+        morphs_combos_df = pd.read_csv(self.input().path)
 
         # add emodels with seeds
         for emodel in self.emodels:
@@ -106,6 +114,7 @@ class EvaluateExemplars(BaseTask):
 
         morphs_combos_df = morphs_combos_df[morphs_combos_df.emodel.isin(self.emodels)]
         morphs_combos_df = morphs_combos_df[morphs_combos_df.for_optimisation == 1]
+        print(morphs_combos_df)
 
         ensure_dir(self.eval_db_path)
         with InitParallelFactory(self.parallel_lib) as parallel_factory:

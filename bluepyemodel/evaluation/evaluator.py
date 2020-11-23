@@ -251,7 +251,7 @@ class eFELFeatureBPEM(eFELFeature):
             interp_step,
             double_settings,
             int_settings,
-            max_score=250,
+            max_score=250.0,
         )
 
     def calculate_bpo_feature(self, responses):
@@ -754,7 +754,6 @@ def create_evaluator(
     Returns:
         CellEvaluator
     """
-
     main_protocol, features = define_main_protocol(
         protocols_definition,
         features_definition,
