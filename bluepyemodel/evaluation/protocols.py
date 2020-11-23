@@ -7,6 +7,8 @@ import numpy
 
 import bluepyopt.ephys as ephys
 
+from ..ecode import eCodes
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,8 +25,7 @@ class StepProtocol(ephys.protocols.SweepProtocol):
     def __init__(
         self,
         name=None,
-        step_stimulus=None,
-        holding_stimulus=None,
+        stimulus=None,
         recordings=None,
         stochasticity=True,
     ):
@@ -32,7 +33,7 @@ class StepProtocol(ephys.protocols.SweepProtocol):
 
         Args:
             name (str): name of this object
-            step_stimulus (lstimuli): List of Stimulus objects used in
+            stimulus (Stimulus): stimulus objects
             recordings (list of Recordings): Recording objects used in the
                 protocol
             stochasticity (bool): turns on or off the channels that can be
@@ -41,14 +42,11 @@ class StepProtocol(ephys.protocols.SweepProtocol):
 
         super().__init__(
             name,
-            stimuli=[step_stimulus, holding_stimulus]
-            if holding_stimulus is not None
-            else [step_stimulus],
+            stimuli=[stimulus],
             recordings=recordings,
         )
 
-        self.step_stimulus = step_stimulus
-        self.holding_stimulus = holding_stimulus
+        self.stimulus = stimulus
         self.stochasticity = stochasticity
 
         self.features = []
@@ -56,15 +54,15 @@ class StepProtocol(ephys.protocols.SweepProtocol):
     @property
     def stim_start(self):
         """Time stimulus starts"""
-        return self.step_stimulus.step_delay
+        return self.stimulus.step_delay
 
     @property
     def stim_end(self):
-        return self.step_stimulus.step_delay + self.step_stimulus.step_duration
+        return self.stimulus.step_delay + self.stimulus.step_duration
 
     @property
     def step_amplitude(self):
-        return self.step_stimulus.step_amplitude
+        return self.stimulus.step_amplitude
 
     def run(self, cell_model, param_values, sim=None, isolate=None, timeout=None):
         """Run protocol"""
@@ -97,8 +95,7 @@ class StepThresholdProtocol(StepProtocol):
         self,
         name,
         thresh_perc=None,
-        step_stimulus=None,
-        holding_stimulus=None,
+        stimulus=None,
         recordings=None,
         stochasticity=True,
     ):
@@ -108,8 +105,7 @@ class StepThresholdProtocol(StepProtocol):
             name (str): name of this object
             thresh_perc (float): amplitude in percentage of the rheobase of
                 the step current
-            step_stimulus (lstimuli): List of Stimulus objects used in
-                protocol
+            stimulus (Stimulus): Stimulus object
             recordings (list of Recordings): Recording objects used in the
                 protocol
             stochasticity (bool): turns on or off the channels that can be
@@ -118,8 +114,7 @@ class StepThresholdProtocol(StepProtocol):
 
         super().__init__(
             name,
-            step_stimulus=step_stimulus,
-            holding_stimulus=holding_stimulus,
+            stimulus=stimulus,
             recordings=recordings,
             stochasticity=stochasticity,
         )
@@ -140,8 +135,8 @@ class StepThresholdProtocol(StepProtocol):
         if holding_current is None or threshold_current is None:
             raise Exception("StepThresholdProtocol: missing holding or threshold current " "value")
 
-        self.step_stimulus.step_amplitude = threshold_current * (float(self.thresh_perc) / 100.0)
-        self.holding_stimulus.step_amplitude = holding_current
+        self.stimulus.step_amplitude = threshold_current * (float(self.thresh_perc) / 100.0)
+        self.stimulus.holding_current = holding_current
 
         return super().run(cell_model, param_values, sim=sim, timeout=timeout)
 
@@ -153,8 +148,7 @@ class RMPProtocol(StepProtocol):
     def __init__(
         self,
         name=None,
-        step_stimulus=None,
-        holding_stimulus=None,
+        stimulus=None,
         recordings=None,
         stochasticity=True,
         target_voltage=None,
@@ -163,7 +157,7 @@ class RMPProtocol(StepProtocol):
 
         Args:
             name (str): name of this object
-            step_stimulus (lstimuli): List of Stimulus objects used in
+            stimulus (Stimulus): Stimulus objects
             recordings (list of Recordings): Recording objects used in the
                 protocol
             stochasticity (bool): turns on or off the channels that can be
@@ -172,8 +166,7 @@ class RMPProtocol(StepProtocol):
 
         super().__init__(
             name=name,
-            step_stimulus=step_stimulus,
-            holding_stimulus=holding_stimulus,
+            stimulus=stimulus,
             recordings=recordings,
             stochasticity=stochasticity,
         )
@@ -252,7 +245,7 @@ class SearchRinHoldingCurrent:
         protocol.name = "SearchRinHoldingCurrent"
         for recording in protocol.recordings:
             recording.name = recording.name.replace(self.protocol.name, protocol.name)
-        protocol.holding_stimulus.step_amplitude = holding_current
+        protocol.stimulus.holding_current = holding_current
         return protocol
 
     def get_voltage_base(
@@ -395,23 +388,17 @@ class SearchThresholdCurrent:
     def create_protocol(self, holding_current, step_current):
         """Create a one-time use protocol made of a holding and step current"""
         # Create the stimuli and recording
-        tot_duration = self.step_duration + 400.0
-        stimuli = [
-            ephys.stimuli.NrnSquarePulse(
-                step_amplitude=holding_current,
-                step_delay=0.0,
-                step_duration=tot_duration,
-                location=soma_loc,
-                total_duration=tot_duration,
-            ),
-            ephys.stimuli.NrnSquarePulse(
-                step_amplitude=step_current,
-                step_delay=200.0,
-                step_duration=self.step_duration,
-                location=soma_loc,
-                total_duration=tot_duration,
-            ),
-        ]
+        stimulus_definition = {
+            "delay": 200.0,
+            "amp": step_current,
+            "thresh_perc": None,
+            "duration": self.step_duration,
+            "totduration": self.step_duration + 400.0,
+            "holding_current": holding_current,
+        }
+
+        stimulus = eCodes["step"](location=self.location, **stimulus_definition)
+
         recordings = [
             ephys.recordings.CompRecording(
                 name="%s.%s.%s" % ("ThresholdCurrentSearch", self.location.name, "v"),
@@ -419,9 +406,10 @@ class SearchThresholdCurrent:
                 variable="v",
             )
         ]
-        return ephys.protocols.SweepProtocol(
+
+        return StepProtocol(
             name="ThresholdCurrentSearch",
-            stimuli=stimuli,
+            stimulus=stimulus,
             recordings=recordings,
         )
 

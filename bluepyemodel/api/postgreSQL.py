@@ -636,19 +636,12 @@ class PostgreSQL_API(DatabaseAPI):
                     protocols_out["RinHoldCurrent"] = {
                         "type": "RinHoldCurrent",
                         "stimuli": {
-                            "step": {
-                                "delay": delay + prot["definition"]["step"]["delay"],
-                                "amp": prot["definition"]["step"]["amp"],
-                                "thresh_perc": prot["definition"]["step"]["thresh_perc"],
-                                "duration": prot["definition"]["step"]["duration"],
-                                "totduration": delay + prot["definition"]["step"]["totduration"],
-                            },
-                            "holding": {
-                                "delay": 0,
-                                "amp": None,
-                                "duration": prot["definition"]["holding"]["duration"],
-                                "totduration": delay + prot["definition"]["holding"]["totduration"],
-                            },
+                            "delay": delay + prot["definition"]["step"]["delay"],
+                            "amp": prot["definition"]["step"]["amp"],
+                            "thresh_perc": prot["definition"]["step"]["thresh_perc"],
+                            "duration": prot["definition"]["step"]["duration"],
+                            "totduration": delay + prot["definition"]["step"]["totduration"],
+                            "holding_current": None,
                         },
                     }
 
@@ -658,35 +651,18 @@ class PostgreSQL_API(DatabaseAPI):
                     protocols_out["RMP"] = {
                         "type": "RMP",
                         "stimuli": {
-                            "step": {
-                                "delay": 250,
-                                "amp": 0,
-                                "duration": 400,
-                                "totduration": 650,
-                            },
-                            "holding": {
-                                "delay": 0,
-                                "amp": 0,
-                                "duration": 650,
-                                "totduration": 650,
-                            },
+                            "delay": 250,
+                            "amp": 0,
+                            "duration": 400,
+                            "totduration": 650,
+                            "holding_current": 0,
                         },
                     }
 
                 elif target["type"] in ("StepThresholdProtocol", "StepProtocol"):
-
-                    protocols_out[prot["name"]] = {
-                        "type": target["type"],
-                        "stimuli": prot["definition"],
-                    }
-
-                    if (
-                        "step" in protocols_out[prot["name"]]["stimuli"]
-                        and "delay" in protocols_out[prot["name"]]["stimuli"]["step"]
-                    ):
-                        protocols_out[prot["name"]]["stimuli"]["step"]["delay"] += delay
-                        protocols_out[prot["name"]]["stimuli"]["step"]["totduration"] += delay
-                        protocols_out[prot["name"]]["stimuli"]["holding"]["totduration"] += delay
+                    stim_def = prot["definition"]["step"]
+                    stim_def["holding_current"] = prot["definition"]["holding"]["amp"]
+                    protocols_out[prot["name"]] = {"type": target["type"], "stimuli": stim_def}
 
         return protocols_out
 

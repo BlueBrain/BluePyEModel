@@ -17,7 +17,9 @@ from .protocols import (
     StepProtocol,
     StepThresholdProtocol,
 )
-from .stimuli import NrnHDPulse
+from ..ecode import eCodes
+
+# pylint: disable=R1702,R1705
 
 logger = logging.getLogger(__name__)
 
@@ -534,86 +536,56 @@ def define_protocol(
             )
             recordings.append(recording)
 
-    holding_def = protocol_definition["stimuli"]["holding"]
-    holding_stimulus = ephys.stimuli.NrnSquarePulse(
-        step_amplitude=holding_def["amp"],
-        step_delay=holding_def["delay"],
-        step_duration=holding_def["duration"],
-        location=soma_loc,
-        total_duration=holding_def["totduration"],
-    )
-
-    # TODO: SEARCH NAME IN eCODE LIKE IN BPE2
-    if "IDhyperpol" in name:
-        step_def = protocol_definition["stimuli"]["step"]
-        step_stimulus = NrnHDPulse(
-            amp=step_def["amp2"],
-            amp2=step_def["amp"],
-            ton=step_def["ton"],
-            tmid=step_def["tmid"],
-            tmid2=step_def["tmid2"],
-            toff=step_def["toff"],
-            total_duration=step_def["tend"],
-            location=soma_loc,
-        )
-        if protocol_definition["type"] == "StepThresholdProtocol":
-            thresh_perc = step_def["amp2_rel"]
+    for k in eCodes:
+        if k in name.lower():
+            stimulus = eCodes[k](location=soma_loc, **protocol_definition["stimuli"])
+            break
     else:
-        step_def = protocol_definition["stimuli"]["step"]
-        step_stimulus = ephys.stimuli.NrnSquarePulse(
-            step_amplitude=step_def["amp"],
-            step_delay=step_def["delay"],
-            step_duration=step_def["duration"],
-            location=soma_loc,
-            total_duration=step_def["totduration"],
+        raise KeyError(
+            "There is no eCode linked to the stimulus name {}. "
+            "See ecode/__init__.py for the available stimuli "
+            "names".format(name.lower())
         )
-        if protocol_definition["type"] == "StepThresholdProtocol":
-            thresh_perc = step_def["thresh_perc"]
 
     if protocol_definition["type"] == "StepThresholdProtocol":
         return StepThresholdProtocol(
             name=name,
-            thresh_perc=thresh_perc,
-            step_stimulus=step_stimulus,
-            holding_stimulus=holding_stimulus,
+            thresh_perc=protocol_definition["stimuli"]["thresh_perc"],
+            stimulus=stimulus,
             recordings=recordings,
             stochasticity=stochasticity,
         )
 
-    if protocol_definition["type"] == "StepProtocol":
+    elif protocol_definition["type"] == "StepProtocol":
         return StepProtocol(
             name=name,
-            step_stimulus=step_stimulus,
-            holding_stimulus=holding_stimulus,
+            stimulus=stimulus,
             recordings=recordings,
             stochasticity=stochasticity,
         )
 
-    if protocol_definition["type"] == "RMP":
+    elif protocol_definition["type"] == "RMP":
         protocol = RMPProtocol(
             name=name,
-            step_stimulus=step_stimulus,
-            holding_stimulus=holding_stimulus,
+            stimulus=stimulus,
             recordings=recordings,
             stochasticity=stochasticity,
         )
-        protocol.holding_stimulus.step_amplitude = 0.0
+        protocol.stimulus.step_amplitude = 0.0
         return protocol
 
-    if protocol_definition["type"] == "RinHoldCurrent":
+    elif protocol_definition["type"] == "RinHoldCurrent":
         protocol = StepProtocol(
             name=name,
-            step_stimulus=step_stimulus,
-            holding_stimulus=holding_stimulus,
+            stimulus=stimulus,
             recordings=recordings,
             stochasticity=stochasticity,
         )
-        tot_dur = protocol.step_stimulus.step_delay + protocol.step_stimulus.step_duration + 100.0
-        protocol.holding_stimulus.total_duration = tot_dur
-        protocol.step_stimulus.total_duration = tot_dur
+        protocol.stimulus.total_duration += 100.0
         return SearchRinHoldingCurrent(name="SearchRinHoldingCurrent", protocol=protocol)
 
-    raise Exception('Protocol type "{}" unknown.'.format(protocol_definition["type"]))
+    else:
+        raise Exception('Protocol type "{}" unknown.'.format(protocol_definition["type"]))
 
 
 def define_main_protocol(protocols_definition, features_definition, stochasticity=True):
@@ -626,19 +598,12 @@ def define_main_protocol(protocols_definition, features_definition, stochasticit
                 "Rin": {
                     "type": "StepProtocol",
                     "stimuli": {
-                        "step": {
-                            "delay": 700,
-                            "amp": -0.1097239395382074,
-                            "thresh_perc": -41,
-                            "duration": 1000,
-                            "totduration": 3800
-                        },
-                        "holding": {
-                            "delay": 0,
-                            "amp": null,
-                            "duration": 3100,
-                            "totduration": 3800
-                        }
+                        "delay": 700,
+                        "amp": -0.1097239395382074,
+                        "thresh_perc": -41,
+                        "duration": 1000,
+                        "totduration": 3800,
+                        "holding_current": null
                     }
                 }
             }
@@ -686,33 +651,26 @@ def define_main_protocol(protocols_definition, features_definition, stochasticit
             raise Exception('Protocol type "{}" unknown.'.format(definition["type"]))
 
         # Define the efeatures associated to the protocol
-        f_definition = features_definition[name]
-        for recording_name, feature_configs in f_definition.items():
+        if name in features_definition:
 
-            for f in feature_configs:
+            f_definition = features_definition[name]
+            for recording_name, feature_configs in f_definition.items():
 
-                if hasattr(protocol, "stim_start"):
+                for f in feature_configs:
 
                     stim_amp = protocol.step_amplitude
-                    stim_start = protocol.stim_start
-                    if "bAP" in name:
-                        # bAP response can be after stimulus
-                        stim_end = protocol.total_duration
+
+                    if "stim_start" and "stim_end" in f:
+                        stim_start = f["stim_start"]
+                        stim_end = f["stim_end"]
                     else:
+                        stim_start = protocol.stim_start
                         stim_end = protocol.stim_end
-                else:
-                    stim_amp = None
-                    stim_start = None
-                    stim_end = None
 
-                if "stim_start" and "stim_end" in f:
-                    stim_start = f["stim_start"]
-                    stim_end = f["stim_end"]
-
-                feature = define_feature(
-                    f, stim_start, stim_end, stim_amp, protocol.name, recording_name
-                )
-                features.append(feature)
+                    feature = define_feature(
+                        f, stim_start, stim_end, stim_amp, protocol.name, recording_name
+                    )
+                    features.append(feature)
 
     main_protocol = MainProtocol(
         name="Main",
@@ -756,12 +714,6 @@ def define_threshold_main_protocol(  # pylint: disable=R0912,R0915
 
     for name, definition in protocols_definition.items():
 
-        # Define holding for the protocols that do not have it
-        if "holding" not in definition and "totduration" in definition["stimuli"]["step"]:
-            dur = definition["stimuli"]["step"]["totduration"]
-            holding = {"delay": 0, "amp": None, "duration": dur, "totduration": dur}
-            definition["stimuli"]["holding"] = holding
-
         protocol = define_protocol(name, definition, stochasticity)
 
         if definition["type"] == "StepThresholdProtocol":
@@ -776,45 +728,40 @@ def define_threshold_main_protocol(  # pylint: disable=R0912,R0915
             raise Exception('Protocol type "{}" unknown.'.format(definition["type"]))
 
         # Define the efeatures associated to the protocol
-        f_definition = features_definition[name]
-        for recording_name, feature_configs in f_definition.items():
+        if name in features_definition:
+            f_definition = features_definition[name]
+            for recording_name, feature_configs in f_definition.items():
 
-            for f in feature_configs:
-
-                if hasattr(protocol, "stim_start"):
+                for f in feature_configs:
 
                     stim_amp = protocol.step_amplitude
-                    stim_start = protocol.stim_start
-                    if "bAP" in name:
-                        # bAP response can be after stimulus
-                        stim_end = protocol.total_duration
+
+                    if "stim_start" and "stim_end" in f:
+                        stim_start = f["stim_start"]
+                        stim_end = f["stim_end"]
                     else:
+                        stim_start = protocol.stim_start
                         stim_end = protocol.stim_end
-                else:
-                    stim_amp = None
-                    stim_start = None
-                    stim_end = None
 
-                if "stim_start" and "stim_end" in f:
-                    stim_start = f["stim_start"]
-                    stim_end = f["stim_end"]
+                        if "bAP" in name:
+                            stim_end = protocol.total_duration
 
-                feature = define_feature(
-                    f, stim_start, stim_end, stim_amp, protocol.name, recording_name
-                )
-                features.append(feature)
+                    feature = define_feature(
+                        f, stim_start, stim_end, stim_amp, protocol.name, recording_name
+                    )
+                    features.append(feature)
 
-                if definition["type"] == "RinHoldCurrent":
-                    if feature.efel_feature_name == "voltage_base":
-                        holding_rin_protocol.target_voltage = feature
-                    elif feature.efel_feature_name == "ohmic_input_resistance_vb_ssse":
-                        holding_rin_protocol.target_Rin = feature
-                    elif feature.efel_feature_name == "bpo_holding_current":
-                        holding_rin_protocol.target_current = feature
+                    if definition["type"] == "RinHoldCurrent":
+                        if feature.efel_feature_name == "voltage_base":
+                            holding_rin_protocol.target_voltage = feature
+                        elif feature.efel_feature_name == "ohmic_input_resistance_vb_ssse":
+                            holding_rin_protocol.target_Rin = feature
+                        elif feature.efel_feature_name == "bpo_holding_current":
+                            holding_rin_protocol.target_current = feature
 
-                elif definition["type"] == "RMP":
-                    if feature.efel_feature_name == "voltage_base":
-                        rmp_protocol.target_voltage = feature
+                    elif definition["type"] == "RMP":
+                        if feature.efel_feature_name == "voltage_base":
+                            rmp_protocol.target_voltage = feature
 
     if holding_rin_protocol or rmp_protocol:
         assert rmp_protocol.target_voltage

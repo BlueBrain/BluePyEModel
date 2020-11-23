@@ -256,7 +256,7 @@ def define_morphology(
     if morph_modifiers is None:
         morph_modifiers = [replace_axon_with_taper]
         morph_modifiers_hoc = [replace_axon_hoc]  # TODO: check the hoc is correct
-        logger.debug("No morph_modifiers provided, we will use replace_axon_with_taper")
+        logger.warning("No morphology modifiers provided, replace_axon_with_taper will be used.")
 
     return NrnFileMorphology(
         morphology_path,

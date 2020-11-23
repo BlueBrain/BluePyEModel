@@ -124,12 +124,29 @@ class EModel_pipeline:
         project_name=None,
         final_path=None,
         forge_path=None,
+        morphology_modifiers=None,
     ):
         """Init
 
         Args:
-            mechanisms_dir (str): directory to which the mechanisms have to be
-                copied (has to be a subdirectory of working_dir).
+            emodel (str): name of the emodel, has to match the emodel under
+                which the data are stored.
+            species (str): name of the species.
+            db_api (str): name of the API used to access the data, can be "sql",
+                "nexus" or "singlecell".
+            working_dir (str): path of the directory in which the operations
+                will be performed (has to be a subdirectory of working_dir).
+            mechanisms_dir (str): path of the directory in which the mechanisms
+                will be copied and/or compiled.
+            recipes_path (str): path of the recipes.json, only needed if
+                db_api="singlecell".
+            project_name (str): name of the project, only needed if db_api="sql".
+            final_path (str): path to the final.json in which optimized emodels
+                are stored, only needed if db_api="singlecell".
+            forge_path (str): path to the .yml used to connect to Nexus Forge,
+                only needed if db_api="nexus".
+            morphology_modifiers (list): list of python functions that will be
+                applied to all the morphologies.
 
         """
 
@@ -152,6 +169,7 @@ class EModel_pipeline:
         if forge_path is None and self.db_api == "nexus":
             raise Exception("If using DB API 'sqnexusl', argument forge_path has to be defined.")
 
+        self.morphology_modifiers = morphology_modifiers
         self.mechanisms_dir = mechanisms_dir
         self.recipes_path = recipes_path
         self.working_dir = working_dir
@@ -176,6 +194,7 @@ class EModel_pipeline:
         copy_mechanisms=False,
         compile_mechanisms=False,
         include_validation_protocols=False,
+        additional_protocols=None,
     ):
         """Create an evaluator for the emodel.
 
@@ -186,6 +205,7 @@ class EModel_pipeline:
                 directory.
             include_validation_protocols (bool): should the validation protocols
                 and efeatures be added to the evaluator
+            additional_protocols (dict): dictionary of definition of supplementary protocols.
 
         Returns:
             MultiEvaluator
@@ -208,7 +228,8 @@ class EModel_pipeline:
         protocols = db.get_protocols(self.emodel, self.species, include_validation_protocols)
         if not (protocols):
             raise Exception("No protocols for emodel %s" % self.emodel)
-
+        if additional_protocols:
+            protocols.update(additional_protocols)
         db.close()
 
         if copy_mechanisms:
@@ -225,6 +246,7 @@ class EModel_pipeline:
             morphologies=morphologies,
             mechanisms=mechanisms,
             parameters=parameters,
+            morph_modifiers=self.morphology_modifiers,
         )
 
         return evaluator.create_evaluators(
@@ -377,7 +399,7 @@ class EModel_pipeline:
         scores = dict(zip(feature_names, best_model.fitness.values))
         params = dict(zip(param_names, best_model))
 
-        db.store_model(
+        db.store_emodel(
             self.emodel,
             scores,
             params,
@@ -424,7 +446,7 @@ class EModel_pipeline:
                 mo["scores"] = dict(s)
                 validated = validation_function(mo)
 
-                db.store_model(
+                db.store_emodel(
                     emodel=self.emodel,
                     species=self.species,
                     scores=mo["scores"],
@@ -442,15 +464,20 @@ class EModel_pipeline:
         stochasticity=False,
         copy_mechanisms=False,
         compile_mechanisms=False,
+        additional_protocols=None,
     ):
         """Return the responses of the optimisation and validation protocols."""
         # map_function = optimisation.ipyparallel_map_function("USEIPYP")
+
+        if additional_protocols is None:
+            additional_protocols = {}
 
         _evaluator = self.get_evaluator(
             stochasticity=stochasticity,
             copy_mechanisms=copy_mechanisms,
             compile_mechanisms=compile_mechanisms,
             include_validation_protocols=True,
+            additional_protocols=additional_protocols,
         )
 
         db = self.connect_db()
@@ -486,19 +513,25 @@ class EModel_pipeline:
         stochasticity=False,
         copy_mechanisms=False,
         compile_mechanisms=False,
+        additional_protocols=None,
     ):
         """Plot the traces and scores for all the models of this emodel."""
+        if additional_protocols is None:
+            additional_protocols = {}
+
         _evaluator = self.get_evaluator(
             stochasticity=stochasticity,
             copy_mechanisms=copy_mechanisms,
             compile_mechanisms=compile_mechanisms,
             include_validation_protocols=True,
+            additional_protocols=additional_protocols,
         )
 
         emodels = self.compute_responses(
             stochasticity=stochasticity,
             copy_mechanisms=copy_mechanisms,
             compile_mechanisms=compile_mechanisms,
+            additional_protocols=additional_protocols,
         )
 
         stimuli = _evaluator.evaluators[0].fitness_protocols["main_protocol"].subprotocols()

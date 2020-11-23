@@ -100,17 +100,16 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
                 holding = response
 
     fig, axs = plt.subplots(
-        len(traces_name), 1, figsize=(10, 2 + (1.5 * len(traces_name))), squeeze=False
+        len(traces_name), 1, figsize=(10, 2 + (1.6 * len(traces_name))), squeeze=False
     )
 
     axs_c = []
     for idx, t in enumerate(sorted(traces_name)):
 
-        # Plot voltage
-        axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
-
         axs[idx, 0].set_title(t)
 
+        # Plot voltage
+        axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
         axs[idx, 0].set_xlabel("Time (ms)")
         axs[idx, 0].set_ylabel("Voltage (mV)")
 
@@ -118,30 +117,21 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
         basename = t.split(".")[0]
         if basename in stimuli:
 
-            stim = stimuli[basename]
+            if hasattr(stimuli[basename], "stimulus"):
 
-            axs_c.append(axs[idx, 0].twinx())
-            axs_c[-1].set_xlabel("Time (ms)")
-            axs_c[-1].set_ylabel("Current (pA)")
+                if hasattr(stimuli[basename], "thresh_perc") and threshold and holding:
+                    stimuli[basename].stimulus.step_amplitude = threshold * (
+                        float(stimuli[basename].thresh_perc) / 100.0
+                    )
+                    stimuli[basename].stimulus.holding_current = holding
 
-            if hasattr(stim, "thresh_perc") and threshold and holding:
+                axs_c.append(axs[idx, 0].twinx())
+                axs_c[-1].set_xlabel("Time (ms)")
+                axs_c[-1].set_ylabel("Current (pA)")
 
-                amp = holding + threshold * (float(stim.thresh_perc) / 100.0)
-
-                ton = stim.step_stimulus.step_delay
-                toff = stim.step_stimulus.step_delay + stim.step_stimulus.step_duration
-                tend = stim.step_stimulus.total_duration
-
-                axs_c[-1].plot([0.0, ton], [holding, holding], color="gray", alpha=0.6)
-                axs_c[-1].plot([ton, ton], [holding, amp], color="gray", alpha=0.6)
-                axs_c[-1].plot([ton, toff], [amp, amp], color="gray", alpha=0.6)
-                axs_c[-1].plot([toff, toff], [amp, holding], color="gray", alpha=0.6)
-                axs_c[-1].plot([toff, tend], [holding, holding], color="gray", alpha=0.6)
-
-                axs_c[-1].set_ylim(min(holding, amp) - 0.2, max(holding, amp) + 0.2)
-
-            else:
-                pass
+                time, current = stimuli[basename].stimulus.generate()
+                axs_c[-1].plot(time, current, color="gray", alpha=0.6)
+                axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
 
         idx += 1
 

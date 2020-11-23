@@ -177,19 +177,9 @@ class Singlecell_API(DatabaseAPI):
                 continue
 
             if prot_name == "Rin":
-
-                protocols_out["RinHoldCurrent"] = {
-                    "type": "RinHoldCurrent",
-                    "stimuli": {
-                        "step": prot["stimuli"]["step"],
-                        "holding": {
-                            "delay": 0,
-                            "amp": None,
-                            "duration": prot["stimuli"]["holding"]["duration"],
-                            "totduration": prot["stimuli"]["holding"]["totduration"],
-                        },
-                    },
-                }
+                stim_def = prot["stimuli"]["step"]
+                stim_def["holding_current"] = None
+                protocols_out["RinHoldCurrent"] = {"type": "RinHoldCurrent", "stimuli": stim_def}
 
             elif prot_name == "RMP":
                 # The name_rmp_protocol is used only for the efeatures, the
@@ -197,23 +187,18 @@ class Singlecell_API(DatabaseAPI):
                 protocols_out["RMP"] = {
                     "type": "RMP",
                     "stimuli": {
-                        "step": {
-                            "delay": 250,
-                            "amp": 0,
-                            "duration": 400,
-                            "totduration": 650,
-                        },
-                        "holding": {
-                            "delay": 0,
-                            "amp": 0,
-                            "duration": 650,
-                            "totduration": 650,
-                        },
+                        "delay": 250,
+                        "amp": 0,
+                        "duration": 400,
+                        "totduration": 650,
+                        "holding_current": 0.0,
                     },
                 }
 
-            elif prot["type"] == "StepThresholdProtocol":
-                protocols_out[prot_name] = prot
+            elif prot["type"] in ["StepThresholdProtocol", "StepProtocol"]:
+                stim_def = prot["stimuli"]["step"]
+                stim_def["holding_current"] = prot["stimuli"]["step"]["amp"]
+                protocols_out[prot_name] = {"type": prot["type"], "stimuli": stim_def}
 
         return protocols_out
 
@@ -236,6 +221,7 @@ class Singlecell_API(DatabaseAPI):
 
         """
         efeatures = self._get_json(emodel, "features")
+        protocols = self._get_json(emodel, "protocol")
 
         efeatures_out = {
             "RMP": {"soma.v": []},
@@ -246,6 +232,10 @@ class Singlecell_API(DatabaseAPI):
         for prot_name in efeatures:
             for loc in efeatures[prot_name]:
                 for efeat in efeatures[prot_name][loc]:
+
+                    if "bAP" in prot_name:
+                        efeat["stim_start"] = protocols[prot_name]["stimuli"]["step"]["delay"]
+                        efeat["stim_end"] = protocols[prot_name]["stimuli"]["step"]["totduration"]
 
                     # Put Rin and RinHoldCurrent together
                     if prot_name == "Rin":
