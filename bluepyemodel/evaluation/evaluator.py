@@ -7,69 +7,26 @@ import numpy
 import bluepyopt
 import bluepyopt.ephys as ephys
 from bluepyopt.ephys.efeatures import eFELFeature
-from bluepyopt.ephys.objectives import EFeatureObjective
+from bluepyopt.ephys.objectives import SingletonObjective
 
 from .protocols import (
     MainProtocol,
     RMPProtocol,
-    SearchRinHoldingCurrent,
+    RinProtocol,
+    SearchHoldingCurrent,
     SearchThresholdCurrent,
     StepProtocol,
     StepThresholdProtocol,
 )
 from ..ecode import eCodes
 
-# pylint: disable=R1702,R1705
+# pylint: disable=R0914,R1702,R1705,E1101
 
 logger = logging.getLogger(__name__)
 
 soma_loc = ephys.locations.NrnSeclistCompLocation(
     name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5
 )
-
-
-class NrnSomaDistanceCompLocation(ephys.locations.NrnSomaDistanceCompLocation):
-    """Custom class for distance to soma computation."""
-
-    def instantiate(self, sim=None, icell=None):
-        """Find the instantiate compartment"""
-
-        soma = icell.soma[0]
-
-        sim.neuron.h.distance(0, 0.5, sec=soma)
-
-        iseclist = getattr(icell, self.seclist_name)
-
-        icomp = None
-
-        for isec in iseclist:
-            start_distance = sim.neuron.h.distance(1, 0.0, sec=isec)
-            end_distance = sim.neuron.h.distance(1, 1.0, sec=isec)
-
-            min_distance = min(start_distance, end_distance)
-            max_distance = max(start_distance, end_distance)
-
-            if min_distance <= self.soma_distance <= end_distance:
-                comp_x = float(self.soma_distance - min_distance) / (max_distance - min_distance)
-
-                icomp = isec(comp_x)
-                seccomp = isec
-                break
-
-        if icomp is None:
-            raise ephys.locations.EPhysLocInstantiateException(
-                "No comp found at %s distance from soma" % self.soma_distance
-            )
-
-        logger.debug(
-            "Using %s at distance %f, nseg %f, length %f",
-            icomp,
-            sim.neuron.h.distance(1, comp_x, sec=seccomp),
-            seccomp.nseg,
-            end_distance - start_distance,
-        )
-
-        return icomp
 
 
 class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocation):
@@ -89,12 +46,14 @@ class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocat
 
     def instantiate(self, sim=None, icell=None):
         """Find the instantiate compartment"""
+
         if self.apical_point_isec is None:
             raise ephys.locations.EPhysLocInstantiateException("No apical point was given")
 
         apical_branch = []
         section = icell.apic[self.apical_point_isec]
         while True:
+
             name = str(section.name()).split(".")[-1]
             if name == "soma[0]":
                 break
@@ -114,6 +73,7 @@ class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocat
         icomp = None
 
         for isec in apical_branch:
+
             start_distance = sim.neuron.h.distance(1, 0.0, sec=isec)
             end_distance = sim.neuron.h.distance(1, 1.0, sec=isec)
 
@@ -121,6 +81,7 @@ class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocat
             max_distance = max(start_distance, end_distance)
 
             if min_distance <= self.soma_distance <= end_distance:
+
                 comp_x = float(self.soma_distance - min_distance) / (max_distance - min_distance)
 
                 icomp = isec(comp_x)
@@ -228,7 +189,7 @@ class MultiEvaluator(bluepyopt.evaluators.Evaluator):
         return content
 
 
-class eFELFeatureExtra(eFELFeature):
+class eFELFeatureBPEM(eFELFeature):
 
     """eFEL feature extra"""
 
@@ -253,7 +214,6 @@ class eFELFeatureExtra(eFELFeature):
         stim_end=None,
         exp_mean=None,
         exp_std=None,
-        exp_vals=None,
         threshold=None,
         stimulus_current=None,
         comment="",
@@ -291,43 +251,33 @@ class eFELFeatureExtra(eFELFeature):
             interp_step,
             double_settings,
             int_settings,
+            max_score=250,
         )
 
-        extra_features = [
-            "spikerate_tau_jj_skip",
-            "spikerate_drop_skip",
-            "spikerate_tau_log_skip",
-            "spikerate_tau_fit_skip",
-        ]
-
-        if self.efel_feature_name in extra_features:
-            self.extra_feature_name = self.efel_feature_name
-            self.efel_feature_name = "peak_time"
-        else:
-            self.extra_feature_name = None
-
-        self.exp_vals = exp_vals
-
-    def get_bpo_feature(self, responses):
+    def calculate_bpo_feature(self, responses):
         """Return internal feature which is directly passed as a response"""
 
         if self.efel_feature_name not in responses:
             return None
+
         return responses[self.efel_feature_name]
 
-    def get_bpo_score(self, responses):
-        """Return internal score which is directly passed as a response"""
+    def calculate_bpo_score(self, responses):
+        """Return score for bpo feature"""
 
-        feature_value = self.get_bpo_feature(responses)
+        feature_value = self.calculate_bpo_feature(responses)
+
         if feature_value is None:
-            return 250.0
+            return self.max_score
+
         return abs(feature_value - self.exp_mean) / self.exp_std
 
     def calculate_features(self, responses, raise_warnings=False):
         """Calculate feature value"""
 
-        if self.efel_feature_name.startswith("bpo_"):  # check if internal feature
-            feature_values = numpy.array(self.get_bpo_feature(responses))
+        if self.efel_feature_name.startswith("bpo_"):
+            feature_values = numpy.array(self.calculate_bpo_feature(responses))
+
         else:
             efel_trace = self._construct_efel_trace(responses)
 
@@ -355,9 +305,8 @@ class eFELFeatureExtra(eFELFeature):
     def calculate_score(self, responses, trace_check=False):
         """Calculate the score"""
 
-        # check if internal feature
         if self.efel_feature_name.startswith("bpo_"):
-            score = self.get_bpo_score(responses)
+            score = self.calculate_bpo_score(responses)
 
         elif self.exp_mean is None:
             score = 0
@@ -366,7 +315,7 @@ class eFELFeatureExtra(eFELFeature):
 
             feature_values = self.calculate_features(responses)
             if (feature_values is None) or (len(feature_values) == 0):
-                score = 250.0
+                score = self.max_score
             else:
                 score = (
                     numpy.sum(numpy.fabs(feature_values - self.exp_mean))
@@ -375,47 +324,18 @@ class eFELFeatureExtra(eFELFeature):
                 )
                 logger.debug("Calculated score for %s: %f", self.name, score)
 
-            score = numpy.min([score, 250.0])
+            score = numpy.min([score, self.max_score])
+
         return score
 
 
-class SingletonWeightObjective(EFeatureObjective):
-
-    """Single EPhys feature"""
-
-    def __init__(self, name, feature, weight):
-        """Constructor
-
-        Args:
-            name (str): name of this object
-            feature (EFeature): single eFeature inside this objective
-            weight ():
-        """
-
-        super().__init__(name, [feature])
-        self.weight = weight
-
-    def calculate_score(self, responses):
-        """Objective score"""
-
-        return self.calculate_feature_scores(responses)[0] * self.weight
-
-    def __str__(self):
-        """String representation"""
-
-        return "( %s ), weight:%f" % (self.features[0], self.weight)
-
-
-def get_features_by_name(list_features, name):
-    """Get a feature from its name/"""
-    for feature in list_features:
-        if feature["feature"] == name:
-            return feature
-    return None
-
-
 def define_feature(
-    feature_definition, stim_start, stim_end, stim_amp, protocol_name, recording_name
+    feature_definition,
+    stim_start=None,
+    stim_end=None,
+    stim_amp=None,
+    protocol_name=None,
+    recording_name=None,
 ):
     """Create a feature.
 
@@ -442,7 +362,11 @@ def define_feature(
         recording_name,
         efel_feature_name,
     )
-    recording_names = {"": "%s.%s" % (protocol_name, recording_name)}
+
+    if protocol_name:
+        recording_names = {"": "%s.%s" % (protocol_name, recording_name)}
+    else:
+        recording_names = {"": recording_name}
 
     if "strict_stim" in feature_definition:
         strict_stim = feature_definition["strict_stim"]
@@ -454,7 +378,7 @@ def define_feature(
     else:
         threshold = -30
 
-    feature = eFELFeatureExtra(
+    feature = eFELFeatureBPEM(
         feature_name,
         efel_feature_name=efel_feature_name,
         recording_names=recording_names,
@@ -462,7 +386,6 @@ def define_feature(
         stim_end=stim_end,
         exp_mean=meanstd[0],
         exp_std=meanstd[1],
-        exp_vals=meanstd,
         stimulus_current=stim_amp,
         threshold=threshold,
         int_settings={"strict_stiminterval": strict_stim},
@@ -503,7 +426,7 @@ def define_protocol(
     if "extra_recordings" in protocol_definition:
         for recording_definition in protocol_definition["extra_recordings"]:
             if recording_definition["type"] == "somadistance":
-                location = NrnSomaDistanceCompLocation(
+                location = ephys.locations.NrnSomaDistanceCompLocation(
                     name=recording_definition["name"],
                     soma_distance=recording_definition["somadistance"],
                     seclist_name=recording_definition["seclist_name"],
@@ -564,128 +487,140 @@ def define_protocol(
             stochasticity=stochasticity,
         )
 
-    elif protocol_definition["type"] == "RMP":
-        protocol = RMPProtocol(
-            name=name,
-            stimulus=stimulus,
-            recordings=recordings,
-            stochasticity=stochasticity,
-        )
-        protocol.stimulus.step_amplitude = 0.0
-        return protocol
-
-    elif protocol_definition["type"] == "RinHoldCurrent":
-        protocol = StepProtocol(
-            name=name,
-            stimulus=stimulus,
-            recordings=recordings,
-            stochasticity=stochasticity,
-        )
-        protocol.stimulus.total_duration += 100.0
-        return SearchRinHoldingCurrent(name="SearchRinHoldingCurrent", protocol=protocol)
-
     else:
         raise Exception('Protocol type "{}" unknown.'.format(protocol_definition["type"]))
 
 
-def define_main_protocol(protocols_definition, features_definition, stochasticity=True):
-    """Create the MainProtocol and the list of efeatures to use as objectives.
+def get_features_by_name(list_features, name):
+    """Get a feature from its name/"""
 
-    Args:
-        protocols_definition (dict): in the following format. The "type" field
-            of a protocol should be "StepProtocol".
-            protocols_definition = {
-                "Rin": {
-                    "type": "StepProtocol",
-                    "stimuli": {
-                        "delay": 700,
-                        "amp": -0.1097239395382074,
-                        "thresh_perc": -41,
-                        "duration": 1000,
-                        "totduration": 3800,
-                        "holding_current": null
-                    }
-                }
-            }
+    for feature in list_features:
+        if feature["feature"] == name:
+            return feature
 
-        (dict): of the form
-            features_definition =  {
-                "APWaveform_200": {
-                    "soma.v": [
-                        {
-                            "feature": "Spikecount",
-                            "val": [1.64, 0.71],
-                            "strict_stim":True,
-                            ""
-                        },
-                        {
-                            "feature": "AHP_depth",
-                            "val": [19.67, 4.74],
-                            "strict_stim": true,
-                            "stim_start": 100.,
-                            "stim_end": 200.
-                        }
-                }
-            }
-        stochasticity (bool): Should the stochastic channels be stochastic or
-            deterministic
+    return None
 
-    Returns:
 
-    """
-    other_protocols = {}
-    features = []
+def define_RMP_protocol(features_definition):
+    """Define the resting membrane potential protocol"""
 
-    for name, definition in protocols_definition.items():
-
-        protocol = define_protocol(name, definition, stochasticity)
-
-        if definition["type"] in ["StepThresholdProtocol", "RMP", "RinHoldCurrent"]:
-            logger.warning(
-                "Protocol of type %s in none-threshold" " based evaluator will be ignored",
-                definition["type"],
-            )
-        elif definition["type"] == "StepProtocol":
-            other_protocols[name] = protocol
-        else:
-            raise Exception('Protocol type "{}" unknown.'.format(definition["type"]))
-
-        # Define the efeatures associated to the protocol
-        if name in features_definition:
-
-            f_definition = features_definition[name]
-            for recording_name, feature_configs in f_definition.items():
-
-                for f in feature_configs:
-
-                    stim_amp = protocol.step_amplitude
-
-                    if "stim_start" and "stim_end" in f:
-                        stim_start = f["stim_start"]
-                        stim_end = f["stim_end"]
-                    else:
-                        stim_start = protocol.stim_start
-                        stim_end = protocol.stim_end
-
-                    feature = define_feature(
-                        f, stim_start, stim_end, stim_amp, protocol.name, recording_name
-                    )
-                    features.append(feature)
-
-    main_protocol = MainProtocol(
-        name="Main",
-        rmp_protocol=None,
-        holding_rin_protocol=None,
-        search_threshold_protocol=None,
-        threshold_protocols=None,
-        other_protocols=other_protocols,
-        score_threshold=None,
+    feature_def = get_features_by_name(
+        features_definition["RMPProtocol"]["soma.v"], "steady_state_voltage_stimend"
     )
 
-    return main_protocol, features
+    if feature_def:
+
+        target_voltage = define_feature(
+            feature_def,
+            protocol_name="RMPProtocol",
+            recording_name="soma.v",
+        )
+
+        protocol = RMPProtocol(name="RMPProtocol", location=soma_loc, target_voltage=target_voltage)
+
+        return protocol, [target_voltage]
+
+    logger.debug(
+        "steady_state_voltage_stimend not present in the feature_definition"
+        " dictionnary for RMPProtocol"
+    )
+
+    return None, []
 
 
-def define_threshold_main_protocol(  # pylint: disable=R0912,R0915
+def define_Rin_protocol(features_definition):
+    """Define the Rin protocol"""
+
+    feature_def = get_features_by_name(
+        features_definition["RinProtocol"]["soma.v"], "ohmic_input_resistance_vb_ssse"
+    )
+
+    if feature_def:
+
+        target_rin = define_feature(
+            feature_def,
+            protocol_name="RinProtocol",
+            recording_name="soma.v",
+        )
+
+        protocol = RinProtocol(name="RinProtocol", location=soma_loc, target_rin=target_rin)
+
+        return protocol, [target_rin]
+
+    logger.debug(
+        "ohmic_input_resistance_vb_ssse not present in the feature_definition"
+        " dictionnary for RinProtocol"
+    )
+    return None, []
+
+
+def define_holding_protocol(features_definition):
+    """Define the search holdinf current protocol"""
+    def_holding_voltage = get_features_by_name(
+        features_definition["SearchHoldingCurrent"]["soma.v"], "steady_state_voltage_stimend"
+    )
+    def_holding_current = get_features_by_name(
+        features_definition["SearchHoldingCurrent"]["soma.v"], "bpo_holding_current"
+    )
+
+    if def_holding_voltage and def_holding_current:
+
+        target_holding_voltage = define_feature(
+            def_holding_voltage,
+            protocol_name="SearchHoldingCurrent",
+            recording_name="soma.v",
+        )
+        target_holding_current = define_feature(
+            def_holding_current,
+            protocol_name="",
+            recording_name="bpo_holding_current",
+        )
+
+        protocol = SearchHoldingCurrent(
+            name="SearchHoldingCurrent",
+            location=soma_loc,
+            target_voltage=target_holding_voltage,
+            target_holding=target_holding_current,
+        )
+
+        return protocol, [target_holding_current]
+
+    logger.debug(
+        "steady_state_voltage_stimend or bpo_holding_current not present"
+        " in the feature_definition dictionnary for SearchHoldingCurrent"
+    )
+    return None, []
+
+
+def define_threshold_protocol(features_definition):
+    """Define the search threshold current protocol"""
+
+    feature_def = get_features_by_name(
+        features_definition["SearchThresholdCurrent"]["soma.v"], "bpo_threshold_current"
+    )
+
+    if feature_def:
+
+        target_threshold = define_feature(
+            feature_def,
+            protocol_name="",
+            recording_name="bpo_threshold_current",
+        )
+
+        protocol = SearchThresholdCurrent(
+            name="SearchThresholdCurrent", location=soma_loc, target_threshold=target_threshold
+        )
+
+        return protocol, [target_threshold]
+
+    logger.debug(
+        "bpo_threshold_current not present in the feature_definition dictionnary"
+        " for SearchThresholdCurrent"
+    )
+    return None, []
+
+
+def define_main_protocol(  # pylint: disable=R0912,R0915
     protocols_definition, features_definition, stochasticity=True
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
@@ -704,10 +639,6 @@ def define_threshold_main_protocol(  # pylint: disable=R0912,R0915
     Returns:
 
     """
-    rmp_protocol = None
-    holding_rin_protocol = None
-    search_threshold_protocol = None
-
     threshold_protocols = {}
     other_protocols = {}
     features = []
@@ -720,10 +651,6 @@ def define_threshold_main_protocol(  # pylint: disable=R0912,R0915
             threshold_protocols[name] = protocol
         elif definition["type"] == "StepProtocol":
             other_protocols[name] = protocol
-        elif definition["type"] == "RMP":
-            rmp_protocol = protocol
-        elif definition["type"] == "RinHoldCurrent":
-            holding_rin_protocol = protocol
         else:
             raise Exception('Protocol type "{}" unknown.'.format(definition["type"]))
 
@@ -751,54 +678,22 @@ def define_threshold_main_protocol(  # pylint: disable=R0912,R0915
                     )
                     features.append(feature)
 
-                    if definition["type"] == "RinHoldCurrent":
-                        if feature.efel_feature_name == "voltage_base":
-                            holding_rin_protocol.target_voltage = feature
-                        elif feature.efel_feature_name == "ohmic_input_resistance_vb_ssse":
-                            holding_rin_protocol.target_Rin = feature
-                        elif feature.efel_feature_name == "bpo_holding_current":
-                            holding_rin_protocol.target_current = feature
+    rmp_protocol, rmp_features = define_RMP_protocol(features_definition)
+    rin_protocol, rin_features = define_Rin_protocol(features_definition)
+    search_holding_protocol, hold_features = define_holding_protocol(features_definition)
+    search_threshold_protocol, thres_features = define_threshold_protocol(features_definition)
 
-                    elif definition["type"] == "RMP":
-                        if feature.efel_feature_name == "voltage_base":
-                            rmp_protocol.target_voltage = feature
-
-    if holding_rin_protocol or rmp_protocol:
-        assert rmp_protocol.target_voltage
-        assert holding_rin_protocol
-        assert rmp_protocol
-        assert holding_rin_protocol.target_voltage
-        assert holding_rin_protocol.target_Rin
-
-    # Define the search for the threshold current
-    if holding_rin_protocol and rmp_protocol:
-
-        feature_def = get_features_by_name(
-            features_definition["Threshold"]["soma.v"], "bpo_threshold_current"
-        )
-        threshold = define_feature(
-            feature_def,
-            stim_start=0,
-            stim_end=0,
-            stim_amp=0,
-            protocol_name="",
-            recording_name="threshold_current",
-        )
-        features.append(threshold)
-
-        # Define the protocol searching for the spiking current
-        search_threshold_protocol = SearchThresholdCurrent(
-            name="SearchThreshold", location=soma_loc, target_threshold=threshold
-        )
+    features += thres_features + hold_features + rin_features + rmp_features
 
     main_protocol = MainProtocol(
-        name="Main",
-        rmp_protocol=rmp_protocol,
-        holding_rin_protocol=holding_rin_protocol,
-        search_threshold_protocol=search_threshold_protocol,
+        "Main",
+        rmp_protocol,
+        rin_protocol,
+        search_holding_protocol,
+        search_threshold_protocol,
         threshold_protocols=threshold_protocols,
         other_protocols=other_protocols,
-        score_threshold=None,
+        score_threshold=10.0,
     )
 
     return main_protocol, features
@@ -813,10 +708,13 @@ def define_fitness_calculator(features):
     Returns:
         ObjectivesCalculator
     """
+
     objectives = []
+
     for feat in features:
-        objective = SingletonWeightObjective(feat.name, feat, weight=1)
+        objective = SingletonObjective(feat.name, feat)
         objectives.append(objective)
+
     return ephys.objectivescalculators.ObjectivesCalculator(objectives)
 
 
@@ -857,23 +755,11 @@ def create_evaluator(
         CellEvaluator
     """
 
-    if "RMP" in protocols_definition and "RinHoldCurrent" in protocols_definition:
-        logger.info("RMP and RinHoldCurrent protocols present, creating threshold based evaluator")
-        main_protocol, features = define_threshold_main_protocol(
-            protocols_definition,
-            features_definition,
-            stochasticity,
-        )
-
-    else:
-        logger.info(
-            "RMP and RinHoldCurrent protocols not present, creating none-threshold based evaluator"
-        )
-        main_protocol, features = define_main_protocol(
-            protocols_definition,
-            features_definition,
-            stochasticity,
-        )
+    main_protocol, features = define_main_protocol(
+        protocols_definition,
+        features_definition,
+        stochasticity,
+    )
 
     fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}
@@ -897,7 +783,9 @@ def create_evaluator(
     return cell_eval
 
 
-def create_evaluators(cell_models, protocols_definition, features_definition, stochasticity=False):
+def create_evaluators(
+    cell_models, protocols_definition, features_definition, stochasticity=False, timeout=None
+):
     """Create a multi-evaluator built from a list of evaluators (one for each
     cell model). The protocols and e-features will be the same for all the
     cell models.
@@ -915,11 +803,7 @@ def create_evaluators(cell_models, protocols_definition, features_definition, st
     simulator = get_simulator(stochasticity, cell_models)
     cell_evals = [
         create_evaluator(
-            cell_model,
-            protocols_definition,
-            features_definition,
-            simulator,
-            stochasticity,
+            cell_model, protocols_definition, features_definition, simulator, stochasticity, timeout
         )
         for cell_model in cell_models
     ]

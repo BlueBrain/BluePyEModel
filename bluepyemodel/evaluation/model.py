@@ -275,6 +275,8 @@ def create_cell_model(
     parameters,
     morph_modifiers=None,
     morph_modifiers_hoc=None,
+    seclist_names=None,
+    secarray_names=None,
 ):
     """Create a cell model based on a morphology, mechanisms and parameters
 
@@ -307,6 +309,8 @@ def create_cell_model(
         morph=morph,
         mechs=mechs,
         params=params,
+        seclist_names=seclist_names,
+        secarray_names=secarray_names,
     )
 
 
@@ -330,6 +334,14 @@ def create_cell_models(emodel, morphologies, mechanisms, parameters, morph_modif
         morph_name = morphology["name"]
         morph_path = Path(morphology["path"])
 
+        seclist_names = None
+        if "seclist_names" in morphology:
+            seclist_names = morphology["seclist_names"]
+
+        secarray_names = None
+        if "secarray_names" in morphology:
+            secarray_names = morphology["secarray_names"]
+
         # Create the cell model
         name = "{}_{}".format(emodel, morph_name)
         cell_models.append(
@@ -339,6 +351,8 @@ def create_cell_models(emodel, morphologies, mechanisms, parameters, morph_modif
                 mechanisms=mechanisms,
                 parameters=parameters,
                 morph_modifiers=morph_modifiers,
+                seclist_names=seclist_names,
+                secarray_names=secarray_names,
             )
         )
 

@@ -62,7 +62,9 @@ def_morphologies = """CREATE TABLE {}_morphologies (
 name text NOT NULL,
 path text NOT NULL,
 emodel VARCHAR (20) NOT NULL,
-species VARCHAR (20) NOT NULL
+species VARCHAR (20) NOT NULL,
+seclist_names text[],
+secarray_names text[]
 );"""
 
 def_optimisation_morphology = """CREATE TABLE {}_optimisation_morphology (

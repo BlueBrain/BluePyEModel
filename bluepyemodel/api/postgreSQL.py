@@ -8,10 +8,9 @@ from psycopg2.extras import Json
 from bluepyemodel.api.databaseAPI import DatabaseAPI
 import bluepyemodel.api.postgreSQL_tables as sql_tables
 
-# pylint: disable=W0231,W0401,W0703,R1702,R0912
-
-
 logger = logging.getLogger("__main__")
+
+# pylint: disable=W0231,W0703
 
 
 class PostgreSQL_API(DatabaseAPI):
@@ -631,35 +630,7 @@ class PostgreSQL_API(DatabaseAPI):
 
             for prot in protocols.to_dict(orient="records"):
 
-                if target["type"] == "RinHoldCurrent":
-
-                    protocols_out["RinHoldCurrent"] = {
-                        "type": "RinHoldCurrent",
-                        "stimuli": {
-                            "delay": delay + prot["definition"]["step"]["delay"],
-                            "amp": prot["definition"]["step"]["amp"],
-                            "thresh_perc": prot["definition"]["step"]["thresh_perc"],
-                            "duration": prot["definition"]["step"]["duration"],
-                            "totduration": delay + prot["definition"]["step"]["totduration"],
-                            "holding_current": None,
-                        },
-                    }
-
-                elif target["type"] == "RMP":
-                    # The name_rmp_protocol is used only for the efeatures, the
-                    # protocol itself is fixed:
-                    protocols_out["RMP"] = {
-                        "type": "RMP",
-                        "stimuli": {
-                            "delay": 250,
-                            "amp": 0,
-                            "duration": 400,
-                            "totduration": 650,
-                            "holding_current": 0,
-                        },
-                    }
-
-                elif target["type"] in ("StepThresholdProtocol", "StepProtocol"):
+                if target["type"] in ("StepThresholdProtocol", "StepProtocol"):
                     stim_def = prot["definition"]["step"]
                     stim_def["holding_current"] = prot["definition"]["holding"]["amp"]
                     protocols_out[prot["name"]] = {"type": target["type"], "stimuli": stim_def}
@@ -684,9 +655,6 @@ class PostgreSQL_API(DatabaseAPI):
             efeatures_out (dict): efeatures definitions
 
         """
-
-        efeatures_out = {}
-
         # Get the optimization targets
         targets = self.fetch(
             table="optimisation_targets",
@@ -713,6 +681,13 @@ class PostgreSQL_API(DatabaseAPI):
         else:
             validation_targets = []
 
+        efeatures_out = {
+            "RMPProtocol": {"soma.v": []},
+            "RinProtocol": {"soma.v": []},
+            "SearchHoldingCurrent": {"soma.v": []},
+            "SearchThresholdCurrent": {"soma.v": []},
+        }
+
         # Get the values for the efeatures matching the targets
         for target in targets + validation_targets:
 
@@ -737,38 +712,44 @@ class PostgreSQL_API(DatabaseAPI):
 
                 for efeat in efeatures.to_dict(orient="records"):
 
-                    if target["type"] == "RMP":
+                    if (
+                        target["type"] == "RinProtocol"
+                        and efeat["name"] == "ohmic_input_resistance_vb_ssse"
+                    ):
+                        efeatures_out["RinProtocol"]["soma.v"].append(
+                            {
+                                "feature": efeat["name"],
+                                "val": [efeat["mean"], efeat["std"]],
+                                "strict_stim": True,
+                            }
+                        )
 
-                        if "RMP" not in efeatures_out:
-                            efeatures_out["RMP"] = {"soma.v": []}
+                    # TODO: If the original amp of the RMP protocol is 0. It can be of:
+                    # steady_state_voltage_stimend, voltage_base, voltage_deflection
+                    elif (
+                        target["type"] == "RMPProtocol"
+                        and efeat["name"] == "steady_state_voltage_stimend"
+                    ):
+                        efeatures_out["RMPProtocol"]["soma.v"].append(
+                            {
+                                "feature": efeat["name"],
+                                "val": [efeat["mean"], efeat["std"]],
+                                "strict_stim": True,
+                            }
+                        )
 
-                        protocol_name = "RMP"
-                        if efeat["name"] == "steady_state_voltage_stimend":
-                            efeatures_out[protocol_name]["soma.v"].append(
-                                {
-                                    "feature": "voltage_base",
-                                    "val": [efeat["mean"], efeat["std"]],
-                                    "strict_stim": True,
-                                }
-                            )
-
-                    elif target["type"] == "RinHoldCurrent":
-
-                        if "RinHoldCurrent" not in efeatures_out:
-                            efeatures_out["RinHoldCurrent"] = {"soma.v": []}
-
-                        protocol_name = "RinHoldCurrent"
-                        if efeat["name"] in (
-                            "voltage_base",
-                            "ohmic_input_resistance_vb_ssse",
-                        ):
-                            efeatures_out["RinHoldCurrent"]["soma.v"].append(
-                                {
-                                    "feature": efeat["name"],
-                                    "val": [efeat["mean"], efeat["std"]],
-                                    "strict_stim": True,
-                                }
-                            )
+                    # TODO: What we need here is the voltage when the cell is holded. Therefore
+                    # it should be a global feature like hypamp and thresh,
+                    # and not associated to a given protocol
+                    elif target["type"] == "RinProtocol" and efeat["name"] == "voltage_base":
+                        efeat["efeature"] = "steady_state_voltage_stimend"
+                        efeatures_out["SearchHoldingCurrent"]["soma.v"].append(
+                            {
+                                "feature": "steady_state_voltage_stimend",
+                                "val": [efeat["mean"], efeat["std"]],
+                                "strict_stim": True,
+                            }
+                        )
 
                     else:
                         protocol_name = efeat["protocol"]
@@ -783,14 +764,14 @@ class PostgreSQL_API(DatabaseAPI):
                             }
                         )
 
-                    # Check if there is a stim_start and stim_end for this feature
-                    if len(target["efeatures"][feat]) > 0:
-                        efeatures_out[protocol_name]["soma.v"][-1]["stim_start"] = target[
-                            "efeatures"
-                        ][feat][0]
-                        efeatures_out[protocol_name]["soma.v"][-1]["stim_end"] = target[
-                            "efeatures"
-                        ][feat][1]
+                        # Check if there is a stim_start and stim_end for this feature
+                        if len(target["efeatures"][feat]) > 0:
+                            efeatures_out[protocol_name]["soma.v"][-1]["stim_start"] = target[
+                                "efeatures"
+                            ][feat][0]
+                            efeatures_out[protocol_name]["soma.v"][-1]["stim_end"] = target[
+                                "efeatures"
+                            ][feat][1]
 
         # Get the hypamp and thresh currents
         efeatures = self.fetch(
@@ -808,12 +789,9 @@ class PostgreSQL_API(DatabaseAPI):
         else:
 
             for efeat in efeatures.to_dict(orient="records"):
+
                 if efeat["name"] == "hypamp":
-
-                    if "RinHoldCurrent" not in efeatures_out:
-                        efeatures_out["RinHoldCurrent"] = {"soma.v": []}
-
-                    efeatures_out["RinHoldCurrent"]["soma.v"].append(
+                    efeatures_out["SearchHoldingCurrent"]["soma.v"].append(
                         {
                             "feature": "bpo_holding_current",
                             "val": [efeat["mean"], efeat["std"]],
@@ -821,11 +799,7 @@ class PostgreSQL_API(DatabaseAPI):
                     )
 
                 elif efeat["name"] == "thresh":
-
-                    if "Threshold" not in efeatures_out:
-                        efeatures_out["Threshold"] = {"soma.v": []}
-
-                    efeatures_out["Threshold"]["soma.v"].append(
+                    efeatures_out["SearchThresholdCurrent"]["soma.v"].append(
                         {
                             "feature": "bpo_threshold_current",
                             "val": [efeat["mean"], efeat["std"]],

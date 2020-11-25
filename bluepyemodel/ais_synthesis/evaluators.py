@@ -7,9 +7,8 @@ from functools import partial
 from hashlib import sha256
 from pathlib import Path
 
-from ..evaluation.evaluator import create_evaluator
+from ..evaluation.evaluator import create_evaluator, define_main_protocol
 from ..evaluation.model import create_cell_model
-from ..evaluation.protocols import SearchRinHoldingCurrent
 from ..evaluation.modifiers import (
     isolate_axon,
     remove_axon,
@@ -19,7 +18,6 @@ from ..evaluation.modifiers import (
 from .tools.evaluator import evaluate_combos
 
 logger = logging.getLogger(__name__)
-RIN_RESPONSE = "rin_noholding"  # "rin_holding" or "rin_noholding"
 
 
 def _get_synth_modifiers(combo, morph_modifiers=None):
@@ -163,28 +161,6 @@ def get_emodel_data(
     return cell, protocols, features, emodel_params
 
 
-def run_custom(self, cell_model, param_values, rmp, sim=None, isolate=None, timeout=None):
-    """Run function for SearchRinHoldingCurrent that saves rin_holding and rin_noholding."""
-    # Calculate Rin without holding current
-    protocol = self.create_protocol(holding_current=0.0)
-    response = protocol.run(cell_model, param_values, sim, isolate, timeout=timeout)
-    rin = self.target_Rin.calculate_feature(response)
-
-    holding_current = self.search_holding_current(cell_model, param_values, rmp, rin, sim, isolate)
-    if holding_current is None:
-        return None
-
-    # Return the response of the final estimate of the holding current
-    protocol = self.create_protocol(holding_current=holding_current)
-    response = protocol.run(cell_model, param_values, sim, isolate, timeout=timeout)
-    rin_holding = self.target_Rin.calculate_feature(response)
-    response["bpo_holding_current"] = holding_current
-    response["rin_noholding"] = rin
-    response["rin_holding"] = rin_holding
-
-    return response
-
-
 def _rin_evaluation(
     combo,
     emodel_db,
@@ -197,30 +173,32 @@ def _rin_evaluation(
 ):
     """Evaluating rin protocol."""
 
-    cell, protocols, features, emodel_params = get_emodel_data(
+    cell_model, _, features, emodel_params = get_emodel_data(
         emodel_db, combo, morphology_path, morph_modifiers
     )
+    main_protocol, features = define_main_protocol({}, features, stochasticity)
 
-    _evaluator = create_evaluator(
-        cell_model=cell,
-        protocols_definition={prot: protocols[prot] for prot in ["RMP", "RinHoldCurrent"]},
-        features_definition=features,
-        stochasticity=stochasticity,
-        timeout=timeout,
-    )
-    _evaluator.fitness_protocols[
-        "main_protocol"
-    ].Rin_protocol.run = run_custom.__get__(  # pylint: disable=E1120
-        _evaluator.fitness_protocols["main_protocol"].Rin_protocol,
-        SearchRinHoldingCurrent,
-    )
-    responses = _evaluator.run_protocols(_evaluator.fitness_protocols.values(), emodel_params)
+    cell_model.freeze(emodel_params)
+
     if with_currents:
+        responses = {}
+        for pre_run in [
+            main_protocol.run_RMP,
+            main_protocol.run_holding,
+            main_protocol.run_rin,
+            main_protocol.run_threshold,
+        ]:
+            responses.update(pre_run(cell_model, responses, timeout=timeout)[0])
+
+        cell_model.unfreeze(emodel_params.keys())
         return {
             key + "holding_current": responses["bpo_holding_current"],
             key + "threshold_current": responses["bpo_threshold_current"],
         }
-    return {key: responses[RIN_RESPONSE]}
+
+    responses = main_protocol.run_rin(cell_model, {})[0]
+    cell_model.unfreeze(emodel_params.keys())
+    return {key: responses["bpo_rin"]}
 
 
 def evaluate_ais_rin(
@@ -439,6 +417,7 @@ def evaluate_currents(
         pandas.DataFrame: original combos with computed rin of ais
     """
     key = ""
+
     current_evaluation = partial(
         _rin_evaluation,
         emodel_db=emodel_db,
@@ -446,6 +425,7 @@ def evaluate_currents(
         morphology_path=morphology_path,
         with_currents=True,
     )
+
     return evaluate_combos(
         morphs_combos_df,
         current_evaluation,

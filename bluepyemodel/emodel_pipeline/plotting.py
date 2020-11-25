@@ -89,15 +89,24 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
     traces_name = []
     threshold = None
     holding = None
+    rmp = None
+    rin = None
+
     for resp_name, response in responses.items():
 
         if not (isinstance(response, float)):
             traces_name.append(resp_name)
+
         else:
-            if "threshold" in resp_name:
+
+            if resp_name == "bpo_threshold_current":
                 threshold = response
-            elif "holding" in resp_name:
+            elif resp_name == "bpo_holding_current":
                 holding = response
+            elif resp_name == "bpo_rmp":
+                rmp = response
+            elif resp_name == "bpo_rin":
+                rin = response
 
     fig, axs = plt.subplots(
         len(traces_name), 1, figsize=(10, 2 + (1.6 * len(traces_name))), squeeze=False
@@ -127,7 +136,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
 
                 axs_c.append(axs[idx, 0].twinx())
                 axs_c[-1].set_xlabel("Time (ms)")
-                axs_c[-1].set_ylabel("Current (pA)")
+                axs_c[-1].set_ylabel("Current (nA)")
 
                 time, current = stimuli[basename].stimulus.generate()
                 axs_c[-1].plot(time, current, color="gray", alpha=0.6)
@@ -136,16 +145,23 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
         idx += 1
 
     title = str(model["emodel"])
+
     if threshold:
-        title += " ; Threshold current = {:.4f} pA".format(threshold)
+        title += "\n Threshold current = {:.4f} nA".format(threshold)
     if holding:
-        title += " ; Holding current = {:.4f} pA".format(holding)
+        title += " ; Holding current = {:.4f} nA".format(holding)
+    if rmp:
+        title += "\n Resting membrane potential = {:.2f} mV".format(rmp)
+    if rin:
+        title += " ; Input Resistance = {:.2f} MOhm".format(rin)
+
     fig.suptitle(title)
 
     figure_name = "{}_{}_traces.pdf".format(
         model["emodel"],
         model["seed"],
     )
+
     plt.tight_layout()
     save_fig(figures_dir, figure_name)
 

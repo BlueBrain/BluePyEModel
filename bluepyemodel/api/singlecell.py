@@ -1,6 +1,7 @@
 """API to get data from Singlecell-like repositories."""
 import json
 import logging
+
 from pathlib import Path
 
 from bluepyemodel.api.databaseAPI import DatabaseAPI
@@ -173,29 +174,10 @@ class Singlecell_API(DatabaseAPI):
         protocols_out = {}
         for prot_name, prot in protocols.items():
 
-            if prot_name in ("Main", "RinHoldcurrent", "ThresholdDetection"):
+            if prot_name in ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]:
                 continue
 
-            if prot_name == "Rin":
-                stim_def = prot["stimuli"]["step"]
-                stim_def["holding_current"] = None
-                protocols_out["RinHoldCurrent"] = {"type": "RinHoldCurrent", "stimuli": stim_def}
-
-            elif prot_name == "RMP":
-                # The name_rmp_protocol is used only for the efeatures, the
-                # protocol itself is fixed:
-                protocols_out["RMP"] = {
-                    "type": "RMP",
-                    "stimuli": {
-                        "delay": 250,
-                        "amp": 0,
-                        "duration": 400,
-                        "totduration": 650,
-                        "holding_current": 0.0,
-                    },
-                }
-
-            elif prot["type"] in ["StepThresholdProtocol", "StepProtocol"]:
+            if prot["type"] in ["StepThresholdProtocol", "StepProtocol"]:
                 stim_def = prot["stimuli"]["step"]
                 stim_def["holding_current"] = prot["stimuli"]["step"]["amp"]
                 protocols_out[prot_name] = {"type": prot["type"], "stimuli": stim_def}
@@ -224,9 +206,10 @@ class Singlecell_API(DatabaseAPI):
         protocols = self._get_json(emodel, "protocol")
 
         efeatures_out = {
-            "RMP": {"soma.v": []},
-            "RinHoldCurrent": {"soma.v": []},
-            "Threshold": {"soma.v": []},
+            "RMPProtocol": {"soma.v": []},
+            "RinProtocol": {"soma.v": []},
+            "SearchHoldingCurrent": {"soma.v": []},
+            "SearchThresholdCurrent": {"soma.v": []},
         }
 
         for prot_name in efeatures:
@@ -237,16 +220,31 @@ class Singlecell_API(DatabaseAPI):
                         efeat["stim_start"] = protocols[prot_name]["stimuli"]["step"]["delay"]
                         efeat["stim_end"] = protocols[prot_name]["stimuli"]["step"]["totduration"]
 
-                    # Put Rin and RinHoldCurrent together
-                    if prot_name == "Rin":
-                        efeatures_out["RinHoldCurrent"][loc].append(efeat)
+                    if prot_name == "Rin" and efeat["feature"] == "ohmic_input_resistance_vb_ssse":
+                        efeatures_out["RinProtocol"]["soma.v"].append(efeat)
 
-                    # Others
-                    if prot_name not in efeatures_out:
-                        efeatures_out[prot_name] = {loc: []}
-                    if loc not in efeatures_out[prot_name]:
-                        efeatures_out[prot_name][loc] = []
-                    efeatures_out[prot_name][loc].append(efeat)
+                    elif prot_name == "RMP" and efeat["feature"] == "voltage_base":
+                        efeat["feature"] = "steady_state_voltage_stimend"
+                        efeatures_out["RMPProtocol"]["soma.v"].append(efeat)
+
+                    elif (
+                        prot_name == "RinHoldCurrent" and efeat["feature"] == "bpo_holding_current"
+                    ):
+                        efeatures_out["SearchHoldingCurrent"]["soma.v"].append(efeat)
+
+                    elif prot_name == "Rin" and efeat["feature"] == "voltage_base":
+                        efeat["feature"] = "steady_state_voltage_stimend"
+                        efeatures_out["SearchHoldingCurrent"]["soma.v"].append(efeat)
+
+                    elif prot_name == "Threshold" and efeat["feature"] == "bpo_threshold_current":
+                        efeatures_out["SearchThresholdCurrent"]["soma.v"].append(efeat)
+
+                    else:
+                        if prot_name not in efeatures_out:
+                            efeatures_out[prot_name] = {loc: []}
+                        if loc not in efeatures_out[prot_name]:
+                            efeatures_out[prot_name][loc] = []
+                        efeatures_out[prot_name][loc].append(efeat)
 
         return efeatures_out
 
@@ -268,6 +266,12 @@ class Singlecell_API(DatabaseAPI):
 
             morph_path = Path(recipes["morph_path"]) / morph_def[1]
             morphology_definition.append({"name": morph_def[1][:-4], "path": str(morph_path)})
+
+            if "seclist_names" in recipes:
+                morphology_definition[-1]["seclist_names"] = recipes["seclist_names"]
+
+            if "secarray_names" in recipes:
+                morphology_definition[-1]["secarray_names"] = recipes["secarray_names"]
 
         return morphology_definition
 
