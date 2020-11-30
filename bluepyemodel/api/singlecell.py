@@ -172,7 +172,7 @@ class Singlecell_API(DatabaseAPI):
         """
         protocols = self._get_json(emodel, "protocol")
         protocols_out = {}
-        for prot_name, prot in protocols.items():
+        for prot_name, prot in protocols.items():  # pylint: disable=too-many-nested-blocks
 
             if prot_name in ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]:
                 continue
@@ -184,17 +184,18 @@ class Singlecell_API(DatabaseAPI):
                 protocols_out[prot_name] = {"type": prot["type"], "stimuli": stim_def}
 
                 if "extra_recordings" in prot:
-
-                    protocols_out[prot_name]["extra_recordings"] = prot["extra_recordings"]
-
-                    for i, extra in enumerate(protocols_out[prot_name]["extra_recordings"]):
+                    for extra in prot["extra_recordings"]:
                         if extra["type"] == "somadistanceapic":
                             morphologies = self.get_morphologies(emodel)
-                            p = self.working_dir / "apical_points_isec.json"
                             morph_name = morphologies[0]["name"]
-                            protocols_out[prot_name]["extra_recordings"][i][
-                                "sec_index"
-                            ] = json.load(open(str(p)))[morph_name]
+                            p = self.working_dir / "apical_points_isec.json"
+                            if p.exists():
+                                if "extra_recordings" not in protocols_out[prot_name]:
+                                    protocols_out[prot_name]["extra_recordings"] = []
+                                extra["sec_index"] = json.load(open(str(p)))[morph_name]
+                                protocols_out[prot_name]["extra_recordings"].append(extra)
+                            else:
+                                logger.debug("No apical_points_isec.json found, we will skip bap")
 
         return protocols_out
 

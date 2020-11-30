@@ -1,5 +1,6 @@
 """Task to create combos from morphologies dataframe."""
 import json
+import logging
 
 import pandas as pd
 import yaml
@@ -7,20 +8,53 @@ import yaml
 import luigi
 
 from .base_task import BaseTask
+from .config import MorphComboLocalTarget
 from .utils import ensure_dir
+
+logger = logging.getLogger(__name__)
+
+
+def apply_substitutions(original_morphs_df, substitution_rules=None):
+    """Applies substitution rule on .dat file.
+
+    Args:
+        original_morphs_df (DataFrame): dataframe with morphologies
+        substitution_rules (dict): rules to assign duplicated mtypes to morphologies
+
+    Returns:
+        DataFrame: dataframe with original and new morphologies
+    """
+    if not substitution_rules:
+        return original_morphs_df
+
+    new_morphs_df = original_morphs_df.copy()
+    for gid in original_morphs_df.index:
+        mtype_orig = original_morphs_df.loc[gid, "mtype"]
+        if mtype_orig in substitution_rules:
+            for mtype in substitution_rules[mtype_orig]:
+                new_cell = original_morphs_df.loc[gid].copy()
+                new_cell["mtype"] = mtype
+                new_morphs_df = new_morphs_df.append(new_cell)
+    return new_morphs_df
 
 
 def _add_for_optimisation_flag(emodel_db, morphs_combos_df):
     """Add flag for_optimisation for exemplar cells."""
     morphs_combos_df["for_optimisation"] = False
     for emodel in morphs_combos_df.emodel.unique():
-        morphologies = emodel_db.get_morphologies(emodel)
-        morphs_combos_df.loc[
-            (morphs_combos_df["name"] == morphologies[0]["name"])
-            & (morphs_combos_df.emodel == emodel),
-            "for_optimisation",
-        ] = True
-    return morphs_combos_df
+        morphology = emodel_db.get_morphologies(emodel)[0]["name"]
+        mask = (morphs_combos_df["name"] == morphology) & (morphs_combos_df.emodel == emodel)
+        if len(morphs_combos_df[mask]) == 0:
+            new_row = morphs_combos_df[morphs_combos_df["name"] == morphology].iloc[0]
+            new_row["emodel"] = emodel
+            new_row["for_optimisation"] = True
+            etype = morphs_combos_df[morphs_combos_df.emodel == emodel].etype.unique()[0]
+            new_row["etype"] = etype
+            logger.warning("Emodel %s has a cell from a non-compatible etype %s", emodel, etype)
+            morphs_combos_df = morphs_combos_df.append(new_row.copy())
+        else:
+            morphs_combos_df.loc[mask, "for_optimisation"] = True
+    return morphs_combos_df.reset_index(drop=True)
 
 
 def _get_me_types_map(recipe, emodel_etype_map):
@@ -56,11 +90,11 @@ def _get_mecombos(cell_composition):
     return mecombos
 
 
-def _filter_me_types_map(orig_me_types_map, full_emodels, all_emodels):
+def _filter_me_types_map(orig_me_types_map, full_emodels):
     """Filters emodel map with full_emodels (including seeds) and list of wnated emodels."""
     _dfs = []
-    for full_emodel in all_emodels:
-        _df = orig_me_types_map[orig_me_types_map.emodel == full_emodels[full_emodel]]
+    for full_emodel, emodel in full_emodels.items():
+        _df = orig_me_types_map[orig_me_types_map.emodel == emodel]
         _df = _df.assign(emodel=full_emodel)
         _dfs.append(_df)
     return pd.concat(_dfs).reset_index(drop=True)
@@ -90,11 +124,10 @@ class ApplySubstitutionRules(BaseTask):
 
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
     substitution_rules_path = luigi.Parameter(default="substitution_rules.yaml")
+    target_path = luigi.Parameter(default="substituted_morphs_df.csv")
 
     def run(self):
         """"""
-        from synthesis_workflow.synthesis import apply_substitutions
-
         with open(self.substitution_rules_path, "rb") as sub_file:
             substitution_rules = yaml.full_load(sub_file)
 
@@ -104,13 +137,17 @@ class ApplySubstitutionRules(BaseTask):
         ensure_dir(self.output().path)
         substituted_morphs_df.to_csv(self.output().path, index=False)
 
+    def output(self):
+        """"""
+        return MorphComboLocalTarget(self.target_path)
+
 
 class CreateMorphCombosDF(BaseTask):
     """Create a dataframe with all combos to run."""
 
     cell_composition_path = luigi.Parameter()
     emodel_etype_map_path = luigi.Parameter()
-    emodels = luigi.ListParameter(default=None)
+    target_path = luigi.Parameter(default="morphs_combos_df.csv")
 
     def requires(self):
         """"""
@@ -125,18 +162,13 @@ class CreateMorphCombosDF(BaseTask):
         mecombos = _get_mecombos(cell_composition)
         me_types_map = _get_me_types_map(mecombos, emodel_etype_map)
 
-        full_emodels = self.get_database().get_emodel_names()
-        if self.emodels is not None:
-            all_emodels = [
-                full_emodel
-                for full_emodel, emodel in full_emodels.items()
-                if emodel in self.emodels  # pylint: disable=unsupported-membership-test
-            ]
-        else:
-            all_emodels = list(full_emodels.keys())
-        me_types_map = _filter_me_types_map(me_types_map, full_emodels, all_emodels)
+        me_types_map = _filter_me_types_map(me_types_map, self.emodel_db.get_emodel_names())
         morphs_combos_df = _create_morphs_combos_df(morphs_df, me_types_map)
         morphs_combos_df = _add_for_optimisation_flag(self.emodel_db, morphs_combos_df)
 
         ensure_dir(self.output().path)
-        morphs_combos_df.to_csv(self.output().path)
+        morphs_combos_df.to_csv(self.output().path, index=False)
+
+    def output(self):
+        """"""
+        return MorphComboLocalTarget(self.target_path)

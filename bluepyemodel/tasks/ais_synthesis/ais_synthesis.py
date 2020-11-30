@@ -3,22 +3,23 @@ import pandas as pd
 import yaml
 
 import luigi
-from bluepyemodel.ais_synthesis.tools.parallel import InitParallelFactory
+from bluepyemodel.ais_synthesis.tools import init_parallel_factory
 
 from ...ais_synthesis.ais_synthesis import synthesize_ais
 from .ais_model import AisResistanceModel, TargetRhoAxon
 from .base_task import BaseTask
-from .config import scaleconfigs
+from .config import ScaleConfig, SynthesisLocalTarget
 from .morph_combos import CreateMorphCombosDF
-from .utils import add_emodel, ensure_dir
+from .utils import ensure_dir
 
 
 class SynthesizeAis(BaseTask):
     """Synthesize AIS."""
 
     emodel = luigi.Parameter(default=None)
-    morphology_path = luigi.Parameter(default="morphology_path")
+    morphology_path = luigi.Parameter(default="repaired_morphology_path")
     synth_db_path = luigi.Parameter(default="synth_db.sql")
+    target_path = luigi.Parameter(default="synth_combos_df.csv")
 
     def requires(self):
         """Requires."""
@@ -41,19 +42,26 @@ class SynthesizeAis(BaseTask):
         with self.input()["ais_models"].open() as f:
             ais_models = yaml.full_load(f)
 
-        with InitParallelFactory(self.parallel_lib) as parallel_factory:
-            synth_combos_df = synthesize_ais(
-                morphs_combos_df,
-                self.emodel_db,
-                ais_models,
-                target_rhos,
-                morphology_path=self.morphology_path,
-                emodels=[self.emodel],
-                continu=self.continu,
-                parallel_factory=parallel_factory,
-                scales_params=scaleconfigs().scales_params,
-                combos_db_filename=add_emodel(self.synth_db_path, self.emodel),
-            )
+        ensure_dir(self.set_tmp(self.add_emodel(self.synth_db_path)))
+        parallel_factory = init_parallel_factory(self.parallel_lib)
+        synth_combos_df = synthesize_ais(
+            morphs_combos_df,
+            self.emodel_db,
+            ais_models,
+            target_rhos,
+            morphology_path=self.morphology_path,
+            emodels=[self.emodel],
+            continu=self.continu,
+            parallel_factory=parallel_factory,
+            scales_params=ScaleConfig().scales_params,
+            combos_db_filename=self.set_tmp(self.add_emodel(self.synth_db_path)),
+        )
 
         ensure_dir(self.output().path)
         synth_combos_df.to_csv(self.output().path, index=False)
+
+        parallel_factory.shutdown()
+
+    def output(self):
+        """"""
+        return SynthesisLocalTarget(self.add_emodel(self.target_path))

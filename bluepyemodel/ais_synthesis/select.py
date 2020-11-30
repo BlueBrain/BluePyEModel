@@ -1,8 +1,11 @@
 """Function to apply select step to evaluated combos."""
 import json
+import logging
 import re
 import pandas as pd
 from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 def select_best_emodel(selected_combos_df, best_emodel_path):
@@ -83,7 +86,7 @@ def apply_megating(
         ].index
 
         if len(exemplar_id) > 1:
-            raise Exception("Found more than one exemplar, something is wrong.")
+            logger.warning("Found more than one exemplar for %s, something may be wrong.", emodel)
         exemplar_id = exemplar_id[0]
 
         for mtype in repaired_df[(repaired_df.emodel == emodel)].mtype.unique():

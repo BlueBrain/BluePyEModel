@@ -1,83 +1,86 @@
 """Luigi task to run the ais workflow."""
-import pandas as pd
-
 import luigi
 
-from .base_task import BaseTask
-from .evaluations import EvaluateGeneric
+from .base_task import BaseWrapperTask
+from .ais_model import AisResistanceModel, TargetRhoAxon
+from .ais_synthesis import SynthesizeAis
+from .evaluations import EvaluateGeneric, EvaluateExemplars, EvaluateSynthesis
 from .gather import (
     GatherAisModels,
     GatherGenericEvaluations,
     GatherSynthAis,
+    GatherSynthEvaluations,
     GatherTargetRhoAxon,
+    GatherExemplarEvaluations,
 )
-from .morph_combos import CreateMorphCombosDF
+from .select import ApplyMegating, SelectCombos
 from .plotting import (
     PlotAisResistanceModel,
     PlotAisShapeModel,
     PlotGenericEvaluation,
     PlotSynthesisEvaluation,
     PlotTargetRhoAxon,
+    PlotSelected,
+    PlotGenericSelected,
 )
-from .select import PlotGenericSelected, PlotSelected, SelectGenericCombos
+from .select import SelectGenericCombos
 
 
-class RunAll(BaseTask):
+class RunAll(BaseWrapperTask):
     """Main task to run the workflow."""
 
-    _all_completed = luigi.BoolParameter(default=False)
+    emodels = luigi.ListParameter(default=None)
+    rerun_emodels = luigi.ListParameter(default=None)
 
-    def run(self):
+    def requires(self):
         """"""
+        if not self.emodels:
+            emodel_db = self.get_database()
+            self.emodels = list(emodel_db.get_emodel_names().keys())
 
-        morph_combos_task = yield CreateMorphCombosDF()
-        all_emodels = list(pd.read_csv(morph_combos_task.path).emodel.unique())
+        tasks = [PlotAisShapeModel()]
+        for emodel in self.emodels:
+            rerun_emodel = False
+            # pylint: disable=unsupported-membership-test
+            if self.rerun_emodels is not None and emodel in self.rerun_emodels:
+                rerun_emodel = True
+                tasks.append(AisResistanceModel(emodel=emodel, rerun=rerun_emodel))
+                tasks.append(TargetRhoAxon(emodel=emodel, rerun=rerun_emodel))
+                tasks.append(SynthesizeAis(emodel=emodel, rerun=rerun_emodel))
+                tasks.append(EvaluateSynthesis(emodel=emodel, rerun=rerun_emodel))
+                tasks.append(EvaluateExemplars(emodel=emodel, rerun=rerun_emodel))
 
-        yield PlotAisShapeModel()
+            tasks.append(PlotAisResistanceModel(emodel=emodel, rerun=rerun_emodel))
+            tasks.append(PlotTargetRhoAxon(emodel=emodel, rerun=rerun_emodel))
+            tasks.append(PlotSynthesisEvaluation(emodel=emodel, rerun=rerun_emodel))
 
-        for emodel in all_emodels:
-            yield PlotAisResistanceModel(emodel=emodel)
-            yield PlotTargetRhoAxon(emodel=emodel)
-            yield PlotSynthesisEvaluation(emodel=emodel)
-
-        yield GatherAisModels(emodels=all_emodels)
-        yield GatherTargetRhoAxon(emodels=all_emodels)
-        yield GatherSynthAis(emodels=all_emodels)
-        yield PlotSelected(emodels=all_emodels)
-
-        self._all_completed = True
-
-    def on_success(self):
-        """"""
-
-    def complete(self):
-        """"""
-        return self._all_completed
+        tasks.append(GatherAisModels(emodels=self.emodels, rerun=rerun_emodel))
+        tasks.append(GatherTargetRhoAxon(emodels=self.emodels, rerun=rerun_emodel))
+        tasks.append(GatherSynthAis(emodels=self.emodels, rerun=rerun_emodel))
+        tasks.append(GatherSynthEvaluations(emodels=self.emodels, rerun=rerun_emodel))
+        tasks.append(GatherExemplarEvaluations(emodels=self.emodels, rerun=rerun_emodel))
+        tasks.append(ApplyMegating(emodels=self.emodels, rerun=rerun_emodel))
+        tasks.append(SelectCombos(emodels=self.emodels, rerun=rerun_emodel))
+        tasks.append(PlotSelected(emodels=self.emodels, rerun=rerun_emodel))
+        return tasks
 
 
-class RunGenericEvaluations(BaseTask):
+class RunGenericEvaluations(BaseWrapperTask):
     """Main task to run the evaluation of emodels."""
 
-    _all_completed = luigi.BoolParameter(default=False)
+    emodels = luigi.ListParameter(default=None)
 
-    def run(self):
+    def requires(self):
         """"""
-        morph_combos_task = yield CreateMorphCombosDF()
-        all_emodels = list(pd.read_csv(morph_combos_task.path).emodel.unique())
+        if not self.emodels:
+            emodel_db = self.get_database()
+            self.emodels = list(emodel_db.get_emodel_names().keys())
 
-        yield GatherGenericEvaluations(emodels=all_emodels)
-        yield SelectGenericCombos(emodels=all_emodels)
+        tasks = [GatherGenericEvaluations(emodels=self.emodels)]
+        tasks.append(SelectGenericCombos(emodels=self.emodels))
 
-        for emodel in all_emodels:
-            yield EvaluateGeneric(emodel=emodel)
-            yield PlotGenericEvaluation(emodel=emodel)
-        yield PlotGenericSelected(emodels=all_emodels)
-
-        self._all_completed = True
-
-    def on_success(self):
-        """"""
-
-    def complete(self):
-        """"""
-        return self._all_completed
+        for emodel in self.emodels:
+            tasks.append(EvaluateGeneric(emodel=emodel))
+            tasks.append(PlotGenericEvaluation(emodel=emodel))
+        tasks.append(PlotGenericSelected(emodels=self.emodels))
+        return tasks

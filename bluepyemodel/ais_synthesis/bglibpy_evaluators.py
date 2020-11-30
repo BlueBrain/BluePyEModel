@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 AXON_LOC = "self.axonal[1](0.5)._ref_v"
 
 
-def calculate_threshold_current(config, holding_current, cell_kwargs):
+def calculate_threshold_current(cell, config, holding_current):
     """Calculate threshold current"""
     min_current_spike_count = run_spike_sim(
+        cell,
         config,
-        cell_kwargs,
         holding_current,
         config["min_threshold_current"],
     )
@@ -27,11 +27,11 @@ def calculate_threshold_current(config, holding_current, cell_kwargs):
             return None
         config["max_threshold_current"] = copy(config["min_threshold_current"])
         config["min_threshold_current"] /= 2.0
-        return calculate_threshold_current(config, holding_current, cell_kwargs)
+        return calculate_threshold_current(cell, config, holding_current)
 
     max_current_spike_count = run_spike_sim(
+        cell,
         config,
-        cell_kwargs,
         holding_current,
         config["max_threshold_current"],
     )
@@ -41,11 +41,11 @@ def calculate_threshold_current(config, holding_current, cell_kwargs):
         logger.info("Cell is not firing at max current, we multiply by 2")
         config["min_threshold_current"] = copy(config["max_threshold_current"])
         config["max_threshold_current"] *= 2.0
-        return calculate_threshold_current(config, holding_current, cell_kwargs)
+        return calculate_threshold_current(cell, config, holding_current)
 
     return binsearch_threshold_current(
+        cell,
         config,
-        cell_kwargs,
         holding_current,
         config["min_threshold_current"],
         config["max_threshold_current"],
@@ -54,8 +54,8 @@ def calculate_threshold_current(config, holding_current, cell_kwargs):
 
 
 def binsearch_threshold_current(
+    cell,
     config,
-    cell_kwargs,
     holding_current,
     min_current,
     max_current,
@@ -70,8 +70,8 @@ def binsearch_threshold_current(
         return med_current
 
     spike_count = run_spike_sim(
+        cell,
         config,
-        cell_kwargs,
         holding_current,
         med_current,
     )
@@ -80,12 +80,12 @@ def binsearch_threshold_current(
     if spike_count == 0:
         logger.info("Searching upwards")
         return binsearch_threshold_current(
-            config, cell_kwargs, holding_current, med_current, max_current, depth + 1
+            cell, config, holding_current, med_current, max_current, depth + 1
         )
 
     hs_spike_count = run_spike_sim(
+        cell,
         config,
-        cell_kwargs,
         holding_current,
         float(config["highest_silent_perc"]) / 100 * med_current,
     )
@@ -98,16 +98,13 @@ def binsearch_threshold_current(
 
     logger.info("Searching downwards")
     return binsearch_threshold_current(
-        config, cell_kwargs, holding_current, min_current, med_current, depth + 1
+        cell, config, holding_current, min_current, med_current, depth + 1
     )
 
 
-def run_spike_sim(config, cell_kwargs, holding_current, step_current):
+def run_spike_sim(cell, config, holding_current, step_current):
     """Run simulation on a cell and compute number of spikes."""
     import bglibpy
-
-    cell = bglibpy.Cell(**cell_kwargs)
-    is_deterministic = set_cell_deterministic(cell, config["deterministic"])
 
     cell.add_step(0, config["step_stop"], holding_current)
     cell.add_step(config["step_start"], config["step_stop"], step_current)
@@ -120,7 +117,7 @@ def run_spike_sim(config, cell_kwargs, holding_current, step_current):
         config["step_stop"],
         celsius=config["celsius"],
         v_init=config["v_init"],
-        cvode=is_deterministic,
+        cvode=config.get("is_deterministic", True),
     )
 
     time = cell.get_time()
@@ -128,8 +125,6 @@ def run_spike_sim(config, cell_kwargs, holding_current, step_current):
         voltage = cell.get_recording(AXON_LOC)
     else:
         voltage = cell.get_soma_voltage()
-
-    cell.delete()
 
     efel.reset()
     efel.setIntSetting("strict_stiminterval", True)
@@ -145,6 +140,7 @@ def run_spike_sim(config, cell_kwargs, holding_current, step_current):
         ["Spikecount"],
     )[0]["Spikecount"]
 
+    cell.persistent = []  # remove the step protocols for next run
     if spike_count_array is None or len(spike_count_array) != 1:
         raise Exception("Error during spike count calculation")
     return spike_count_array[0]
@@ -168,28 +164,22 @@ def set_cell_deterministic(cell, deterministic):
     return is_deterministic
 
 
-def calculate_holding_current(holding_voltage, cell_kwargs, deterministic=True):
+def calculate_holding_current(cell, config):
     """Calculate holding current.
 
     adapted from: bglibpy.tools.holding_current_subprocess,
     """
     import bglibpy
 
-    cell = bglibpy.Cell(**cell_kwargs)
-    is_deterministic = set_cell_deterministic(cell, deterministic)
-
     vclamp = bglibpy.neuron.h.SEClamp(0.5, sec=cell.soma)
     vclamp.rs = 0.01
     vclamp.dur1 = 2000
-    vclamp.amp1 = holding_voltage
+    vclamp.amp1 = config["holding_voltage"]
 
     simulation = bglibpy.Simulation()
-    simulation.run(1000, cvode=is_deterministic)
+    simulation.run(1000, cvode=config.get("is_deterministic", True))
 
-    holding_current = vclamp.i
-    cell.delete()
-
-    return holding_current
+    return vclamp.i
 
 
 def _current_bglibpy_evaluation(
@@ -200,6 +190,8 @@ def _current_bglibpy_evaluation(
     template_format="v6_ais_scaler",
 ):
     """Compute the threshold and holding currents using bglibpy."""
+    import bglibpy
+
     AIS_scale = None
     if template_format == "v6_ais_scaler":
         AIS_scale = combo.AIS_scale
@@ -215,9 +207,16 @@ def _current_bglibpy_evaluation(
             "AIS_scaler": AIS_scale,
         },
     }
+    cell = bglibpy.Cell(**cell_kwargs)
+    protocol_config["is_deterministic"] = set_cell_deterministic(
+        cell, protocol_config["deterministic"]
+    )
 
-    holding_current = calculate_holding_current(protocol_config["holding_voltage"], cell_kwargs)
-    threshold_current = calculate_threshold_current(protocol_config, holding_current, cell_kwargs)
+    holding_current = calculate_holding_current(cell, protocol_config)
+    threshold_current = calculate_threshold_current(cell, protocol_config, holding_current)
+
+    cell.delete()
+
     return {"holding_current": holding_current, "threshold_current": threshold_current}
 
 

@@ -145,7 +145,7 @@ def plot_ais_taper_models(models, pdf_filename="AIS_models.pdf"):
 
 def plot_ais_resistance_models(fit_df, ais_models, pdf_filename="scan_scales.pdf"):
     """Plot the AIS resistance models."""
-    emodels = sorted(list(set(fit_df.emodel.to_list())))
+    emodels = fit_df.emodel.unique()
     with PdfPages(pdf_filename) as pdf:
         for emodel in emodels:
             for mtype in ais_models.keys():
@@ -424,6 +424,7 @@ def plot_non_selected_cells(
 
 def plot_summary_select(select_df, e_column="etype", select_column="selected"):
     """Plot fraction of selected cells."""
+    select_df[select_column] = select_df[select_column].astype(int)
     select_plot_df = (
         select_df[["mtype", "emodel", "etype", select_column]]
         .groupby(["mtype", "etype", "emodel"])

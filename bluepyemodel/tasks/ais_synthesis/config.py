@@ -1,35 +1,24 @@
 """Luigi config classes."""
 import luigi
 
+from luigi_tools.target import OutputLocalTarget
 
-class databaseconfigs(luigi.Config):
-    """Configuration of darabase."""
+
+class EmodelAPIConfig(luigi.Config):
+    """Configuration of emodel api database."""
 
     api = luigi.Parameter(default="singlecell")
     working_dir = luigi.Parameter(default="config")
     final_path = luigi.Parameter(default=None)
 
 
-class finalconfigs(luigi.Config):
-    """Final files paths configs."""
-
-    ais_models_path = luigi.Parameter(default="ais_models.csv")
-    target_rhos_path = luigi.Parameter(default="target_rhos.csv")
-    synth_combos_df_path = luigi.Parameter(default="synth_combos_df.csv")
-    synth_eval_combos_df_path = luigi.Parameter(default="synth_eval_combos_df.csv")
-    selected_combos_df_path = luigi.Parameter(default="selected_combos_df.csv")
-
-
-class selectconfigs(luigi.Config):
+class SelectConfig(luigi.Config):
     """Parameter for select step."""
 
-    exemplar_morphs_combos_df_path = luigi.Parameter(default="morphs_combos_df.csv")
-    exemplar_evaluations_path = luigi.Parameter(default="exemplar_evaluations.csv")
-    megated_scores_df_path = luigi.Parameter(default="megated_scores_df.csv")
     megate_thresholds_path = luigi.Parameter(default="megate_thresholds.yaml")
 
 
-class scaleconfigs(luigi.Config):
+class ScaleConfig(luigi.Config):
     """Scales configuration."""
 
     scale_min = luigi.FloatParameter(default=-0.8)
@@ -46,3 +35,93 @@ class scaleconfigs(luigi.Config):
             "n": self.scale_n,
             "lin": self.scale_lin,
         }
+
+
+class PathConfig(luigi.Config):
+    """Morphology path configuration."""
+
+    # Output tree
+    result_path = luigi.Parameter(default="out", description=":str: Path to the output directory.")
+
+    model_subpath = luigi.Parameter(
+        default="models", description=":str: Path to the model subdirectory"
+    )
+
+    morphcombo_subpath = luigi.Parameter(
+        default="morph_combos", description=":str: Path to the morph combos subdirectory"
+    )
+
+    synthesis_subpath = luigi.Parameter(
+        default="synthesis", description=":str: Path to the synthesis results subdirectory"
+    )
+
+    evaluation_subpath = luigi.Parameter(
+        default="evaluations", description=":str: Path to the evaluations results subdirectory"
+    )
+
+    gather_subpath = luigi.Parameter(
+        default="finals", description=":str: Path to the gathered results subdirectory"
+    )
+
+    select_subpath = luigi.Parameter(
+        default="select", description=":str: Path to the select results subdirectory"
+    )
+
+    plot_subpath = luigi.Parameter(
+        default="figures", description=":str: Path to the figures subdirectory"
+    )
+
+
+class ModelLocalTarget(OutputLocalTarget):
+    """Specific target for models targets."""
+
+
+class MorphComboLocalTarget(OutputLocalTarget):
+    """Specific target for combos targets."""
+
+
+class SynthesisLocalTarget(OutputLocalTarget):
+    """Specific target for synthesis targets."""
+
+
+class EvaluationLocalTarget(OutputLocalTarget):
+    """Specific target for evaluation targets."""
+
+
+class GatherLocalTarget(OutputLocalTarget):
+    """Specific target for gather targets."""
+
+
+class SelectLocalTarget(OutputLocalTarget):
+    """Specific target for select targets."""
+
+
+class PlotLocalTarget(OutputLocalTarget):
+    """Specific target for plotting targets."""
+
+
+def reset_default_prefixes():
+    """Set default output paths for targets."""
+    # pylint: disable=protected-access
+
+    OutputLocalTarget.set_default_prefix(PathConfig().result_path)
+    ModelLocalTarget.set_default_prefix(OutputLocalTarget._prefix / PathConfig().model_subpath)
+
+    MorphComboLocalTarget.set_default_prefix(
+        OutputLocalTarget._prefix / PathConfig().morphcombo_subpath
+    )
+
+    EvaluationLocalTarget.set_default_prefix(
+        OutputLocalTarget._prefix / PathConfig().evaluation_subpath
+    )
+
+    SynthesisLocalTarget.set_default_prefix(
+        OutputLocalTarget._prefix / PathConfig().synthesis_subpath
+    )
+
+    GatherLocalTarget.set_default_prefix(OutputLocalTarget._prefix / PathConfig().gather_subpath)
+    SelectLocalTarget.set_default_prefix(OutputLocalTarget._prefix / PathConfig().select_subpath)
+    PlotLocalTarget.set_default_prefix(OutputLocalTarget._prefix / PathConfig().plot_subpath)
+
+
+reset_default_prefixes()

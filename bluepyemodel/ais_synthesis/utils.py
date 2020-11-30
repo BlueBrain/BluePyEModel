@@ -46,7 +46,7 @@ def get_scores(morphs_combos_df, features_to_ignore=None, features_to_keep=None,
     morphs_combos_df["scores"] = morphs_combos_df["scores_raw"].apply(
         lambda s: json.loads(s) if isinstance(s, str) and len(s) > 0 else s
     )
-
+    filter_features = None
     if features_to_ignore is not None:
         if features_to_keep is not None:
             raise Exception("please provide only a list of features to ignore or to keep")
@@ -57,7 +57,9 @@ def get_scores(morphs_combos_df, features_to_ignore=None, features_to_keep=None,
             raise Exception("please provide only a list of features to ignore or to keep")
         filter_features = partial(_filter_features, features=features_to_keep, method="keep")
 
-    morphs_combos_df.apply(filter_features, axis=1)
+    if filter_features is not None:
+        morphs_combos_df.apply(filter_features, axis=1)
+
     morphs_combos_df["median_score"] = morphs_combos_df["scores"].apply(
         lambda score: np.clip(np.median(list(score.values())), 0, clip)
         if isinstance(score, dict)

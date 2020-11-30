@@ -1,6 +1,7 @@
-"""Evaluations functions for scores, rin and rho factors."""
+"""Evaluators."""
 import json
 import logging
+from copy import copy
 import os
 import pickle
 from functools import partial
@@ -54,7 +55,7 @@ def _single_evaluation(
     """Evaluating single protocol."""
 
     cell, protocols, features, parameters = get_emodel_data(
-        emodel_db, combo, morphology_path, morph_modifiers
+        emodel_db, combo, morphology_path, copy(morph_modifiers)
     )
     _evaluator = create_evaluator(
         cell_model=cell,
@@ -170,7 +171,7 @@ def _rin_evaluation(
 ):
     """Evaluating rin protocol."""
     cell_model, _, features, emodel_params = get_emodel_data(
-        emodel_db, combo, morphology_path, morph_modifiers
+        emodel_db, combo, morphology_path, copy(morph_modifiers)
     )
     main_protocol, features = define_main_protocol({}, features, stochasticity)
 
@@ -369,7 +370,7 @@ def evaluate_combos_rho(
         task_ids,
         continu=continu,
         morphology_path=morphology_path,
-        combos_db_filename=combos_db_filename + ".rho",
+        combos_db_filename=str(combos_db_filename) + ".rho",
         parallel_factory=parallel_factory,
     )
 
@@ -380,7 +381,7 @@ def evaluate_combos_rho(
         save_traces=save_traces,
         trace_folder=trace_folder,
         continu=continu,
-        combos_db_filename=combos_db_filename + ".scores",
+        combos_db_filename=str(combos_db_filename) + ".scores",
         morphology_path=morphology_path,
         parallel_factory=parallel_factory,
     )

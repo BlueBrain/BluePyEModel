@@ -7,8 +7,8 @@ import luigi
 from .ais_model import AisResistanceModel, AisShapeModel, TargetRhoAxon
 from .ais_synthesis import SynthesizeAis
 from .base_task import BaseTask
-from .config import scaleconfigs
-from .evaluations import EvaluateGeneric, EvaluateSynthesis
+from .config import ScaleConfig, GatherLocalTarget
+from .evaluations import EvaluateGeneric, EvaluateSynthesis, EvaluateExemplars
 from .utils import ensure_dir
 
 
@@ -16,6 +16,7 @@ class GatherAisModels(BaseTask):
     """Gather all ais models in a single yaml file."""
 
     emodels = luigi.ListParameter()
+    target_path = luigi.Parameter(default="ais_models.yaml")
 
     def requires(self):
         """Requires."""
@@ -46,18 +47,23 @@ class GatherAisModels(BaseTask):
         # record the scales_params for emodel_release
         ais_models_final = {
             "mtype": ais_models,
-            "scales_params": scaleconfigs().scales_params,
+            "scales_params": ScaleConfig().scales_params,
         }
 
         ensure_dir(self.output().path)
         with self.output().open("w") as f:
             yaml.dump(ais_models_final, f)
 
+    def output(self):
+        """"""
+        return GatherLocalTarget(self.target_path)
+
 
 class GatherTargetRhoAxon(BaseTask):
     """Gather all target rho axons in a single yaml file."""
 
     emodels = luigi.ListParameter()
+    target_path = luigi.Parameter(default="target_rhos.yaml")
 
     def requires(self):
         """Requires."""
@@ -77,11 +83,16 @@ class GatherTargetRhoAxon(BaseTask):
         with self.output().open("w") as f:
             yaml.dump(target_rhos, f)
 
+    def output(self):
+        """"""
+        return GatherLocalTarget(self.target_path)
+
 
 class GatherSynthAis(BaseTask):
     """Gather the synthesized AIS to final dataframe."""
 
     emodels = luigi.ListParameter()
+    target_path = luigi.Parameter(default="synth_combos_df.csv")
 
     def requires(self):
         """"""
@@ -96,11 +107,40 @@ class GatherSynthAis(BaseTask):
         ensure_dir(self.output().path)
         synth_combos_df.to_csv(self.output().path, index=False)
 
+    def output(self):
+        """"""
+        return GatherLocalTarget(self.target_path)
+
+
+class GatherExemplarEvaluations(BaseTask):
+    """Gather all the evaluations to same final dataframe."""
+
+    emodels = luigi.ListParameter()
+    target_path = luigi.Parameter(default="exemplar_evaluations.csv")
+
+    def requires(self):
+        """"""
+        return {emodel: EvaluateExemplars(emodel=emodel) for emodel in self.emodels}
+
+    def run(self):
+        """"""
+        exemplar_combos_df = pd.concat(
+            [pd.read_csv(self.input()[emodel].path) for emodel in self.emodels]
+        )
+
+        ensure_dir(self.output().path)
+        exemplar_combos_df.to_csv(self.output().path, index=False)
+
+    def output(self):
+        """"""
+        return GatherLocalTarget(self.target_path)
+
 
 class GatherSynthEvaluations(BaseTask):
     """Gather all the evaluations to same final dataframe."""
 
     emodels = luigi.ListParameter()
+    target_path = luigi.Parameter(default="synth_evaluations_combos_df.csv")
 
     def requires(self):
         """"""
@@ -115,11 +155,16 @@ class GatherSynthEvaluations(BaseTask):
         ensure_dir(self.output().path)
         synth_eval_combos_df.to_csv(self.output().path, index=False)
 
+    def output(self):
+        """"""
+        return GatherLocalTarget(self.target_path)
+
 
 class GatherGenericEvaluations(BaseTask):
     """Gather all the evaluations to same final dataframe."""
 
     emodels = luigi.ListParameter()
+    target_path = luigi.Parameter(default="evaluations_combos_df.csv")
 
     def requires(self):
         """"""
@@ -133,3 +178,7 @@ class GatherGenericEvaluations(BaseTask):
 
         ensure_dir(self.output().path)
         morphs_combos_df.to_csv(self.output().path, index=False)
+
+    def output(self):
+        """"""
+        return GatherLocalTarget(self.target_path)

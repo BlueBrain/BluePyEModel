@@ -135,22 +135,12 @@ class DaskFactory(ParallelFactory):
         return _mapper
 
 
-class InitParallelFactory:
-    """Context manager of parallel factories."""
-
-    def __init__(self, parallel_lib):
-        """Instantiate a parallel factory."""
-        self.parallel_factory = {
-            "dask": DaskFactory,
-            "ipyparallel": IPyParallelFactory,
-            "multiprocessing": MultiprocessingFactory,
-        }[parallel_lib]()
-        L.info("Initialized %s factory", parallel_lib)
-
-    def __enter__(self):
-        """Return instance of parallel factory."""
-        return self.parallel_factory
-
-    def __exit__(self, type, value, traceback):
-        """Call shutdown method."""
-        self.parallel_factory.shutdown()
+def init_parallel_factory(parallel_lib):
+    """Return the desired instance of the parallel factory."""
+    parallel_factory = {
+        "dask": DaskFactory,
+        "ipyparallel": IPyParallelFactory,
+        "multiprocessing": MultiprocessingFactory,
+    }[parallel_lib]()
+    L.info("Initialized %s factory", parallel_lib)
+    return parallel_factory

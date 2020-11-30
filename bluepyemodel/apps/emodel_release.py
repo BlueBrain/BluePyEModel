@@ -16,7 +16,7 @@ from morphio.mut import Morphology
 from tqdm import tqdm
 
 from voxcell import CellCollection
-from bluepyemodel.ais_synthesis.tools import InitParallelFactory
+from bluepyemodel.ais_synthesis.tools import init_parallel_factory
 from bluepyemodel.api.singlecell import Singlecell_API
 
 L = logging.getLogger(__name__)
@@ -285,7 +285,7 @@ def get_me_combos_scales(
     from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
 
     # Initialize the parallel library. If using dask, it must be called at the beginning.
-    parallel_factory = InitParallelFactory(parallel_lib).parallel_factory
+    parallel_factory = init_parallel_factory(parallel_lib)
 
     # 1) load release data, cells and compile mechanisms
     L.info("Load release data, cells and compile mechanisms.")
@@ -381,7 +381,7 @@ def get_me_combos_currents(
 
     """
     # Initialize the parallel library. If using dask, it must be called at the beginning.
-    parallel_factory = InitParallelFactory(parallel_lib).parallel_factory
+    parallel_factory = init_parallel_factory(parallel_lib)
 
     # 1) load release data, cells and compile mechanisms
     combos_df = pd.read_csv(combos_df_path)
@@ -464,6 +464,8 @@ def fix_ais(combo, out_path="fixed_cells_test"):
             scale=combo.AIS_scale,
         )
         modify_ais(morphology, _taper_func)
+    else:
+        raise Exception(combo)
 
     morphology = Morphology(morphology, morphio.Option.nrn_order)  # ensures NEURON order
     morphology.write(str(Path(out_path) / Path(combo.morphology_path).name))
@@ -476,7 +478,7 @@ def taper_function(distance, strength, taper_scale, terminal_diameter, scale=1.0
 
 def modify_ais(morphology, taper_func):
     """Modify morphology first axon section in place using taper_func."""
-    L_target = 60
+    L_target = 65  # we set it to a little longer thatn 60, to ensures the end points are good
     for root_section in morphology.root_sections:
         if root_section.type == morphio.SectionType.axon:
             dist = 0
@@ -488,8 +490,10 @@ def modify_ais(morphology, taper_func):
                     prev_point = copy(point)
                     diams[i] = taper_func(dist)
                     if dist >= L_target:
-                        section.diameters = diams
-                        return
+                        break
+                section.diameters = diams
+                if dist >= L_target:
+                    break
 
 
 @cli.command("set_me_combos_scales_inplace")
@@ -540,11 +544,12 @@ def set_me_combos_scales_inplace(  # pylint: disable=too-many-locals
     from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
 
     # Initialize the parallel library. If using dask, it must be called at the beginning.
-    parallel_factory = InitParallelFactory(parallel_lib).parallel_factory
+    parallel_factory = init_parallel_factory(parallel_lib)
 
     # 1) load release data, cells and compile mechanisms
     L.info("Load release data, cells and compile mechanisms.")
     all_morphs_combos_df = pd.read_csv(mecombos_path, sep="\t")
+
     if to_fix_combos_path is not None:
         to_fix_combos_df = pd.read_csv(to_fix_combos_path, header=None, names=["combo_name"])
         morphs_combos_df = all_morphs_combos_df[

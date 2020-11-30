@@ -16,13 +16,7 @@ from .utils import get_mtypes, get_scores
 
 logger = logging.getLogger(__name__)
 POLYFIT_DEGREE = 10
-RHO_FACTOR_FEATURES = [
-    "voltage_base",
-    "Spikecount",
-    #        'mean_frequency',
-    #        'AHP_depth',
-    #        'ISI_CV'
-]
+RHO_FACTOR_FEATURES = ["voltage_base", "Spikecount", "mean_frequency", "AHP_depth", "ISI_CV"]
 
 
 def get_ais(neuron):
@@ -54,7 +48,7 @@ def extract_ais_path_distances(morphologies):
         )
 
 
-def build_ais_diameter_model(morphology_paths, bin_size=2, total_length=60):
+def build_ais_diameter_model(morphology_paths, bin_size=2, total_length=60, with_taper=False):
     """Build the AIS model by fitting first sections of axons.
 
     Args:
@@ -80,8 +74,12 @@ def build_ais_diameter_model(morphology_paths, bin_size=2, total_length=60):
         means.append(np.mean(diams))
         stds.append(np.std(diams))
         bins.append(all_bins[i - 1])
+    bounds = [3 * [-np.inf], 3 * [np.inf]]
+    if not with_taper:
+        bounds[0][0] = 0.0
+        bounds[1][0] = 0.000001
 
-    popt, _ = curve_fit(taper_function, np.array(bins), np.array(means))[:2]
+    popt, _ = curve_fit(taper_function, np.array(bins), np.array(means), bounds=bounds)[:2]
     logger.debug("Taper strength: %s, scale: %s, terminal diameter: %s", *popt)
 
     model = {}
@@ -102,7 +100,11 @@ def build_ais_diameter_model(morphology_paths, bin_size=2, total_length=60):
 
 
 def build_ais_diameter_models(
-    morphs_df, mtypes="all", morphology_path="morphology_path", mtype_dependent=False
+    morphs_df,
+    mtypes="all",
+    morphology_path="morphology_path",
+    mtype_dependent=False,
+    with_taper=True,
 ):
     """Build ais diameter models from data, and plot the results.
 
@@ -121,14 +123,14 @@ def build_ais_diameter_models(
     morphologies_all = morphs_df.loc[:, morphology_path].to_list()
 
     models = {}
-    models["all"] = build_ais_diameter_model(morphologies_all)
+    models["all"] = build_ais_diameter_model(morphologies_all, with_taper=with_taper)
     if not mtype_dependent:
         return models
 
     for mtype in tqdm(mtypes):
         morphologies = morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
         if len(morphologies) > 5:
-            model = build_ais_diameter_model(morphologies)
+            model = build_ais_diameter_model(morphologies, with_taper=with_taper)
             if model["AIS"]["popt"][0] > 0.0:
                 models[mtype] = model
                 models[mtype]["used_all_data"] = False
@@ -156,27 +158,20 @@ def _get_scales(scales_params, with_unity=False):
     return scales
 
 
-def _prepare_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel, mtypes="all"):
+def _prepare_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel):
     """Prepare combos with scaled AIS."""
     scales = _get_scales(scales_params)
-    mtypes = get_mtypes(morphs_combos_df, mtypes)
-
-    if mtypes[0] not in ais_models:
-        mtypes = ["all"]
 
     fit_df = pd.DataFrame()
-    me_mask = morphs_combos_df.emodel == emodel
-    for mtype in mtypes:
-        if mtypes[0] != "all":
-            me_mask = me_mask & (morphs_combos_df.mtype == mtype)
-        if len(morphs_combos_df[me_mask]) > 0:
-            logger.info("Creating combos for %s, %s", emodel, mtype)
-            df_tmp = morphs_combos_df[me_mask & morphs_combos_df.use_axon].iloc[0]
-            for scale in scales:
-                df_tmp["AIS_scale"] = scale
-                df_tmp["AIS_model"] = json.dumps(ais_models[mtype]["AIS"])
-                df_tmp["for_optimisation"] = False
-                fit_df = fit_df.append(df_tmp.copy())
+    mask = morphs_combos_df.emodel == emodel
+    if len(morphs_combos_df[mask]) > 0:
+        logger.info("Creating combos for %s", emodel)
+        df_tmp = morphs_combos_df[mask].iloc[0]
+        for scale in scales:
+            df_tmp["AIS_scale"] = scale
+            df_tmp["AIS_model"] = json.dumps(ais_models["all"]["AIS"])
+            df_tmp["for_optimisation"] = False
+            fit_df = fit_df.append(df_tmp.copy())
     return fit_df.reset_index(drop=True)
 
 
@@ -213,71 +208,51 @@ def build_ais_resistance_models(
         parallel_factory=parallel_factory,
     )
 
-    mtypes = get_mtypes(morphs_combos_df, "all")
-    if mtypes[0] not in ais_models:
-        mtypes = ["all"]
+    mtype = "all"
 
     mask = fit_df.emodel == emodel
-    for mtype in mtypes:
-        if mtypes[0] != "all":
-            mask = mask & (fit_df.mtype == mtype)
-        if len(fit_df[mask]) > 0:
-            if "resistance" not in ais_models[mtype]:
-                ais_models[mtype]["resistance"] = {}
-            AIS_scale = fit_df[mask].AIS_scale.to_numpy()
-            rin_ais = fit_df[mask].rin_ais.to_numpy()
-            AIS_scale = AIS_scale[rin_ais > 0]
-            rin_ais = rin_ais[rin_ais > 0]
-            if len(rin_ais) != len(fit_df[mask].AIS_scale.to_numpy()):
-                logger.warning("Some AIS Rin are < 0, we will drop these!")
-            ais_models[mtype]["resistance"][emodel] = {
-                "polyfit_params": np.polyfit(
-                    np.log10(AIS_scale),
-                    np.log10(rin_ais),
-                    POLYFIT_DEGREE,
-                ).tolist()
-            }
+    if len(fit_df[mask]) > 0:
+        if "resistance" not in ais_models[mtype]:
+            ais_models[mtype]["resistance"] = {}
+        AIS_scale = fit_df[mask].AIS_scale.to_numpy()
+        rin_ais = fit_df[mask].rin_ais.to_numpy()
+        AIS_scale = AIS_scale[rin_ais > 0]
+        rin_ais = rin_ais[rin_ais > 0]
+        if len(rin_ais) != len(fit_df[mask].AIS_scale.to_numpy()):
+            logger.warning("Some AIS Rin are < 0, we will drop these!")
+        ais_models[mtype]["resistance"][emodel] = {
+            "polyfit_params": np.polyfit(
+                np.log10(AIS_scale),
+                np.log10(rin_ais),
+                POLYFIT_DEGREE,
+            ).tolist()
+        }
 
     return fit_df, ais_models
 
 
-def _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel, mtypes="all"):
+def _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel):
     """Prepare the combos for scaning rho."""
     scales = _get_scales(scales_params, with_unity=True)
 
-    mtypes = get_mtypes(morphs_combos_df, mtypes)
-
-    if mtypes[0] not in ais_models:
-        mtypes = ["all"]
-
     mask = morphs_combos_df.emodel == emodel
     rho_scan_df = pd.DataFrame()
-    for mtype in mtypes:
-        if mtypes[0] != "all":
-            me_mask = mask & (morphs_combos_df.mtype == mtype)
+
+    if len(morphs_combos_df[mask]) > 0:
+        logger.info("creating rows for %s", emodel)
+        new_row = morphs_combos_df[mask & morphs_combos_df.for_optimisation].copy()
+        if len(new_row) > 1:
+            new_row = new_row.head(1)
+            logger.info("Multiple candidates, we take the first.")
+        if len(new_row) == 1:
+            for scale in scales:
+                new_row["mtype"] = "all"
+                new_row["AIS_scale"] = scale
+                new_row["AIS_model"] = json.dumps(ais_models["all"]["AIS"])
+                new_row["for_optimisation"] = False
+                rho_scan_df = rho_scan_df.append(new_row.copy())
         else:
-            me_mask = mask
-        if len(morphs_combos_df[me_mask]) > 0:
-            logger.info("creating rows for %s, %s", emodel, mtype)
-            new_row = morphs_combos_df[mask & morphs_combos_df.for_optimisation].copy()
-            if len(new_row) > 1:
-                if mtype in new_row.mtype:
-                    new_row = new_row[new_row.mtype == mtype]
-                else:
-                    new_row = new_row.head(1)
-                    logger.info(
-                        "Multiple candidates but no matching mtypes, we take the first %s.",
-                        new_row.mtype.to_numpy(),
-                    )
-            if len(new_row) > 0:
-                for scale in scales:
-                    new_row["mtype"] = mtype
-                    new_row["AIS_scale"] = scale
-                    new_row["AIS_model"] = json.dumps(ais_models[mtype]["AIS"])
-                    new_row["for_optimisation"] = False
-                    rho_scan_df = rho_scan_df.append(new_row.copy())
-            else:
-                logger.info("no cell for %s, %s", emodel, mtype)
+            logger.info("no cell for %s", emodel)
 
     return rho_scan_df.reset_index(drop=True)
 
@@ -342,7 +317,7 @@ def find_target_rho_axon(
         emodel_db,
         morphology_path=morphology_path,
         continu=continu,
-        combos_db_filename=combos_db_filename + ".rho",
+        combos_db_filename=str(combos_db_filename) + ".rho",
         parallel_factory=parallel_factory,
     )
 
@@ -351,31 +326,25 @@ def find_target_rho_axon(
         emodel_db,
         save_traces=False,
         continu=continu,
-        combos_db_filename=combos_db_filename + ".scores",
+        combos_db_filename=str(combos_db_filename) + ".scores",
         morphology_path=morphology_path,
         parallel_factory=parallel_factory,
     )
 
     rho_scan_df = get_scores(rho_scan_df, features_to_keep=RHO_FACTOR_FEATURES, clip=5)
-    mtypes = get_mtypes(morphs_combos_df, "all")
-
-    if mtypes[0] not in ais_models:
-        mtypes = ["all"]
+    mtype = "all"
 
     mask = rho_scan_df.emodel == emodel
     target_rhos = {}
-    for mtype in mtypes:
-        if mtypes[0] != "all":
-            mask = mask & (rho_scan_df.mtype == mtype)
-        if len(rho_scan_df[mask]) > 0:
-            scale_mask = rho_scan_df.AIS_scale == 1
-            median_scores = rho_scan_df[mask & ~scale_mask].median_score.to_numpy()
-            smooth_score = gaussian_filter(median_scores, filter_sigma)
-            rho_scan_df.loc[mask & ~scale_mask, "smooth_score"] = smooth_score
-            best_score_id = rho_scan_df[mask & ~scale_mask].smooth_score.idxmin()
+    if len(rho_scan_df[mask]) > 0:
+        scale_mask = rho_scan_df.AIS_scale == 1
+        median_scores = rho_scan_df[mask & ~scale_mask].median_score.to_numpy()
+        smooth_score = gaussian_filter(median_scores, filter_sigma)
+        rho_scan_df.loc[mask & ~scale_mask, "smooth_score"] = smooth_score
+        best_score_id = rho_scan_df[mask & ~scale_mask].smooth_score.idxmin()
 
-            if emodel not in target_rhos:
-                target_rhos[emodel] = {}
-            target_rhos[emodel][mtype] = float(rho_scan_df.loc[best_score_id, "rho_axon"])
+        if emodel not in target_rhos:
+            target_rhos[emodel] = {}
+        target_rhos[emodel][mtype] = float(rho_scan_df.loc[best_score_id, "rho_axon"])
 
     return rho_scan_df, target_rhos
