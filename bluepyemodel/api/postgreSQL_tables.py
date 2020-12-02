@@ -55,6 +55,7 @@ ecode VARCHAR (20) NOT NULL,
 target smallint NOT NULL,
 efeatures JSONB,
 location VARCHAR (20) NOT NULL,
+extra_recordings JSONB[],
 type text NOT NULL
 );"""
 
@@ -64,7 +65,8 @@ path text NOT NULL,
 emodel VARCHAR (20) NOT NULL,
 species VARCHAR (20) NOT NULL,
 seclist_names text[],
-secarray_names text[]
+secarray_names text[],
+sec_index int
 );"""
 
 def_optimisation_morphology = """CREATE TABLE {}_optimisation_morphology (
@@ -87,6 +89,7 @@ def_optimisation_distributions = """CREATE TABLE {}_optimisation_distributions (
 name text NOT NULL,
 function text NOT NULL,
 parameters text[],
+soma_ref_location real,
 PRIMARY KEY (name)
 );"""
 
@@ -116,5 +119,6 @@ ecode VARCHAR (20) NOT NULL,
 target smallint NOT NULL,
 efeatures JSONB,
 location VARCHAR (20) NOT NULL,
- type text NOT NULL
+extra_recordings JSONB[],
+type text NOT NULL
 );"""

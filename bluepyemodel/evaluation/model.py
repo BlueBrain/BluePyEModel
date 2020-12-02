@@ -89,10 +89,17 @@ def define_parameters(definitions):
             dist_param_names = definition["parameters"]
         else:
             dist_param_names = None
+
+        if "soma_ref_location" in definition:
+            soma_ref_location = definition["soma_ref_location"]
+        else:
+            soma_ref_location = 0.5
+
         distributions[distribution] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
             name=distribution,
             distribution=definition["fun"],
             dist_param_names=dist_param_names,
+            soma_ref_location=soma_ref_location,
         )
 
     params_definitions = definitions["parameters"]
@@ -214,8 +221,11 @@ def define_mechanisms(mechanisms_definition):
 
     mechanisms = []
     for sectionlist, channels in mechanisms_definition.items():
+
         seclist_locs = multi_locations(sectionlist)
+
         for channel, stoch in zip(channels["mech"], channels["stoch"]):
+
             mechanisms.append(
                 ephys.mechanisms.NrnMODMechanism(
                     name="%s.%s" % (channel, sectionlist),
@@ -342,8 +352,8 @@ def create_cell_models(emodel, morphologies, mechanisms, parameters, morph_modif
         if "secarray_names" in morphology:
             secarray_names = morphology["secarray_names"]
 
-        # Create the cell model
         name = "{}_{}".format(emodel, morph_name)
+
         cell_models.append(
             create_cell_model(
                 name=name,

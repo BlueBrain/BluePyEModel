@@ -1,3 +1,9 @@
+x86_64/
+figures/
+checkpoints/
+ExampleCell/
+examples/optimisation/mechanisms/
+examples/optimisation/config/
 
 SOURCES.txt
 *.svg

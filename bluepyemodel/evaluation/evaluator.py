@@ -398,7 +398,6 @@ def define_protocol(
     name,
     protocol_definition,
     stochasticity=True,
-    apical_point_isec=None,
 ):
     """Create the protocol.
 
@@ -408,8 +407,6 @@ def define_protocol(
             define_main_protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
-        apical_point_isec (isec): dendritic section at which the recordings
-            takes place. Used only when "type" == "somadistanceapic".
 
     Returns:
         Protocol
@@ -424,7 +421,9 @@ def define_protocol(
     recordings = [somav_recording]
 
     if "extra_recordings" in protocol_definition:
+
         for recording_definition in protocol_definition["extra_recordings"]:
+
             if recording_definition["type"] == "somadistance":
                 location = ephys.locations.NrnSomaDistanceCompLocation(
                     name=recording_definition["name"],
@@ -433,11 +432,16 @@ def define_protocol(
                 )
 
             elif recording_definition["type"] == "somadistanceapic":
+                if "sec_index" not in recording_definition:
+                    raise Exception(
+                        "The extra_recordings definition for 'somadistanceapic' has to contain"
+                        " an entry 'sec_index'."
+                    )
                 location = NrnSomaDistanceCompLocationApical(
                     name=recording_definition["name"],
                     soma_distance=recording_definition["somadistance"],
                     seclist_name=recording_definition["seclist_name"],
-                    apical_point_isec=apical_point_isec,
+                    apical_point_isec=recording_definition["sec_index"],
                 )
 
             elif recording_definition["type"] == "nrnseclistcomp":
@@ -457,6 +461,7 @@ def define_protocol(
                 location=location,
                 variable=recording_definition["var"],
             )
+
             recordings.append(recording)
 
     for k in eCodes:

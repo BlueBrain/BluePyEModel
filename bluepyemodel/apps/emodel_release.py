@@ -432,9 +432,9 @@ def get_me_combos_currents(
     if "morph_name" not in combos_df.columns:
         combos_df["morph_name"] = combos_df["morphology"]
 
-    if 'threshold_current' not in all_morphs_combos_df.columns:
-        all_morphs_combos_df['threshold_current'] =0 
-        all_morphs_combos_df['holding_current'] = 0 
+    if "threshold_current" not in all_morphs_combos_df.columns:
+        all_morphs_combos_df["threshold_current"] = 0
+        all_morphs_combos_df["holding_current"] = 0
 
     all_morphs_combos_df.update(_add_combo_name(combos_df).set_index("combo_name"))
     all_morphs_combos_df = all_morphs_combos_df.reset_index(drop=True)

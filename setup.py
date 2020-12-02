@@ -21,7 +21,6 @@ setup(
         'numpy',
         'scipy',
         'pandas',
-        'nose',
         'ipyparallel',
         'dask[distributed]>=2.30',
         'dask_mpi>=2.20',

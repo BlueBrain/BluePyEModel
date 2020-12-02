@@ -10,7 +10,7 @@ import bluepyemodel.api.postgreSQL_tables as sql_tables
 
 logger = logging.getLogger("__main__")
 
-# pylint: disable=W0231,W0703
+# pylint: disable=W0231,W0703,R1702
 
 
 class PostgreSQL_API(DatabaseAPI):
@@ -558,10 +558,16 @@ class PostgreSQL_API(DatabaseAPI):
             return params, None, None
 
         for dd in dist_def.to_dict("records"):
+
             params_definition["distributions"][dd["name"]] = {
                 "fun": dd["function"],
                 "parameters": dd["parameters"],
             }
+
+            if not pandas.isnull(dd["soma_ref_location"]):
+                params_definition["distributions"][dd["name"]]["soma_ref_location"] = dd[
+                    "soma_ref_location"
+                ]
 
         return params_definition, mech_definition, mech_names
 
@@ -634,6 +640,23 @@ class PostgreSQL_API(DatabaseAPI):
                     stim_def = prot["definition"]["step"]
                     stim_def["holding_current"] = prot["definition"]["holding"]["amp"]
                     protocols_out[prot["name"]] = {"type": target["type"], "stimuli": stim_def}
+
+                if not pandas.isnull(target["extra_recordings"]):
+                    protocols_out[prot["name"]]["extra_recordings"] = target["extra_recordings"]
+
+                    for i, extra in enumerate(protocols_out[prot["name"]]["extra_recordings"]):
+                        if extra["type"] == "somadistanceapic":
+                            morphologies = self.get_morphologies(emodel, species)
+
+                            if not pandas.isnull(morphologies[0]["sec_index"]):
+                                sec_index = morphologies[0]["sec_index"]
+                                protocols_out[prot["name"]]["extra_recordings"][i][
+                                    "sec_index"
+                                ] = sec_index
+                            else:
+                                raise Exception(
+                                    "Missing sec_index for morphology %s" % morphologies[0]["name"]
+                                )
 
         return protocols_out
 

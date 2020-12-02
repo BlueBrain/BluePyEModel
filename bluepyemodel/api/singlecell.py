@@ -178,9 +178,23 @@ class Singlecell_API(DatabaseAPI):
                 continue
 
             if prot["type"] in ["StepThresholdProtocol", "StepProtocol"]:
+
                 stim_def = prot["stimuli"]["step"]
                 stim_def["holding_current"] = prot["stimuli"]["step"]["amp"]
                 protocols_out[prot_name] = {"type": prot["type"], "stimuli": stim_def}
+
+                if "extra_recordings" in prot:
+
+                    protocols_out[prot_name]["extra_recordings"] = prot["extra_recordings"]
+
+                    for i, extra in enumerate(protocols_out[prot_name]["extra_recordings"]):
+                        if extra["type"] == "somadistanceapic":
+                            morphologies = self.get_morphologies(emodel)
+                            p = self.working_dir / "apical_points_isec.json"
+                            morph_name = morphologies[0]["name"]
+                            protocols_out[prot_name]["extra_recordings"][i][
+                                "sec_index"
+                            ] = json.load(open(str(p)))[morph_name]
 
         return protocols_out
 
@@ -283,6 +297,7 @@ class Singlecell_API(DatabaseAPI):
             species (str): name of the species (rat, human, mouse)
         """
         if emodel in self.final:
+
             final_data = self.final[emodel]
             emodel_data = {
                 "emodel": "_".join(emodel.split("_")[:2]),
@@ -302,8 +317,11 @@ class Singlecell_API(DatabaseAPI):
             ]:
                 if key in final_data:
                     emodel_data[key] = final_data[key]
+
             return emodel_data
+
         logger.warning("Could not find the models for emodel %s", emodel)
+
         return None
 
     def get_emodels(self, emodels, species):
