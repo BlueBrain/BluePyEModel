@@ -8,6 +8,8 @@ from bluepyemodel.api.databaseAPI import DatabaseAPI
 
 logger = logging.getLogger(__name__)
 
+seclist_to_sec = {"somatic": "soma", "apical": "apic", "axonal": "axon", "myelinated": "myelin"}
+
 # pylint: disable=W0231,W0221,W0613
 
 
@@ -155,6 +157,33 @@ class Singlecell_API(DatabaseAPI):
 
         return params_definition, mech_definition, mech_names
 
+    def _handle_extra_recording(self, emodel, extra_recordings):
+        extra_recordings_out = []
+
+        for extra in extra_recordings:
+
+            if extra["type"] == "somadistanceapic":
+
+                morphologies = self.get_morphologies(emodel)
+                morph_name = morphologies[0]["name"]
+                p = self.working_dir / "apical_points_isec.json"
+
+                if p.exists():
+
+                    extra["sec_index"] = json.load(open(str(p)))[morph_name]
+
+                    if extra["seclist_name"]:
+                        extra["sec_name"] = seclist_to_sec[extra["seclist_name"]]
+                    else:
+                        raise Exception("Cannot get section name from seclist_name.")
+
+                else:
+                    logger.warning("No apical_points_isec.json found, bAP will be skipped")
+
+            extra_recordings_out.append(extra)
+
+        return extra_recordings_out
+
     def get_protocols(self, emodel, species=None, delay=0.0, include_validation=False):
         """Get the protocols from the database and put in a format that fits
          the MainProtocol needs.
@@ -184,18 +213,9 @@ class Singlecell_API(DatabaseAPI):
                 protocols_out[prot_name] = {"type": prot["type"], "stimuli": stim_def}
 
                 if "extra_recordings" in prot:
-                    for extra in prot["extra_recordings"]:
-                        if extra["type"] == "somadistanceapic":
-                            morphologies = self.get_morphologies(emodel)
-                            morph_name = morphologies[0]["name"]
-                            p = self.working_dir / "apical_points_isec.json"
-                            if p.exists():
-                                if "extra_recordings" not in protocols_out[prot_name]:
-                                    protocols_out[prot_name]["extra_recordings"] = []
-                                extra["sec_index"] = json.load(open(str(p)))[morph_name]
-                                protocols_out[prot_name]["extra_recordings"].append(extra)
-                            else:
-                                logger.debug("No apical_points_isec.json found, we will skip bap")
+                    protocols_out[prot_name]["extra_recordings"] = self._handle_extra_recording(
+                        emodel, prot["extra_recordings"]
+                    )
 
         return protocols_out
 

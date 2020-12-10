@@ -2,17 +2,12 @@
 
 import logging
 
-import pandas
 from kgforge.core import KnowledgeGraphForge  # , Resource
-
 from bluepyemodel.api.databaseAPI import DatabaseAPI
-
-# from kgforge.specializations.resources import Dataset
-
 
 logger = logging.getLogger("__main__")
 
-# pylint: disable=W0231
+# pylint: disable=W0231,W0221
 
 
 class Nexus_API(DatabaseAPI):
@@ -33,7 +28,7 @@ class Nexus_API(DatabaseAPI):
 
         Args:
             type_ (str): nexus type of the resources to fetch
-            conditions (dict): keys and values used for the WHERE.
+            conditions (dict): keys and values used for the "WHERE".
 
         Returns:
             List
@@ -55,55 +50,51 @@ class Nexus_API(DatabaseAPI):
             protocols (dict): return the protocols metadata
 
         """
-        targets_metadata = self.fetch("Extraction_target", {"emodel.name": emodel})
-
         protocols = {}
-        for t in targets_metadata:
-            protocols[t.ecode] = {
-                "tolerances": t.tolerance,
-                "targets": t.targets,
-                "efeatures": t.efeatures,
-                "location": t.location,
-            }
-
-        path_metadata = self.fetch(
-            type_="Recording",
-            conditions={
-                "emodel.name": emodel,
-                "emodel.species": species,
-                "ecode": tuple(protocols.keys()),
-            },
-        )
-
         cells = {}
-        for p in path_metadata:
+        protocols_threshold = []
 
-            if p.cell_id not in cells:
-                cells[p.cell_id] = {}
+        # Fetch the data from the targets for E-features extraction
 
-            if p.ecode not in cells[p.cell_id]:
-                cells[p.cell_id][p.ecode] = []
+        return cells, protocols, protocols_threshold
 
-            trace_metadata = {
-                "filepath": p.path,
-                "ljp": p.liquid_junction_potential,
-            }
+    def store_efeatures(self, emodel, species, efeatures, currents):
+        """Store the efeatures and currents obtained from BluePyEfe in
+            the extracted e-features ressources.
 
-            for opt_key in ["ton", "toff", "i_unit", "v_unit", "t_unit"]:
-                if opt_key in vars(p) and getattr(p, opt_key) and not (pandas.isnull(p[opt_key])):
-                    trace_metadata[opt_key] = p[opt_key]
+        Args:
+            emodel (str): name of the emodel
+            species (str): name of the species (rat, human, mouse)
+            efeatures (dict): of the format:
+                                {
+                                    'protocol_name':[
+                                        {'feature': feature_name, value: [mean, std]},
+                                        {'feature': feature_name2, value: [mean, std]}
+                                    ]
+                                }
+            currents (dict): of the format:
+                                {
+                                    "hypamp": [mean, std],
+                                    "thresh": [mean, std]
+                                }
 
-            cells[p["cell_id"]][p["ecode"]].append(trace_metadata)
-
-        return cells, protocols
-
-    def store_efeatures(self, emodel, species, efeatures, current):
-        """ Save the efeatures and currents obtained from BluePyEfe"""
+        """
 
     def store_protocols(self, emodel, species, stimuli):
-        """ Save the protocols obtained from BluePyEfe"""
+        """Store the protocols obtained from BluePyEfe in
+            the extracted protocols ressources.
 
-    def store_model(
+        Args:
+            emodel (str): name of the emodel
+            species (str): name of the species (rat, human, mouse)
+            stimuli (dict): of the format:
+                                {
+                                    'protocol_name':
+                                        {"step": ..., "holding": ...}
+                                }
+        """
+
+    def store_emodel(
         self,
         emodel,
         scores,
@@ -113,60 +104,178 @@ class Nexus_API(DatabaseAPI):
         validated=False,
         species=None,
     ):
-        """ Save a model obtained from BluePyEfe"""
+        """Store an emodel obtained from BluePyOpt in a EModel ressource
+
+        Args:
+            emodel (str): name of the emodel
+            scores (dict): scores of the efeatures,
+            params (dict): values of the parameters,
+            optimizer_name (str): name of the optimizer.
+            seed (int): seed used for optimization,
+            validated (bool): True if the model has been validated.
+            species (str): name of the species (rat, human, mouse)
+        """
+
+    def get_emodels(self, emodels, species):
+        """Get the list of emodels matching the .
+
+        Args:
+            emodels (list): list of names of the emodel's metypes
+            species (str): name of the species (rat, human, mouse)
+
+
+        Returns:
+            models (list): return the emodels, of the format:
+            [
+                {
+                    "emodel": ,
+                    "species": ,
+                    "fitness": ,
+                    "parameters": ,
+                    "scores": ,
+                    "validated": ,
+                    "optimizer": ,
+                    "seed": ,
+                }
+            ]
+        """
+        models = []
+        return models
 
     def get_parameters(self, emodel, species):
-        """Get the definition of the parameters to optimize as well as the
-         locations of the mechanisms. Also returns the name to the mechanisms.
+        """Get the definition of the parameters to optimize from the
+            optimization parameters ressources, as well as the
+            locations of the mechanisms. Also returns the names of the mechanisms.
 
         Args:
             emodel (str): name of the emodel
             species (str): name of the species (rat, human, mouse)
 
         Returns:
-            params_definition (dict):
-            mech_definition (dict):
-            mech_names (list):
+            params_definition (dict): of the format:
+                definitions = {
+                        'distributions':
+                            {'distrib_name': {
+                                'function': function,
+                                'parameters': ['param_name']}
+                             },
+                        'parameters':
+                            {'sectionlist_name': [
+                                    {'name': param_name1, 'val': [lbound1, ubound1]},
+                                    {'name': param_name2, 'val': 3.234}
+                                ]
+                             }
+                    }
+            mech_definition (dict): of the format:
+                mechanisms_definition = {
+                    section_name1: {
+                        "mech":[
+                            mech_name1,
+                            mech_name2
+                        ]
+                    },
+                    section_name2: {
+                        "mech": [
+                            mech_name3,
+                            mech_name4
+                        ]
+                    }
+                }
+            mech_names (list): list of mechanisms names
 
         """
 
+        params_definition = {"distributions": {}, "parameters": {}}
+        mech_definition = {}
+        mech_names = []
+
+        return params_definition, mech_definition, mech_names
+
     def get_protocols(self, emodel, species, delay=0.0, include_validation=False):
-        """Get the protocols from the database and put in a format that fits
-         the MainProtocol needs.
+        """Get some of the protocols from the "Extracted protocols" resources depending
+            on "Optimization and validation targets" ressources.
 
         Args:
             emodel (str): name of the emodel
             species (str): name of the species (rat, human, mouse)
             delay (float): additional delay in ms to add at the start of
                 the protocols.
+            include_validation (bool): if True, returns the protocols for validation as well
 
         Returns:
-            protocols_out (dict): protocols definitions
-
+            protocols_out (dict): protocols definitions. Of the format:
+                {
+                     protocolname: {
+                         "type": "StepProtocol" or "StepThresholdProtocol",
+                         "stimuli": {...}
+                         "extra_recordings": ...
+                     }
+                }
         """
+        protocols_out = {}
 
-    def get_features(self, emodel, species, include_validation=False):
-        """Get the efeatures from the database and put in a format that fits
-         the MainProtocol needs.
+        return protocols_out
+
+    def get_features(
+        self,
+        emodel,
+        species,
+        include_validation=False,
+    ):
+        """Get the efeatures from the "Extracted e-features" ressources  depending
+            on "Optimization and validation targets" ressources.
 
         Args:
             emodel (str): name of the emodel
             species (str): name of the species (rat, human, mouse)
+            include_validation (bool): should the features for validation be returned as well
 
         Returns:
-            efeatures_out (dict): efeatures definitions
+            efeatures_out (dict): efeatures definitions. Of the format:
+                {
+                    "protocol_name": {"soma.v":
+                        [{"feature": feature_name, val:[mean, std]}]
+                    }
+                }
 
         """
+        efeatures_out = {
+            "RMPProtocol": {"soma.v": []},
+            "RinProtocol": {"soma.v": []},
+            "SearchHoldingCurrent": {"soma.v": []},
+            "SearchThresholdCurrent": {"soma.v": []},
+        }
+
+        return efeatures_out
 
     def get_morphologies(self, emodel, species):
-        """Get the name and path to the morphologies.
+        """Get the name and path (or data) to the morphologies from
+            the "Optimization morphologies" ressources.
 
         Args:
             emodel (str): name of the emodel
             species (str): name of the species (rat, human, mouse)
 
         Returns:
-            morphology_definition (dict): [{'name': morph_name,
+            morphology_definition (list): [{'name': morph_name,
                                             'path': 'morph_path'}
 
         """
+        morphology_definition = []
+
+        return morphology_definition
+
+    def get_mechanism_paths(self, mechanism_names):
+        """Get the path of the mod files from the "Mechanisms" ressrouce,
+            to copy and compile them locally.
+
+        Args:
+            mechanism_names (list): names of the mechanisms
+
+        Returns:
+            mechanism_paths (dict): {'mech_name': 'mech_path'}
+
+        """
+        mechanism_paths = {}
+
+        return mechanism_paths

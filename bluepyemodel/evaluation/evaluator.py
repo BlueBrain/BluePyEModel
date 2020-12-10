@@ -29,78 +29,6 @@ soma_loc = ephys.locations.NrnSeclistCompLocation(
 )
 
 
-class NrnSomaDistanceCompLocationApical(ephys.locations.NrnSomaDistanceCompLocation):
-    """Custom class for distance to soma computation with apical point."""
-
-    def __init__(
-        self,
-        name,
-        soma_distance=None,
-        seclist_name=None,
-        comment="",
-        apical_point_isec=None,
-    ):
-
-        super().__init__(name, soma_distance, seclist_name, comment)
-        self.apical_point_isec = apical_point_isec
-
-    def instantiate(self, sim=None, icell=None):
-        """Find the instantiate compartment"""
-
-        if self.apical_point_isec is None:
-            raise ephys.locations.EPhysLocInstantiateException("No apical point was given")
-
-        apical_branch = []
-        section = icell.apic[self.apical_point_isec]
-        while True:
-
-            name = str(section.name()).split(".")[-1]
-            if name == "soma[0]":
-                break
-            apical_branch.append(section)
-
-            if sim.neuron.h.SectionRef(sec=section).has_parent():
-                section = sim.neuron.h.SectionRef(sec=section).parent
-            else:
-                raise ephys.locations.EPhysLocInstantiateException(
-                    "soma[0] was not reached from apical point"
-                )
-
-        soma = icell.soma[0]
-
-        sim.neuron.h.distance(0, 0.5, sec=soma)
-
-        icomp = None
-
-        for isec in apical_branch:
-
-            start_distance = sim.neuron.h.distance(1, 0.0, sec=isec)
-            end_distance = sim.neuron.h.distance(1, 1.0, sec=isec)
-
-            min_distance = min(start_distance, end_distance)
-            max_distance = max(start_distance, end_distance)
-
-            if min_distance <= self.soma_distance <= end_distance:
-
-                comp_x = float(self.soma_distance - min_distance) / (max_distance - min_distance)
-
-                icomp = isec(comp_x)
-                seccomp = isec
-
-        if icomp is None:
-            raise ephys.locations.EPhysLocInstantiateException(
-                "No comp found at %s distance from soma" % self.soma_distance
-            )
-
-        logger.debug(
-            "Using %s at distance %f",
-            icomp,
-            sim.neuron.h.distance(1, comp_x, sec=seccomp),
-        )
-
-        return icomp
-
-
 class MultiEvaluator(bluepyopt.evaluators.Evaluator):
 
     """Multiple cell evaluator"""
@@ -363,6 +291,11 @@ def define_feature(
         efel_feature_name,
     )
 
+    if meanstd[1] < 0.01 * meanstd[0]:
+        logger.warning(
+            "E-feature %s has a standard deviation inferior to 1%% of its mean.", feature_name
+        )
+
     if protocol_name:
         recording_names = {"": "%s.%s" % (protocol_name, recording_name)}
     else:
@@ -432,16 +365,11 @@ def define_protocol(
                 )
 
             elif recording_definition["type"] == "somadistanceapic":
-                if "sec_index" not in recording_definition:
-                    raise Exception(
-                        "The extra_recordings definition for 'somadistanceapic' has to contain"
-                        " an entry 'sec_index'."
-                    )
-                location = NrnSomaDistanceCompLocationApical(
+                location = ephys.locations.NrnSecSomaDistanceCompLocation(
                     name=recording_definition["name"],
                     soma_distance=recording_definition["somadistance"],
-                    seclist_name=recording_definition["seclist_name"],
-                    apical_point_isec=recording_definition["sec_index"],
+                    sec_index=recording_definition["sec_index"],
+                    sec_name=recording_definition["sec_name"],
                 )
 
             elif recording_definition["type"] == "nrnseclistcomp":

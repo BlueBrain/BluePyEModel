@@ -432,6 +432,8 @@ class SearchThresholdCurrent:
             exp_std=0.1,
         )
 
+        self.flag_spike_detected = False
+
     def create_protocol(self, holding_current, step_current):
         """Create a one-time use protocol made of a holding and step current"""
         # Create the stimuli and recording
@@ -488,7 +490,12 @@ class SearchThresholdCurrent:
             timeout=timeout,
         )
 
-        return {"bpo_threshold_current": step_current}
+        if self.flag_spike_detected:
+            response = {"bpo_threshold_current": step_current}
+        else:
+            response = {"bpo_threshold_current": None}
+
+        return response
 
     def max_threshold_current(self, rin, rmp):
         """Find the current necessary to get to max_threshold_voltage"""
@@ -541,6 +548,9 @@ class SearchThresholdCurrent:
         )
 
         if spikecount == 1:
+
+            self.flag_spike_detected = True
+
             return mid_bound
 
         if spikecount == 0:
@@ -557,6 +567,9 @@ class SearchThresholdCurrent:
             )
 
         if spikecount > 1:
+
+            self.flag_spike_detected = True
+
             return self.bisection_search(
                 cell_model,
                 param_values,
