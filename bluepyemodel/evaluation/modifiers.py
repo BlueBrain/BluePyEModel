@@ -242,17 +242,13 @@ def remove_axon(sim=None, icell=None):  # pylint: disable=unused-argument
 
 
 def isolate_axon(sim=None, icell=None):
-    """Remove everything except the axon
-
-    TODO: setting soma to small diameter is not compatible with soma recordings.
-    """
+    """Remove everything except the axon."""
     for section in icell.basal:
         sim.neuron.h.delete_section(sec=section)
     for section in icell.apical:
         sim.neuron.h.delete_section(sec=section)
     for section in icell.soma:
-        #  a smaller number does not work here (similar size to AIS diameter)
-        section.diam = 0.5
+        sim.neuron.h.delete_section(sec=section)
 
 
 replace_axon_hoc = """

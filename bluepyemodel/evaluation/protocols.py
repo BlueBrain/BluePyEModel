@@ -11,10 +11,6 @@ from ..ecode import eCodes
 
 logger = logging.getLogger(__name__)
 
-soma_loc = ephys.locations.NrnSeclistCompLocation(
-    name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5
-)
-
 
 class StepProtocol(ephys.protocols.SweepProtocol):
     """Protocol consisting of step and holding current with an additional
@@ -739,7 +735,6 @@ class MainProtocol(ephys.protocols.Protocol):
                         score,
                     )
                 )
-
                 if score > self.score_threshold:
                     logger.debug("Score is higher than score_threshold. Stopping MainProtocol run.")
                     cell_model.unfreeze(param_values.keys())

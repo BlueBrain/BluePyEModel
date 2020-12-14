@@ -4,7 +4,6 @@ from copy import copy
 import logging
 from pathlib import Path
 
-import efel
 
 from .tools.evaluator import evaluate_combos
 
@@ -20,9 +19,9 @@ def calculate_threshold_current(cell, config, holding_current):
         holding_current,
         config["min_threshold_current"],
     )
-    logger.info("min %s", min_current_spike_count)
+    logger.debug("min %s", min_current_spike_count)
     if min_current_spike_count > 0:
-        logger.info("Cell is firing spontaneously at min current, we divide by 2")
+        logger.debug("Cell is firing spontaneously at min current, we divide by 2")
         if config["min_threshold_current"] == 0:
             return None
         config["max_threshold_current"] = copy(config["min_threshold_current"])
@@ -36,9 +35,9 @@ def calculate_threshold_current(cell, config, holding_current):
         config["max_threshold_current"],
     )
 
-    logger.info("max %s", max_current_spike_count)
+    logger.debug("max %s", max_current_spike_count)
     if max_current_spike_count < 1:
-        logger.info("Cell is not firing at max current, we multiply by 2")
+        logger.debug("Cell is not firing at max current, we multiply by 2")
         config["min_threshold_current"] = copy(config["max_threshold_current"])
         config["max_threshold_current"] *= 2.0
         return calculate_threshold_current(cell, config, holding_current)
@@ -62,12 +61,12 @@ def binsearch_threshold_current(
     depth,
 ):
     """Binary search for threshold currents"""
-    logger.info("current %s, %s at depth %s", min_current, max_current, depth)
+    logger.debug("current %s, %s at depth %s", min_current, max_current, depth)
     med_current = min_current + abs(min_current - max_current) / 2
 
     if depth >= int(config["max_recursion_depth"]):
-        logger.info("Reached maximal recursion depth, return latest value")
-        return med_current
+        logger.debug("Reached maximal recursion depth, return latest value")
+        return min_current
 
     spike_count = run_spike_sim(
         cell,
@@ -75,28 +74,29 @@ def binsearch_threshold_current(
         holding_current,
         med_current,
     )
-    logger.info("Med spike count %d", spike_count)
+    logger.debug("Med spike count %d", spike_count)
 
     if spike_count == 0:
-        logger.info("Searching upwards")
+        logger.debug("Searching upwards")
         return binsearch_threshold_current(
             cell, config, holding_current, med_current, max_current, depth + 1
         )
 
+    hs_current = float(config["highest_silent_perc"]) / 100 * med_current
     hs_spike_count = run_spike_sim(
         cell,
         config,
         holding_current,
-        float(config["highest_silent_perc"]) / 100 * med_current,
+        hs_current,
     )
 
-    logger.info("Highest silent spike count %d", hs_spike_count)
+    logger.debug("Highest silent spike count %d", hs_spike_count)
 
     if hs_spike_count == 0 and spike_count <= int(config["max_spikes_at_threshold"]):
-        logger.info("Found threshold %s", med_current)
-        return med_current
+        logger.debug("Found threshold %s", hs_current)
+        return hs_current
 
-    logger.info("Searching downwards")
+    logger.debug("Searching downwards")
     return binsearch_threshold_current(
         cell, config, holding_current, min_current, med_current, depth + 1
     )
@@ -105,6 +105,7 @@ def binsearch_threshold_current(
 def run_spike_sim(cell, config, holding_current, step_current):
     """Run simulation on a cell and compute number of spikes."""
     import bglibpy
+    import efel
 
     cell.add_step(0, config["step_stop"], holding_current)
     cell.add_step(config["step_start"], config["step_stop"], step_current)
@@ -125,6 +126,9 @@ def run_spike_sim(cell, config, holding_current, step_current):
         voltage = cell.get_recording(AXON_LOC)
     else:
         voltage = cell.get_soma_voltage()
+
+    if len(voltage) > 0:
+        raise Exception("No voltage trace!")
 
     efel.reset()
     efel.setIntSetting("strict_stiminterval", True)
@@ -194,10 +198,9 @@ def _current_bglibpy_evaluation(
 
     AIS_scale = None
     if template_format == "v6_ais_scaler":
-        AIS_scale = combo.AIS_scale
-
+        AIS_scale = combo["AIS_scale"]
     cell_kwargs = {
-        "template_filename": str(Path(emodels_hoc_dir) / f"{combo.emodel}.hoc"),
+        "template_filename": str(Path(emodels_hoc_dir) / f"{combo['emodel']}.hoc"),
         "morphology_name": Path(combo[morphology_path]).name,
         "morph_dir": str(Path(combo[morphology_path]).parent),
         "template_format": template_format,
@@ -208,12 +211,17 @@ def _current_bglibpy_evaluation(
         },
     }
     cell = bglibpy.Cell(**cell_kwargs)
+
     protocol_config["is_deterministic"] = set_cell_deterministic(
         cell, protocol_config["deterministic"]
     )
 
     holding_current = calculate_holding_current(cell, protocol_config)
     threshold_current = calculate_threshold_current(cell, protocol_config, holding_current)
+
+    # apply a correction factor to threshold for stochastic cells if in deterministic mode
+    if "stoch_correction" in protocol_config and not set_cell_deterministic(cell, False):
+        threshold_current *= float(protocol_config["stoch_correction"])
 
     cell.delete()
 

@@ -1,9 +1,8 @@
 """Main functions for AIS synthesis."""
-import json
 import logging
 import os
+import json
 from functools import partial
-from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -40,14 +39,13 @@ def _debug_plot(p, scale_min, scale_max, rin_ais, scale, mtype, task_id):
 
 def _synth_combo(combo, ais_models, target_rhos, scale_min, scale_max):
     """compute AIS  scale."""
-    mtype = combo.mtype
-    emodel = combo.emodel
+    mtype = combo["mtype"]
+    emodel = combo["emodel"]
     if mtype not in ais_models:
         mtype = "all"
-    ais_model = deepcopy(ais_models[mtype])
 
-    rin_ais = combo.rin_no_axon * target_rhos[emodel][mtype]
-    p = np.poly1d(ais_model["resistance"][emodel]["polyfit_params"])
+    rin_ais = combo["rin_no_axon"] * target_rhos[emodel][mtype]
+    p = np.poly1d(ais_models[mtype]["resistance"][emodel]["polyfit_params"])
 
     # first ensures we are within the rin range of the fit
     if rin_ais > 10 ** p(np.log10(scale_min)):
@@ -74,8 +72,23 @@ def _synth_combo(combo, ais_models, target_rhos, scale_min, scale_max):
     return {
         "ais_failed": ais_failed,
         "AIS_scale": scale,
-        "AIS_model": json.dumps(ais_model["AIS"]),
+        "AIS_model": json.dumps(ais_models[mtype]["AIS"]),
     }
+
+
+def _clean_ais_model(ais_models):
+    """Remove unnecessary entries in ais_model dict to speed up parallelisation"""
+    ais_models_clean = {}
+    for mtype in ais_models:
+        ais_models_clean[mtype] = {}
+        ais_models_clean[mtype]["AIS"] = ais_models[mtype]["AIS"]
+        ais_models_clean[mtype]["resistance"] = {}
+        for emodel in ais_models[mtype]["resistance"]:
+            ais_models_clean[mtype]["resistance"][emodel] = {}
+            ais_models_clean[mtype]["resistance"][emodel]["polyfit_params"] = ais_models[mtype][
+                "resistance"
+            ][emodel]["polyfit_params"]
+    return ais_models_clean
 
 
 def synthesize_ais(
@@ -124,18 +137,17 @@ def synthesize_ais(
 
     synth_combo = partial(
         _synth_combo,
-        ais_models=ais_models,
+        ais_models=_clean_ais_model(ais_models),
         target_rhos=target_rhos,
         scale_min=scale_min,
         scale_max=scale_max,
     )
-    morphs_combos_df = evaluate_combos(
+    return evaluate_combos(
         morphs_combos_df,
         synth_combo,
         new_columns=[["ais_failed", 1], ["AIS_scale", 1.0], ["AIS_model", ""]],
         task_ids=task_ids,
         continu=continu,
         parallel_factory=parallel_factory,
-        combos_db_filename=str(combos_db_filename) + ".synth_ais",
+        no_sql=True,  # each evaluation is fast, so we won't use sql backend for massive speedup
     )
-    return morphs_combos_df

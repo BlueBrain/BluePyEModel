@@ -178,7 +178,7 @@ class Singlecell_API(DatabaseAPI):
                         raise Exception("Cannot get section name from seclist_name.")
 
                 else:
-                    logger.warning("No apical_points_isec.json found, bAP will be skipped")
+                    logger.debug("No apical_points_isec.json found, bAP will be skipped")
 
             extra_recordings_out.append(extra)
 

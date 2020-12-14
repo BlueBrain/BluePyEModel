@@ -33,6 +33,7 @@ setup(
         'psycopg2',
         'nexusforge',
         'bluepy',
+        'neuron',
     ],
     packages=find_packages(),
     entry_points={

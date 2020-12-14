@@ -43,6 +43,10 @@ def _add_for_optimisation_flag(emodel_db, morphs_combos_df):
     morphs_combos_df["for_optimisation"] = False
     for emodel in morphs_combos_df.emodel.unique():
         morphology = emodel_db.get_morphologies(emodel)[0]["name"]
+
+        if len(morphs_combos_df[morphs_combos_df["name"] == morphology]) == 0:
+            raise Exception(f"Exemplar for {emodel} named {morphology} does not exist")
+
         mask = (morphs_combos_df["name"] == morphology) & (morphs_combos_df.emodel == emodel)
         if len(morphs_combos_df[mask]) == 0:
             new_row = morphs_combos_df[morphs_combos_df["name"] == morphology].iloc[0]
@@ -91,7 +95,7 @@ def _get_mecombos(cell_composition):
 
 
 def _filter_me_types_map(orig_me_types_map, full_emodels):
-    """Filters emodel map with full_emodels (including seeds) and list of wnated emodels."""
+    """Filters emodel map with full_emodels (including seeds) and list of wanted emodels."""
     _dfs = []
     for full_emodel, emodel in full_emodels.items():
         _df = orig_me_types_map[orig_me_types_map.emodel == emodel]
@@ -161,7 +165,6 @@ class CreateMorphCombosDF(BaseTask):
 
         mecombos = _get_mecombos(cell_composition)
         me_types_map = _get_me_types_map(mecombos, emodel_etype_map)
-
         me_types_map = _filter_me_types_map(me_types_map, self.emodel_db.get_emodel_names())
         morphs_combos_df = _create_morphs_combos_df(morphs_df, me_types_map)
         morphs_combos_df = _add_for_optimisation_flag(self.emodel_db, morphs_combos_df)

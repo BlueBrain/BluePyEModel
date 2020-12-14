@@ -38,7 +38,7 @@ def _get_database(api, emodel_path, final_path=None, legacy_dir_structure=True):
 
 
 def get_release_paths(release_path):
-    """Fix the folder sturcture of emodel release."""
+    """Fix the folder structure of emodel release."""
     release_path = Path(release_path)
     return {
         "hoc_path": release_path / "hoc_files",
@@ -50,7 +50,7 @@ def get_release_paths(release_path):
     }
 
 
-def create_hoc_file(emodel, emodel_db, template_path, ais_models):
+def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
     """Create hoc files for a given emodel.
     Args:
         emodel (str): name of emodel
@@ -59,10 +59,15 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models):
         ais_models (dict): contains information about the AIS shape and eletrical properties
     """
     from bluepyemodel.evaluation.model import create_cell_model
-    from bluepyemodel.evaluation.modifiers import get_synth_axon_hoc
 
-    # TODO: this assumes that the AIS models are the same for all mtypes/etypes
-    morph_modifier_hoc = get_synth_axon_hoc(ais_models["mtype"]["all"]["AIS"]["popt"])
+    if ais_models is None:
+        from bluepyemodel.evaluation.modifiers import replace_axon_hoc as morph_modifier_hoc
+
+    else:
+        from bluepyemodel.evaluation.modifiers import get_synth_axon_hoc
+
+        # TODO: this assumes that the AIS models are the same for all mtypes/etypes
+        morph_modifier_hoc = get_synth_axon_hoc(ais_models["mtype"]["all"]["AIS"]["popt"])
 
     parameters, mechanisms, _ = emodel_db.get_parameters(emodel)
     cell_model = create_cell_model(
@@ -81,8 +86,8 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models):
 
 
 @cli.command("create_emodel_release")
-@click.option("--ais-models", type=click.Path(exists=True), required=True)
-@click.option("--target-rho-factors", type=click.Path(exists=True), required=True)
+@click.option("--ais-models", type=click.Path(exists=True), required=False)
+@click.option("--target-rho-factors", type=click.Path(exists=True), required=False)
 @click.option("--emodel-api", type=str, default="singlecell")
 @click.option("--emodel-path", type=click.Path(exists=True), required=True)
 @click.option("--final-path", type=click.Path(exists=True), required=True)
@@ -114,8 +119,7 @@ def create_emodel_release(
         mechanisms (str): path to mechanisms folder, if None, we will not try to copy them
         emodel_release (str): path to folder to store emodel release
     """
-    # 1) create release folders, the structure is fixed to be compatible with
-    # the function get_me_combos_parameters below
+    # 1) create release folders
     L.info("Creating emodel release folder structure.")
     release_paths = get_release_paths(emodel_release)
     if not Path(emodel_release).exists():
@@ -124,30 +128,33 @@ def create_emodel_release(
 
     # 2) load required files
     L.info("Loading required files.")
-    with open(ais_models, "r") as ais_file:
-        ais_models = yaml.full_load(ais_file)
-    with open(target_rho_factors, "r") as rho_file:
-        target_rho_factors_all = yaml.full_load(rho_file)
     etype_emodel_map = pd.read_csv(etype_emodel_map_path)
-    target_rho_factors = {
-        emodel: target_rho_factors_all[emodel] for emodel in etype_emodel_map.emodel
-    }
-
     emodel_db = _get_database(emodel_api, emodel_path, final_path)
+    if ais_models:
+        with open(ais_models, "r") as ais_file:
+            ais_models = yaml.full_load(ais_file)
+        with open(target_rho_factors, "r") as rho_file:
+            target_rho_factors = {
+                emodel: target_rho_factors_all[emodel] for emodel in etype_emodel_map.emodel
+            }
+    else:
+        ais_models = None
+        target_rho_factors = None
 
     # 3) write hoc files for each emodel
     L.info("Writing hoc files for each emodel")
-    for emodel in target_rho_factors:
+    for emodel in etype_emodel_map.emodel.unique():
         hoc = create_hoc_file(emodel, emodel_db, template, ais_models)
         with open(release_paths["hoc_path"] / f"{emodel}.hoc", "w") as hoc_file:
             hoc_file.write(hoc)
 
     # 4) write other release files
     L.info("Copy other release files.")
-    with open(release_paths["ais_model_path"], "w") as ais_file:
-        yaml.dump(ais_models, ais_file)
-    with open(release_paths["target_rho_path"], "w") as rho_file:
-        yaml.dump(target_rho_factors, rho_file)
+    if ais_models is not None:
+        with open(release_paths["ais_model_path"], "w") as ais_file:
+            yaml.dump(ais_models, ais_file)
+        with open(release_paths["target_rho_path"], "w") as rho_file:
+            yaml.dump(target_rho_factors, rho_file)
 
     shutil.copyfile(etype_emodel_map_path, release_paths["etype_emodel_map"])
 
@@ -180,16 +187,7 @@ def _create_emodel_column(cells, etype_emodel_map):
     assert set(cells.etype.unique()).issubset(
         set(etype_emodel_map.etype.unique())
     ), "There are missing etypes in etype_emodel_map"
-
-    cells["emodel"] = cells[["mtype", "etype"]].apply(
-        lambda row: etype_emodel_map.loc[
-            (etype_emodel_map["mtype"] == row["mtype"])
-            & (etype_emodel_map["etype"] == row["etype"]),
-            "emodel",
-        ].tolist()[0],
-        axis=1,
-    )
-    return cells
+    return pd.merge(cells, etype_emodel_map, on=["mtype", "etype"])
 
 
 def _add_combo_name(combos_df):
@@ -204,13 +202,11 @@ def _add_combo_name(combos_df):
 def save_mecombos(combos_df, output, with_scaler=True):
     """Save dataframe to mecombo_emodel.tsv file"""
     if "AIS_scaler" not in combos_df.columns:
-        combos_df = combos_df.rename(
-            columns={
-                "AIS_scale": "AIS_scaler",
-                "mtype": "fullmtype",
-                "morphology": "morph_name",
-            }
-        )
+        combos_df = combos_df.rename(columns={"AIS_scale": "AIS_scaler"})
+    if "fullmtype" not in combos_df.columns:
+        combos_df = combos_df.rename(columns={"mtype": "fullmtype"})
+    if "morph_name" not in combos_df.columns:
+        combos_df = combos_df.rename(columns={"morphology": "morph_name"})
     combos_df["layer"] = combos_df["layer"].astype(int)
     combos_df = _add_combo_name(combos_df)
     columns = [
@@ -231,6 +227,7 @@ def save_mecombos(combos_df, output, with_scaler=True):
 
     if with_scaler:
         columns.append("AIS_scaler")
+
     combos_df.to_csv(
         output,
         columns=columns,
@@ -255,6 +252,7 @@ def save_mecombos(combos_df, output, with_scaler=True):
 @click.option("--n-cells", default=None, type=int)
 @click.option("--mtype", default=None, type=str)
 @click.option("--parallel-lib", default="multiprocessing")
+@click.option("--continu", is_flag=True)
 def get_me_combos_scales(
     circuit_morphologies_mvd3,
     release_path,
@@ -266,6 +264,7 @@ def get_me_combos_scales(
     n_cells,
     mtype,
     parallel_lib,
+    continu,
 ):
     """For each me-combos, compute the AIS scale and thresholds currents.
 
@@ -308,9 +307,7 @@ def get_me_combos_scales(
     cells = _create_emodel_column(cells, etype_emodel_map)
     if morphology_path is None:
         morphology_path = Path(circuit_morphologies_mvd3).parent
-    cells["morphology_path"] = cells["morphology"].apply(
-        lambda morph: str(Path(morphology_path) / morph) + ".asc"
-    )
+    cells["morphology_path"] = str(morphology_path) + "/" + cells["morphology"] + ".asc"
     cells["gid"] = cells.index
     morphs_combos_df = cells[
         ["gid", "morphology_path", "emodel", "mtype", "etype", "layer", "morphology"]
@@ -327,6 +324,7 @@ def get_me_combos_scales(
         parallel_factory=parallel_factory,
         scales_params=ais_models["scales_params"],
         combos_db_filename=Path(sql_tmp_path) / "synth_db.sql",
+        continu=continu,
     )
 
     # 4) save all values in .tsv
@@ -424,20 +422,25 @@ def get_me_combos_currents(
 
     # 3) save all values in .tsv
     L.info("Save results in .tsv")
-
     all_morphs_combos_df = pd.read_csv(mecombos_path, sep="\t")
-    all_morphs_combos_df = _add_combo_name(all_morphs_combos_df).set_index("combo_name")
+    all_morphs_combos_df = _add_combo_name(all_morphs_combos_df)
     if "fullmtype" not in combos_df.columns:
         combos_df["fullmtype"] = combos_df["mtype"]
     if "morph_name" not in combos_df.columns:
+        combos_df["fullmtype"] = combos_df["mtype"]
         combos_df["morph_name"] = combos_df["morphology"]
+    combos_df = _add_combo_name(combos_df)
 
     if "threshold_current" not in all_morphs_combos_df.columns:
         all_morphs_combos_df["threshold_current"] = 0
         all_morphs_combos_df["holding_current"] = 0
 
-    all_morphs_combos_df.update(_add_combo_name(combos_df).set_index("combo_name"))
-    all_morphs_combos_df = all_morphs_combos_df.reset_index(drop=True)
+    all_morphs_combos_df.loc[
+        all_morphs_combos_df.combo_name.isin(combos_df.combo_name), "threshold_current"
+    ] = combos_df["threshold_current"].to_list()
+    all_morphs_combos_df.loc[
+        all_morphs_combos_df.combo_name.isin(combos_df.combo_name), "holding_current"
+    ] = combos_df["holding_current"].to_list()
 
     with_scaler = False
     if "AIS_scaler" in all_morphs_combos_df:
@@ -450,7 +453,7 @@ def get_me_combos_currents(
     parallel_factory.shutdown()
 
 
-def fix_ais(combo, out_path="fixed_cells_test"):
+def fix_ais(combo, out_path="fixed_cells_test", morph_name="combo_name"):
     """Modify morphology first axon section in place from combo data."""
     morphology = Morphology(combo.morphology_path)
 
@@ -468,7 +471,7 @@ def fix_ais(combo, out_path="fixed_cells_test"):
         raise Exception(combo)
 
     morphology = Morphology(morphology, morphio.Option.nrn_order)  # ensures NEURON order
-    morphology.write(str(Path(out_path) / Path(combo.morphology_path).name))
+    morphology.write(str(Path(out_path) / combo[morph_name]) + ".asc")
 
 
 def taper_function(distance, strength, taper_scale, terminal_diameter, scale=1.0):
@@ -476,9 +479,8 @@ def taper_function(distance, strength, taper_scale, terminal_diameter, scale=1.0
     return strength * np.exp(-distance / taper_scale) + terminal_diameter * scale
 
 
-def modify_ais(morphology, taper_func):
+def modify_ais(morphology, taper_func, L_target=65):
     """Modify morphology first axon section in place using taper_func."""
-    L_target = 65  # we set it to a little longer thatn 60, to ensures the end points are good
     for root_section in morphology.root_sections:
         if root_section.type == morphio.SectionType.axon:
             dist = 0
@@ -496,8 +498,19 @@ def modify_ais(morphology, taper_func):
                     break
 
 
+def _create_etype_column(cells, cell_composition):
+    """Create etype column from cell_composition.yaml data."""
+    dfs = []
+    for data in cell_composition["neurons"]:
+        for etype in data["traits"]["etype"]:
+            _df = cells[cells.mtype == data["traits"]["mtype"]].copy()
+            _df.loc[:, "etype"] = etype
+            dfs.append(_df)
+    return pd.concat(dfs).reset_index(drop=True)
+
+
 @cli.command("set_me_combos_scales_inplace")
-@click.option("--mecombos-path", type=click.Path(exists=True), required=True)
+@click.option("--mecombos-path", type=click.Path(exists=True), required=False)
 @click.option("--to-fix-combos-path", type=click.Path(exists=True), required=False)
 @click.option(
     "--release-path",
@@ -510,10 +523,11 @@ def modify_ais(morphology, taper_func):
 @click.option("--mecombo-emodel-tsv-path", default="mecombo_emodel.tsv", type=str)
 @click.option("--combos-df-path", default="mecombo_emodel.tsv", type=str)
 @click.option("--emodel-api", default="singlecell", type=str)
+@click.option("--cell-composition-path", type=click.Path(exists=True), required=False)
 @click.option("--sql-tmp-path", default="tmp", type=str)
 @click.option("--parallel-lib", default="multiprocessing")
 @click.option("--continu", is_flag=True)
-def set_me_combos_scales_inplace(  # pylint: disable=too-many-locals
+def set_me_combos_scales_inplace(  # pylint: disable-all
     mecombos_path,
     to_fix_combos_path,
     release_path,
@@ -522,6 +536,7 @@ def set_me_combos_scales_inplace(  # pylint: disable=too-many-locals
     mecombo_emodel_tsv_path,
     combos_df_path,
     emodel_api,
+    cell_composition_path,
     sql_tmp_path,
     parallel_lib,
     continu,
@@ -537,6 +552,7 @@ def set_me_combos_scales_inplace(  # pylint: disable=too-many-locals
         fixed_morphology_path (str): path to folder to save modified morphologies
         combos_df_path (str): path to .csv file to save all result dataframe
         emodel_api (str): name of emodel api, so far only 'singlecell' is available
+        cell_composition_path (str): path to cell_composition.yaml
         protocol_config_path (str): path to yaml file with protocol config for bglibpy
         sql_tmp_path (str): path to a folder to save sql files used during computations
         parallel_lib (str): parallel library
@@ -548,23 +564,6 @@ def set_me_combos_scales_inplace(  # pylint: disable=too-many-locals
 
     # 1) load release data, cells and compile mechanisms
     L.info("Load release data, cells and compile mechanisms.")
-    all_morphs_combos_df = pd.read_csv(mecombos_path, sep="\t")
-
-    if to_fix_combos_path is not None:
-        to_fix_combos_df = pd.read_csv(to_fix_combos_path, header=None, names=["combo_name"])
-        morphs_combos_df = all_morphs_combos_df[
-            all_morphs_combos_df.combo_name.isin(to_fix_combos_df.combo_name)
-        ].copy()
-    else:
-        morphs_combos_df = all_morphs_combos_df.copy()
-
-    assert len(morphs_combos_df.index) == len(to_fix_combos_df.index)
-
-    morphs_combos_df["mtype"] = morphs_combos_df["fullmtype"]
-    morphs_combos_df["name"] = morphs_combos_df["morph_name"]
-    morphs_combos_df["morphology_path"] = morphs_combos_df["name"].apply(
-        lambda name: str(Path(morphology_path) / name) + ".asc"
-    )
 
     release_paths = get_release_paths(release_path)
     with open(release_paths["ais_model_path"], "r") as ais_file:
@@ -575,6 +574,60 @@ def set_me_combos_scales_inplace(  # pylint: disable=too-many-locals
     if Path(release_paths["mechanisms"]).exists():
         sh.nrnivmodl(release_paths["mechanisms"])  # pylint: disable=no-member
     emodel_db = _get_database(emodel_api, release_paths["emodel_path"])
+
+    if mecombos_path:
+        L.info("Loading cells from mecombo_emodel.tsv file")
+        all_morphs_combos_df = pd.read_csv(mecombos_path, sep="\t")
+        morph_name = "name"  # we will keep original morph names
+    else:
+        L.info("Loading cells from morphology folder")
+        from synthesis_workflow.tools import load_neurondb_to_dataframe
+
+        morph_name = "combo_name"  # we will write a morph per combo
+        morphology_path = Path(morphology_path)
+        morph_dirs = {"morphology_path": str(morphology_path.absolute())}
+        neurondb_path = morphology_path / "neuronDB.xml"
+        assert neurondb_path.exists(), "No neuronDB.xml file found in morphology_path"
+        cells = load_neurondb_to_dataframe(neurondb_path, morphology_dirs=morph_dirs)
+        cells["morphology_path"] = cells["morphology_path"].apply(lambda path: str(path))
+        etype_emodel_map = pd.read_csv(release_paths["etype_emodel_map"])
+        with open(cell_composition_path, "r") as cell_comp_file:
+            cell_composition = yaml.safe_load(cell_comp_file)
+        cells = _create_etype_column(cells, cell_composition)
+        cells = _create_emodel_column(cells, etype_emodel_map)
+        cells["gid"] = cells.index
+        if "morphology" not in cells.columns:
+            cells["morphology"] = cells["name"]
+        if "name" not in cells.columns:
+            cells["name"] = cells["morphology"]
+
+        all_morphs_combos_df = cells[
+            ["gid", "morphology_path", "emodel", "mtype", "etype", "layer", "morphology"]
+        ]
+
+        if "fullmtype" not in all_morphs_combos_df.columns:
+            all_morphs_combos_df["fullmtype"] = all_morphs_combos_df["mtype"]
+        if "name" not in all_morphs_combos_df.columns:
+            all_morphs_combos_df["name"] = all_morphs_combos_df["morphology"]
+        if "morph_name" not in all_morphs_combos_df.columns:
+            all_morphs_combos_df["morph_name"] = all_morphs_combos_df["name"]
+        all_morphs_combos_df = _add_combo_name(all_morphs_combos_df)
+
+    if to_fix_combos_path is not None:
+        to_fix_combos_df = pd.read_csv(to_fix_combos_path, header=None, names=["combo_name"])
+        morphs_combos_df = all_morphs_combos_df[
+            all_morphs_combos_df.combo_name.isin(to_fix_combos_df.combo_name)
+        ].copy()
+        assert len(morphs_combos_df.index) == len(to_fix_combos_df.index)
+    else:
+        morphs_combos_df = all_morphs_combos_df.copy()
+
+    if "mtype" not in morphs_combos_df.columns:
+        morphs_combos_df["mtype"] = morphs_combos_df["fullmtype"]
+    if "morphology_path" not in morphs_combos_df.columns:
+        morphs_combos_df["morphology_path"] = morphs_combos_df["name"].apply(
+            lambda name: str(Path(morphology_path) / name) + ".asc"
+        )
 
     # 2) Compute AIS scales
     L.info("Compute AIS scales.")
@@ -597,12 +650,14 @@ def set_me_combos_scales_inplace(  # pylint: disable=too-many-locals
     Path(fixed_morphology_path).mkdir(parents=True)
 
     for gid in tqdm(combos_df.index):
-        fix_ais(combos_df.loc[gid], fixed_morphology_path)
+        fix_ais(combos_df.loc[gid], fixed_morphology_path, morph_name=morph_name)
 
     # 4) save new mecombos_emodel.tsv file with updated entries
     all_morphs_combos_df.update(combos_df)
     combos_df.to_csv(combos_df_path, index=False)
     Path(mecombo_emodel_tsv_path).parent.mkdir(parents=True, exist_ok=True)
+    if morph_name == "combo_name":
+        all_morphs_combos_df["morph_name"] = all_morphs_combos_df["combo_name"]
     save_mecombos(all_morphs_combos_df, mecombo_emodel_tsv_path, with_scaler=False)
 
     # clean up the parallel library, if needed

@@ -32,8 +32,8 @@ def _get_synth_modifiers(combo, morph_modifiers=None):
             0,
             partial(
                 synth_axon,
-                params=json.loads(combo.AIS_model)["popt"],
-                scale=combo.AIS_scale,
+                params=json.loads(combo["AIS_model"])["popt"],
+                scale=combo["AIS_scale"],
             ),
         )
     else:
@@ -76,8 +76,7 @@ def _single_evaluation(
 
 def get_combo_hash(combo):
     """Convert combo values to hash for saving traces."""
-    msg = json.dumps(combo[["name", "emodel", "mtype", "etype"]].tolist())
-    return sha256(msg.encode()).hexdigest()
+    return sha256(json.dumps(combo).encode()).hexdigest()
 
 
 def _save_traces(trace_folder, responses, combo_hash):
@@ -144,6 +143,7 @@ def get_emodel_data(
     morph_modifiers,
 ):
     """Gather needed emodel data and build cell model for evaluation."""
+
     parameters, mechanisms, _ = emodel_db.get_parameters(combo["emodel"])
     protocols = emodel_db.get_protocols(combo["emodel"])
     features = emodel_db.get_features(combo["emodel"])
@@ -168,12 +168,16 @@ def _rin_evaluation(
     with_currents=False,
     stochasticity=False,
     timeout=1000,
+    ais_recording=False,
 ):
     """Evaluating rin protocol."""
+
     cell_model, _, features, emodel_params = get_emodel_data(
         emodel_db, combo, morphology_path, copy(morph_modifiers)
     )
-    main_protocol, features = define_main_protocol({}, features, stochasticity)
+    main_protocol, features = define_main_protocol(
+        {}, features, stochasticity, ais_recording=ais_recording
+    )
 
     cell_model.freeze(emodel_params)
     sim = get_simulator(stochasticity, [cell_model])
@@ -222,14 +226,15 @@ def evaluate_ais_rin(
     Returns:
         pandas.DataFrame: original combos with computed rin of ais
     """
-
     key = "rin_ais"
+
     rin_ais_evaluation = partial(
         _rin_evaluation,
         emodel_db=emodel_db,
         morph_modifiers=[isolate_axon],
         key=key,
         morphology_path=morphology_path,
+        ais_recording=True,
     )
     return evaluate_combos(
         morphs_combos_df,
