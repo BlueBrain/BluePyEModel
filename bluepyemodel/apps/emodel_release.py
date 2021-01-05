@@ -71,7 +71,7 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
 
     parameters, mechanisms, _ = emodel_db.get_parameters(emodel)
     cell_model = create_cell_model(
-        "cell_model",
+        emodel,
         emodel_db.get_morphologies(emodel),
         mechanisms,
         parameters,
@@ -134,6 +134,7 @@ def create_emodel_release(
         with open(ais_models, "r") as ais_file:
             ais_models = yaml.full_load(ais_file)
         with open(target_rho_factors, "r") as rho_file:
+            target_rho_factors_all = yaml.safe_load(rho_file)
             target_rho_factors = {
                 emodel: target_rho_factors_all[emodel] for emodel in etype_emodel_map.emodel
             }
