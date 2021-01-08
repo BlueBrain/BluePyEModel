@@ -37,6 +37,8 @@ setup(
     ],
     packages=find_packages(),
     entry_points={
-        "console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"],
+        "console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"]
     },
+    include_package_data=True,
+    package_data={'': ['data/*.npy']},
 )

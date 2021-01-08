@@ -13,42 +13,58 @@ class PosCheops(BPEM_stimulus):
 
     name = "PosCheops"
 
-    ramp1_duration = 4000.0
-    ramp2_duration = 2000.0
-    ramp3_duration = 1333.0
-    inter_delay = 500.0
-
     def __init__(self, location, **kwargs):
         """Constructor
         Args:
             location(Location): location of stimulus
         """
 
-        for k in ["delay", "amp", "holding_current"]:
-            if k not in kwargs:
-                raise Exception(
-                    "Argument {} missing for initialisation of " "eCode {}".format(k, self.name)
-                )
+        self.amp = kwargs.get("amp", None)
+        self.amp_rel = kwargs.get("thresh_perc", 300.0)
 
-        total_duration = (
-            kwargs["delay"]
-            + 2.0 * self.ramp1_duration
-            + 2.0 * self.ramp2_duration
-            + 2.0 * self.ramp3_duration
-            + 3.0 * self.inter_delay
-        )
-        step_duration = total_duration - self.inter_delay - kwargs["delay"]
+        self.holding_current = kwargs.get("holding_current", None)
+        self.threshold_current = None
+
+        if self.amp is None and self.amp_rel is None:
+            raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
+
+        self.delay = kwargs.get("delay", 250.0)
+        self.duration = kwargs.get("duration", 1350.0)
+
+        self.ramp1_duration = kwargs.get("ramp1_duration", 4000.0)
+        self.ramp2_duration = kwargs.get("ramp2_duration", 2000.0)
+        self.ramp3_duration = kwargs.get("ramp3_duration", 1333.0)
+        self.inter_delay = kwargs.get("inter_delay", 2000.0)
 
         super().__init__(
-            step_amplitude=kwargs["amp"],
-            step_delay=kwargs["delay"],
-            total_duration=total_duration,
-            step_duration=step_duration,
-            holding_current=kwargs["holding_current"],
             location=location,
         )
 
-        self.toff = self.step_duration + self.step_delay
+        self.toff = self.duration + self.delay
+
+    @property
+    def stim_start(self):
+        return self.delay
+
+    @property
+    def stim_end(self):
+        return (
+            self.delay
+            + 2.0 * self.inter_delay
+            + 2.0 * self.ramp1_duration
+            + 2.0 * self.ramp2_duration
+            + 2.0 * self.ramp3_duration
+        )
+
+    @property
+    def total_duration(self):
+        return self.stim_end + self.delay
+
+    @property
+    def amplitude(self):
+        if self.amp_rel is None or self.threshold_current is None:
+            return self.amp
+        return self.threshold_current * (float(self.amp_rel) / 100.0)
 
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
@@ -64,18 +80,18 @@ class PosCheops(BPEM_stimulus):
         self.time_vec.append(0.0)
         self.current_vec.append(self.holding_current)
 
-        self.time_vec.append(self.step_delay)
+        self.time_vec.append(self.delay)
         self.current_vec.append(self.holding_current)
-        self.time_vec.append(self.step_delay + self.ramp1_duration)
-        self.current_vec.append(self.holding_current + self.step_amplitude)
-        self.time_vec.append(self.step_delay + 2.0 * self.ramp1_duration)
+        self.time_vec.append(self.delay + self.ramp1_duration)
+        self.current_vec.append(self.holding_current + self.amplitude)
+        self.time_vec.append(self.delay + 2.0 * self.ramp1_duration)
         self.current_vec.append(self.holding_current)
 
-        start_cheops2 = self.step_delay + 2.0 * self.ramp1_duration + self.inter_delay
+        start_cheops2 = self.delay + 2.0 * self.ramp1_duration + self.inter_delay
         self.time_vec.append(start_cheops2)
         self.current_vec.append(self.holding_current)
         self.time_vec.append(start_cheops2 + self.ramp2_duration)
-        self.current_vec.append(self.holding_current + self.step_amplitude)
+        self.current_vec.append(self.holding_current + self.amplitude)
         self.time_vec.append(start_cheops2 + 2.0 * self.ramp2_duration)
         self.current_vec.append(self.holding_current)
 
@@ -83,7 +99,7 @@ class PosCheops(BPEM_stimulus):
         self.time_vec.append(start_cheops3)
         self.current_vec.append(self.holding_current)
         self.time_vec.append(start_cheops3 + self.ramp3_duration)
-        self.current_vec.append(self.holding_current + self.step_amplitude)
+        self.current_vec.append(self.holding_current + self.amplitude)
         self.time_vec.append(start_cheops3 + 2.0 * self.ramp3_duration)
         self.current_vec.append(self.holding_current)
 
@@ -106,33 +122,33 @@ class PosCheops(BPEM_stimulus):
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, self.holding_current, dtype="float64")
 
-        idx_ton = int(self.step_delay / dt)
+        idx_ton = int(self.delay / dt)
         idx_inter_delay = int(self.inter_delay / dt)
         idx_ramp1_duration = int(self.ramp1_duration / dt)
         idx_ramp2_duration = int(self.ramp2_duration / dt)
         idx_ramp3_duration = int(self.ramp3_duration / dt)
 
         current[idx_ton : idx_ton + idx_ramp1_duration] += numpy.linspace(
-            0.0, self.step_amplitude, idx_ramp1_duration
+            0.0, self.amplitude, idx_ramp1_duration
         )
         current[
             idx_ton + idx_ramp1_duration : idx_ton + (2 * idx_ramp1_duration)
-        ] += numpy.linspace(self.step_amplitude, 0.0, idx_ramp1_duration)
+        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp1_duration)
 
         idx_ton2 = idx_ton + (2 * idx_ramp1_duration) + idx_inter_delay
         current[idx_ton2 : idx_ton2 + idx_ramp2_duration] += numpy.linspace(
-            0.0, self.step_amplitude, idx_ramp2_duration
+            0.0, self.amplitude, idx_ramp2_duration
         )
         current[
             idx_ton2 + idx_ramp2_duration : idx_ton2 + (2 * idx_ramp2_duration)
-        ] += numpy.linspace(self.step_amplitude, 0.0, idx_ramp2_duration)
+        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp2_duration)
 
         idx_ton3 = idx_ton2 + (2 * idx_ramp2_duration) + idx_inter_delay
         current[idx_ton3 : idx_ton3 + idx_ramp3_duration] += numpy.linspace(
-            0.0, self.step_amplitude, idx_ramp3_duration
+            0.0, self.amplitude, idx_ramp3_duration
         )
         current[
             idx_ton3 + idx_ramp3_duration : idx_ton3 + (2 * idx_ramp3_duration)
-        ] += numpy.linspace(self.step_amplitude, 0.0, idx_ramp3_duration)
+        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp3_duration)
 
         return t, current

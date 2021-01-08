@@ -1,4 +1,4 @@
-"""Ramp stimulus class"""
+"""sAHP stimulus class"""
 import logging
 import numpy
 
@@ -7,11 +7,11 @@ from bluepyemodel.ecode.stimulus import BPEM_stimulus
 logger = logging.getLogger(__name__)
 
 
-class Ramp(BPEM_stimulus):
+class sAHP(BPEM_stimulus):
 
-    """Ramp current stimulus"""
+    """sAHP current stimulus"""
 
-    name = "Ramp"
+    name = "sAHP"
 
     def __init__(self, location, **kwargs):
         """Constructor
@@ -22,15 +22,25 @@ class Ramp(BPEM_stimulus):
         self.amp = kwargs.get("amp", None)
         self.amp_rel = kwargs.get("thresh_perc", 200.0)
 
-        self.holding_current = kwargs.get("holding_current", None)
-        self.threshold_current = None
+        self.long_amp = kwargs.get("long_amp", None)
+        self.long_amp_rel = kwargs.get("long_amp_rel", 40.0)
 
         if self.amp is None and self.amp_rel is None:
             raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
 
+        if self.long_amp is None and self.long_amp_rel is None:
+            raise Exception(
+                "In stimulus %s, long_amp and long_amp_rel cannot be both None." % self.name
+            )
+
+        self.holding_current = kwargs.get("holding_current", None)
+        self.threshold_current = None
+
         self.delay = kwargs.get("delay", 250.0)
-        self.duration = kwargs.get("duration", 1350.0)
-        self.total_duration = kwargs.get("totduration", 1850.0)
+        self.tmid = kwargs.get("tmid", 500.0)
+        self.tmid2 = kwargs.get("tmid2", 725.0)
+        self.toff = kwargs.get("toff", 1175)
+        self.total_duration = kwargs.get("totduration", 1425.0)
 
         super().__init__(
             location=location,
@@ -42,13 +52,19 @@ class Ramp(BPEM_stimulus):
 
     @property
     def stim_end(self):
-        return self.delay + self.duration
+        return self.toff
 
     @property
     def amplitude(self):
         if self.amp_rel is None or self.threshold_current is None:
             return self.amp
         return self.threshold_current * (float(self.amp_rel) / 100.0)
+
+    @property
+    def long_amplitude(self):
+        if self.long_amp_rel is None or self.threshold_current is None:
+            return self.long_amp
+        return self.threshold_current * (float(self.long_amp_rel) / 100.0)
 
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
@@ -67,10 +83,25 @@ class Ramp(BPEM_stimulus):
         self.time_vec.append(self.delay)
         self.current_vec.append(self.holding_current)
 
-        self.time_vec.append(self.stim_end)
+        self.time_vec.append(self.delay)
+        self.current_vec.append(self.holding_current + self.long_amplitude)
+
+        self.time_vec.append(self.tmid)
+        self.current_vec.append(self.holding_current + self.long_amplitude)
+
+        self.time_vec.append(self.tmid)
         self.current_vec.append(self.holding_current + self.amplitude)
 
-        self.time_vec.append(self.stim_end)
+        self.time_vec.append(self.tmid2)
+        self.current_vec.append(self.holding_current + self.amplitude)
+
+        self.time_vec.append(self.tmid2)
+        self.current_vec.append(self.holding_current + self.long_amplitude)
+
+        self.time_vec.append(self.toff)
+        self.current_vec.append(self.holding_current + self.long_amplitude)
+
+        self.time_vec.append(self.toff)
         self.current_vec.append(self.holding_current)
 
         self.time_vec.append(self.total_duration)
@@ -85,14 +116,19 @@ class Ramp(BPEM_stimulus):
         )
 
     def generate(self, dt=0.1):
-        """Return current time series"""
+        """Return current time series
 
+        WARNING: do not offset ! This is on-top of a holding stimulus."""
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, self.holding_current, dtype="float64")
 
-        ton_idx = int(self.stim_start / dt)
-        toff_idx = int((self.stim_end) / dt)
+        ton = int(self.delay / dt)
+        tmid = int(self.tmid / dt)
+        tmid2 = int(self.tmid2 / dt)
+        toff = int(self.toff / dt)
 
-        current[ton_idx:toff_idx] += numpy.linspace(0.0, self.amplitude, toff_idx - ton_idx)
+        current[ton:tmid] += self.long_amplitude
+        current[tmid2:toff] += self.long_amplitude
+        current[tmid:tmid2] += self.amplitude
 
         return t, current

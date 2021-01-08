@@ -12,16 +12,12 @@ from ..ecode import eCodes
 logger = logging.getLogger(__name__)
 
 
-class StepProtocol(ephys.protocols.SweepProtocol):
-    """Protocol consisting of step and holding current with an additional
-    stochasticity option"""
+class BPEM_Protocol(ephys.protocols.SweepProtocol):
+
+    """Protocol having rheobase-rescaling and stochasticity capabilities"""
 
     def __init__(
-        self,
-        name=None,
-        stimulus=None,
-        recordings=None,
-        stochasticity=True,
+        self, name=None, stimulus=None, recordings=None, stochasticity=False, threshold_based=False
     ):
         """Constructor
 
@@ -32,6 +28,8 @@ class StepProtocol(ephys.protocols.SweepProtocol):
                 protocol
             stochasticity (bool): turns on or off the channels that can be
                 stochastic
+            threshold_based (bool): should the amplitude of the protocol be
+                rescaled based on the rheobase
         """
 
         super().__init__(
@@ -42,77 +40,22 @@ class StepProtocol(ephys.protocols.SweepProtocol):
 
         self.stimulus = stimulus
         self.stochasticity = stochasticity
+        self.threshold_based = threshold_based
 
         self.features = []
 
     @property
     def stim_start(self):
         """Time stimulus starts"""
-        return self.stimulus.step_delay
+        return self.stimulus.stim_start
 
     @property
     def stim_end(self):
-        return self.stimulus.step_delay + self.stimulus.step_duration
+        return self.stimulus.stim_end
 
     @property
-    def step_amplitude(self):
-        return self.stimulus.step_amplitude
-
-    def run(self, cell_model, param_values, sim=None, isolate=None, timeout=None):
-        """Run protocol"""
-        if self.stochasticity:
-            for mechanism in cell_model.mechanisms:
-                if not mechanism.deterministic:
-                    if "Stoch" not in mechanism.suffix:
-                        logger.warning(
-                            """You are trying to set a mechanism to stochastic mode
-                                       without 'Stoch' in the mechanism prefix, this may not work
-                                       with current version of BluePyOpt."""
-                        )
-
-                    self.cvode_active = False
-        else:
-            for mechanism in cell_model.mechanisms:
-                if not mechanism.deterministic:
-                    mechanism.deterministic = True
-
-        return super().run(cell_model, param_values, sim=sim, timeout=timeout)
-
-
-class StepThresholdProtocol(StepProtocol):
-    """Protocol consisting of step and holding current with an additional
-    stochasticity option. The step amplitude and holding current are at first
-    undefined and copied from the cell model before evaluation"""
-
-    def __init__(
-        self,
-        name,
-        thresh_perc=None,
-        stimulus=None,
-        recordings=None,
-        stochasticity=True,
-    ):
-        """Constructor
-
-        Args:
-            name (str): name of this object
-            thresh_perc (float): amplitude in percentage of the rheobase of
-                the step current
-            stimulus (Stimulus): Stimulus object
-            recordings (list of Recordings): Recording objects used in the
-                protocol
-            stochasticity (bool): turns on or off the channels that can be
-                stochastic
-        """
-
-        super().__init__(
-            name,
-            stimulus=stimulus,
-            recordings=recordings,
-            stochasticity=stochasticity,
-        )
-
-        self.thresh_perc = thresh_perc
+    def amplitude(self):
+        return self.stimulus.amplitude
 
     def run(  # pylint: disable=arguments-differ
         self,
@@ -125,13 +68,34 @@ class StepThresholdProtocol(StepProtocol):
         timeout=None,
     ):
         """Run protocol"""
-        if holding_current is None or threshold_current is None:
-            raise Exception("StepThresholdProtocol: missing holding or threshold current " "value")
 
-        self.stimulus.step_amplitude = threshold_current * (float(self.thresh_perc) / 100.0)
-        self.stimulus.holding_current = holding_current
+        # Set the holding and threshold currents
+        if self.threshold_based:
 
-        return super().run(cell_model, param_values, sim=sim, timeout=timeout)
+            if holding_current is None or threshold_current is None:
+                raise Exception("StepProtocol: holding or threshold current is None")
+
+            self.stimulus.holding_current = holding_current
+            self.stimulus.threshold_current = threshold_current
+
+        # Set the stochasticity
+        if self.stochasticity:
+            logger.debug("Stochasticity is on.")
+            for mechanism in cell_model.mechanisms:
+                if not mechanism.deterministic:
+                    if "Stoch" not in mechanism.suffix:
+                        logger.warning(
+                            """You are trying to set a mechanism to stochastic mode
+                                       without 'Stoch' in the mechanism prefix, this may not work
+                                       with current version of BluePyOpt."""
+                        )
+                    self.cvode_active = False
+        else:
+            for mechanism in cell_model.mechanisms:
+                if not mechanism.deterministic:
+                    mechanism.deterministic = True
+
+        return super().run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
 
 
 class RMPProtocol:
@@ -173,7 +137,7 @@ class RMPProtocol:
                 variable="v",
             )
         ]
-        return StepProtocol(name="RMPProtocol", stimulus=stimulus, recordings=recordings)
+        return BPEM_Protocol(name="RMPProtocol", stimulus=stimulus, recordings=recordings)
 
     def run(self, cell_model, param_values, sim, isolate, timeout):
         """Compute the RMP"""
@@ -227,13 +191,15 @@ class RinProtocol:
             )
         ]
 
-        return StepProtocol(name="RinProtocol", stimulus=stimulus, recordings=recordings)
+        return BPEM_Protocol(name="RinProtocol", stimulus=stimulus, recordings=recordings)
 
     def run(self, cell_model, param_values, holding_current, sim, isolate, timeout):
         """Compute input resistance"""
         rin_protocol = self.create_protocol(holding_current)
 
-        response = rin_protocol.run(cell_model, param_values, sim, isolate, timeout)
+        response = rin_protocol.run(
+            cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
+        )
         response["bpo_rin"] = self.target_rin.calculate_feature(response)
 
         return response
@@ -301,14 +267,14 @@ class SearchHoldingCurrent:
                 variable="v",
             )
         ]
-        return StepProtocol(name="SearchHoldingCurrent", stimulus=stimulus, recordings=recordings)
+        return BPEM_Protocol(name="SearchHoldingCurrent", stimulus=stimulus, recordings=recordings)
 
     def get_voltage_base(
         self, holding_current, cell_model, param_values, sim, isolate, timeout=None
     ):
         """ Calculate voltage base for a certain holding current """
         protocol = self.create_protocol(holding_current=holding_current)
-        response = protocol.run(cell_model, param_values, sim, isolate, timeout=timeout)
+        response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
 
         return self.target_voltage.calculate_feature(response)
 
@@ -324,8 +290,8 @@ class SearchHoldingCurrent:
         step_current = self.bisection_search(
             cell_model,
             param_values,
-            sim,
-            isolate,
+            sim=sim,
+            isolate=isolate,
             upper_bound=self.upper_bound,
             lower_bound=self.lower_bound,
             timeout=timeout,
@@ -452,7 +418,7 @@ class SearchThresholdCurrent:
             )
         ]
 
-        return StepProtocol(
+        return BPEM_Protocol(
             name="SearchThresholdCurrent",
             stimulus=stimulus,
             recordings=recordings,
@@ -512,7 +478,7 @@ class SearchThresholdCurrent:
         """Returns True if step_current makes the model produce an AP,
         False otherwise"""
         protocol = self.create_protocol(holding_current, step_current)
-        response = protocol.run(cell_model, param_values, sim, isolate, timeout)
+        response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         spikecount = self.spike_feature.calculate_feature(response)
 
         return spikecount
@@ -540,7 +506,13 @@ class SearchThresholdCurrent:
             return mid_bound
 
         spikecount = self.is_spike(
-            cell_model, param_values, holding_current, mid_bound, sim, isolate, timeout
+            cell_model,
+            param_values,
+            holding_current,
+            mid_bound,
+            sim=sim,
+            isolate=isolate,
+            timeout=timeout,
         )
 
         if spikecount == 1:
@@ -689,9 +661,9 @@ class MainProtocol(ephys.protocols.Protocol):
             responses["bpo_holding_current"],
             responses["bpo_rin"],
             responses["bpo_rmp"],
-            sim,
-            isolate,
-            timeout,
+            sim=sim,
+            isolate=isolate,
+            timeout=timeout,
         )
         score = self.search_threshold_protocol.target_threshold.calculate_score(response)
 
@@ -707,6 +679,7 @@ class MainProtocol(ephys.protocols.Protocol):
         for protocol in self.other_protocols.values():
             responses.update(protocol.run(cell_model, {}, sim, isolate, timeout))
 
+        logger.debug("Computing pre-protocols ...")
         if (
             self.RMP_protocol
             and self.rin_protocol
@@ -728,13 +701,13 @@ class MainProtocol(ephys.protocols.Protocol):
                     return responses
 
                 logger.debug(
-                    "Computed {} in {:.2f}s. Value = {:.2f}, Score = {:.2f}".format(
-                        pre_run.__name__,
-                        dt,
-                        list(responses.values())[-1],
-                        score,
-                    )
+                    "Computed %s in %s s. Value = %s, Score = %s",
+                    pre_run.__name__,
+                    dt,
+                    list(responses.values())[-1],
+                    score,
                 )
+
                 if score > self.score_threshold:
                     logger.debug("Score is higher than score_threshold. Stopping MainProtocol run.")
                     cell_model.unfreeze(param_values.keys())
