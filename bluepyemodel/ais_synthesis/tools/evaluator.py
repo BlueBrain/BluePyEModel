@@ -1,7 +1,6 @@
 """Module to evaluate generic functions on rows of combos dataframe (similar to BluePyMMM)."""
 import logging
 import sqlite3
-from collections import defaultdict
 from pathlib import Path
 import sys
 import traceback
@@ -137,13 +136,15 @@ def evaluate_combos(  # pylint:disable=too-many-branches
     )
 
     if no_sql:
-        _results = defaultdict(list)
+        _results = {}
+        for new_column, new_column_empty in new_columns:
+            _results[new_column] = len(task_ids) * [new_column_empty]
 
     try:
         for task_id, results, exception in tqdm(mapper(eval_func, arg_list), total=len(task_ids)):
             if no_sql:
                 for new_column, _ in new_columns:
-                    _results[new_column].append(
+                    _results[new_column][task_id] = (
                         results[new_column] if results is not None else None
                     )
             else:
