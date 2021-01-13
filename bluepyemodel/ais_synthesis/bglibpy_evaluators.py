@@ -127,7 +127,7 @@ def run_spike_sim(cell, config, holding_current, step_current):
     else:
         voltage = cell.get_soma_voltage()
 
-    if len(voltage) > 0:
+    if len(voltage) < 2:
         raise Exception("No voltage trace!")
 
     efel.reset()
