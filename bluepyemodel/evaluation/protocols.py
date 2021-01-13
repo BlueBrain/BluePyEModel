@@ -79,21 +79,9 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
             self.stimulus.threshold_current = threshold_current
 
         # Set the stochasticity
-        if self.stochasticity:
-            logger.debug("Stochasticity is on.")
+        if not (self.stochasticity):
             for mechanism in cell_model.mechanisms:
-                if not mechanism.deterministic:
-                    if "Stoch" not in mechanism.suffix:
-                        logger.warning(
-                            """You are trying to set a mechanism to stochastic mode
-                                       without 'Stoch' in the mechanism prefix, this may not work
-                                       with current version of BluePyOpt."""
-                        )
-                    self.cvode_active = False
-        else:
-            for mechanism in cell_model.mechanisms:
-                if not mechanism.deterministic:
-                    mechanism.deterministic = True
+                mechanism.deterministic = True
 
         return super().run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
 
