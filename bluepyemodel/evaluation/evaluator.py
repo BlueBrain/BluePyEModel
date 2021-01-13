@@ -23,8 +23,7 @@ from .protocols import (
     RinProtocol,
     SearchHoldingCurrent,
     SearchThresholdCurrent,
-    StepProtocol,
-    StepThresholdProtocol,
+    BPEM_Protocol,
 )
 from ..ecode import eCodes
 
@@ -382,8 +381,16 @@ def define_protocol(
 
     for k in eCodes:
         if k in name.lower():
-            stimulus = eCodes[k](location=soma_loc, **protocol_definition["stimuli"])
+
+            if "stimuli" in protocol_definition:
+                stim_def = protocol_definition["stimuli"]
+            else:
+                stim_def = {}
+
+            stimulus = eCodes[k](location=soma_loc, **stim_def)
+
             break
+
     else:
         raise KeyError(
             "There is no eCode linked to the stimulus name {}. "
@@ -392,20 +399,21 @@ def define_protocol(
         )
 
     if protocol_definition["type"] == "StepThresholdProtocol":
-        return StepThresholdProtocol(
+        return BPEM_Protocol(
             name=name,
-            thresh_perc=protocol_definition["stimuli"]["thresh_perc"],
             stimulus=stimulus,
             recordings=recordings,
             stochasticity=stochasticity,
+            threshold_based=True,
         )
 
     if protocol_definition["type"] == "StepProtocol":
-        return StepProtocol(
+        return BPEM_Protocol(
             name=name,
             stimulus=stimulus,
             recordings=recordings,
             stochasticity=stochasticity,
+            threshold_based=False,
         )
 
     raise Exception('Protocol type "{}" unknown.'.format(protocol_definition["type"]))
@@ -588,7 +596,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
 
                 for f in feature_configs:
 
-                    stim_amp = protocol.step_amplitude
+                    stim_amp = protocol.amplitude
 
                     if "stim_start" and "stim_end" in f:
                         stim_start = f["stim_start"]
@@ -670,8 +678,10 @@ def create_evaluator(
         protocols_definition (dict): protocols and their definition
         features_definition (dict): features means and stds
         simulator (NrnSimulator): simulator, is None, one will be created
-        stochasticity (bool): Should the stochastic channels be stochastic or
+        stochasticity (bool): should the stochastic channels be stochastic or
             deterministic
+        timeout (float): maximum time in second during which a protocol is
+            allowed to run
 
     Returns:
         CellEvaluator

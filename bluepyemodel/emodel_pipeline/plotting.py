@@ -128,11 +128,9 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
 
             if hasattr(stimuli[basename], "stimulus"):
 
-                if hasattr(stimuli[basename], "thresh_perc") and threshold and holding:
-                    stimuli[basename].stimulus.step_amplitude = threshold * (
-                        float(stimuli[basename].thresh_perc) / 100.0
-                    )
+                if stimuli[basename].threshold_based and threshold and holding:
                     stimuli[basename].stimulus.holding_current = holding
+                    stimuli[basename].stimulus.threshold_current = threshold
 
                 axs_c.append(axs[idx, 0].twinx())
                 axs_c[-1].set_xlabel("Time (ms)")

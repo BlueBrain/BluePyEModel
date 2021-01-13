@@ -8,30 +8,36 @@ logger = logging.getLogger(__name__)
 
 class BPEM_stimulus(Stimulus):
 
-    """BPEM current stimulus"""
+    """Abstract current stimulus"""
 
     name = ""
 
-    def __init__(
-        self, step_amplitude, step_delay, total_duration, step_duration, holding_current, location
-    ):
+    def __init__(self, location):
         """Constructor
         Args:
+            total_duration (float): total duration of the stimulus in ms
             location(Location): location of stimulus
         """
 
         super().__init__()
 
-        self.step_amplitude = step_amplitude
-        self.step_delay = step_delay
-        self.total_duration = total_duration
-        self.step_duration = step_duration
-        self.holding_current = holding_current
         self.location = location
 
         self.iclamp = None
         self.current_vec = None
         self.time_vec = None
+
+    @property
+    def stim_start(self):
+        return 0.0
+
+    @property
+    def stim_end(self):
+        return 0.0
+
+    @property
+    def amplitude(self):
+        return 0.0
 
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
@@ -60,18 +66,14 @@ class BPEM_stimulus(Stimulus):
 
     def destroy(self, sim=None):  # pylint:disable=W0613
         """Destroy stimulus"""
-
         self.iclamp = None
         self.time_vec = None
         self.current_vec = None
 
     def generate(self, dt=0.1):  # pylint:disable=W0613
-        """Return current time series
-
-        WARNING: do not offset ! This is on-top of a holding stimulus."""
+        """Return current time series"""
         return [], []
 
     def __str__(self):
         """String representation"""
-
         return "%s current played at %s" % (self.name, self.location)

@@ -1,4 +1,4 @@
-"""Ramp stimulus class"""
+"""IDrest stimulus class"""
 import logging
 import numpy
 
@@ -7,11 +7,11 @@ from bluepyemodel.ecode.stimulus import BPEM_stimulus
 logger = logging.getLogger(__name__)
 
 
-class Ramp(BPEM_stimulus):
+class IDrest(BPEM_stimulus):
 
-    """Ramp current stimulus"""
+    """IDrest current stimulus"""
 
-    name = "Ramp"
+    name = "IDrest"
 
     def __init__(self, location, **kwargs):
         """Constructor
@@ -67,6 +67,9 @@ class Ramp(BPEM_stimulus):
         self.time_vec.append(self.delay)
         self.current_vec.append(self.holding_current)
 
+        self.time_vec.append(self.delay)
+        self.current_vec.append(self.holding_current + self.amplitude)
+
         self.time_vec.append(self.stim_end)
         self.current_vec.append(self.holding_current + self.amplitude)
 
@@ -91,8 +94,8 @@ class Ramp(BPEM_stimulus):
         current = numpy.full(t.shape, self.holding_current, dtype="float64")
 
         ton_idx = int(self.stim_start / dt)
-        toff_idx = int((self.stim_end) / dt)
+        toff_idx = int(self.stim_end / dt)
 
-        current[ton_idx:toff_idx] += numpy.linspace(0.0, self.amplitude, toff_idx - ton_idx)
+        current[ton_idx:toff_idx] += self.amplitude
 
         return t, current
