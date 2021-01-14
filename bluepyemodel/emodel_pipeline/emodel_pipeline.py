@@ -195,6 +195,7 @@ class EModel_pipeline:
         compile_mechanisms=False,
         include_validation_protocols=False,
         additional_protocols=None,
+        timeout=600,
     ):
         """Create an evaluator for the emodel.
 
@@ -254,6 +255,7 @@ class EModel_pipeline:
             protocols_definition=protocols,
             features_definition=efeatures,
             stochasticity=stochasticity,
+            timeout=timeout,
         )
 
     def extract_efeatures(

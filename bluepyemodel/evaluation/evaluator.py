@@ -660,6 +660,12 @@ def get_simulator(stochasticity, cell_models):
             for mechanism in cell_model.mechanisms:
                 if not mechanism.deterministic:
                     return NrnSimulator(dt=0.025, cvode_active=False)
+
+        logger.warning(
+            "Stochasticity is True but no mechanisms are stochastic. Switching to "
+            "non-stochastic."
+        )
+
     return NrnSimulator()
 
 
@@ -731,6 +737,7 @@ def create_evaluators(
     Returns:
         MultiEvaluator
     """
+
     simulator = get_simulator(stochasticity, cell_models)
     cell_evals = [
         create_evaluator(
