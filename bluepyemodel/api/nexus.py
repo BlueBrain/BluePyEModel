@@ -58,7 +58,16 @@ class Nexus_API(DatabaseAPI):
 
         return cells, protocols, protocols_threshold
 
-    def store_efeatures(self, emodel, species, efeatures, currents):
+    def store_efeatures(
+        self,
+        emodel,
+        species,
+        efeatures,
+        currents,
+        name_Rin_protocol,
+        name_rmp_protocol,
+        validation_protocols,
+    ):
         """Store the efeatures and currents obtained from BluePyEfe in
             the extracted e-features ressources.
 
@@ -80,7 +89,7 @@ class Nexus_API(DatabaseAPI):
 
         """
 
-    def store_protocols(self, emodel, species, stimuli):
+    def store_protocols(self, emodel, species, stimuli, validation_protocols):
         """Store the protocols obtained from BluePyEfe in
             the extracted protocols ressources.
 
@@ -102,6 +111,7 @@ class Nexus_API(DatabaseAPI):
         optimizer_name,
         seed,
         validated=False,
+        scores_validation=None,
         species=None,
     ):
         """Store an emodel obtained from BluePyOpt in a EModel ressource

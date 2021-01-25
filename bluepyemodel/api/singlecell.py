@@ -1,8 +1,11 @@
 """API to get data from Singlecell-like repositories."""
 import json
 import logging
+import copy
 
 from pathlib import Path
+
+from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.api.databaseAPI import DatabaseAPI
 
@@ -57,7 +60,125 @@ class Singlecell_API(DatabaseAPI):
 
         with open(json_path, "r") as f:
             data = json.load(f)
+
         return data
+
+    def store_efeatures(
+        self,
+        emodel,
+        species,
+        efeatures,
+        current,
+        name_Rin_protocol,
+        name_rmp_protocol,
+        validation_protocols,
+    ):
+        """ Save the efeatures and currents obtained from BluePyEfe"""
+
+        out_features = {}
+
+        out_features["SearchHoldingCurrent"] = {
+            "soma.v": [
+                {"feature": "bpo_holding_current", "val": current["hypamp"], "strict_stim": True}
+            ]
+        }
+
+        out_features["SearchThresholdCurrent"] = {
+            "soma.v": [
+                {"feature": "bpo_threshold_current", "val": current["thresh"], "strict_stim": True}
+            ]
+        }
+
+        to_remove = {}
+        for prot in efeatures:
+
+            out_features[prot] = {"soma.v": efeatures[prot]["soma"]}
+
+            prot_name = str(prot.split("_")[0])
+            prot_target = float(prot.split("_")[1])
+
+            for v, targets in validation_protocols.items():
+                for target in targets:
+                    if v.lower() in prot_name.lower() and float(target) == prot_target:
+                        out_features[prot]["validation"] = True
+                        break
+            if "validation" not in out_features[prot]:
+                out_features[prot]["validation"] = False
+
+            to_remove = {prot: []}
+            for i, efeat in enumerate(out_features[prot]["soma.v"]):
+
+                if prot == name_rmp_protocol and efeat["feature"] == "voltage_base":
+                    out_features["RMPProtocol"] = {
+                        "soma.v": [
+                            {
+                                "feature": "steady_state_voltage_stimend",
+                                "val": efeat["val"],
+                                "strict_stim": True,
+                            }
+                        ]
+                    }
+                    to_remove[prot].append(i)
+
+                if prot == name_Rin_protocol and efeat["feature"] == "voltage_base":
+                    out_features["SearchHoldingCurrent"]["soma.v"].append(
+                        {
+                            "feature": "steady_state_voltage_stimend",
+                            "val": efeat["val"],
+                            "strict_stim": True,
+                        }
+                    )
+                    to_remove[prot].append(i)
+
+                if (
+                    prot == name_Rin_protocol
+                    and efeat["feature"] == "ohmic_input_resistance_vb_ssse"
+                ):
+                    out_features["RinProtocol"] = {"soma.v": [copy.copy(efeat)]}
+                    to_remove[prot].append(i)
+
+        for prot in to_remove:
+            if to_remove[prot]:
+                out_features[prot]["soma.v"] = [
+                    f
+                    for i, f in enumerate(out_features[prot]["soma.v"])
+                    if i not in to_remove[prot]
+                ]
+
+            if not (out_features[prot]["soma.v"]):
+                out_features.pop(prot)
+
+        file_name = emodel + ".json"
+        features_path = self.working_dir / "config" / "features" / file_name
+
+        s = json.dumps(out_features, indent=2, cls=NumpyEncoder)
+        with open(features_path, "w") as f:
+            f.write(s)
+
+    def store_protocols(self, emodel, species, stimuli, validation_protocols):
+        """ Save the protocols obtained from BluePyEfe"""
+
+        for stim in stimuli:
+            stimuli[stim]["type"] = "StepThresholdProtocol"
+
+            prot_name = str(stim.split("_")[0])
+            prot_target = float(stim.split("_")[1])
+
+            for v, targets in validation_protocols.items():
+                for target in targets:
+                    if v.lower() in prot_name.lower() and int(target) == int(prot_target):
+                        stimuli[stim]["validation"] = True
+                        break
+
+            if "validation" not in stimuli[stim]:
+                stimuli[stim]["validation"] = False
+
+        file_name = emodel + ".json"
+        protocols_path = self.working_dir / "config" / "protocols" / file_name
+
+        s = json.dumps(stimuli, indent=2, cls=NumpyEncoder)
+        with open(protocols_path, "w") as f:
+            f.write(s)
 
     def get_recipes(self, emodel):
         """Load the recipes json for a given emodel.
@@ -82,9 +203,13 @@ class Singlecell_API(DatabaseAPI):
         optimizer_name,
         seed,
         validated=False,
+        scores_validation=None,
         species=None,
     ):
         """ Save an emodel obtained from BluePyOpt"""
+
+        if scores_validation is None:
+            scores_validation = {}
 
         if self.final_path is None:
             raise Exception("Cannot store the model because final_path is None")
@@ -103,6 +228,7 @@ class Singlecell_API(DatabaseAPI):
             "score": sum(list(scores.values())),
             "params": params,
             "fitness": scores,
+            "validation_fitness": scores_validation,
             "validated": validated,
             "optimizer": str(optimizer_name),
             "seed": int(seed),
@@ -110,11 +236,7 @@ class Singlecell_API(DatabaseAPI):
 
         model_name = "{}_{}".format(emodel, seed)
 
-        if model_name in final.keys():
-            if final[model_name]["score"] > entry["score"]:
-                final[model_name] = entry
-        else:
-            final[model_name] = entry
+        final[model_name] = entry
 
         with open(self.final_path, "w") as fp:
             json.dump(final, fp, indent=2)
@@ -184,6 +306,44 @@ class Singlecell_API(DatabaseAPI):
 
         return extra_recordings_out
 
+    def _read_protocol(self, emodel, prot, prot_name):
+
+        stim_def = prot["step"]
+        stim_def["holding_current"] = prot["holding"]["amp"]
+
+        protocol_definition = {"type": prot["type"], "stimuli": stim_def}
+
+        if "extra_recordings" in prot:
+            protocol_definition["extra_recordings"] = self._handle_extra_recording(
+                emodel, prot["extra_recordings"]
+            )
+
+        return protocol_definition
+
+    def _read_legacy_protocol(self, emodel, prot, prot_name):
+
+        if prot_name in ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]:
+            return None
+
+        if prot["type"] in ["StepThresholdProtocol", "StepProtocol"]:
+
+            stim_def = prot["stimuli"]["step"]
+            if "holding" in prot["stimuli"]:
+                stim_def["holding_current"] = prot["stimuli"]["holding"]["amp"]
+            else:
+                stim_def["holding_current"] = None
+
+            protocol_definition = {"type": prot["type"], "stimuli": stim_def}
+
+            if "extra_recordings" in prot:
+                protocol_definition["extra_recordings"] = self._handle_extra_recording(
+                    emodel, prot["extra_recordings"]
+                )
+
+            return protocol_definition
+
+        return None
+
     def get_protocols(self, emodel, species=None, delay=0.0, include_validation=False):
         """Get the protocols from the database and put in a format that fits
          the MainProtocol needs.
@@ -201,23 +361,36 @@ class Singlecell_API(DatabaseAPI):
         """
         protocols = self._get_json(emodel, "protocol")
         protocols_out = {}
-        for prot_name, prot in protocols.items():  # pylint: disable=too-many-nested-blocks
+        for prot_name, prot in protocols.items():
 
-            if prot_name in ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]:
-                continue
+            if "validation" in prot:
 
-            if prot["type"] in ["StepThresholdProtocol", "StepProtocol"]:
+                if not (include_validation) and prot["validation"]:
+                    continue
 
-                stim_def = prot["stimuli"]["step"]
-                stim_def["holding_current"] = prot["stimuli"]["step"]["amp"]
-                protocols_out[prot_name] = {"type": prot["type"], "stimuli": stim_def}
+                prot_definition = self._read_protocol(emodel, prot, prot_name)
+                if prot_definition:
+                    protocols_out[prot_name] = prot_definition
 
-                if "extra_recordings" in prot:
-                    protocols_out[prot_name]["extra_recordings"] = self._handle_extra_recording(
-                        emodel, prot["extra_recordings"]
-                    )
+            else:
+
+                prot_definition = self._read_legacy_protocol(emodel, prot, prot_name)
+                if prot_definition:
+                    protocols_out[prot_name] = prot_definition
 
         return protocols_out
+
+    def get_name_validation_protocols(self, emodel, species):
+        """Get the names of the protocols used for validation """
+        protocols = self._get_json(emodel, "protocol")
+
+        names = []
+        for prot_name, prot in protocols.items():
+
+            if "validation" in prot and prot["validation"]:
+                names.append(prot_name)
+
+        return names
 
     def get_features(
         self,
@@ -248,7 +421,19 @@ class Singlecell_API(DatabaseAPI):
         }
 
         for prot_name in efeatures:
+
+            if (
+                "validation" in efeatures[prot_name]
+                and not include_validation
+                and efeatures[prot_name]["validation"]
+            ):
+                continue
+
             for loc in efeatures[prot_name]:
+
+                if loc == "validation":
+                    continue
+
                 for efeat in efeatures[prot_name][loc]:
 
                     if "bAP" in prot_name:
@@ -333,11 +518,16 @@ class Singlecell_API(DatabaseAPI):
                 "githash",
                 "branch",
                 "rank",
-                "optimiser",
+                "optimizer",
                 "species",
             ]:
                 if key in final_data:
                     emodel_data[key] = final_data[key]
+
+            if "validation_fitness" in final_data:
+                emodel_data["scores_validation"] = final_data["validation_fitness"]
+            else:
+                emodel_data["scores_validation"] = {}
 
             return emodel_data
 

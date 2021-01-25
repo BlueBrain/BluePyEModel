@@ -5,7 +5,7 @@ import bluepyefe
 logger = logging.getLogger(__name__)
 
 
-def get_config(cells, protocols, file_format, protocols_threshold=None, threshold_nvalue_save=1):
+def get_config(cells, protocols, protocols_threshold=None, threshold_nvalue_save=1):
     """Create configuration dictionnary."""
     if protocols_threshold is None:
         protocols_threshold = []
@@ -14,7 +14,6 @@ def get_config(cells, protocols, file_format, protocols_threshold=None, threshol
 
     config["cells"] = cells
     config["protocols"] = protocols
-    config["options"]["format"] = file_format
     config["options"]["protocols_threshold"] = protocols_threshold
     config["options"]["threshold_nvalue_save"] = threshold_nvalue_save
 

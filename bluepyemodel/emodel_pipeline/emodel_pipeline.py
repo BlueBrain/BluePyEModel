@@ -7,6 +7,7 @@ from pathlib import Path
 
 from bluepyemodel.evaluation import model
 from bluepyemodel.evaluation import evaluator
+from bluepyemodel.validation import validation
 from bluepyemodel.optimisation import optimisation
 from bluepyemodel.feature_extraction import extract
 from bluepyemodel.emodel_pipeline.utils import read_checkpoint
@@ -222,11 +223,15 @@ class EModel_pipeline:
         if not (morphologies):
             raise Exception("No morphologies for emodel %s" % self.emodel)
 
-        efeatures = db.get_features(self.emodel, self.species, include_validation_protocols)
+        efeatures = db.get_features(
+            self.emodel, self.species, include_validation=include_validation_protocols
+        )
         if not (efeatures):
             raise Exception("No efeatures for emodel %s" % self.emodel)
 
-        protocols = db.get_protocols(self.emodel, self.species, include_validation_protocols)
+        protocols = db.get_protocols(
+            self.emodel, self.species, include_validation=include_validation_protocols
+        )
         if not (protocols):
             raise Exception("No protocols for emodel %s" % self.emodel)
         if additional_protocols:
@@ -260,44 +265,67 @@ class EModel_pipeline:
 
     def extract_efeatures(
         self,
-        file_format="axon",
+        config_dict=None,
         threshold_nvalue_save=1,
+        name_Rin_protocol=None,
+        name_rmp_protocol=None,
+        validation_protocols=None,
     ):
         """
 
         Args:
-            file_format (str): format of the trace recordings
+            config_dict (dict): BluePyEfe configuration dictionnary, only required if
+                db_api is 'singlecell'
             threshold_nvalue_save (int): lower bounds of values required to return an efeatures
+            name_Rin_protocol (str): only used when db_api is 'singlecell'
+            name_rmp_protocol (str): only used when db_api is 'singlecell'
+            validation_protocols (dict): only used when db_api is 'singlecell'
 
         Returns:
             efeatures (dict): mean efeatures and standard deviation
             stimuli (dict): definition of the mean stimuli
             current (dict): threshold and holding current
         """
+
+        if validation_protocols is None:
+            validation_protocols = {}
+
         db = self.connect_db()
 
         map_function = optimisation.ipyparallel_map_function("USEIPYP")
 
-        cells, protocols, protocols_threshold = db.get_extraction_metadata(
-            self.emodel, self.species
-        )
-        if not (cells) or not (protocols):
-            raise Exception("No extraction metadata for emodel %s" % self.emodel)
+        if not (config_dict):
 
-        config_dict = extract.get_config(
-            cells,
-            protocols,
-            file_format=file_format,
-            protocols_threshold=protocols_threshold,
-            threshold_nvalue_save=threshold_nvalue_save,
-        )
+            if self.db_api == "singlecell":
+                raise Exception("When using singlecell API, a config_dict has to be provided.")
+
+            cells, protocols, protocols_threshold = db.get_extraction_metadata(
+                self.emodel, self.species
+            )
+            if not (cells) or not (protocols):
+                raise Exception("No extraction metadata for emodel %s" % self.emodel)
+
+            config_dict = extract.get_config(
+                cells,
+                protocols,
+                protocols_threshold=protocols_threshold,
+                threshold_nvalue_save=threshold_nvalue_save,
+            )
 
         efeatures, stimuli, current = extract.extract_efeatures(
             config_dict, self.emodel, map_function=map_function
         )
 
-        db.store_efeatures(self.emodel, self.species, efeatures, current)
-        db.store_protocols(self.emodel, self.species, stimuli)
+        db.store_efeatures(
+            self.emodel,
+            self.species,
+            efeatures,
+            current,
+            name_Rin_protocol,
+            name_rmp_protocol,
+            validation_protocols,
+        )
+        db.store_protocols(self.emodel, self.species, stimuli, validation_protocols)
         db.close()
 
         return efeatures, stimuli, current
@@ -415,7 +443,7 @@ class EModel_pipeline:
 
     def validate(
         self,
-        validation_function,
+        validation_function=None,
         stochasticity=False,
         copy_mechanisms=False,
         compile_mechanisms=False,
@@ -423,7 +451,7 @@ class EModel_pipeline:
         """Compute the scores and traces for the optimisation and validation
         protocols and perform validation.
         """
-        map_function = optimisation.ipyparallel_map_function("USEIPYP")
+        # map_function = optimisation.ipyparallel_map_function("USEIPYP")
 
         _evaluator = self.get_evaluator(
             stochasticity=stochasticity,
@@ -435,17 +463,27 @@ class EModel_pipeline:
         db = self.connect_db()
 
         emodels = db.get_emodels([self.emodel], self.species)
+
         if emodels:
+
+            if validation_function is None:
+                logger.warning("Validation function not  specified, will use max_score.")
+                validation_function = validation.max_score
+
+            name_validation_protocols = db.get_name_validation_protocols(self.emodel, self.species)
 
             logger.info("In compute_scores, %s emodels found to evaluate.", len(emodels))
 
-            parameters = [mod["parameters"] for mod in emodels if mod["validated"] is False]
-            scores = map_function(_evaluator.evaluate_with_dicts, parameters)
-            scores = list(scores)
+            for mo in emodels:
 
-            for mo, s in zip(emodels, scores):
+                mo["scores"] = _evaluator.evaluate_with_dicts(mo["parameters"])
 
-                mo["scores"] = dict(s)
+                mo["scores_validation"] = {}
+                for feature_names, score in mo["scores"].items():
+                    for p in name_validation_protocols:
+                        if p in feature_names:
+                            mo["scores_validation"][feature_names] = score
+
                 validated = validation_function(mo)
 
                 db.store_emodel(
@@ -456,10 +494,13 @@ class EModel_pipeline:
                     optimizer_name=mo["optimizer"],
                     seed=mo["seed"],
                     validated=validated,
+                    scores_validation=mo["scores_validation"],
                 )
 
-        else:
-            logger.warning("In compute_scores, no emodel for %s %s", self.emodel, self.species)
+            return emodels
+
+        logger.warning("In compute_scores, no emodel for %s %s", self.emodel, self.species)
+        return None
 
     def compute_responses(
         self,

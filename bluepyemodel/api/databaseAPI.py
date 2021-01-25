@@ -7,10 +7,19 @@ class DatabaseAPI:
     def __init__(self):
         """"""
 
-    def store_efeatures(self, emodel, species, efeatures, current):
+    def store_efeatures(
+        self,
+        emodel,
+        species,
+        efeatures,
+        current,
+        name_Rin_protocol,
+        name_rmp_protocol,
+        validation_protocols,
+    ):
         """ Save the efeatures and currents obtained from BluePyEfe"""
 
-    def store_protocols(self, emodel, species, stimuli):
+    def store_protocols(self, emodel, species, stimuli, validation_protocols):
         """ Save the protocols obtained from BluePyEfe"""
 
     def store_emodel(
@@ -21,6 +30,7 @@ class DatabaseAPI:
         optimizer_name,
         seed,
         validated=False,
+        scores_validation=None,
         species=None,
     ):
         """ Save a model obtained from BluePyOpt"""

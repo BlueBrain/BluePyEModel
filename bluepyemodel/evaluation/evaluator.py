@@ -617,6 +617,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     rin_protocol, rin_features = define_Rin_protocol(
         features_definition, ais_recording=ais_recording
     )
+
     search_holding_protocol, hold_features = define_holding_protocol(features_definition)
     search_threshold_protocol, thres_features = define_threshold_protocol(features_definition)
 

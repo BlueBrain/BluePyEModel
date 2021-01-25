@@ -703,6 +703,9 @@ class MainProtocol(ephys.protocols.Protocol):
 
             logger.debug("Computing StepThresholdProtocols ...")
             for protocol in self.threshold_protocols.values():
+
+                logger.debug("Computing protocol %s ...", protocol.name)
+
                 responses.update(
                     protocol.run(
                         cell_model,

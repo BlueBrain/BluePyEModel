@@ -363,7 +363,16 @@ class PostgreSQL_API(DatabaseAPI):
         )
         return None, None, None
 
-    def store_efeatures(self, emodel, species, efeatures, current):
+    def store_efeatures(
+        self,
+        emodel,
+        species,
+        efeatures,
+        current,
+        name_Rin_protocol,
+        name_rmp_protocol,
+        validation_protocols,
+    ):
         """ Save the efeatures and currents obtained from BluePyEfe"""
         entries = []
         for protocol in efeatures:
@@ -400,7 +409,7 @@ class PostgreSQL_API(DatabaseAPI):
             replace_keys=replace_keys,
         )
 
-    def store_protocols(self, emodel, species, stimuli):
+    def store_protocols(self, emodel, species, stimuli, validation_protocols):
         """ Save the protocols obtained from BluePyEfe"""
         entries = []
         for stim_name, stim in stimuli.items():
@@ -429,9 +438,13 @@ class PostgreSQL_API(DatabaseAPI):
         optimizer_name,
         seed,
         validated=False,
+        scores_validation=None,
         species=None,
     ):
         """ Save an emodel obtained from BluePyOpt"""
+
+        if scores_validation is None:
+            scores_validation = {}
 
         entry = {
             "emodel": emodel,
@@ -439,6 +452,7 @@ class PostgreSQL_API(DatabaseAPI):
             "fitness": sum(list(scores.values())),
             "parameters": params,
             "scores": scores,
+            "scores_validation": scores_validation,
             "validated": validated,
             "optimizer": str(optimizer_name),
             "seed": seed,
@@ -659,6 +673,28 @@ class PostgreSQL_API(DatabaseAPI):
                                 )
 
         return protocols_out
+
+    def get_name_validation_protocols(self, emodel, species):
+        """Get the names of the protocols used for validation """
+
+        validation_targets = self.fetch(
+            table="validation_targets",
+            conditions={"emodel": emodel, "species": species},
+        )
+        if validation_targets.empty:
+            logger.warning(
+                "PostgreSQL warning: could not get the validation targets" " for emodel %s",
+                emodel,
+            )
+            return []
+
+        validation_targets = validation_targets.to_dict(orient="records")
+
+        names = []
+        for prot in validation_targets:
+            names.append("{}_{}".format(prot["ecode"], prot["target"]))
+
+        return names
 
     def get_features(
         self,
