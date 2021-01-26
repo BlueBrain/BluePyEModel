@@ -437,6 +437,7 @@ class PostgreSQL_API(DatabaseAPI):
         params,
         optimizer_name,
         seed,
+        githash="",
         validated=False,
         scores_validation=None,
         species=None,
@@ -456,6 +457,7 @@ class PostgreSQL_API(DatabaseAPI):
             "validated": validated,
             "optimizer": str(optimizer_name),
             "seed": seed,
+            "githash": githash,
         }
 
         if seed is not None:

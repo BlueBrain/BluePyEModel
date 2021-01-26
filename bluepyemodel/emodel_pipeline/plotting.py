@@ -25,7 +25,9 @@ def save_fig(figures_dir, figure_name):
     plt.clf()
 
 
-def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures"):
+def optimization(
+    checkpoint_path="./checkpoint.pkl", figures_dir="./figures", emodel=None, githash=None
+):
     """Create plots related to a BluePyOpt optimization"""
 
     make_dir(figures_dir)
@@ -45,7 +47,14 @@ def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures"):
     axs[0, 0].legend(loc="upper right", frameon=False)
 
     p = Path(checkpoint_path)
-    figure_name = p.stem + ".pdf"
+
+    figure_name = p.stem
+    if githash:
+        figure_name += f"_{emodel}"
+    else:
+        figure_name += f"_{githash}"
+    figure_name += ".pdf"
+
     plt.tight_layout()
     save_fig(figures_dir, figure_name)
 
@@ -74,8 +83,9 @@ def scores(model, figures_dir="./figures"):
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
 
-    figure_name = "{}_{}_scores.pdf".format(
+    figure_name = "{}_{}_{}_scores.pdf".format(
         model["emodel"],
+        model["githash"],
         model["seed"],
     )
     plt.tight_layout()
@@ -155,8 +165,9 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
 
     fig.suptitle(title)
 
-    figure_name = "{}_{}_traces.pdf".format(
+    figure_name = "{}_{}_{}_traces.pdf".format(
         model["emodel"],
+        model["githash"],
         model["seed"],
     )
 

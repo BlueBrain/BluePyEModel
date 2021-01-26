@@ -29,6 +29,7 @@ class DatabaseAPI:
         params,
         optimizer_name,
         seed,
+        githash,
         validated=False,
         scores_validation=None,
         species=None,

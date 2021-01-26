@@ -668,7 +668,9 @@ class MainProtocol(ephys.protocols.Protocol):
 
         logger.debug("Computing StepProtocols ...")
         for protocol in self.other_protocols.values():
-            responses.update(protocol.run(cell_model, {}, sim, isolate, timeout))
+            responses.update(
+                protocol.run(cell_model, {}, sim=sim, isolate=isolate, timeout=timeout)
+            )
 
         logger.debug("Computing pre-protocols ...")
         if (
@@ -681,7 +683,9 @@ class MainProtocol(ephys.protocols.Protocol):
             for pre_run in [self.run_RMP, self.run_holding, self.run_rin, self.run_threshold]:
 
                 t1 = time.time()
-                response, score = pre_run(cell_model, responses, sim, isolate, timeout)
+                response, score = pre_run(
+                    cell_model, responses, sim=sim, isolate=isolate, timeout=timeout
+                )
                 dt = time.time() - t1
 
                 responses.update(response)

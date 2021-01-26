@@ -244,6 +244,7 @@ class Singlecell_API(DatabaseAPI):
         params,
         optimizer_name,
         seed,
+        githash="",
         validated=False,
         scores_validation=None,
         species=None,
@@ -265,9 +266,16 @@ class Singlecell_API(DatabaseAPI):
             "validated": validated,
             "optimizer": str(optimizer_name),
             "seed": int(seed),
+            "githash": str(githash),
         }
 
-        model_name = "{}_{}".format(emodel, seed)
+        if githash:
+            model_name = "{}__{}__{}".format(emodel, githash, seed)
+        else:
+            logger.warning(
+                "Githash is %s. It is highly advise the use githash in the future.", githash
+            )
+            model_name = "{}__{}".format(emodel, seed)
 
         final[model_name] = entry
 

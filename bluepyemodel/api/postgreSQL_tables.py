@@ -109,7 +109,8 @@ scores JSONB,
 scores_validation JSONB,
 validated bool,
 optimizer text,
-seed smallint
+seed smallint,
+githash VARCHAR (20)
 );"""
 
 def_validation_targets = """CREATE TABLE {}_validation_targets (

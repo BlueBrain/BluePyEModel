@@ -7,15 +7,35 @@ from bluepyemodel.api.databaseAPI import DatabaseAPI
 
 logger = logging.getLogger("__main__")
 
-# pylint: disable=W0231,W0221
+# pylint: disable=W0231,W0221,E0602,W0613,
+
+
+def condition_to_filter(key, value):
+    """TODO: Transform a key/value pair to a Nexus filter statement"""
+    return condition
 
 
 class Nexus_API(DatabaseAPI):
     """API using Nexus Forge"""
 
-    def __init__(self, forge_path):
+    def __init__(
+        self,
+        project="",
+        organisation="",
+        endpoint="https://staging.nexus.ocp.bbp.epfl.ch/v1",
+        forge_path=None,
+    ):
         """Init"""
-        self.forge = KnowledgeGraphForge(forge_path)
+
+        bucket = organisation + "/" + "project"
+        if not forge_path:
+            forge_path = (
+                "https://raw.githubusercontent.com/BlueBrain/nexus-forge/"
+                + "master/examples/notebooks/use-cases/prod-forge-nexus.yml"
+            )
+
+        self.forge = KnowledgeGraphForge(forge_path, bucket=bucket, endpoint=endpoint)
+
         self.path_dataset = self.forge.paths("Dataset")
 
     def register(self, resources):
@@ -34,7 +54,21 @@ class Nexus_API(DatabaseAPI):
             List
 
         """
-        resources = self.forge.search(self.path_dataset.type.id == type_, **conditions)
+        params = {
+            "debug": False,
+            "limit": 1000,
+            "offset": None,
+            "deprecated": False,
+            "cross_bucket": False,
+            "bucket": None,
+        }
+
+        filters = []
+        for k, v in conditions.items():
+            filters.append(condition_to_filter(k, v))
+
+        resources = self.forge.search(self.path_dataset.type.id == type_, *filters, **params)
+
         return resources
 
     def get_extraction_metadata(self, emodel, species):
@@ -110,6 +144,7 @@ class Nexus_API(DatabaseAPI):
         params,
         optimizer_name,
         seed,
+        githash="",
         validated=False,
         scores_validation=None,
         species=None,
@@ -118,10 +153,11 @@ class Nexus_API(DatabaseAPI):
 
         Args:
             emodel (str): name of the emodel
-            scores (dict): scores of the efeatures,
-            params (dict): values of the parameters,
+            scores (dict): scores of the efeatures
+            params (dict): values of the parameters
             optimizer_name (str): name of the optimizer.
-            seed (int): seed used for optimization,
+            seed (int): seed used for optimization.
+            githash (string): githash for which the model has been generated.
             validated (bool): True if the model has been validated.
             species (str): name of the species (rat, human, mouse)
         """
