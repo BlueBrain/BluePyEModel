@@ -15,7 +15,7 @@ from bluepyopt.ephys.locations import (
 )
 from bluepyopt.evaluators import Evaluator
 from bluepyopt.ephys.efeatures import eFELFeature
-from bluepyopt.ephys.objectives import SingletonObjective
+from bluepyopt.ephys.objectives import SingletonObjective, SingletonRuleObjective
 
 from .protocols import (
     MainProtocol,
@@ -637,7 +637,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     return main_protocol, features
 
 
-def define_fitness_calculator(features):
+def define_fitness_calculator(features, optimisation_rules):
     """Creates the objectives calculator.
 
     Args:
@@ -646,7 +646,14 @@ def define_fitness_calculator(features):
     Returns:
         ObjectivesCalculator
     """
-    return ObjectivesCalculator([SingletonObjective(feat.name, feat) for feat in features])
+
+    objectives = [SingletonObjective(feat.name, feat) for feat in features]
+
+    if optimisation_rules:
+        for r in optimisation_rules:
+            objectives.append(SingletonRuleObjective(name=r.name, rule=r))
+
+    return ObjectivesCalculator(objectives)
 
 
 def get_simulator(stochasticity, cell_models):
@@ -676,6 +683,7 @@ def create_evaluator(
     features_definition,
     simulator=None,
     stochasticity=True,
+    optimisation_rules=None,
     timeout=None,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
@@ -699,7 +707,7 @@ def create_evaluator(
         stochasticity,
     )
 
-    fitness_calculator = define_fitness_calculator(features)
+    fitness_calculator = define_fitness_calculator(features, optimisation_rules)
     fitness_protocols = {"main_protocol": main_protocol}
 
     param_names = [param.name for param in cell_model.params.values() if not param.frozen]
@@ -722,7 +730,12 @@ def create_evaluator(
 
 
 def create_evaluators(
-    cell_models, protocols_definition, features_definition, stochasticity=False, timeout=None
+    cell_models,
+    protocols_definition,
+    features_definition,
+    stochasticity=False,
+    optimisation_rules=None,
+    timeout=None,
 ):
     """Create a multi-evaluator built from a list of evaluators (one for each
     cell model). The protocols and e-features will be the same for all the
@@ -742,7 +755,13 @@ def create_evaluators(
     simulator = get_simulator(stochasticity, cell_models)
     cell_evals = [
         create_evaluator(
-            cell_model, protocols_definition, features_definition, simulator, stochasticity, timeout
+            cell_model,
+            protocols_definition,
+            features_definition,
+            simulator,
+            stochasticity,
+            optimisation_rules,
+            timeout,
         )
         for cell_model in cell_models
     ]

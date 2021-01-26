@@ -503,6 +503,9 @@ class SearchThresholdCurrent:
             timeout=timeout,
         )
 
+        if spikecount is None:
+            return None
+
         if spikecount == 1:
 
             self.flag_spike_detected = True

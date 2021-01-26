@@ -196,6 +196,7 @@ class EModel_pipeline:
         compile_mechanisms=False,
         include_validation_protocols=False,
         additional_protocols=None,
+        optimisation_rules=None,
         timeout=600,
     ):
         """Create an evaluator for the emodel.
@@ -260,6 +261,7 @@ class EModel_pipeline:
             protocols_definition=protocols,
             features_definition=efeatures,
             stochasticity=stochasticity,
+            optimisation_rules=optimisation_rules,
             timeout=timeout,
         )
 
@@ -340,6 +342,7 @@ class EModel_pipeline:
         optimizer="MO-CMA",
         checkpoint_path="./checkpoint.pkl",
         continue_opt=False,
+        optimisation_rules=None,
     ):
         """
         Run optimisation
@@ -367,6 +370,7 @@ class EModel_pipeline:
             copy_mechanisms=copy_mechanisms,
             compile_mechanisms=compile_mechanisms,
             include_validation_protocols=False,
+            optimisation_rules=optimisation_rules,
         )
 
         p = Path(checkpoint_path)

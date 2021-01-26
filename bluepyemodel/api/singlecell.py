@@ -35,21 +35,63 @@ class Singlecell_API(DatabaseAPI):
         self.working_dir = Path(working_dir)
         self.recipes_path = recipes_path
         self.legacy_dir_structure = legacy_dir_structure
+
         if final_path is None:
             self.final_path = self.working_dir / "final.json"
         else:
             self.final_path = Path(final_path)
 
-        if self.final_path.exists():
-            with open(self.final_path, "r") as f:
-                self.final = json.load(f)
+        self.fix_final_compatibility()
 
-            # ensures the the base emodel name exists in each entry (for compatibility)
-            for emodel in self.final:
-                if "emodel" not in self.final[emodel]:
-                    self.final[emodel]["emodel"] = "_".join(emodel.split("_")[:2])
+    def get_final(self):
+        """Get emodels from json"""
+        if self.final_path is None:
+            raise Exception("Final_path is None")
+
+        p = Path(self.final_path)
+        if not (p.is_file()):
+            logger.info("%s does not exist and will be create", self.final_path)
+            return {}
+
+        with open(self.final_path, "r") as f:
+            final = json.load(f)
+
+        return final
+
+    def save_final(self, final):
+        """ Save final emodels in json"""
+        if self.final_path is None:
+            raise Exception("Final_path is None")
+
+        with open(self.final_path, "w+") as fp:
+            json.dump(final, fp, indent=2)
+
+    def fix_final_compatibility(self):
+        """ Ensures that the base emodel name exists in each entry (for compatibility)"""
+        if self.final_path.exists():
+
+            final = self.get_final()
+
+            for emodel in final:
+                if "emodel" not in final[emodel]:
+
+                    splitted = emodel.split("_")
+
+                    if splitted[-1].isnumeric():
+                        seed = int(splitted[-1])
+                        emodel = "_".join(emodel.split("_")[:-1])
+                    else:
+                        seed = None
+
+                    if seed and "seed" not in final[emodel]:
+                        final[emodel]["seed"] = seed
+
+                    final[emodel]["emodel"] = str(emodel)
+
+            self.save_final(final)
+
         else:
-            logger.warning("Final.json does not exists at %s", self.final_path)
+            logger.warning("%s does not exist.", self.final_path)
 
     def _get_json(self, emodel, recipe_entry):
         """Helper function to load a  json using path in recipe."""
@@ -211,16 +253,7 @@ class Singlecell_API(DatabaseAPI):
         if scores_validation is None:
             scores_validation = {}
 
-        if self.final_path is None:
-            raise Exception("Cannot store the model because final_path is None")
-
-        p = Path(self.final_path)
-        if not (p.is_file()):
-            logger.info("%s does not exist and will be create", self.final_path)
-            final = {}
-        else:
-            with open(self.final_path, "r") as f:
-                final = json.load(f)
+        final = self.get_final()
 
         entry = {
             "emodel": emodel,
@@ -238,8 +271,7 @@ class Singlecell_API(DatabaseAPI):
 
         final[model_name] = entry
 
-        with open(self.final_path, "w") as fp:
-            json.dump(final, fp, indent=2)
+        self.save_final(final)
 
     def get_parameters(self, emodel, species=None):
         """Get the definition of the parameters to optimize as well as the
@@ -495,44 +527,52 @@ class Singlecell_API(DatabaseAPI):
 
         return morphology_definition
 
+    def format_emodel_data(self, model_data, species=None):
+
+        out_data = {
+            "emodel": model_data["emodel"],
+            "fitness": model_data["score"],
+            "parameters": model_data["params"],
+            "scores": model_data["fitness"],
+        }
+
+        for key in [
+            "seed",
+            "githash",
+            "branch",
+            "rank",
+            "optimizer",
+            "species",
+        ]:
+            if key in model_data:
+                out_data[key] = model_data[key]
+
+        if "validation_fitness" in model_data:
+            out_data["scores_validation"] = model_data["validation_fitness"]
+            out_data["validated"] = True
+        else:
+            out_data["scores_validation"] = {}
+            out_data["validated"] = False
+
+        return out_data
+
     def get_emodel(self, emodel, species=None):
         """Get dict with parameter of single emodel (including seed if any)
+
+        WARNING: this search is based on the name of the model and not its
+        emodel despite the name of the variable. To search by emode name
+        use get_emodels.
 
         Args:
             emodel (str): name of the emodels
             species (str): name of the species (rat, human, mouse)
         """
-        if emodel in self.final:
+        final = self.get_final()
 
-            final_data = self.final[emodel]
-            emodel_data = {
-                "emodel": "_".join(emodel.split("_")[:2]),
-                "fitness": final_data["score"],
-                "parameters": final_data["params"],
-                "scores": final_data["fitness"],
-                "validated": "False",
-            }
-
-            for key in [
-                "seed",
-                "githash",
-                "branch",
-                "rank",
-                "optimizer",
-                "species",
-            ]:
-                if key in final_data:
-                    emodel_data[key] = final_data[key]
-
-            if "validation_fitness" in final_data:
-                emodel_data["scores_validation"] = final_data["validation_fitness"]
-            else:
-                emodel_data["scores_validation"] = {}
-
-            return emodel_data
+        if emodel in final:
+            return self.format_emodel_data(final[emodel])
 
         logger.warning("Could not find the models for emodel %s", emodel)
-
         return None
 
     def get_emodels(self, emodels, species):
@@ -542,11 +582,12 @@ class Singlecell_API(DatabaseAPI):
             emodels (list): list of names of the emodels
             species (str): name of the species (rat, human, mouse)
         """
-        return [
-            self.get_emodel(full_emodel, species=species)
-            for full_emodel in self.final
-            if self.final[full_emodel]["emodel"] in emodels
-        ]
+        models = []
+        for mod_data in self.get_final().values():
+            if mod_data["emodel"] in emodels:
+                models.append(self.format_emodel_data(mod_data))
+
+        return models
 
     def get_emodel_names(self):
         """Get the list of all the names of emodels
@@ -554,4 +595,5 @@ class Singlecell_API(DatabaseAPI):
         Returns:
             dict: keys are emodel names with seed, values are names without seed.
         """
-        return {full_emodel: _em["emodel"] for full_emodel, _em in self.final.items()}
+        final = self.get_final()
+        return {mod_name: mod["emodel"] for mod_name, mod in final.items()}
