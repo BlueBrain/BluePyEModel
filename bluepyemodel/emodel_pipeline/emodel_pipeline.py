@@ -3,7 +3,12 @@ import logging
 import shutil
 import os
 import copy
+import tarfile
+import time
+import datetime
+
 from pathlib import Path
+from git import Repo
 
 from bluepyemodel.evaluation import model
 from bluepyemodel.evaluation import evaluator
@@ -99,17 +104,18 @@ def compile_mechs(mechanisms_dir):
             mod files to compile.
     """
 
-    p = Path(mechanisms_dir)
+    path_mechanisms_dir = Path(mechanisms_dir)
 
-    if p.is_dir():
+    if path_mechanisms_dir.is_dir():
 
         if Path("x86_64").is_dir():
             os.popen("rm -rf x86_64").read()
-        os.popen("nrnivmodl {}".format(mechanisms_dir)).read()
+        os.popen("nrnivmodl {}".format(path_mechanisms_dir)).read()
 
     else:
         raise Exception(
-            "Cannot compile the mechanisms because 'mechanisms_dir': {} does not exist.".format(p)
+            "Cannot compile the mechanisms because 'mechanisms_dir':"
+            " {} does not exist.".format(str(path_mechanisms_dir))
         )
 
 
@@ -131,6 +137,139 @@ def get_responses(to_run):
     )
 
 
+def change_cwd(dir_path):
+    """Changes the cwd for dir_path, creating it if it doesn't exist.
+
+    Args:
+        dir_path (str): path of the target directory
+    """
+
+    if str(Path(os.getcwd())) != str(Path(dir_path).absolute()):
+
+        p = Path(dir_path)
+        p.mkdir(parents=True, exist_ok=True)
+
+        logger.warning("Moving to working_dir %s", dir_path)
+        os.chdir(dir_path)
+
+
+def update_gitignore():
+    """
+    Adds the following lines to .gitignore: 'run/', 'checkpoints/', 'figures/',
+    'logs/', '.ipython/', '.ipynb_checkpoints/'
+    """
+
+    path_gitignore = Path("./.gitignore")
+
+    if not (path_gitignore.is_file()):
+        raise Exception("Could not update .gitignore as it does not exist.")
+
+    with open(str(path_gitignore), "r") as f:
+        lines = f.readlines()
+
+    to_add = ["run/", "checkpoints/", "figures/", "logs/", ".ipython/", ".ipynb_checkpoints/"]
+    not_to_add = []
+    for d in to_add:
+        for line in lines:
+            if d in line:
+                not_to_add.append(d)
+                break
+
+    for a in to_add:
+        if a not in not_to_add:
+            lines.append(f"{a}\n")
+
+    with open(str(path_gitignore), "w") as f:
+        f.writelines(lines)
+
+
+def generate_versions():
+    """
+    Save a list of the versions of the python packages in the current environnement.
+    """
+
+    path_versions = Path("./list_versions.log")
+
+    if path_versions.is_file():
+        logger.warning("%s already exists and will overwritten.", path_versions)
+
+    os.popen(f"pip list > {str(path_versions)}").read()
+
+
+def generate_githash(run_dir):
+    """
+    Generate a githash and create the associated run directory
+    """
+
+    path_run = Path(run_dir)
+
+    if not (path_run.is_dir()):
+        logger.warning("Directory %s does not exist and will be created.", run_dir)
+        path_run.mkdir(parents=True, exist_ok=True)
+
+    while Path("./.git/index.lock").is_file():
+        time.sleep(5.0)
+        logger.info("emodel_pipeline waiting for ./.git/index.lock.")
+
+    repo = Repo("./")
+    changedFiles = [item.a_path for item in repo.index.diff(None)]
+    if changedFiles:
+        os.popen('git add -A && git commit --allow-empty -a -m "Running pipeline"').read()
+
+    githash = os.popen("git rev-parse --short HEAD").read()[:-1]
+
+    tar_source = path_run / f"{githash}.tar"
+    tar_target = path_run / githash
+
+    if not (tar_target.is_dir()):
+
+        logger.info("New githash directory: %s", githash)
+
+        repo = Repo("./")
+        with open(str(tar_source), "wb") as fp:
+            repo.archive(fp)
+        with tarfile.open(str(tar_source)) as tf:
+            tf.extractall(str(tar_target))
+
+        if tar_source.is_file():
+            os.remove(str(tar_source))
+
+    else:
+        logger.info("Working from existing githash directory: %s", githash)
+
+    return githash
+
+
+def ipyparallel_map_function(flag_use_IPYP=None, ipython_profil="IPYTHON_PROFILE"):
+    """Get the map function linked to the ipython profile
+
+    Args:
+       flag_use_IPYP (str): name of the environement variable used as boolean
+           to check if ipyparallel should be used
+       ipython_profil (str): name fo the environement variable containing
+           the name of the name of the ipython profile
+
+    Returns:
+        map
+    """
+    if flag_use_IPYP and os.getenv(flag_use_IPYP):
+        from ipyparallel import Client
+
+        rc = Client(profile=os.getenv(ipython_profil))
+        lview = rc.load_balanced_view()
+
+        def mapper(func, it):
+            start_time = datetime.datetime.now()
+            ret = lview.map_sync(func, it)
+            logger.debug("Took %s", datetime.datetime.now() - start_time)
+            return ret
+
+    else:
+        mapper = map
+
+    return mapper
+
+
 class EModel_pipeline:
 
     """EModel pipeline"""
@@ -140,12 +279,14 @@ class EModel_pipeline:
         emodel,
         species,
         db_api,
-        working_dir,
-        mechanisms_dir="mechanisms",
+        working_dir="./",
+        mechanisms_dir="./mechanisms",
         recipes_path=None,
         project_name=None,
         final_path=None,
         forge_path=None,
+        use_git=False,
+        githash=None,
         morphology_modifiers=None,
     ):
         """Initialize the emodel_pipeline.
@@ -173,6 +314,13 @@ class EModel_pipeline:
                 are stored, only needed if db_api="singlecell".
             forge_path (str): path to the .yml used to connect to Nexus Forge,
                 only needed if db_api="nexus".
+            use_git (bool): if True, work will be perfomed in a sub-directory:
+                working_dir/run/githash. If use_git is True and githash is None,
+                a new githash will be generated. The pipeline will expect a git
+                repository to exist in working_dir.
+            githash (str): if provided, the pipeline will work in the directory
+                working_dir/run/githash. Needed when continuing work or resuming
+                optimisations.
             morphology_modifiers (list): list of python functions that will be
                 applied to all the morphologies.
 
@@ -207,6 +355,41 @@ class EModel_pipeline:
         self.project_name = project_name
         self.final_path = final_path
         self.forge_path = forge_path
+
+        change_cwd(self.working_dir)
+
+        if use_git:
+
+            self.run_dir = "./run"
+
+            is_git = str(os.popen("git rev-parse --is-inside-work-tree").read())[:-1]
+            if is_git != "true":
+                raise Exception(
+                    "use_git is true, but there is no git repository initialized in working_dir."
+                )
+
+            if githash is None:
+
+                update_gitignore()
+                # generate_version has to be ran before generating the githash as a change
+                # in a package version should induce the creation of a new githash
+                generate_versions()
+                self.githash = generate_githash(self.run_dir)
+
+            else:
+
+                self.githash = githash
+                logger.info("Working from existing githash directory: %s", self.githash)
+
+            self.working_dir = str(Path(self.working_dir) / self.run_dir / self.githash)
+            change_cwd(self.working_dir)
+
+        elif githash:
+            raise Exception("A githash was provided but use_git is False.")
+
+        else:
+            change_cwd(self.working_dir)
+            self.githash = githash
 
     def connect_db(self):
         """
@@ -252,6 +435,13 @@ class EModel_pipeline:
 
         """
         db = self.connect_db()
+
+        if compile_mechanisms and self.githash:
+            raise Exception(
+                "Compile mechanisms and the use of githash are not compatible "
+                "yet. Please pre-compile the mechanisms and re-run with "
+                "compile_mechanisms=False."
+            )
 
         # Get the data
         parameters, mechanisms, mechanism_names = db.get_parameters(self.emodel, self.species)
@@ -339,7 +529,7 @@ class EModel_pipeline:
 
         db = self.connect_db()
 
-        map_function = optimisation.ipyparallel_map_function("USEIPYP")
+        map_function = ipyparallel_map_function("USEIPYP")
 
         if not (config_dict):
 
@@ -388,6 +578,7 @@ class EModel_pipeline:
         checkpoint_path="./checkpoint.pkl",
         continue_opt=False,
         optimisation_rules=None,
+        timeout=600,
     ):
         """Run optimisation.
 
@@ -404,11 +595,14 @@ class EModel_pipeline:
             checkpoint_path (str): path to the file used as a checkpoint by BluePyOpt.
             continue_opt (bool): should the optimization restart from a previously
                 created checkpoint file.
+            timeout (float): duration (in second) after which the evaluation of a
+                protocol will be interrupted.
+
         """
         if opt_params is None:
             opt_params = {}
 
-        map_function = optimisation.ipyparallel_map_function("USEIPYP")
+        map_function = ipyparallel_map_function("USEIPYP")
 
         _evaluator = self.get_evaluator(
             stochasticity=stochasticity,
@@ -416,6 +610,7 @@ class EModel_pipeline:
             compile_mechanisms=compile_mechanisms,
             include_validation_protocols=False,
             optimisation_rules=optimisation_rules,
+            timeout=timeout,
         )
 
         p = Path(checkpoint_path)
@@ -442,7 +637,6 @@ class EModel_pipeline:
         copy_mechanisms=False,
         compile_mechanisms=False,
         opt_params=None,
-        githash="",
         optimizer="MO-CMA",
         checkpoint_path="./checkpoint.pkl",
     ):
@@ -487,7 +681,7 @@ class EModel_pipeline:
             params,
             optimizer_name=optimizer,
             seed=seed,
-            githash=githash,
+            githash=self.githash,
             validated=False,
             species=self.species,
         )
@@ -516,7 +710,7 @@ class EModel_pipeline:
         Returns:
             emodels (list): list of emodels.
         """
-        # map_function = optimisation.ipyparallel_map_function("USEIPYP")
+        # map_function = ipyparallel_map_function("USEIPYP")
 
         _evaluator = self.get_evaluator(
             stochasticity=stochasticity,
@@ -589,7 +783,7 @@ class EModel_pipeline:
             emodels (list): list of emodels.
         """
 
-        # map_function = optimisation.ipyparallel_map_function("USEIPYP")
+        # map_function = ipyparallel_map_function("USEIPYP")
 
         if additional_protocols is None:
             additional_protocols = {}

@@ -26,6 +26,7 @@ setup(
         'dask_mpi>=2.20',
         'tqdm',
         'pyyaml',
+        'gitpython',
         'luigi',
         'bluepyopt @ git+http://github.com/BlueBrain/BluePyOpt@CMA_clean#egg=bluepyopt',
         'bluepyefe @ git+ssh://bbpcode.epfl.ch/analysis/BluePyEfe@BPE2#egg=bluepyefe',

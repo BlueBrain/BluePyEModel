@@ -15,6 +15,7 @@ from bluepyemodel.emodel_pipeline.utils import read_checkpoint, make_dir
 matplotlib.rcParams["pdf.fonttype"] = 42
 
 logger = logging.getLogger("__main__")
+logging.getLogger("matplotlib").setLevel(level=logging.ERROR)
 
 
 def save_fig(figures_dir, figure_name):

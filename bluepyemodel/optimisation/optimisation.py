@@ -1,43 +1,10 @@
 """Optimisation function"""
-
-import os
-from datetime import datetime
 from pathlib import Path
 import logging
 
 import bluepyopt
 
 logger = logging.getLogger(__name__)
-
-
-def ipyparallel_map_function(flag_use_IPYP=None, ipython_profil="IPYTHON_PROFILE"):
-    """Get the map function linked to the ipython profile
-
-    Args:
-       flag_use_IPYP (str): name of the environement variable used as boolean
-           to check if ipyparallel should be used
-       ipython_profil (str): name fo the environement variable containing
-           the name of the name of the ipython profile
-
-    Returns:
-        map
-    """
-    if flag_use_IPYP and os.getenv(flag_use_IPYP):
-        from ipyparallel import Client
-
-        rc = Client(profile=os.getenv(ipython_profil))
-        lview = rc.load_balanced_view()
-
-        def mapper(func, it):
-            start_time = datetime.now()
-            ret = lview.map_sync(func, it)
-            logger.debug("Took %s", datetime.now() - start_time)
-            return ret
-
-    else:
-        mapper = map
-
-    return mapper
 
 
 def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
