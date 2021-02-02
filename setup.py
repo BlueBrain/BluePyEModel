@@ -10,16 +10,31 @@ if sys.version_info < (3, 6):
 
 VERSION = imp.load_source("", "bluepyemodel/version.py").__version__
 
+# Read the contents of the README file
+with open("README.rst", encoding="utf-8") as f:
+    README = f.read()
+
+
 EXTRA_LUIGI = ["luigi", "luigi-tools"]
 EXTRA_GENERALISATION = ["bluepyparallel"]
 EXTRA_NEXUS = ["nexusforge"]
+
+doc_reqs = [
+    "graphviz",
+    "sphinx",
+    "sphinx-autoapi",
+    "sphinx-bluebrain-theme",
+]
+
 
 setup(
     name="BluePyEModel",
     author="BlueBrain cells",
     author_email="bbp-ou-cell@groupes.epfl.ch",
     version=VERSION,
-    description="",
+    description="Electrical modeling pipeline",
+    long_description=README,
+    long_description_content_type="text/x-rst",
     license="BBP-internal-confidential",
     install_requires=[
         "numpy",
@@ -42,7 +57,7 @@ setup(
         "generalisation": EXTRA_GENERALISATION,
         "nexus": EXTRA_NEXUS,
         "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS,
-    },
+        "docs": doc_reqs},
     packages=find_packages(),
     entry_points={"console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"]},
     include_package_data=True,

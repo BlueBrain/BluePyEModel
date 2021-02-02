@@ -12,9 +12,9 @@ BluePyOpt and BluePyMM.
 
 
 To get started
-===========
+==============
 
 With E-Model building pipeline
---------------------------
+-------------------------------
 
 See notebook: ./examples/pipeline/pipeline.ipynb
