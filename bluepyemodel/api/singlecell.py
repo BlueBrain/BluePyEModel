@@ -21,23 +21,23 @@ class Singlecell_API(DatabaseAPI):
 
     def __init__(
         self,
-        working_dir,
+        emodel_dir,
         final_path=None,
         recipes_path=None,
         legacy_dir_structure=False,
     ):
         """
         Args:
-            working_dir (str): path to the workign directory
+            emodel_dir (str): path to the emodel directory
             final_path (str): path to final.json
             recipes_path (str): path to the recipes.json
         """
-        self.working_dir = Path(working_dir)
+        self.emodel_dir = Path(emodel_dir)
         self.recipes_path = recipes_path
         self.legacy_dir_structure = legacy_dir_structure
 
         if final_path is None:
-            self.final_path = self.working_dir / "final.json"
+            self.final_path = self.emodel_dir / "final.json"
         else:
             self.final_path = Path(final_path)
 
@@ -98,7 +98,7 @@ class Singlecell_API(DatabaseAPI):
         json_path = self.get_recipes(emodel)[recipe_entry]
         if self.legacy_dir_structure:
             emodel = "_".join(emodel.split("_")[:2])
-            json_path = self.working_dir / emodel / json_path
+            json_path = self.emodel_dir / emodel / json_path
 
         with open(json_path, "r") as f:
             data = json.load(f)
@@ -191,7 +191,7 @@ class Singlecell_API(DatabaseAPI):
                 out_features.pop(prot)
 
         file_name = emodel + ".json"
-        features_path = self.working_dir / "config" / "features" / file_name
+        features_path = self.emodel_dir / "config" / "features" / file_name
 
         s = json.dumps(out_features, indent=2, cls=NumpyEncoder)
         with open(features_path, "w") as f:
@@ -216,7 +216,7 @@ class Singlecell_API(DatabaseAPI):
                 stimuli[stim]["validation"] = False
 
         file_name = emodel + ".json"
-        protocols_path = self.working_dir / "config" / "protocols" / file_name
+        protocols_path = self.emodel_dir / "config" / "protocols" / file_name
 
         s = json.dumps(stimuli, indent=2, cls=NumpyEncoder)
         with open(protocols_path, "w") as f:
@@ -226,11 +226,11 @@ class Singlecell_API(DatabaseAPI):
         """Load the recipes json for a given emodel.
 
         This assumes a specific folder structure per emodel, which consists in a folder per
-        emodel in the working_dir, with the original config folder.
+        emodel in the emodel_dir, with the original config folder.
         """
         if self.legacy_dir_structure:
             emodel = "_".join(emodel.split("_")[:2])
-            recipes_path = self.working_dir / emodel / "config" / "recipes" / "recipes.json"
+            recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
             recipes_path = self.recipes_path
 
@@ -328,7 +328,7 @@ class Singlecell_API(DatabaseAPI):
 
                 morphologies = self.get_morphologies(emodel)
                 morph_name = morphologies[0]["name"]
-                p = self.working_dir / "apical_points_isec.json"
+                p = self.emodel_dir / "apical_points_isec.json"
 
                 if p.exists():
 
@@ -596,6 +596,10 @@ class Singlecell_API(DatabaseAPI):
                 models.append(self.format_emodel_data(mod_data))
 
         return models
+
+    def get_emodel_etype_map(self):
+        final = self.get_final()
+        return {emodel: emodel.split("_")[0] for emodel in final}
 
     def get_emodel_names(self):
         """Get the list of all the names of emodels

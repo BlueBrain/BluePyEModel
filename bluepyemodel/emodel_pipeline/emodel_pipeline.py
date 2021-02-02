@@ -60,7 +60,7 @@ def connect_db(
         from bluepyemodel.api.singlecell import Singlecell_API
 
         return Singlecell_API(
-            working_dir=working_dir, recipes_path=recipes_path, final_path=final_path
+            emodel_dir=working_dir, recipes_path=recipes_path, final_path=final_path
         )
 
     raise Exception(f"Unknown api: {db_api}")
