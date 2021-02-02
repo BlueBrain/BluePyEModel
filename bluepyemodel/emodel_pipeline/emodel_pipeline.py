@@ -130,11 +130,9 @@ def get_responses(to_run):
     eva = to_run["evaluator"]
     params = to_run["parameters"]
 
-    eva.evaluators[0].cell_model.unfreeze(params)
+    eva.cell_model.unfreeze(params)
 
-    return eva.evaluators[0].run_protocols(
-        protocols=eva.evaluators[0].fitness_protocols.values(), param_values=params
-    )
+    return eva.run_protocols(protocols=eva.fitness_protocols.values(), param_values=params)
 
 
 def change_cwd(dir_path):
@@ -484,8 +482,8 @@ class EModel_pipeline:
             morph_modifiers=self.morphology_modifiers,
         )
 
-        return evaluator.create_evaluators(
-            cell_models=cell_models,
+        return evaluator.create_evaluator(
+            cell_model=cell_models[0],
             protocols_definition=protocols,
             features_definition=efeatures,
             stochasticity=stochasticity,
@@ -667,7 +665,7 @@ class EModel_pipeline:
         run = read_checkpoint(checkpoint_path)
 
         best_model = run["halloffame"][0]
-        feature_names = [obj.name for obj in _evaluator.evaluators[0].fitness_calculator.objectives]
+        feature_names = [obj.name for obj in _evaluator.fitness_calculator.objectives]
         param_names = list(_evaluator.param_names)
 
         scores = dict(zip(feature_names, best_model.fitness.values))
@@ -864,18 +862,18 @@ class EModel_pipeline:
             additional_protocols=additional_protocols,
         )
 
-        stimuli = _evaluator.evaluators[0].fitness_protocols["main_protocol"].subprotocols()
+        stimuli = _evaluator.fitness_protocols["main_protocol"].subprotocols()
 
         if emodels:
 
             lbounds = {
                 p.name: p.bounds[0]
-                for p in _evaluator.evaluators[0].cell_model.params.values()
+                for p in _evaluator.cell_model.params.values()
                 if p.bounds is not None
             }
             ubounds = {
                 p.name: p.bounds[1]
-                for p in _evaluator.evaluators[0].cell_model.params.values()
+                for p in _evaluator.cell_model.params.values()
                 if p.bounds is not None
             }
 

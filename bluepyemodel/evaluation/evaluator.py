@@ -1,7 +1,5 @@
 """Evaluator module."""
 import logging
-from collections import defaultdict
-
 import numpy
 
 from bluepyopt.ephys.recordings import CompRecording
@@ -13,7 +11,6 @@ from bluepyopt.ephys.locations import (
     NrnSomaDistanceCompLocation,
     NrnSecSomaDistanceCompLocation,
 )
-from bluepyopt.evaluators import Evaluator
 from bluepyopt.ephys.efeatures import eFELFeature
 from bluepyopt.ephys.objectives import SingletonObjective, SingletonRuleObjective
 
@@ -33,80 +30,6 @@ logger = logging.getLogger(__name__)
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 # this location can be used to record at ais, using the option ais_recording below
 ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
-
-
-class MultiEvaluator(Evaluator):
-
-    """Multiple cell evaluator"""
-
-    def __init__(
-        self,
-        evaluators=None,
-        sim=None,
-    ):
-        """Constructor
-
-        Args:
-            evaluators (list): list of CellModel evaluators
-            sim (NrnSimulator): simulator (usually NrnSimulator object)
-        """
-
-        self.sim = sim
-        self.evaluators = evaluators
-        # these are identical for all models. Better solution available?
-        self.param_names = self.evaluators[0].param_names
-
-        # loop objectives for all evaluators, rename based on evaluators
-        objectives = [
-            objective for evaluator in self.evaluators for objective in evaluator.objectives
-        ]
-        params = self.evaluators[0].cell_model.params_by_names(self.param_names)
-        super().__init__(objectives, params)
-
-    def param_dict(self, param_array):
-        """Convert param_array in param_dict"""
-        return dict(zip(self.param_names, param_array))
-
-    def objective_dict(self, objective_array):
-        """Convert objective_array in objective_dict"""
-        objective_names = [objective.name for objective in self.objectives]
-
-        if len(objective_names) != len(objective_array):
-            raise Exception(
-                "MultiEvaluator: list given to objective_dict() " "has wrong number of objectives"
-            )
-
-        return dict(zip(objective_names, objective_array))
-
-    def objective_list(self, objective_dict):
-        """Convert objective_dict in objective_list"""
-        return [objective_dict[objective.name] for objective in self.objectives]
-
-    def evaluate_with_dicts(self, param_dict=None):
-        """Run evaluation with dict as input and output"""
-        scores = defaultdict(float)
-        for evaluator in self.evaluators:
-            score = evaluator.evaluate_with_dicts(param_dict=param_dict)
-            for score_name in score:
-                scores[score_name] += score[score_name]
-        return scores
-
-    def evaluate_with_lists(self, params=None):
-        """Run evaluation with lists as input and outputs"""
-        param_dict = self.param_dict(params)
-        obj_dict = self.evaluate_with_dicts(param_dict=param_dict)
-        return self.objective_list(obj_dict)
-
-    def evaluate(self, param_list=None):
-        """Run evaluation with lists as input and outputs"""
-        return self.evaluate_with_lists(param_list)
-
-    def __str__(self):
-        content = "multi cell evaluator:\n"
-        content += "  evaluators:\n"
-        for evaluator in self.evaluators:
-            content += "    %s\n" % str(evaluator)
-        return content
 
 
 class eFELFeatureBPEM(eFELFeature):
@@ -656,18 +579,17 @@ def define_fitness_calculator(features, optimisation_rules):
     return ObjectivesCalculator(objectives)
 
 
-def get_simulator(stochasticity, cell_models):
+def get_simulator(stochasticity, cell_model):
     """Get NrnSimulator
 
     Args:
         stochasticity (Bool): allow the use of simulator for stochastic channels
-        cell_models (list): List of CellModel to detect if any stochastic channels are present
+        cell_model (CellModel): used to check if any stochastic channels are present
     """
     if stochasticity:
-        for cell_model in cell_models:
-            for mechanism in cell_model.mechanisms:
-                if not mechanism.deterministic:
-                    return NrnSimulator(dt=0.025, cvode_active=False)
+        for mechanism in cell_model.mechanisms:
+            if not mechanism.deterministic:
+                return NrnSimulator(dt=0.025, cvode_active=False)
 
         logger.warning(
             "Stochasticity is True but no mechanisms are stochastic. Switching to "
@@ -681,7 +603,6 @@ def create_evaluator(
     cell_model,
     protocols_definition,
     features_definition,
-    simulator=None,
     stochasticity=True,
     optimisation_rules=None,
     timeout=None,
@@ -689,10 +610,9 @@ def create_evaluator(
     """Creates an evaluator for a cell model/protocols/e-feature set
 
     Args:
-        cell_model (CellModel): cell mode
+        cell_model (CellModel): cell model
         protocols_definition (dict): protocols and their definition
         features_definition (dict): features means and stds
-        simulator (NrnSimulator): simulator, is None, one will be created
         stochasticity (bool): should the stochastic channels be stochastic or
             deterministic
         timeout (float): maximum time in second during which a protocol is
@@ -712,8 +632,7 @@ def create_evaluator(
 
     param_names = [param.name for param in cell_model.params.values() if not param.frozen]
 
-    if simulator is None:
-        simulator = get_simulator(stochasticity, [cell_model])
+    simulator = get_simulator(stochasticity, cell_model)
 
     cell_eval = CellEvaluator(
         cell_model=cell_model,
@@ -727,43 +646,3 @@ def create_evaluator(
     cell_eval.prefix = cell_model.name
 
     return cell_eval
-
-
-def create_evaluators(
-    cell_models,
-    protocols_definition,
-    features_definition,
-    stochasticity=False,
-    optimisation_rules=None,
-    timeout=None,
-):
-    """Create a multi-evaluator built from a list of evaluators (one for each
-    cell model). The protocols and e-features will be the same for all the
-    cell models.
-
-    Args:
-        cell_models (list): list of cell models
-        protocols_definition (dict): protocols and their definition
-        features_definition (dict): features means and stds
-        stochasticity (bool): Should the stochastic channels be stochastic or
-            deterministic
-
-    Returns:
-        MultiEvaluator
-    """
-
-    simulator = get_simulator(stochasticity, cell_models)
-    cell_evals = [
-        create_evaluator(
-            cell_model,
-            protocols_definition,
-            features_definition,
-            simulator,
-            stochasticity,
-            optimisation_rules,
-            timeout,
-        )
-        for cell_model in cell_models
-    ]
-
-    return MultiEvaluator(evaluators=cell_evals, sim=simulator)
