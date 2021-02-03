@@ -663,3 +663,33 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
 
     # clean up the parallel library, if needed
     parallel_factory.shutdown()
+
+
+@cli.command("update_sonata")
+@click.option("--input-sonata-path", type=click.Path(exists=True), required=False)
+@click.option("--output-sonata-path", type=click.Path(exists=True), required=False)
+@click.option("--mecombo-emodel-path", type=click.Path(exists=True), required=False)
+def update_sonata(input_sonata_path, output_sonata_path, mecombo_emodel_path):
+    """Update sonata file add threshols current, holding current and AIS_scaler.
+
+    Args:
+        input_sonata_path (str): path to sonata file to update
+        output_sonata_path (str): path to new sonata file
+        mecombo-emodel-path (str): path to mecombo_emodel.tsv file
+    """
+    mecombo_emodel = pd.read_csv(mecombo_emodel_path, sep=r"\s+")
+    bad_cells = mecombo_emodel[mecombo_emodel.isnull().any(axis=1)].index
+    L.info("Failed cells:")
+    L.info(mecombo_emodel.loc[bad_cells])
+
+    # we remove combo_name here, so the remove_unassigned_cells() later will remove these cells
+    mecombo_emodel.loc[bad_cells, "combo_name"] = None
+
+    cells = CellCollection.load(input_sonata_path)
+    cells.properties["me_combo"] = (
+        mecombo_emodel.set_index("morph_name")
+        .loc[cells.properties["morphology"], "combo_name"]
+        .to_list()
+    )
+    cells.remove_unassigned_cells()
+    cells.save(output_sonata_path)
