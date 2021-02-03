@@ -7,7 +7,8 @@ from pathlib import Path
 import bluepyopt.ephys as ephys
 from bluepyopt.ephys.morphologies import NrnFileMorphology
 
-from .modifiers import replace_axon_hoc, replace_axon_with_taper
+from .modifiers import replace_axon_hoc
+from .modifiers import replace_axon_with_taper
 
 logger = logging.getLogger(__name__)
 

@@ -2,14 +2,13 @@
 import json
 import logging
 
+import luigi
 import pandas as pd
 import yaml
 
-import luigi
-
-from .base_task import BaseTask
-from .config import MorphComboLocalTarget
-from .utils import ensure_dir
+from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
+from bluepyemodel.tasks.ais_synthesis.config import MorphComboLocalTarget
+from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
 

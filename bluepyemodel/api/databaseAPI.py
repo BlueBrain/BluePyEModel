@@ -50,6 +50,19 @@ class DatabaseAPI:
 
         """
 
+    def get_feature_extraction_config(self, emodel, species, threshold_nvalue_save=1):
+        """Get config for feature extraction.
+
+        Args:
+            emodel (str): name of the emodels
+            species (str): name of the species (rat, human, mouse)
+            threshold_nvalue_save (int): lower bounds of the number of values required
+                to save an efeature.
+
+        Returns:
+            extract_config (dict): config dict used in extract.extract_efeatures()
+        """
+
     def get_emodel(self, emodel, species=None):
         """Get dict with parameter of single emodel (including seed if any)
 

@@ -1,5 +1,6 @@
 """SubWhiteNoise stimulus class"""
 import logging
+
 import numpy
 import pkg_resources
 

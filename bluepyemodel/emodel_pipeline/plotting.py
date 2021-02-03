@@ -2,13 +2,14 @@
 
 import logging
 from pathlib import Path
-import numpy
 
 import matplotlib
-import matplotlib.pyplot as plt
 import matplotlib.font_manager
+import matplotlib.pyplot as plt
+import numpy
 
-from bluepyemodel.emodel_pipeline.utils import read_checkpoint, make_dir
+from bluepyemodel.emodel_pipeline.utils import make_dir
+from bluepyemodel.emodel_pipeline.utils import read_checkpoint
 
 # pylint: disable=W0612,W0102
 

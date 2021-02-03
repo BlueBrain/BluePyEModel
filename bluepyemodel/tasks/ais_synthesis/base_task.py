@@ -2,11 +2,11 @@
 from pathlib import Path
 
 import luigi
-
-from luigi_tools.task import WorkflowTask, WorkflowWrapperTask
+from luigi_tools.task import WorkflowTask
+from luigi_tools.task import WorkflowWrapperTask
 
 from bluepyemodel.api.singlecell import Singlecell_API
-from .config import EmodelAPIConfig
+from bluepyemodel.tasks.ais_synthesis.config import EmodelAPIConfig
 
 
 class EmodelAwareTask:

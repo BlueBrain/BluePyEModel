@@ -1,16 +1,19 @@
 """Luigi task for select step with plotting tasks."""
 import logging
 
+import luigi
 import pandas as pd
 import yaml
 
-import luigi
-
-from ...ais_synthesis.select import apply_megating, select_best_emodel
-from .base_task import BaseTask
-from .config import SelectConfig, SelectLocalTarget
-from .gather import GatherGenericEvaluations, GatherSynthEvaluations, GatherExemplarEvaluations
-from .utils import ensure_dir
+from bluepyemodel.ais_synthesis.select import apply_megating
+from bluepyemodel.ais_synthesis.select import select_best_emodel
+from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
+from bluepyemodel.tasks.ais_synthesis.config import SelectConfig
+from bluepyemodel.tasks.ais_synthesis.config import SelectLocalTarget
+from bluepyemodel.tasks.ais_synthesis.gather import GatherExemplarEvaluations
+from bluepyemodel.tasks.ais_synthesis.gather import GatherGenericEvaluations
+from bluepyemodel.tasks.ais_synthesis.gather import GatherSynthEvaluations
+from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +123,7 @@ class SelectGenericCombos(BaseTask):
 
     emodels = luigi.ListParameter()
     best_emodel_path = luigi.Parameter(default="best_emodels.csv")
+    target_path = luigi.Parameter(default="selected_combos_df.csv")
 
     def requires(self):
         """"""

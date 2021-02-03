@@ -1,12 +1,13 @@
 """Module to evaluate generic functions on rows of combos dataframe (similar to BluePyMMM)."""
 import logging
 import sqlite3
-from pathlib import Path
 import sys
 import traceback
 from functools import partial
-from tqdm import tqdm
+from pathlib import Path
+
 import pandas as pd
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 

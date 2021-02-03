@@ -1,14 +1,14 @@
 """eCode init script"""
 
+from .apwaveform import APWaveform
+from .dehyperpol import DeHyperpol
+from .firepattern import FirePattern
+from .hyperdepol import HyperDepol
 from .idrest import IDrest
 from .iv import IV
-from .apwaveform import APWaveform
-from .firepattern import FirePattern
-from .sahp import sAHP
-from .hyperdepol import HyperDepol
-from .dehyperpol import DeHyperpol
 from .poscheops import PosCheops
 from .ramp import Ramp
+from .sahp import sAHP
 from .sinespec import SineSpec
 from .subwhitenoise import SubWhiteNoise
 

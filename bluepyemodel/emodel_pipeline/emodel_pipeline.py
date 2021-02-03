@@ -1,22 +1,22 @@
 """Define a class for a pipeline allowing the creation of emodels."""
-import logging
-import shutil
-import os
 import copy
+import datetime
+import logging
+import os
+import shutil
 import tarfile
 import time
-import datetime
-
 from pathlib import Path
+
 from git import Repo
 
-from bluepyemodel.evaluation import model
-from bluepyemodel.evaluation import evaluator
-from bluepyemodel.validation import validation
-from bluepyemodel.optimisation import optimisation
-from bluepyemodel.feature_extraction import extract
-from bluepyemodel.emodel_pipeline.utils import read_checkpoint
 from bluepyemodel.emodel_pipeline import plotting
+from bluepyemodel.emodel_pipeline.utils import read_checkpoint
+from bluepyemodel.evaluation import evaluator
+from bluepyemodel.evaluation import model
+from bluepyemodel.feature_extraction import extract
+from bluepyemodel.optimisation import optimisation
+from bluepyemodel.validation import validation
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,14 @@ def update_gitignore():
     with open(str(path_gitignore), "r") as f:
         lines = f.readlines()
 
-    to_add = ["run/", "checkpoints/", "figures/", "logs/", ".ipython/", ".ipynb_checkpoints/"]
+    to_add = [
+        "run/",
+        "checkpoints/",
+        "figures/",
+        "logs/",
+        ".ipython/",
+        ".ipynb_checkpoints/",
+    ]
     not_to_add = []
     for d in to_add:
         for line in lines:

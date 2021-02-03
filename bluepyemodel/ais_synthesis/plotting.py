@@ -8,15 +8,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.backends.backend_pdf import PdfPages
-from tqdm import tqdm
-
 from bluepyopt.ephys.responses import TimeVoltageResponse
-from neurom import load_neuron, viewer
+from matplotlib.backends.backend_pdf import PdfPages
+from neurom import load_neuron
+from neurom import viewer
+from tqdm import tqdm
 
 from .ais_model import taper_function
 from .evaluators import get_combo_hash
-from .utils import get_emodels, get_mtypes, get_scores
+from .utils import get_emodels
+from .utils import get_mtypes
+from .utils import get_scores
 
 matplotlib.use("Agg")
 

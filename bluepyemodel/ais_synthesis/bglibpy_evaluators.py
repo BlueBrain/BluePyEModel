@@ -1,9 +1,8 @@
 """Compute the threshold and holding current using bglibpy, adapted from BluePyThresh."""
-from functools import partial
-from copy import copy
 import logging
+from copy import copy
+from functools import partial
 from pathlib import Path
-
 
 from .tools.evaluator import evaluate_combos
 

@@ -1,8 +1,7 @@
 """Utils"""
 
-import pickle
 import logging
-
+import pickle
 from pathlib import Path
 
 logger = logging.getLogger("__main__")

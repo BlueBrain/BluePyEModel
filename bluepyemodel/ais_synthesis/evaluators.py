@@ -1,21 +1,21 @@
 """Evaluators."""
 import json
 import logging
-from copy import copy
 import os
 import pickle
+from copy import copy
 from functools import partial
 from hashlib import sha256
 from pathlib import Path
 
-from ..evaluation.evaluator import create_evaluator, define_main_protocol, get_simulator
+from ..evaluation.evaluator import create_evaluator
+from ..evaluation.evaluator import define_main_protocol
+from ..evaluation.evaluator import get_simulator
 from ..evaluation.model import create_cell_model
-from ..evaluation.modifiers import (
-    isolate_axon,
-    remove_axon,
-    replace_axon_with_taper,
-    synth_axon,
-)
+from ..evaluation.modifiers import isolate_axon
+from ..evaluation.modifiers import remove_axon
+from ..evaluation.modifiers import replace_axon_with_taper
+from ..evaluation.modifiers import synth_axon
 from .tools.evaluator import evaluate_combos
 
 logger = logging.getLogger(__name__)

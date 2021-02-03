@@ -1,31 +1,33 @@
 """Plotting Luigi tasks to run the ais workflow."""
 import logging
 from pathlib import Path
-import yaml
-import pandas as pd
 
 import luigi
 import matplotlib.pyplot as plt
+import pandas as pd
+import yaml
 from matplotlib.backends.backend_pdf import PdfPages
 
-from ...ais_synthesis.plotting import (
-    plot_ais_resistance_models,
-    plot_ais_taper_models,
-    plot_synth_ais_evaluations,
-    plot_target_rho_axon,
-)
-from .ais_model import AisResistanceModel, AisShapeModel, TargetRhoAxon
-from .base_task import BaseTask
-from .evaluations import EvaluateGeneric, EvaluateSynthesis
-from .select import ApplyMegating, ApplyGenericMegating, SelectCombos, SelectGenericCombos
-from ...ais_synthesis.plotting import (
-    plot_feature_select,
-    plot_feature_summary_select,
-    plot_frac_exceptions,
-    plot_summary_select,
-)
-from .utils import ensure_dir
-from .config import PlotLocalTarget
+from bluepyemodel.ais_synthesis.plotting import plot_ais_resistance_models
+from bluepyemodel.ais_synthesis.plotting import plot_ais_taper_models
+from bluepyemodel.ais_synthesis.plotting import plot_feature_select
+from bluepyemodel.ais_synthesis.plotting import plot_feature_summary_select
+from bluepyemodel.ais_synthesis.plotting import plot_frac_exceptions
+from bluepyemodel.ais_synthesis.plotting import plot_summary_select
+from bluepyemodel.ais_synthesis.plotting import plot_synth_ais_evaluations
+from bluepyemodel.ais_synthesis.plotting import plot_target_rho_axon
+from bluepyemodel.tasks.ais_synthesis.ais_model import AisResistanceModel
+from bluepyemodel.tasks.ais_synthesis.ais_model import AisShapeModel
+from bluepyemodel.tasks.ais_synthesis.ais_model import TargetRhoAxon
+from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
+from bluepyemodel.tasks.ais_synthesis.config import PlotLocalTarget
+from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateGeneric
+from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateSynthesis
+from bluepyemodel.tasks.ais_synthesis.select import ApplyGenericMegating
+from bluepyemodel.tasks.ais_synthesis.select import ApplyMegating
+from bluepyemodel.tasks.ais_synthesis.select import SelectCombos
+from bluepyemodel.tasks.ais_synthesis.select import SelectGenericCombos
+from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
 
@@ -228,6 +230,7 @@ class PlotGenericSelected(BaseTask):
     """Plot non selected cells."""
 
     emodels = luigi.ListParameter()
+    target_path = luigi.Parameter(default="select_summary.pdf")
 
     def requires(self):
         """"""

@@ -5,8 +5,9 @@ import pandas
 import psycopg2
 from psycopg2.extras import Json
 
-from bluepyemodel.api.databaseAPI import DatabaseAPI
 import bluepyemodel.api.postgreSQL_tables as sql_tables
+from bluepyemodel.api.databaseAPI import DatabaseAPI
+from bluepyemodel.feature_extraction.extract import get_config
 
 logger = logging.getLogger("__main__")
 
@@ -363,6 +364,29 @@ class PostgreSQL_API(DatabaseAPI):
         )
         return None, None, None
 
+    def get_feature_extraction_config(self, emodel, species, threshold_nvalue_save=1):
+        """Get config for feature extraction.
+
+        Args:
+            emodel (str): name of the emodels
+            species (str): name of the species (rat, human, mouse)
+            threshold_nvalue_save (int): lower bounds of the number of values required
+                to save an efeature.
+
+        Returns:
+            extract_config (dict): config dict used in extract.extract_efeatures()
+        """
+        cells, protocols, protocols_threshold = self.get_extraction_metadata(
+            emodel=emodel, species=species
+        )
+
+        return get_config(
+            cells,
+            protocols,
+            protocols_threshold=protocols_threshold,
+            threshold_nvalue_save=threshold_nvalue_save,
+        )
+
     def store_efeatures(
         self,
         emodel,
@@ -655,7 +679,10 @@ class PostgreSQL_API(DatabaseAPI):
                 if target["type"] in ("StepThresholdProtocol", "StepProtocol"):
                     stim_def = prot["definition"]["step"]
                     stim_def["holding_current"] = prot["definition"]["holding"]["amp"]
-                    protocols_out[prot["name"]] = {"type": target["type"], "stimuli": stim_def}
+                    protocols_out[prot["name"]] = {
+                        "type": target["type"],
+                        "stimuli": stim_def,
+                    }
 
                 if not pandas.isnull(target["extra_recordings"]):
                     protocols_out[prot["name"]]["extra_recordings"] = target["extra_recordings"]
@@ -918,3 +945,71 @@ class PostgreSQL_API(DatabaseAPI):
             return None
 
         return mechanism_paths.to_dict(orient="records")
+
+    def has_protocols_and_features(self, emodel, species=None):
+        """Check if the efeatures and protocol exist."""
+
+        targets = self.fetch(
+            table="optimisation_targets",
+            conditions={"emodel": emodel, "species": species},
+        )
+
+        tot_features = 0
+        present_features = 0
+        for target in targets.to_dict(orient="records"):
+
+            # Check if protocol
+            protocols = self.fetch(
+                table="extraction_protocols",
+                conditions={
+                    "emodel": emodel,
+                    "species": species,
+                    "name": f"{target['ecode']}_{target['target']}",
+                },
+            )
+            if protocols.empty:
+                return False
+
+            # Check if efeatures
+            for feat in target["efeatures"]:
+                tot_features += 1
+                efeatures = self.fetch(
+                    table="extraction_efeatures",
+                    conditions={
+                        "emodel": emodel,
+                        "species": species,
+                        "protocol": f"{target['ecode']}_{target['target']}",
+                        "name": feat,
+                    },
+                )
+                if not (efeatures.empty):
+                    present_features += 1
+
+        # Check if currents
+        efeatures = self.fetch(
+            table="extraction_efeatures",
+            conditions={
+                "emodel": emodel,
+                "species": species,
+                "protocol": "global",
+            },
+        )
+        flag_hypamp = False
+        flag_thresh = False
+        for efeat in efeatures.to_dict(orient="records"):
+            if efeat["name"] == "hypamp":
+                flag_hypamp = True
+            elif efeat["name"] == "thresh":
+                flag_thresh = True
+
+        return flag_hypamp and flag_thresh and present_features / tot_features > 0.8
+
+    def optimisation_state(
+        self, emodel, checkpoint_dir, species=None, seed=1
+    ):  # pylint: disable=unused-argument
+        """Return the state of the opttimisation.
+
+        TODO: - should return three states: completed, in progress, empty
+              - better management of checkpoints, we don't need checkpoint_file here?
+        """
+        return not self.fetch("models", {"emodel": emodel, "species": species}).empty

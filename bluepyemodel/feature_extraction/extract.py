@@ -1,5 +1,6 @@
 """Extract features."""
 import logging
+
 import bluepyefe
 
 logger = logging.getLogger(__name__)
@@ -94,3 +95,32 @@ def plot_traces(extractor, plotter=None):
     for cell in extractor.cells:
         for exp in cell.get_protocol_names():
             plotter.individual_cell_traces(cell, exp)
+
+
+def extract_save_features_protocols(
+    emodel_db,
+    emodel,
+    species=None,
+    threshold_nvalue_save=1,
+    mapper=None,
+    name_Rin_protocol=None,
+    name_rmp_protocol=None,
+    validation_protocols=None,
+):
+
+    config = emodel_db.get_feature_extraction_config(emodel, species, threshold_nvalue_save)
+
+    # extract features
+    efeatures, stimuli, current = extract_efeatures(config, emodel, map_function=mapper)
+
+    # store features & protocols
+    emodel_db.store_efeatures(
+        emodel,
+        species,
+        efeatures,
+        current,
+        name_Rin_protocol,
+        name_rmp_protocol,
+        validation_protocols,
+    )
+    emodel_db.store_protocols(emodel, species, stimuli, validation_protocols)
