@@ -16,7 +16,7 @@ class EmodelAwareTask:
         """Fetch emodel AP."""
         if EmodelAPIConfig().api == "singlecell":
             return Singlecell_API(
-                working_dir=EmodelAPIConfig().working_dir,
+                emodel_dir=EmodelAPIConfig().emodel_dir,
                 final_path=EmodelAPIConfig().final_path,
                 legacy_dir_structure=True,
             )

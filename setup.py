@@ -35,6 +35,7 @@ setup(
         'nexusforge',
         'bluepy',
         'neuron',
+        'morph_tool'
     ],
     packages=find_packages(),
     entry_points={
