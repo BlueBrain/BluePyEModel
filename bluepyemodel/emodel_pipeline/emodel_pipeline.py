@@ -250,7 +250,8 @@ def ipyparallel_map_function(flag_use_IPYP=None, ipython_profil="IPYTHON_PROFILE
     Returns:
         map
     """
-    if flag_use_IPYP and os.getenv(flag_use_IPYP):
+
+    if flag_use_IPYP and os.getenv(flag_use_IPYP) and int(os.getenv(flag_use_IPYP)):
         from ipyparallel import Client
 
         rc = Client(profile=os.getenv(ipython_profil))
@@ -573,7 +574,7 @@ class EModel_pipeline:
         compile_mechanisms=False,
         opt_params=None,
         optimizer="MO-CMA",
-        checkpoint_path="./checkpoint.pkl",
+        checkpoint_path=None,
         continue_opt=False,
         optimisation_rules=None,
         timeout=600,
@@ -599,6 +600,20 @@ class EModel_pipeline:
         """
         if opt_params is None:
             opt_params = {}
+
+        if checkpoint_path is None:
+
+            checkpoint_path = f"./checkpoints/emodel:{self.emodel}"
+
+            if self.githash:
+                checkpoint_path += f"__githash:{self.githash}"
+
+            if "seed" in opt_params:
+                checkpoint_path += f"__seed:{opt_params['seed']}.pkl"
+            else:
+                checkpoint_path += ".pkl"
+
+        logger.info("Path to the checkpoint file is %s", checkpoint_path)
 
         map_function = ipyparallel_map_function("USEIPYP")
 
@@ -686,80 +701,6 @@ class EModel_pipeline:
 
         db.close()
 
-    def validate(
-        self,
-        validation_function=None,
-        stochasticity=False,
-        copy_mechanisms=False,
-        compile_mechanisms=False,
-    ):
-        """Compute the scores and traces for the optimisation and validation
-        protocols and perform validation.
-
-        Args:
-            validation_function (python function): function used to decide if a model
-                passes validation or not. Should rely on emodel['scores'] and
-                emodel['scores_validation']. See bluepyemodel/validation for examples.
-            stochasticity (bool): should channels behave stochastically if they can.
-            copy_mechanisms (bool): should the mod files be copied in the local
-                mechanisms_dir directory.
-            compile_mechanisms (bool): should the mod files be compiled.
-
-        Returns:
-            emodels (list): list of emodels.
-        """
-        # map_function = ipyparallel_map_function("USEIPYP")
-
-        _evaluator = self.get_evaluator(
-            stochasticity=stochasticity,
-            copy_mechanisms=copy_mechanisms,
-            compile_mechanisms=compile_mechanisms,
-            include_validation_protocols=True,
-        )
-
-        db = self.connect_db()
-
-        emodels = db.get_emodels([self.emodel], self.species)
-
-        if emodels:
-
-            if validation_function is None:
-                logger.warning("Validation function not  specified, will use max_score.")
-                validation_function = validation.max_score
-
-            name_validation_protocols = db.get_name_validation_protocols(self.emodel, self.species)
-
-            logger.info("In compute_scores, %s emodels found to evaluate.", len(emodels))
-
-            for mo in emodels:
-
-                mo["scores"] = _evaluator.evaluate_with_dicts(mo["parameters"])
-
-                mo["scores_validation"] = {}
-                for feature_names, score in mo["scores"].items():
-                    for p in name_validation_protocols:
-                        if p in feature_names:
-                            mo["scores_validation"][feature_names] = score
-
-                validated = validation_function(mo)
-
-                db.store_emodel(
-                    emodel=self.emodel,
-                    species=self.species,
-                    scores=mo["scores"],
-                    params=mo["parameters"],
-                    optimizer_name=mo["optimizer"],
-                    seed=mo["seed"],
-                    githash=mo["githash"],
-                    validated=validated,
-                    scores_validation=mo["scores_validation"],
-                )
-
-            return emodels
-
-        logger.warning("In compute_scores, no emodel for %s %s", self.emodel, self.species)
-        return []
-
     def compute_responses(
         self,
         stochasticity=False,
@@ -781,7 +722,7 @@ class EModel_pipeline:
             emodels (list): list of emodels.
         """
 
-        # map_function = ipyparallel_map_function("USEIPYP")
+        map_function = ipyparallel_map_function("USEIPYP")
 
         if additional_protocols is None:
             additional_protocols = {}
@@ -810,8 +751,7 @@ class EModel_pipeline:
                     }
                 )
 
-            responses = list(map(get_responses, to_run))
-            # responses = list(map_function(get_responses, to_run))
+            responses = list(map_function(get_responses, to_run))
 
             for mo, r in zip(emodels, responses):
                 mo["responses"] = r
@@ -820,6 +760,83 @@ class EModel_pipeline:
             logger.warning("In compute_responses, no emodel for %s %s", self.emodel, self.species)
 
         return emodels
+
+    def validate(
+        self,
+        validation_function=None,
+        stochasticity=False,
+        copy_mechanisms=False,
+        compile_mechanisms=False,
+    ):
+        """Compute the scores and traces for the optimisation and validation
+        protocols and perform validation.
+
+        Args:
+            validation_function (python function): function used to decide if a model
+                passes validation or not. Should rely on emodel['scores'] and
+                emodel['scores_validation']. See bluepyemodel/validation for examples.
+            stochasticity (bool): should channels behave stochastically if they can.
+            copy_mechanisms (bool): should the mod files be copied in the local
+                mechanisms_dir directory.
+            compile_mechanisms (bool): should the mod files be compiled.
+
+        Returns:
+            emodels (list): list of emodels.
+        """
+        _evaluator = self.get_evaluator(
+            stochasticity=stochasticity,
+            copy_mechanisms=copy_mechanisms,
+            compile_mechanisms=compile_mechanisms,
+            include_validation_protocols=True,
+        )
+
+        emodels = self.compute_responses(
+            stochasticity=stochasticity,
+            copy_mechanisms=copy_mechanisms,
+            compile_mechanisms=compile_mechanisms,
+            additional_protocols=None,
+        )
+
+        db = self.connect_db()
+
+        if emodels:
+
+            if validation_function is None:
+                logger.warning("Validation function not  specified, will use max_score.")
+                validation_function = validation.max_score
+
+            name_validation_protocols = db.get_name_validation_protocols(self.emodel, self.species)
+
+            logger.info("In validate, %s emodels found to validate.", len(emodels))
+
+            for mo in emodels:
+
+                mo["scores"] = _evaluator.fitness_calculator.calculate_scores(mo["responses"])
+
+                mo["scores_validation"] = {}
+                for feature_names, score in mo["scores"].items():
+                    for p in name_validation_protocols:
+                        if p in feature_names:
+                            mo["scores_validation"][feature_names] = score
+
+                validated = validation_function(mo)
+
+                db.store_emodel(
+                    emodel=self.emodel,
+                    species=self.species,
+                    scores=mo["scores"],
+                    params=mo["parameters"],
+                    optimizer_name=mo["optimizer"],
+                    seed=mo["seed"],
+                    githash=mo["githash"],
+                    validated=validated,
+                    scores_validation=mo["scores_validation"],
+                )
+
+            return emodels
+
+        logger.warning("In compute_scores, no emodel for %s %s", self.emodel, self.species)
+        return []
 
     def plot_models(
         self,
