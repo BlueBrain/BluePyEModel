@@ -44,6 +44,7 @@ def get_db(api, **kwargs):
             recipes_path=kwargs.get("recipes_path", None),
             final_path=kwargs.get("final_path", None),
             legacy_dir_structure=kwargs.get("legacy_dir_structure", False),
+            extract_config=kwargs.get("extract_config", None),
         )
 
     raise Exception(f"Unknown api: {api}")

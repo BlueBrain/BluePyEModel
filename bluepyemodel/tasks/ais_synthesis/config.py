@@ -1,6 +1,5 @@
 """Luigi config classes."""
 import luigi
-
 from luigi_tools.target import OutputLocalTarget
 
 

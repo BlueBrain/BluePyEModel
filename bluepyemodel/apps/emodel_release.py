@@ -14,8 +14,8 @@ import sh
 import yaml
 from morphio.mut import Morphology
 from tqdm import tqdm
-
 from voxcell import CellCollection
+
 from bluepyemodel.ais_synthesis.tools import init_parallel_factory
 from bluepyemodel.api.singlecell import Singlecell_API
 

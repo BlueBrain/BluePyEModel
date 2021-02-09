@@ -1,7 +1,7 @@
 """Module with protocoal classes."""
-from collections import OrderedDict
 import logging
 import time
+from collections import OrderedDict
 
 import bluepyopt.ephys as ephys
 

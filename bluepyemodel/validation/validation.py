@@ -1,6 +1,7 @@
 """Validation functions."""
 
 import logging
+
 import numpy
 
 logger = logging.getLogger(__name__)

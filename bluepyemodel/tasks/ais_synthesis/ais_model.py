@@ -2,22 +2,20 @@
 import logging
 from pathlib import Path
 
+import luigi
 import pandas as pd
 import yaml
 
-import luigi
+from bluepyemodel.ais_synthesis.ais_model import build_ais_diameter_models
+from bluepyemodel.ais_synthesis.ais_model import build_ais_resistance_models
+from bluepyemodel.ais_synthesis.ais_model import find_target_rho_axon
 from bluepyemodel.ais_synthesis.tools import init_parallel_factory
-
-from ...ais_synthesis.ais_model import (
-    build_ais_diameter_models,
-    build_ais_resistance_models,
-    find_target_rho_axon,
-    # get_rho_targets,
-)
-from .base_task import BaseTask
-from .config import ScaleConfig, ModelLocalTarget
-from .morph_combos import CreateMorphCombosDF, ApplySubstitutionRules
-from .utils import ensure_dir
+from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
+from bluepyemodel.tasks.ais_synthesis.config import ModelLocalTarget
+from bluepyemodel.tasks.ais_synthesis.config import ScaleConfig
+from bluepyemodel.tasks.ais_synthesis.morph_combos import ApplySubstitutionRules
+from bluepyemodel.tasks.ais_synthesis.morph_combos import CreateMorphCombosDF
+from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
 

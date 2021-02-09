@@ -6,6 +6,7 @@ import time
 from abc import abstractmethod
 from collections.abc import Iterator
 from functools import partial
+
 import numpy as np
 
 try:

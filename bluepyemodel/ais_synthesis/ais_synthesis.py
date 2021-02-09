@@ -1,7 +1,7 @@
 """Main functions for AIS synthesis."""
+import json
 import logging
 import os
-import json
 from functools import partial
 from pathlib import Path
 
@@ -18,8 +18,8 @@ def _debug_plot(p, scale_min, scale_max, rin_ais, scale, mtype, task_id):
     if not Path("figures_debug").exists():
         os.mkdir("figures_debug")
 
-    import matplotlib.pyplot as plt
     import matplotlib
+    import matplotlib.pyplot as plt
 
     matplotlib.use("Agg")
 

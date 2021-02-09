@@ -1,8 +1,7 @@
 """API to get data from Singlecell-like repositories."""
+import copy
 import json
 import logging
-import copy
-
 from pathlib import Path
 
 from bluepyefe.tools import NumpyEncoder
@@ -11,7 +10,12 @@ from bluepyemodel.api.databaseAPI import DatabaseAPI
 
 logger = logging.getLogger(__name__)
 
-seclist_to_sec = {"somatic": "soma", "apical": "apic", "axonal": "axon", "myelinated": "myelin"}
+seclist_to_sec = {
+    "somatic": "soma",
+    "apical": "apic",
+    "axonal": "axon",
+    "myelinated": "myelin",
+}
 
 # pylint: disable=W0231,W0221,W0613
 
@@ -25,6 +29,7 @@ class Singlecell_API(DatabaseAPI):
         final_path=None,
         recipes_path=None,
         legacy_dir_structure=False,
+        extract_config=None,
     ):
         """
         Args:
@@ -35,6 +40,7 @@ class Singlecell_API(DatabaseAPI):
         self.emodel_dir = Path(emodel_dir)
         self.recipes_path = recipes_path
         self.legacy_dir_structure = legacy_dir_structure
+        self.extract_config = extract_config
 
         if final_path is None:
             self.final_path = self.emodel_dir / "final.json"
@@ -42,6 +48,17 @@ class Singlecell_API(DatabaseAPI):
             self.final_path = Path(final_path)
 
         self.fix_final_compatibility()
+        self._seeds = {}
+
+    def set_seed(self, emodel, seed, species=None):
+        """Set the seed of an emodel"""
+        if emodel in self._seeds:
+            raise Exception("Seed already set for this emodel.")
+        self._seeds[emodel] = seed
+
+    def get_seed(self, emodel, seed, species=None):
+        """Get the seed of an emodel"""
+        return self._seeds["emodel"]
 
     def get_final(self):
         """Get emodels from json"""
@@ -105,6 +122,24 @@ class Singlecell_API(DatabaseAPI):
 
         return data
 
+    def get_feature_extraction_config(
+        self, emodel=None, species=None, threshold_nvalue_save=None
+    ):  # pylint: disable=unused-argument
+        """Get config for feature extraction.
+
+        Args:
+            emodel (str): name of the emodels
+            species (str): name of the species (rat, human, mouse)
+            threshold_nvalue_save (int): lower bounds of the number of values required
+                to save an efeature.
+
+        Returns:
+            config_dict (dict): config dict used in extract.extract_efeatures()
+        """
+        with open(self.extract_config, "r") as f:
+            config_dict = json.load(f)
+        return config_dict
+
     def store_efeatures(
         self,
         emodel,
@@ -121,13 +156,21 @@ class Singlecell_API(DatabaseAPI):
 
         out_features["SearchHoldingCurrent"] = {
             "soma.v": [
-                {"feature": "bpo_holding_current", "val": current["hypamp"], "strict_stim": True}
+                {
+                    "feature": "bpo_holding_current",
+                    "val": current["hypamp"],
+                    "strict_stim": True,
+                }
             ]
         }
 
         out_features["SearchThresholdCurrent"] = {
             "soma.v": [
-                {"feature": "bpo_threshold_current", "val": current["thresh"], "strict_stim": True}
+                {
+                    "feature": "bpo_threshold_current",
+                    "val": current["thresh"],
+                    "strict_stim": True,
+                }
             ]
         }
 
@@ -193,6 +236,9 @@ class Singlecell_API(DatabaseAPI):
         file_name = emodel + ".json"
         features_path = self.emodel_dir / "config" / "features" / file_name
 
+        # create directory if needed.
+        features_path.parent.mkdir(parents=True, exist_ok=True)
+
         s = json.dumps(out_features, indent=2, cls=NumpyEncoder)
         with open(features_path, "w") as f:
             f.write(s)
@@ -217,6 +263,9 @@ class Singlecell_API(DatabaseAPI):
 
         file_name = emodel + ".json"
         protocols_path = self.emodel_dir / "config" / "protocols" / file_name
+
+        # create directory if needed.
+        protocols_path.parent.mkdir(parents=True, exist_ok=True)
 
         s = json.dumps(stimuli, indent=2, cls=NumpyEncoder)
         with open(protocols_path, "w") as f:
@@ -273,7 +322,8 @@ class Singlecell_API(DatabaseAPI):
             model_name = "{}__{}__{}".format(emodel, githash, seed)
         else:
             logger.warning(
-                "Githash is %s. It is highly advise the use githash in the future.", githash
+                "Githash is %s. It is highly advise the use githash in the future.",
+                githash,
             )
             model_name = "{}__{}".format(emodel, seed)
 
@@ -609,3 +659,22 @@ class Singlecell_API(DatabaseAPI):
         """
         final = self.get_final()
         return {mod_name: mod["emodel"] for mod_name, mod in final.items()}
+
+    def has_protocols_and_features(self, emodel, species=None):
+        """Check if the efeatures and protocol exist."""
+        features_exists = (
+            Path(self.emodel_dir, "config", "features", emodel).with_suffix(".json").is_file()
+        )
+        protocols_exists = (
+            Path(self.emodel_dir, "config", "protocols", emodel).with_suffix(".json").is_file()
+        )
+        return features_exists and protocols_exists
+
+    def optimisation_state(self, emodel, checkpoint_dir, species=None, seed=1):
+        """Return the state of the opttimisation.
+
+        TODO: - should return three states: completed, in progress, empty
+              - better management of checkpoints
+        """
+        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{seed}.pkl"
+        return checkpoint_path.is_file()

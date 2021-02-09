@@ -1,29 +1,29 @@
 """Luigi task to run the ais workflow."""
 import luigi
 
-from .base_task import BaseWrapperTask
-from .ais_model import AisResistanceModel, TargetRhoAxon
-from .ais_synthesis import SynthesizeAis
-from .evaluations import EvaluateGeneric, EvaluateExemplars, EvaluateSynthesis
-from .gather import (
-    GatherAisModels,
-    GatherGenericEvaluations,
-    GatherSynthAis,
-    GatherSynthEvaluations,
-    GatherTargetRhoAxon,
-    GatherExemplarEvaluations,
-)
-from .select import ApplyMegating, SelectCombos
-from .plotting import (
-    PlotAisResistanceModel,
-    PlotAisShapeModel,
-    PlotGenericEvaluation,
-    PlotSynthesisEvaluation,
-    PlotTargetRhoAxon,
-    PlotSelected,
-    PlotGenericSelected,
-)
-from .select import SelectGenericCombos
+from bluepyemodel.tasks.ais_synthesis.ais_model import AisResistanceModel
+from bluepyemodel.tasks.ais_synthesis.ais_model import TargetRhoAxon
+from bluepyemodel.tasks.ais_synthesis.ais_synthesis import SynthesizeAis
+from bluepyemodel.tasks.ais_synthesis.base_task import BaseWrapperTask
+from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateExemplars
+from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateGeneric
+from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateSynthesis
+from bluepyemodel.tasks.ais_synthesis.gather import GatherAisModels
+from bluepyemodel.tasks.ais_synthesis.gather import GatherExemplarEvaluations
+from bluepyemodel.tasks.ais_synthesis.gather import GatherGenericEvaluations
+from bluepyemodel.tasks.ais_synthesis.gather import GatherSynthAis
+from bluepyemodel.tasks.ais_synthesis.gather import GatherSynthEvaluations
+from bluepyemodel.tasks.ais_synthesis.gather import GatherTargetRhoAxon
+from bluepyemodel.tasks.ais_synthesis.plotting import PlotAisResistanceModel
+from bluepyemodel.tasks.ais_synthesis.plotting import PlotAisShapeModel
+from bluepyemodel.tasks.ais_synthesis.plotting import PlotGenericEvaluation
+from bluepyemodel.tasks.ais_synthesis.plotting import PlotGenericSelected
+from bluepyemodel.tasks.ais_synthesis.plotting import PlotSelected
+from bluepyemodel.tasks.ais_synthesis.plotting import PlotSynthesisEvaluation
+from bluepyemodel.tasks.ais_synthesis.plotting import PlotTargetRhoAxon
+from bluepyemodel.tasks.ais_synthesis.select import ApplyMegating
+from bluepyemodel.tasks.ais_synthesis.select import SelectCombos
+from bluepyemodel.tasks.ais_synthesis.select import SelectGenericCombos
 
 
 class RunAll(BaseWrapperTask):

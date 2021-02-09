@@ -1,5 +1,6 @@
 """HyperDepol stimulus class"""
 import logging
+
 import numpy
 
 from bluepyemodel.ecode.stimulus import BPEM_stimulus

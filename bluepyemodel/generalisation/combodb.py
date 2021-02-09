@@ -1,6 +1,6 @@
 """ComboDB class to manage combos."""
-import yaml
 import pandas as pd
+import yaml
 from morph_tool.morphdb import MorphDB
 
 

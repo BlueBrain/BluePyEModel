@@ -1,29 +1,25 @@
 """Evaluator module."""
 import logging
-import numpy
 
+import numpy
+from bluepyopt.ephys.efeatures import eFELFeature
+from bluepyopt.ephys.evaluators import CellEvaluator
+from bluepyopt.ephys.locations import NrnSeclistCompLocation
+from bluepyopt.ephys.locations import NrnSecSomaDistanceCompLocation
+from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
+from bluepyopt.ephys.objectives import SingletonObjective
+from bluepyopt.ephys.objectives import SingletonRuleObjective
+from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.simulators import NrnSimulator
-from bluepyopt.ephys.evaluators import CellEvaluator
-from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
-from bluepyopt.ephys.locations import (
-    NrnSeclistCompLocation,
-    NrnSomaDistanceCompLocation,
-    NrnSecSomaDistanceCompLocation,
-)
-from bluepyopt.ephys.efeatures import eFELFeature
-from bluepyopt.ephys.objectives import SingletonObjective, SingletonRuleObjective
 
-from .protocols import (
-    MainProtocol,
-    RMPProtocol,
-    RinProtocol,
-    SearchHoldingCurrent,
-    SearchThresholdCurrent,
-    BPEM_Protocol,
-)
 from ..ecode import eCodes
-
+from .protocols import BPEM_Protocol
+from .protocols import MainProtocol
+from .protocols import RinProtocol
+from .protocols import RMPProtocol
+from .protocols import SearchHoldingCurrent
+from .protocols import SearchThresholdCurrent
 
 logger = logging.getLogger(__name__)
 

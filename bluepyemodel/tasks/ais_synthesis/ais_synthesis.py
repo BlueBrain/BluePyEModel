@@ -1,16 +1,17 @@
 """Tasks to synthesize ais"""
+import luigi
 import pandas as pd
 import yaml
 
-import luigi
+from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
 from bluepyemodel.ais_synthesis.tools import init_parallel_factory
-
-from ...ais_synthesis.ais_synthesis import synthesize_ais
-from .ais_model import AisResistanceModel, TargetRhoAxon
-from .base_task import BaseTask
-from .config import ScaleConfig, SynthesisLocalTarget
-from .morph_combos import CreateMorphCombosDF
-from .utils import ensure_dir
+from bluepyemodel.tasks.ais_synthesis.ais_model import AisResistanceModel
+from bluepyemodel.tasks.ais_synthesis.ais_model import TargetRhoAxon
+from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
+from bluepyemodel.tasks.ais_synthesis.config import ScaleConfig
+from bluepyemodel.tasks.ais_synthesis.config import SynthesisLocalTarget
+from bluepyemodel.tasks.ais_synthesis.morph_combos import CreateMorphCombosDF
+from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
 
 
 class SynthesizeAis(BaseTask):

@@ -2,17 +2,19 @@
 import json
 import logging
 
-from tqdm import tqdm
 import numpy as np
 import pandas as pd
+from morphio import SectionType
+from morphio.mut import Morphology
 from scipy.ndimage.filters import gaussian_filter
 from scipy.optimize import curve_fit
+from tqdm import tqdm
 
-from morphio.mut import Morphology
-from morphio import SectionType
-
-from .evaluators import evaluate_ais_rin, evaluate_rho_axon, evaluate_scores
-from .utils import get_mtypes, get_scores
+from .evaluators import evaluate_ais_rin
+from .evaluators import evaluate_rho_axon
+from .evaluators import evaluate_scores
+from .utils import get_mtypes
+from .utils import get_scores
 
 logger = logging.getLogger(__name__)
 POLYFIT_DEGREE = 10

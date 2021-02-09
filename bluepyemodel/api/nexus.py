@@ -3,6 +3,7 @@
 import logging
 
 from kgforge.core import KnowledgeGraphForge  # , Resource
+
 from bluepyemodel.api.databaseAPI import DatabaseAPI
 
 logger = logging.getLogger("__main__")

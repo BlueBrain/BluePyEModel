@@ -34,8 +34,8 @@ def import_mod_lib(_neuron):
 def _nrn_disable_banner():
     """Disable Neuron banner"""
 
-    import imp
     import ctypes
+    import imp
 
     nrnpy_path = os.path.join(imp.find_module("neuron")[1])
     import glob

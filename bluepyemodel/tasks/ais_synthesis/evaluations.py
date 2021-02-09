@@ -1,17 +1,17 @@
 """Tasks to evaluate scores on combos."""
+import luigi
 import pandas as pd
 import yaml
 
-import luigi
+from bluepyemodel.ais_synthesis.evaluators import evaluate_combos_rho
 from bluepyemodel.ais_synthesis.tools import init_parallel_factory
-
-from ...ais_synthesis.evaluators import evaluate_combos_rho
-from ...ais_synthesis.utils import get_scores
-from .ais_synthesis import SynthesizeAis
-from .base_task import BaseTask
-from .config import SelectConfig, EvaluationLocalTarget
-from .morph_combos import CreateMorphCombosDF
-from .utils import ensure_dir
+from bluepyemodel.ais_synthesis.utils import get_scores
+from bluepyemodel.tasks.ais_synthesis.ais_synthesis import SynthesizeAis
+from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
+from bluepyemodel.tasks.ais_synthesis.config import EvaluationLocalTarget
+from bluepyemodel.tasks.ais_synthesis.config import SelectConfig
+from bluepyemodel.tasks.ais_synthesis.morph_combos import CreateMorphCombosDF
+from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
 
 
 class EvaluateSynthesis(BaseTask):
