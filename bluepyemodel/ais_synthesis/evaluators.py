@@ -8,6 +8,8 @@ from functools import partial
 from hashlib import sha256
 from pathlib import Path
 
+from bluepyparallel import evaluate
+
 from ..evaluation.evaluator import create_evaluator
 from ..evaluation.evaluator import define_main_protocol
 from ..evaluation.evaluator import get_simulator
@@ -16,7 +18,6 @@ from ..evaluation.modifiers import isolate_axon
 from ..evaluation.modifiers import remove_axon
 from ..evaluation.modifiers import replace_axon_with_taper
 from ..evaluation.modifiers import synth_axon
-from .tools.evaluator import evaluate_combos
 
 logger = logging.getLogger(__name__)
 
@@ -125,14 +126,14 @@ def evaluate_scores(
         trace_folder=trace_folder,
     )
 
-    return evaluate_combos(
+    return evaluate(
         morphs_combos_df,
         evaluation_function,
         new_columns=[["scores", ""]],
         task_ids=task_ids,
         continu=continu,
         parallel_factory=parallel_factory,
-        combos_db_filename=combos_db_filename,
+        db_filename=combos_db_filename,
     )
 
 
@@ -236,14 +237,14 @@ def evaluate_ais_rin(
         morphology_path=morphology_path,
         ais_recording=True,
     )
-    return evaluate_combos(
+    return evaluate(
         morphs_combos_df,
         rin_ais_evaluation,
         new_columns=[[key, 0.0]],
         task_ids=task_ids,
         continu=continu,
         parallel_factory=parallel_factory,
-        combos_db_filename=combos_db_filename,
+        db_filename=combos_db_filename,
     )
 
 
@@ -279,14 +280,14 @@ def evaluate_somadend_rin(
         key=key,
         morphology_path=morphology_path,
     )
-    return evaluate_combos(
+    return evaluate(
         morphs_combos_df,
         rin_dendrite_evaluation,
         new_columns=[[key, 0.0]],
         task_ids=task_ids,
         continu=continu,
         parallel_factory=parallel_factory,
-        combos_db_filename=combos_db_filename,
+        db_filename=combos_db_filename,
     )
 
 
@@ -428,12 +429,12 @@ def evaluate_currents(
         with_currents=True,
     )
 
-    return evaluate_combos(
+    return evaluate(
         morphs_combos_df,
         current_evaluation,
         new_columns=[[key + "holding_current", 0.0], [key + "threshold_current", 0.0]],
         task_ids=task_ids,
         continu=continu,
         parallel_factory=parallel_factory,
-        combos_db_filename=combos_db_filename,
+        db_filename=combos_db_filename,
     )

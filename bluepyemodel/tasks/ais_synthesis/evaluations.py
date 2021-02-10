@@ -2,9 +2,9 @@
 import luigi
 import pandas as pd
 import yaml
+from bluepyparallel import init_parallel_factory
 
 from bluepyemodel.ais_synthesis.evaluators import evaluate_combos_rho
-from bluepyemodel.ais_synthesis.tools import init_parallel_factory
 from bluepyemodel.ais_synthesis.utils import get_scores
 from bluepyemodel.tasks.ais_synthesis.ais_synthesis import SynthesizeAis
 from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask

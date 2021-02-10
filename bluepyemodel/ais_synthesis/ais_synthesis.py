@@ -6,9 +6,9 @@ from functools import partial
 from pathlib import Path
 
 import numpy as np
+from bluepyparallel import evaluate
 
 from .evaluators import evaluate_somadend_rin
-from .tools.evaluator import evaluate_combos
 from .utils import get_emodels
 
 logger = logging.getLogger(__name__)
@@ -142,7 +142,7 @@ def synthesize_ais(
         scale_min=scale_min,
         scale_max=scale_max,
     )
-    return evaluate_combos(
+    return evaluate(
         morphs_combos_df,
         synth_combo,
         new_columns=[["ais_failed", 1], ["AIS_scale", 1.0], ["AIS_model", ""]],

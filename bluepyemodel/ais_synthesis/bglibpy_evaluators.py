@@ -4,7 +4,7 @@ from copy import copy
 from functools import partial
 from pathlib import Path
 
-from .tools.evaluator import evaluate_combos
+from bluepyparallel.evaluator import evaluate
 
 logger = logging.getLogger(__name__)
 AXON_LOC = "self.axonal[1](0.5)._ref_v"
@@ -246,12 +246,12 @@ def evaluate_currents_bglibpy(
         morphology_path=morphology_path,
         template_format=template_format,
     )
-    return evaluate_combos(
+    return evaluate(
         morphs_combos_df,
         current_evaluation_bglibpy,
         new_columns=[["holding_current", 0.0], ["threshold_current", 0.0]],
         task_ids=task_ids,
         continu=continu,
         parallel_factory=parallel_factory,
-        combos_db_filename=combos_db_filename,
+        db_filename=combos_db_filename,
     )

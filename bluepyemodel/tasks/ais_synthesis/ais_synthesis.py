@@ -2,9 +2,9 @@
 import luigi
 import pandas as pd
 import yaml
+from bluepyparallel import init_parallel_factory
 
 from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
-from bluepyemodel.ais_synthesis.tools import init_parallel_factory
 from bluepyemodel.tasks.ais_synthesis.ais_model import AisResistanceModel
 from bluepyemodel.tasks.ais_synthesis.ais_model import TargetRhoAxon
 from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask

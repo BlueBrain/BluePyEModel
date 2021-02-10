@@ -22,8 +22,6 @@ setup(
         "scipy",
         "pandas",
         "ipyparallel",
-        "dask[distributed]>=2.30",
-        "dask_mpi>=2.20",
         "tqdm",
         "pyyaml",
         "gitpython",
@@ -37,6 +35,7 @@ setup(
         "neuron",
         "morph_tool",
         "luigi-tools",
+        "BluePyParallel",
     ],
     packages=find_packages(),
     entry_points={

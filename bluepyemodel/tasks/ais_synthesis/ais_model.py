@@ -5,11 +5,11 @@ from pathlib import Path
 import luigi
 import pandas as pd
 import yaml
+from bluepyparallel import init_parallel_factory
 
 from bluepyemodel.ais_synthesis.ais_model import build_ais_diameter_models
 from bluepyemodel.ais_synthesis.ais_model import build_ais_resistance_models
 from bluepyemodel.ais_synthesis.ais_model import find_target_rho_axon
-from bluepyemodel.ais_synthesis.tools import init_parallel_factory
 from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
 from bluepyemodel.tasks.ais_synthesis.config import ModelLocalTarget
 from bluepyemodel.tasks.ais_synthesis.config import ScaleConfig
