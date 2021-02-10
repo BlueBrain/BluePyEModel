@@ -20,11 +20,14 @@ from bluepyemodel.validation import validation
 
 logger = logging.getLogger(__name__)
 
+mechanisms_dir = "mechanisms"
+run_dir = "run"
+final_path = "final.json"
+
 
 def connect_db(
     db_api,
     recipes_path=None,
-    final_path=None,
     working_dir=None,
     project_name=None,
     forge_path=None,
@@ -96,21 +99,27 @@ def copy_mechs(mechanism_paths, out_dir):
                 )
 
 
-def compile_mechs(mechanisms_dir):
-    """Compile the mechanisms.
+def compile_mechs(working_dir, githash=None):
+    """Compile the mechanisms and copy them in the cwd.
 
     Args:
-        mechanisms_dir (str): path to the directory containing the
-            mod files to compile.
+        working_dir (str): directory in which to compile and take the mechanisms.
     """
 
-    path_mechanisms_dir = Path(mechanisms_dir)
+    path_mechanisms_dir = Path(working_dir) / mechanisms_dir
 
     if path_mechanisms_dir.is_dir():
 
         if Path("x86_64").is_dir():
             os.popen("rm -rf x86_64").read()
-        os.popen("nrnivmodl {}".format(path_mechanisms_dir)).read()
+
+        if githash:
+            os.chdir(working_dir)
+            os.popen("nrnivmodl mechanisms").read()
+            os.chdir("../../")
+            os.popen("cp -r {} x86_64".format(str(Path(working_dir) / "x86_64"))).read()
+        else:
+            os.popen("nrnivmodl mechanisms").read()
 
     else:
         raise Exception(
@@ -135,22 +144,6 @@ def get_responses(to_run):
     return eva.run_protocols(protocols=eva.fitness_protocols.values(), param_values=params)
 
 
-def change_cwd(dir_path):
-    """Changes the cwd for dir_path, creating it if it doesn't exist.
-
-    Args:
-        dir_path (str): path of the target directory
-    """
-
-    if str(Path(os.getcwd())) != str(Path(dir_path).absolute()):
-
-        p = Path(dir_path)
-        p.mkdir(parents=True, exist_ok=True)
-
-        logger.warning("Moving to working_dir %s", dir_path)
-        os.chdir(dir_path)
-
-
 def update_gitignore():
     """
     Adds the following lines to .gitignore: 'run/', 'checkpoints/', 'figures/',
@@ -165,27 +158,21 @@ def update_gitignore():
     with open(str(path_gitignore), "r") as f:
         lines = f.readlines()
 
+    lines = " ".join(line for line in lines)
+
     to_add = [
-        "run/",
+        run_dir + "/",
         "checkpoints/",
         "figures/",
         "logs/",
         ".ipython/",
         ".ipynb_checkpoints/",
     ]
-    not_to_add = []
-    for d in to_add:
-        for line in lines:
-            if d in line:
-                not_to_add.append(d)
-                break
 
-    for a in to_add:
-        if a not in not_to_add:
-            lines.append(f"{a}\n")
-
-    with open(str(path_gitignore), "w") as f:
-        f.writelines(lines)
+    with open(str(path_gitignore), "a") as f:
+        for a in to_add:
+            if a not in lines:
+                f.write(f"{a}\n")
 
 
 def generate_versions():
@@ -201,15 +188,14 @@ def generate_versions():
     os.popen(f"pip list > {str(path_versions)}").read()
 
 
-def generate_githash(run_dir):
+def generate_githash():
     """
     Generate a githash and create the associated run directory
     """
-
     path_run = Path(run_dir)
 
-    if not (path_run.is_dir()):
-        logger.warning("Directory %s does not exist and will be created.", run_dir)
+    if not path_run.is_dir():
+        logger.warning("Directory %s does not exist and will be created.", str(path_run))
         path_run.mkdir(parents=True, exist_ok=True)
 
     while Path("./.git/index.lock").is_file():
@@ -226,7 +212,7 @@ def generate_githash(run_dir):
     tar_source = path_run / f"{githash}.tar"
     tar_target = path_run / githash
 
-    if not (tar_target.is_dir()):
+    if not tar_target.is_dir():
 
         logger.info("New githash directory: %s", githash)
 
@@ -237,7 +223,7 @@ def generate_githash(run_dir):
             tf.extractall(str(tar_target))
 
         if tar_source.is_file():
-            os.remove(str(tar_source))
+            os.popen(f"rm -rf {str(tar_source)}").read()
 
     else:
         logger.info("Working from existing githash directory: %s", githash)
@@ -285,11 +271,8 @@ class EModel_pipeline:
         emodel,
         species,
         db_api,
-        working_dir="./",
-        mechanisms_dir="./mechanisms",
         recipes_path=None,
         project_name=None,
-        final_path=None,
         forge_path=None,
         use_git=False,
         githash=None,
@@ -308,16 +291,9 @@ class EModel_pipeline:
                 name can be find ontop of the file bluepyemodel/api/sql.py. "nexus"
                 expect the configuration to be defined on Nexus using NexusForge,
                 see bluepyemodel/api/nexus.py.
-            working_dir (str): path of the directory in which the functions of the
-                pipeline will be executed.
-            mechanisms_dir (str): path of the directory in which the mechanisms
-                will be copied and/or compiled. It has to be a subdirectory of
-                working_dir.
             recipes_path (str): path of the recipes.json, only needed if
                 db_api="singlecell".
             project_name (str): name of the project, only needed if db_api="sql".
-            final_path (str): path to the final.json in which optimized emodels
-                are stored, only needed if db_api="singlecell".
             forge_path (str): path to the .yml used to connect to Nexus Forge,
                 only needed if db_api="nexus".
             use_git (bool): if True, work will be perfomed in a sub-directory:
@@ -342,31 +318,17 @@ class EModel_pipeline:
             )
         self.db_api = db_api
 
-        if recipes_path is None and self.db_api == "singlecell":
-            raise Exception("If using DB API 'singlecell', argument recipe_path has to be defined.")
-        if working_dir is None and self.db_api == "singlecell":
-            raise Exception("If using DB API 'singlecell', argument working_dir has to be defined.")
         if project_name is None and self.db_api == "sql":
             raise Exception("If using DB API 'sql', argument project_name has to be defined.")
         if forge_path is None and self.db_api == "nexus":
             raise Exception("If using DB API 'sqnexusl', argument forge_path has to be defined.")
 
-        if Path(working_dir) not in Path(mechanisms_dir).parents:
-            raise Exception("mechanisms_dir has to be a direct subdirectory of working_dir.")
-
         self.morphology_modifiers = morphology_modifiers
-        self.mechanisms_dir = mechanisms_dir
         self.recipes_path = recipes_path
-        self.working_dir = working_dir
         self.project_name = project_name
-        self.final_path = final_path
         self.forge_path = forge_path
 
-        change_cwd(self.working_dir)
-
         if use_git:
-
-            self.run_dir = "./run"
 
             is_git = str(os.popen("git rev-parse --is-inside-work-tree").read())[:-1]
             if is_git != "true":
@@ -380,22 +342,24 @@ class EModel_pipeline:
                 # generate_version has to be ran before generating the githash as a change
                 # in a package version should induce the creation of a new githash
                 generate_versions()
-                self.githash = generate_githash(self.run_dir)
+                self.githash = generate_githash()
 
             else:
 
                 self.githash = githash
                 logger.info("Working from existing githash directory: %s", self.githash)
 
-            self.working_dir = str(Path(self.working_dir) / self.run_dir / self.githash)
-            change_cwd(self.working_dir)
-
         elif githash:
             raise Exception("A githash was provided but use_git is False.")
 
         else:
-            change_cwd(self.working_dir)
-            self.githash = githash
+            self.githash = None
+
+    @property
+    def working_dir(self):
+        if self.githash:
+            return str(Path("./") / run_dir / self.githash)
+        return "./"
 
     def connect_db(self):
         """
@@ -404,7 +368,6 @@ class EModel_pipeline:
         return connect_db(
             self.db_api,
             recipes_path=self.recipes_path,
-            final_path=self.final_path,
             working_dir=self.working_dir,
             project_name=self.project_name,
             forge_path=self.forge_path,
@@ -477,10 +440,10 @@ class EModel_pipeline:
             mechanism_paths = db.get_mechanism_paths(mechanism_names)
             if not (mechanism_paths):
                 raise Exception("No mechanisms paths for emodel %s" % self.emodel)
-            copy_mechs(mechanism_paths, self.mechanisms_dir)
+            copy_mechs(mechanism_paths, mechanisms_dir)
 
         if compile_mechanisms:
-            compile_mechs(self.mechanisms_dir)
+            compile_mechs(self.working_dir, self.githash)
 
         cell_models = model.create_cell_models(
             emodel=self.emodel,
@@ -646,7 +609,7 @@ class EModel_pipeline:
 
         return optimisation.run_optimization(
             optimizer=opt,
-            checkpoint_path=checkpoint_path,
+            checkpoint_path=Path(checkpoint_path),
             max_ngen=max_ngen,
             continue_opt=continue_opt,
         )

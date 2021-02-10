@@ -11,20 +11,13 @@ class PipelineSetUp(unittest.TestCase):
 
         emodel = "cADpyr_L5TPC"
         species = "rat"
-
-        working_dir = pathlib.Path("./")
-        mechanisms_dir = working_dir / "mechanisms"
         recipes_path = "./config/recipes.json"
-        final_path = "./final.json"
 
         self.pipeline = EModel_pipeline(
             emodel=emodel,
             species=species,
             db_api="singlecell",
-            mechanisms_dir=mechanisms_dir,
-            working_dir=working_dir,
             recipes_path=recipes_path,
-            final_path=final_path,
         )
 
         self.model_result = self.pipeline.compute_responses(

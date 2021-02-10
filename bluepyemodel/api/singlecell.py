@@ -112,10 +112,17 @@ class Singlecell_API(DatabaseAPI):
 
     def _get_json(self, emodel, recipe_entry):
         """Helper function to load a  json using path in recipe."""
+
         json_path = self.get_recipes(emodel)[recipe_entry]
+
         if self.legacy_dir_structure:
             emodel = "_".join(emodel.split("_")[:2])
             json_path = self.emodel_dir / emodel / json_path
+
+        else:
+            p = Path(json_path)
+            if not p.is_absolute():
+                json_path = str(Path(self.emodel_dir) / p)
 
         with open(json_path, "r") as f:
             data = json.load(f)
@@ -281,7 +288,7 @@ class Singlecell_API(DatabaseAPI):
             emodel = "_".join(emodel.split("_")[:2])
             recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
-            recipes_path = self.recipes_path
+            recipes_path = self.emodel_dir / self.recipes_path
 
         with open(recipes_path, "r") as f:
             return json.load(f)[emodel]
@@ -575,6 +582,11 @@ class Singlecell_API(DatabaseAPI):
         for morph_def in recipes["morphology"]:
 
             morph_path = Path(recipes["morph_path"]) / morph_def[1]
+
+            p = Path(morph_path)
+            if not p.is_absolute():
+                morph_path = str(Path(self.emodel_dir) / p)
+
             morphology_definition.append({"name": morph_def[1][:-4], "path": str(morph_path)})
 
             if "seclist_names" in recipes:
