@@ -8,13 +8,13 @@ import tarfile
 import time
 from pathlib import Path
 
+import bluepyefe.extract
 from git import Repo
 
 from bluepyemodel.emodel_pipeline import plotting
 from bluepyemodel.emodel_pipeline.utils import read_checkpoint
 from bluepyemodel.evaluation import evaluator
 from bluepyemodel.evaluation import model
-from bluepyemodel.feature_extraction import extract
 from bluepyemodel.optimisation import optimisation
 from bluepyemodel.validation import validation
 
@@ -67,6 +67,59 @@ def connect_db(
         )
 
     raise Exception(f"Unknown api: {db_api}")
+
+
+def extract_save_features_protocols(
+    emodel_db,
+    emodel,
+    species=None,
+    files_metadata=None,
+    targets=None,
+    protocols_threshold=None,
+    threshold_nvalue_save=1,
+    mapper=map,
+    name_Rin_protocol=None,
+    name_rmp_protocol=None,
+    validation_protocols=None,
+):
+
+    if files_metadata is None or targets is None or protocols_threshold is None:
+
+        files_metadata, targets, protocols_threshold = emodel_db.get_extraction_metadata(
+            emodel, species, threshold_nvalue_save
+        )
+
+        if files_metadata is None or targets is None or protocols_threshold is None:
+            raise Exception("Could not get the extraction metadata from the api.")
+
+    # extract features
+    efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
+        output_directory=emodel,
+        files_metadata=files_metadata,
+        targets=targets,
+        strict_stiminterval=True,
+        threshold_nvalue_save=threshold_nvalue_save,
+        protocols_threshold=protocols_threshold,
+        ap_threshold=-20.0,
+        trace_reader=None,
+        map_function=mapper,
+        write_files=False,
+        plot=False,
+    )
+
+    # store features & protocols
+    emodel_db.store_efeatures(
+        emodel,
+        species,
+        efeatures,
+        current,
+        name_Rin_protocol,
+        name_rmp_protocol,
+        validation_protocols,
+    )
+    emodel_db.store_protocols(emodel, species, stimuli, validation_protocols)
+
+    return efeatures, stimuli, current
 
 
 def copy_mechs(mechanism_paths, out_dir):
@@ -464,8 +517,10 @@ class EModel_pipeline:
 
     def extract_efeatures(
         self,
-        config_dict=None,
+        files_metadata=None,
+        targets=None,
         threshold_nvalue_save=1,
+        protocols_threshold=None,
         name_Rin_protocol=None,
         name_rmp_protocol=None,
         validation_protocols=None,
@@ -476,10 +531,40 @@ class EModel_pipeline:
             in the medium chosen by the api.
 
         Args:
-            config_dict (dict): BluePyEfe configuration dictionnary. Only required if
-                db_api is 'singlecell'
+            files_metadata (dict): define for which cell and protocol each file
+                has to be used. Of the form:
+                {
+                    cell_id: {
+                        protocol_name: [{file_metadata1}, {file_metadata1}]
+                    }
+                }
+                A same file path might be present in the file metadata for
+                different protocols.
+                The entries required in the file_metadata are specific to each
+                trace_reader (see bluepyemodel/reader.py to know which one are
+                needed for your trace_reader).
+            targets (dict): define the efeatures to extract for each protocols
+                and the amplitude around which these features should be
+                averaged. Of the form:
+                {
+                    protocol_name: {
+                        "amplitudes": [50, 100],
+                        "tolerances": [10, 10],
+                        "efeatures": ["Spikecount", "AP_amplitude"],
+                        "location": "soma"
+                    }
+                }
+                If efeatures must be computed only for a given time interval,
+                the beginning and end of this interval can be specified as
+                follows (in ms):
+                "efeatures": {
+                    "Spikecount": [500, 1100],
+                    "AP_amplitude": [100, 600],
+                }
             threshold_nvalue_save (int): lower bounds of the number of values required
                 to save an efeature.
+            protocols_threshold (list): names of the protocols that will be
+                used to compute the rheobase of the cells. E.g: ['IDthresh'].
             name_Rin_protocol (str): name of the protocol that should be used to compute
                 the input resistance. Only used when db_api is 'singlecell'
             name_rmp_protocol (str): name of the protocol that should be used to compute
@@ -495,43 +580,27 @@ class EModel_pipeline:
 
         if validation_protocols is None:
             validation_protocols = {}
+        if protocols_threshold is None:
+            protocols_threshold = []
 
         db = self.connect_db()
 
         map_function = ipyparallel_map_function("USEIPYP")
 
-        if not (config_dict):
-
-            if self.db_api == "singlecell":
-                raise Exception("When using singlecell API, a config_dict has to be provided.")
-
-            cells, protocols, protocols_threshold = db.get_extraction_metadata(
-                self.emodel, self.species
-            )
-            if not (cells) or not (protocols):
-                raise Exception("No extraction metadata for emodel %s" % self.emodel)
-
-            config_dict = extract.get_config(
-                cells,
-                protocols,
-                protocols_threshold=protocols_threshold,
-                threshold_nvalue_save=threshold_nvalue_save,
-            )
-
-        efeatures, stimuli, current = extract.extract_efeatures(
-            config_dict, self.emodel, map_function=map_function
+        efeatures, stimuli, current = extract_save_features_protocols(
+            emodel=self.emodel,
+            emodel_db=db,
+            species=self.species,
+            files_metadata=files_metadata,
+            targets=targets,
+            protocols_threshold=protocols_threshold,
+            threshold_nvalue_save=threshold_nvalue_save,
+            mapper=map_function,
+            name_Rin_protocol=name_Rin_protocol,
+            name_rmp_protocol=name_rmp_protocol,
+            validation_protocols=validation_protocols,
         )
 
-        db.store_efeatures(
-            self.emodel,
-            self.species,
-            efeatures,
-            current,
-            name_Rin_protocol,
-            name_rmp_protocol,
-            validation_protocols,
-        )
-        db.store_protocols(self.emodel, self.species, stimuli, validation_protocols)
         db.close()
 
         return efeatures, stimuli, current

@@ -129,7 +129,7 @@ class Singlecell_API(DatabaseAPI):
 
         return data
 
-    def get_feature_extraction_config(
+    def get_extraction_metadata(
         self, emodel=None, species=None, threshold_nvalue_save=None
     ):  # pylint: disable=unused-argument
         """Get config for feature extraction.
@@ -143,9 +143,26 @@ class Singlecell_API(DatabaseAPI):
         Returns:
             config_dict (dict): config dict used in extract.extract_efeatures()
         """
+
+        if self.extract_config is None or not Path(self.extract_config).is_file():
+            return None, None, None
+
         with open(self.extract_config, "r") as f:
             config_dict = json.load(f)
-        return config_dict
+
+        for prot in config_dict["protocols"]:
+
+            if "targets" in config_dict["protocols"][prot]:
+                config_dict["protocols"][prot]["amplitudes"] = config_dict["protocols"][prot][
+                    "targets"
+                ]
+                config_dict["protocols"][prot].pop("targets")
+
+        files_metadata = config_dict["cells"]
+        targets = config_dict["protocols"]
+        protocols_threshold = config_dict["options"].get("protocols_threshold", [])
+
+        return files_metadata, targets, protocols_threshold
 
     def store_efeatures(
         self,
@@ -165,7 +182,7 @@ class Singlecell_API(DatabaseAPI):
             "soma.v": [
                 {
                     "feature": "bpo_holding_current",
-                    "val": current["hypamp"],
+                    "val": current["holding_current"],
                     "strict_stim": True,
                 }
             ]
@@ -175,16 +192,20 @@ class Singlecell_API(DatabaseAPI):
             "soma.v": [
                 {
                     "feature": "bpo_threshold_current",
-                    "val": current["thresh"],
+                    "val": current["threshold_current"],
                     "strict_stim": True,
                 }
             ]
         }
 
         to_remove = {}
+
         for prot in efeatures:
 
-            out_features[prot] = {"soma.v": efeatures[prot]["soma"]}
+            if "soma" in efeatures[prot]:
+                out_features[prot] = {"soma.v": efeatures[prot]["soma"]}
+            else:
+                out_features[prot] = {"soma.v": efeatures[prot]["soma.v"]}
 
             prot_name = str(prot.split("_")[0])
             prot_target = float(prot.split("_")[1])

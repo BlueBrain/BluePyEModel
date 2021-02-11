@@ -7,7 +7,6 @@ from psycopg2.extras import Json
 
 import bluepyemodel.api.postgreSQL_tables as sql_tables
 from bluepyemodel.api.databaseAPI import DatabaseAPI
-from bluepyemodel.feature_extraction.extract import get_config
 
 logger = logging.getLogger("__main__")
 
@@ -380,12 +379,7 @@ class PostgreSQL_API(DatabaseAPI):
             emodel=emodel, species=species
         )
 
-        return get_config(
-            cells,
-            protocols,
-            protocols_threshold=protocols_threshold,
-            threshold_nvalue_save=threshold_nvalue_save,
-        )
+        return cells, protocols, protocols_threshold
 
     def store_efeatures(
         self,
@@ -413,7 +407,7 @@ class PostgreSQL_API(DatabaseAPI):
                 )
 
         # Add holding and threshold current
-        for cur in ["hypamp", "thresh"]:
+        for cur in ["holding_current", "threshold_current"]:
             entries.append(
                 {
                     "emodel": emodel,
@@ -827,7 +821,7 @@ class PostgreSQL_API(DatabaseAPI):
                         )
 
                     # TODO: What we need here is the voltage when the cell is holded. Therefore
-                    # it should be a global feature like hypamp and thresh,
+                    # it should be a global feature like holding and threshold,
                     # and not associated to a given protocol
                     elif target["type"] == "RinProtocol" and efeat["name"] == "voltage_base":
                         efeat["efeature"] = "steady_state_voltage_stimend"
@@ -861,7 +855,7 @@ class PostgreSQL_API(DatabaseAPI):
                                 "efeatures"
                             ][feat][1]
 
-        # Get the hypamp and thresh currents
+        # Get the holding and threshold currents
         efeatures = self.fetch(
             table="extraction_efeatures",
             conditions={"emodel": emodel, "species": species, "protocol": "global"},
@@ -878,7 +872,7 @@ class PostgreSQL_API(DatabaseAPI):
 
             for efeat in efeatures.to_dict(orient="records"):
 
-                if efeat["name"] == "hypamp":
+                if efeat["name"] == "holding_current":
                     efeatures_out["SearchHoldingCurrent"]["soma.v"].append(
                         {
                             "feature": "bpo_holding_current",
@@ -886,7 +880,7 @@ class PostgreSQL_API(DatabaseAPI):
                         }
                     )
 
-                elif efeat["name"] == "thresh":
+                elif efeat["name"] == "threshold_current":
                     efeatures_out["SearchThresholdCurrent"]["soma.v"].append(
                         {
                             "feature": "bpo_threshold_current",
@@ -994,15 +988,15 @@ class PostgreSQL_API(DatabaseAPI):
                 "protocol": "global",
             },
         )
-        flag_hypamp = False
+        flag_hold = False
         flag_thresh = False
         for efeat in efeatures.to_dict(orient="records"):
-            if efeat["name"] == "hypamp":
-                flag_hypamp = True
-            elif efeat["name"] == "thresh":
+            if efeat["name"] == "holding_current":
+                flag_hold = True
+            elif efeat["name"] == "threshold_current":
                 flag_thresh = True
 
-        return flag_hypamp and flag_thresh and present_features / tot_features > 0.8
+        return flag_hold and flag_thresh and present_features / tot_features > 0.8
 
     def optimisation_state(
         self, emodel, checkpoint_dir, species=None, seed=1

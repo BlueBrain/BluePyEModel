@@ -3,7 +3,7 @@ import logging
 
 import luigi
 
-from bluepyemodel.feature_extraction import extract_save_features_protocols
+from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.tasks.luigi_tools import BoolParameterCustom
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
@@ -64,9 +64,9 @@ class ExtractEFeatures(WorkflowTask):
     def run(self):
         """"""
         mapper = self.get_mapper()
-        extract_save_features_protocols(
-            self.emodel_db,
-            self.emodel,
+        _ = extract_save_features_protocols(
+            emodel_db=self.emodel_db,
+            emodel=self.emodel,
             species=self.species,
             threshold_nvalue_save=self.threshold_nvalue_save,
             mapper=mapper,
