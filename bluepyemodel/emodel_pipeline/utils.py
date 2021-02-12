@@ -19,7 +19,7 @@ def read_checkpoint(checkpoint_path):
     """Reads a BluePyOpt checkpoint file"""
 
     p = Path(checkpoint_path)
-    p_tmp = Path(checkpoint_path + ".tmp")
+    p_tmp = p.with_suffix(p.suffix + ".tmp")
 
     try:
         run = pickle.load(open(str(p), "rb"))
