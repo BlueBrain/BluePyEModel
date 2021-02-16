@@ -12,11 +12,11 @@ import numpy as np
 import pandas as pd
 import sh
 import yaml
+from bluepyparallel import init_parallel_factory
 from morphio.mut import Morphology
 from tqdm import tqdm
 from voxcell import CellCollection
 
-from bluepyemodel.ais_synthesis.tools import init_parallel_factory
 from bluepyemodel.api.singlecell import Singlecell_API
 
 L = logging.getLogger(__name__)
