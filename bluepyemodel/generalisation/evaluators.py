@@ -10,14 +10,14 @@ from pathlib import Path
 
 from bluepyparallel import evaluate
 
-from ..evaluation.evaluator import create_evaluator
-from ..evaluation.evaluator import define_main_protocol
-from ..evaluation.evaluator import get_simulator
-from ..evaluation.model import create_cell_model
-from ..evaluation.modifiers import isolate_axon
-from ..evaluation.modifiers import remove_axon
-from ..evaluation.modifiers import replace_axon_with_taper
-from ..evaluation.modifiers import synth_axon
+from bluepyemodel.evaluation.evaluator import create_evaluator
+from bluepyemodel.evaluation.evaluator import define_main_protocol
+from bluepyemodel.evaluation.evaluator import get_simulator
+from bluepyemodel.evaluation.model import create_cell_model
+from bluepyemodel.evaluation.modifiers import isolate_axon
+from bluepyemodel.evaluation.modifiers import remove_axon
+from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
+from bluepyemodel.evaluation.modifiers import synth_axon
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +28,13 @@ def _get_synth_modifiers(combo, morph_modifiers=None):
     """
     if morph_modifiers is None:
         morph_modifiers = []
-    if "AIS_scale" in combo and combo["AIS_scale"] is not None:
+    if "AIS_scaler" in combo and combo["AIS_scaler"] is not None:
         morph_modifiers.insert(
             0,
             partial(
                 synth_axon,
                 params=json.loads(combo["AIS_model"])["popt"],
-                scale=combo["AIS_scale"],
+                scale=combo["AIS_scaler"],
             ),
         )
     else:
@@ -93,12 +93,11 @@ def _save_traces(trace_folder, responses, combo_hash):
 def evaluate_scores(
     morphs_combos_df,
     emodel_db,
-    task_ids=None,
     morphology_path="morphology_path",
     save_traces=False,
     trace_folder="traces",
-    continu=False,
-    combos_db_filename="scores_db.sql",
+    resume=False,
+    db_url="scores_db.sql",
     parallel_factory=None,
 ):
     """Compute the scores on the combos dataframe.
@@ -106,13 +105,12 @@ def evaluate_scores(
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
         emodel_db (DatabaseAPI): object which contains API to access emodel data
-        task_ids (int): index of combos_original to compute, if None, all will be computed
         morphology_path (str): entry from dataframe with morphology paths
         save_traces (bool): save responses as pickles to plot traces
         trace_folder (str): folder name to save traces pickles
-        continu (bool): if True, it will use only compute the empty rows of the database,
+        resume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
-        combos_db_filename (str): filename for the combos sqlite database
+        db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
@@ -130,10 +128,9 @@ def evaluate_scores(
         morphs_combos_df,
         evaluation_function,
         new_columns=[["scores", ""]],
-        task_ids=task_ids,
-        continu=continu,
+        resume=resume,
         parallel_factory=parallel_factory,
-        db_filename=combos_db_filename,
+        db_url=db_url,
     )
 
 
@@ -142,13 +139,20 @@ def get_emodel_data(
     combo,
     morphology_path,
     morph_modifiers,
+    extra_recordings=True,
 ):
     """Gather needed emodel data and build cell model for evaluation."""
+    emodel_db.emodel = "_".join(combo["emodel"].split("_")[:2])
+    parameters, mechanisms, _ = emodel_db.get_parameters()
 
-    parameters, mechanisms, _ = emodel_db.get_parameters(combo["emodel"])
-    protocols = emodel_db.get_protocols(combo["emodel"])
-    features = emodel_db.get_features(combo["emodel"])
-    emodel_params = emodel_db.get_emodel(combo["emodel"])["parameters"]
+    protocols = emodel_db.get_protocols(
+        sec_index=combo.get("apical_point_isec"),
+        extra_recordings=extra_recordings,
+    )
+    features = emodel_db.get_features()
+
+    emodel_db.emodel = combo["emodel"]  # to get the hash from the final
+    emodel_params = emodel_db.get_emodel()["parameters"]
 
     cell = create_cell_model(
         "cell",
@@ -174,12 +178,11 @@ def _rin_evaluation(
     """Evaluating rin protocol."""
 
     cell_model, _, features, emodel_params = get_emodel_data(
-        emodel_db, combo, morphology_path, copy(morph_modifiers)
+        emodel_db, combo, morphology_path, copy(morph_modifiers), extra_recordings=False
     )
     main_protocol, features = define_main_protocol(
         {}, features, stochasticity, ais_recording=ais_recording
     )
-
     cell_model.freeze(emodel_params)
     sim = get_simulator(stochasticity, [cell_model])
 
@@ -206,10 +209,9 @@ def _rin_evaluation(
 def evaluate_ais_rin(
     morphs_combos_df,
     emodel_db,
-    task_ids=None,
     morphology_path="morphology_path",
-    continu=False,
-    combos_db_filename="eval_db.sql",
+    resume=False,
+    db_url="eval_db.sql",
     parallel_factory=None,
 ):
     """Compute the input resistance of the ais (axon).
@@ -217,11 +219,10 @@ def evaluate_ais_rin(
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
         emodel_db (DatabaseAPI): object which contains API to access emodel data
-        task_ids (int): index of combos_original to compute, if None, all will be computed
         morphology_path (str): entry from dataframe with morphology paths
-        continu (bool): if True, it will use only compute the empty rows of the database,
+        resume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
-        combos_db_filename (str): filename for the combos sqlite database
+        db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
@@ -241,20 +242,18 @@ def evaluate_ais_rin(
         morphs_combos_df,
         rin_ais_evaluation,
         new_columns=[[key, 0.0]],
-        task_ids=task_ids,
-        continu=continu,
+        resume=resume,
         parallel_factory=parallel_factory,
-        db_filename=combos_db_filename,
+        db_url=db_url,
     )
 
 
 def evaluate_somadend_rin(
     morphs_combos_df,
     emodel_db,
-    task_ids=None,
     morphology_path="morphology_path",
-    continu=False,
-    combos_db_filename="eval_db.sql",
+    resume=False,
+    db_url="eval_db.sql",
     parallel_factory=None,
 ):
     """Compute the input resistance of the soma and dentrites.
@@ -262,11 +261,10 @@ def evaluate_somadend_rin(
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
         emodel_db (DatabaseAPI): object which contains API to access emodel data
-        task_ids (int): index of combos_original to compute, if None, all will be computed
         morphology_path (str): entry from dataframe with morphology paths
-        continu (bool): if True, it will use only compute the empty rows of the database,
+        resume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
-        combos_db_filename (str): filename for the combos sqlite database
+        db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
@@ -284,20 +282,18 @@ def evaluate_somadend_rin(
         morphs_combos_df,
         rin_dendrite_evaluation,
         new_columns=[[key, 0.0]],
-        task_ids=task_ids,
-        continu=continu,
+        resume=resume,
         parallel_factory=parallel_factory,
-        db_filename=combos_db_filename,
+        db_url=db_url,
     )
 
 
 def evaluate_rho_axon(
     morphs_combos_df,
     emodel_db,
-    task_ids=None,
     morphology_path="morphology_path",
-    continu=False,
-    combos_db_filename="eval_db.sql",
+    resume=False,
+    db_url="eval_db.sql",
     parallel_factory=None,
 ):
     """Compute the input resistances and rho factor.
@@ -305,11 +301,10 @@ def evaluate_rho_axon(
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
         emodel_db (DatabaseAPI): object which contains API to access emodel data
-        task_ids (int): index of combos_original to compute, if None, all will be computed
         morphology_path (str): entry from dataframe with morphology paths
-        continu (bool): if True, it will use only compute the empty rows of the database,
+        rersume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
-        combos_db_filename (str): filename for the combos sqlite database
+        db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
@@ -318,20 +313,18 @@ def evaluate_rho_axon(
     morphs_combos_df = evaluate_somadend_rin(
         morphs_combos_df,
         emodel_db,
-        task_ids=task_ids,
         morphology_path=morphology_path,
-        continu=continu,
-        combos_db_filename=combos_db_filename,
+        resume=resume,
+        db_url=db_url,
         parallel_factory=parallel_factory,
     )
 
     morphs_combos_df = evaluate_ais_rin(
         morphs_combos_df,
         emodel_db,
-        task_ids=task_ids,
         morphology_path=morphology_path,
-        continu=continu,
-        combos_db_filename=combos_db_filename,
+        resume=resume,
+        db_url=db_url,
         parallel_factory=parallel_factory,
     )
 
@@ -342,12 +335,11 @@ def evaluate_rho_axon(
 def evaluate_combos_rho(
     morphs_combos_df,
     emodel_db,
-    emodels=None,
     morphology_path="morphology_path",
     save_traces=False,
     trace_folder="traces",
-    continu=False,
-    combos_db_filename="eval_db.sql",
+    resume=False,
+    db_url="eval_db.sql",
     parallel_factory=None,
 ):
     """Evaluate me-combos and rho axons.
@@ -358,36 +350,30 @@ def evaluate_combos_rho(
         morphology_path (str): entry from dataframe with morphology paths
         save_traces (bool): save responses as pickles to plot traces
         trace_folder (str): folder name to save traces pickles
-        continu (bool): if True, it will use only compute the empty rows of the database,
+        resume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
-        combos_db_filename (str): filename for the combos sqlite database
+        db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
         pandas.DataFrame: original combos with computed scores
     """
-    if emodels is None:
-        task_ids = morphs_combos_df.index
-    else:
-        task_ids = morphs_combos_df[morphs_combos_df.emodel.isin(emodels)].index
     morphs_combos_df = evaluate_rho_axon(
         morphs_combos_df,
         emodel_db,
-        task_ids,
-        continu=continu,
+        resume=resume,
         morphology_path=morphology_path,
-        combos_db_filename=str(combos_db_filename) + ".rho",
+        db_url=str(db_url) + ".rho",
         parallel_factory=parallel_factory,
     )
 
     morphs_combos_df = evaluate_scores(
         morphs_combos_df,
         emodel_db,
-        task_ids,
         save_traces=save_traces,
         trace_folder=trace_folder,
-        continu=continu,
-        combos_db_filename=str(combos_db_filename) + ".scores",
+        resume=resume,
+        db_url=str(db_url) + ".scores",
         morphology_path=morphology_path,
         parallel_factory=parallel_factory,
     )
@@ -398,10 +384,9 @@ def evaluate_combos_rho(
 def evaluate_currents(
     morphs_combos_df,
     emodel_db,
-    task_ids=None,
     morphology_path="morphology_path",
-    continu=False,
-    combos_db_filename="eval_db.sql",
+    resume=False,
+    db_url="eval_db.sql",
     parallel_factory=None,
 ):
     """Compute the threshold and holding currents.
@@ -409,11 +394,10 @@ def evaluate_currents(
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
         emodel_db (DatabaseAPI): object which contains API to access emodel data
-        task_ids (int): index of combos_original to compute, if None, all will be computed
         morphology_path (str): entry from dataframe with morphology paths
-        continu (bool): if True, it will use only compute the empty rows of the database,
+        resume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
-        combos_db_filename (str): filename for the combos sqlite database
+        db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
     Returns:
@@ -433,8 +417,7 @@ def evaluate_currents(
         morphs_combos_df,
         current_evaluation,
         new_columns=[[key + "holding_current", 0.0], [key + "threshold_current", 0.0]],
-        task_ids=task_ids,
-        continu=continu,
+        resume=resume,
         parallel_factory=parallel_factory,
-        db_filename=combos_db_filename,
+        db_url=db_url,
     )

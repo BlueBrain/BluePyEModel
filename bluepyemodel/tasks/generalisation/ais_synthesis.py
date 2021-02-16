@@ -4,14 +4,14 @@ import pandas as pd
 import yaml
 from bluepyparallel import init_parallel_factory
 
-from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
-from bluepyemodel.tasks.ais_synthesis.ais_model import AisResistanceModel
-from bluepyemodel.tasks.ais_synthesis.ais_model import TargetRhoAxon
-from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
-from bluepyemodel.tasks.ais_synthesis.config import ScaleConfig
-from bluepyemodel.tasks.ais_synthesis.config import SynthesisLocalTarget
-from bluepyemodel.tasks.ais_synthesis.morph_combos import CreateMorphCombosDF
-from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
+from bluepyemodel.generalisation.ais_synthesis import synthesize_ais
+from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
+from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
+from bluepyemodel.tasks.generalisation.base_task import BaseTask
+from bluepyemodel.tasks.generalisation.config import ScaleConfig
+from bluepyemodel.tasks.generalisation.config import SynthesisLocalTarget
+from bluepyemodel.tasks.generalisation.morph_combos import CreateMorphCombosDF
+from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 
 class SynthesizeAis(BaseTask):
@@ -52,10 +52,10 @@ class SynthesizeAis(BaseTask):
             target_rhos,
             morphology_path=self.morphology_path,
             emodels=[self.emodel],
-            continu=self.continu,
+            resume=self.resume,
             parallel_factory=parallel_factory,
             scales_params=ScaleConfig().scales_params,
-            combos_db_filename=self.set_tmp(self.add_emodel(self.synth_db_path)),
+            db_url=self.set_tmp(self.add_emodel(self.synth_db_path)),
         )
 
         ensure_dir(self.output().path)

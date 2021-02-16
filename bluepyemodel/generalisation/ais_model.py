@@ -10,11 +10,11 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
-from .evaluators import evaluate_ais_rin
-from .evaluators import evaluate_rho_axon
-from .evaluators import evaluate_scores
-from .utils import get_mtypes
-from .utils import get_scores
+from bluepyemodel.generalisation.evaluators import evaluate_ais_rin
+from bluepyemodel.generalisation.evaluators import evaluate_rho_axon
+from bluepyemodel.generalisation.evaluators import evaluate_scores
+from bluepyemodel.generalisation.utils import get_mtypes
+from bluepyemodel.generalisation.utils import get_scores
 
 logger = logging.getLogger(__name__)
 POLYFIT_DEGREE = 10
@@ -170,7 +170,7 @@ def _prepare_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel):
         logger.info("Creating combos for %s", emodel)
         df_tmp = morphs_combos_df[mask].iloc[0]
         for scale in scales:
-            df_tmp["AIS_scale"] = scale
+            df_tmp["AIS_scaler"] = scale
             df_tmp["AIS_model"] = json.dumps(ais_models["all"]["AIS"])
             df_tmp["for_optimisation"] = False
             fit_df = fit_df.append(df_tmp.copy())
@@ -185,8 +185,8 @@ def build_ais_resistance_models(
     scales_params,
     morphology_path="morphology_path",
     parallel_factory=None,
-    continu=False,
-    combos_db_filename="eval_db.sql",
+    resume=False,
+    db_url="eval_db.sql",
 ):
     """Build AIS resistance models for an emodel.
 
@@ -196,7 +196,7 @@ def build_ais_resistance_models(
         emodel (str): emodel to consider
         ais_models: (dict): dict with ais models
         scales_params (dict): parmeter for scales of AIS to use
-        continu (bool): to ecrase previous AIS Rin computations
+        resume (bool): to ecrase previous AIS Rin computations
     Returns:
         (dataframe, dict): dataframe with Rin results and models for plotting
     """
@@ -204,8 +204,8 @@ def build_ais_resistance_models(
     fit_df = evaluate_ais_rin(
         fit_df,
         emodel_db,
-        continu=continu,
-        combos_db_filename=combos_db_filename,
+        resume=resume,
+        db_url=db_url,
         morphology_path=morphology_path,
         parallel_factory=parallel_factory,
     )
@@ -216,15 +216,15 @@ def build_ais_resistance_models(
     if len(fit_df[mask]) > 0:
         if "resistance" not in ais_models[mtype]:
             ais_models[mtype]["resistance"] = {}
-        AIS_scale = fit_df[mask].AIS_scale.to_numpy()
+        AIS_scaler = fit_df[mask].AIS_scaler.to_numpy()
         rin_ais = fit_df[mask].rin_ais.to_numpy()
-        AIS_scale = AIS_scale[rin_ais > 0]
+        AIS_scaler = AIS_scaler[rin_ais > 0]
         rin_ais = rin_ais[rin_ais > 0]
-        if len(rin_ais) != len(fit_df[mask].AIS_scale.to_numpy()):
+        if len(rin_ais) != len(fit_df[mask].AIS_scaler.to_numpy()):
             logger.warning("Some AIS Rin are < 0, we will drop these!")
         ais_models[mtype]["resistance"][emodel] = {
             "polyfit_params": np.polyfit(
-                np.log10(AIS_scale),
+                np.log10(AIS_scaler),
                 np.log10(rin_ais),
                 POLYFIT_DEGREE,
             ).tolist()
@@ -249,7 +249,7 @@ def _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel
         if len(new_row) == 1:
             for scale in scales:
                 new_row["mtype"] = "all"
-                new_row["AIS_scale"] = scale
+                new_row["AIS_scaler"] = scale
                 new_row["AIS_model"] = json.dumps(ais_models["all"]["AIS"])
                 new_row["for_optimisation"] = False
                 rho_scan_df = rho_scan_df.append(new_row.copy())
@@ -293,10 +293,10 @@ def find_target_rho_axon(
     ais_models,
     scales_params,
     morphology_path="morphology_path",
-    continu=False,
+    resume=False,
     parallel_factory=None,
     filter_sigma=2.0,
-    combos_db_filename="rho_scan_db.sql",
+    db_url="rho_scan_db.sql",
 ):
     """Find the target rho axons for an emodel.
 
@@ -306,7 +306,7 @@ def find_target_rho_axon(
         emodel (str): emodel to consider
         ais_models_file (str): path to yaml with ais models
         scales_params (dict): parameter for scales of AIS to use
-        continu (bool): to ecrase previous AIS Rin computations
+        resume (bool): to ecrase previous AIS Rin computations
         filter_sigma (float): sigma for guassian smoothing of mean scores,
             using (scipy.ndimage.filters.gaussian_filter)
 
@@ -318,8 +318,8 @@ def find_target_rho_axon(
         rho_scan_df,
         emodel_db,
         morphology_path=morphology_path,
-        continu=continu,
-        combos_db_filename=str(combos_db_filename) + ".rho",
+        resume=resume,
+        db_url=str(db_url) + ".rho",
         parallel_factory=parallel_factory,
     )
 
@@ -327,8 +327,8 @@ def find_target_rho_axon(
         rho_scan_df,
         emodel_db,
         save_traces=False,
-        continu=continu,
-        combos_db_filename=str(combos_db_filename) + ".scores",
+        resume=resume,
+        db_url=str(db_url) + ".scores",
         morphology_path=morphology_path,
         parallel_factory=parallel_factory,
     )
@@ -339,7 +339,7 @@ def find_target_rho_axon(
     mask = rho_scan_df.emodel == emodel
     target_rhos = {}
     if len(rho_scan_df[mask]) > 0:
-        scale_mask = rho_scan_df.AIS_scale == 1
+        scale_mask = rho_scan_df.AIS_scaler == 1
         median_scores = rho_scan_df[mask & ~scale_mask].median_score.to_numpy()
         smooth_score = gaussian_filter(median_scores, filter_sigma)
         rho_scan_df.loc[mask & ~scale_mask, "smooth_score"] = smooth_score

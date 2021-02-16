@@ -4,8 +4,8 @@ import pickle
 from copy import copy
 from pathlib import Path
 
-from bluepyemodel.ais_synthesis.evaluators import get_emodel_data
 from bluepyemodel.evaluation.evaluator import create_evaluator
+from bluepyemodel.generalisation.evaluators import get_emodel_data
 
 
 def save_traces(trace_folder, responses, filename="trace.pkl"):

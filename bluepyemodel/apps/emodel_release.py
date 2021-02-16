@@ -1,4 +1,4 @@
-"""Cli for emodel release with ais_synthesis module."""
+"""Cli for emodel release with generalisation module."""
 import json
 import logging
 import shutil
@@ -18,6 +18,7 @@ from tqdm import tqdm
 from voxcell import CellCollection
 
 from bluepyemodel.api.singlecell import SinglecellAPI
+from bluepyemodel.generalisation.ais_model import taper_function
 
 L = logging.getLogger(__name__)
 
@@ -33,7 +34,9 @@ def cli(verbose):
 
 def _get_database(api, emodel_path, final_path=None, legacy_dir_structure=True):
     if api == "singlecell":
-        return SinglecellAPI(emodel_path, final_path, legacy_dir_structure=legacy_dir_structure)
+        return SinglecellAPI(
+            None, emodel_path, final_path, legacy_dir_structure=legacy_dir_structure
+        )
     raise NotImplementedError(f"api {api} is not implemented")
 
 
@@ -69,17 +72,20 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
         # TODO: this assumes that the AIS models are the same for all mtypes/etypes
         morph_modifier_hoc = get_synth_axon_hoc(ais_models["mtype"]["all"]["AIS"]["popt"])
 
-    parameters, mechanisms, _ = emodel_db.get_parameters(emodel)
+    emodel_db.emodel = "_".join(emodel.split("_")[:2])
+    parameters, mechanisms, _ = emodel_db.get_parameters()
+    morph = emodel_db.get_morphologies()[0]
     cell_model = create_cell_model(
         emodel,
-        emodel_db.get_morphologies(emodel),
+        morph["path"],
         mechanisms,
         parameters,
         morph_modifiers=[lambda: None],
         morph_modifiers_hoc=[morph_modifier_hoc],
     )
+    emodel_db.emodel = emodel
     return cell_model.create_hoc(
-        emodel_db.get_emodel(emodel)["parameters"],
+        emodel_db.get_emodel()["parameters"],
         template=Path(template_path).name,
         template_dir=Path(template_path).parent,
     )
@@ -168,9 +174,13 @@ def create_emodel_release(
         shutil.copytree(mechanisms, release_paths["mechanisms"])
 
 
-def _load_cells(circuit_morphologies_mvd3, mtype=None, n_cells=None):
+def _load_cells(circuit_morphologies, mtype=None, n_cells=None):
     """Load cells from a circuit into a dataframe."""
-    cells = CellCollection.load_mvd3(circuit_morphologies_mvd3).as_dataframe()
+    if Path(circuit_morphologies).suffix == ".mvd3":
+        cells = CellCollection.load_mvd3(circuit_morphologies).as_dataframe()
+    if Path(circuit_morphologies).suffix == ".h5":
+        cells = CellCollection.load_sonata(circuit_morphologies).as_dataframe()
+
     if mtype is not None:
         cells = cells[cells.mtype == mtype]
     if n_cells is not None:
@@ -203,7 +213,7 @@ def _add_combo_name(combos_df):
 def save_mecombos(combos_df, output, with_scaler=True):
     """Save dataframe to mecombo_emodel.tsv file"""
     if "AIS_scaler" not in combos_df.columns:
-        combos_df = combos_df.rename(columns={"AIS_scale": "AIS_scaler"})
+        combos_df = combos_df.rename(columns={"AIS_scaler": "AIS_scaler"})
     if "fullmtype" not in combos_df.columns:
         combos_df = combos_df.rename(columns={"mtype": "fullmtype"})
     if "morph_name" not in combos_df.columns:
@@ -238,7 +248,7 @@ def save_mecombos(combos_df, output, with_scaler=True):
 
 
 @cli.command("get_me_combos_scales")
-@click.option("--circuit-morphologies-mvd3", type=click.Path(exists=True), required=True)
+@click.option("--circuit-morphologies", type=click.Path(exists=True), required=True)
 @click.option(
     "--release-path",
     type=click.Path(exists=True),
@@ -253,9 +263,9 @@ def save_mecombos(combos_df, output, with_scaler=True):
 @click.option("--n-cells", default=None, type=int)
 @click.option("--mtype", default=None, type=str)
 @click.option("--parallel-lib", default="multiprocessing")
-@click.option("--continu", is_flag=True)
+@click.option("--resume", is_flag=True)
 def get_me_combos_scales(
-    circuit_morphologies_mvd3,
+    circuit_morphologies,
     release_path,
     morphology_path,
     mecombo_emodel_tsv_path,
@@ -265,12 +275,12 @@ def get_me_combos_scales(
     n_cells,
     mtype,
     parallel_lib,
-    continu,
+    resume,
 ):
     """For each me-combos, compute the AIS scale and thresholds currents.
 
     Args:
-        circuit_morphologies_mvd3 (str): path to mvd3 file with synthesized morphologies
+        circuit_morphologies (str): path to mvd3/sonata file with synthesized morphologies
         release_path (str): path to emodel release folder
         morphology_path (str): base path to morphologies, if none, same dir as mvd3 will be used
         mecombo_emodel_tsv_path (str): path to .tsv file to save output data for each me-combos
@@ -282,14 +292,14 @@ def get_me_combos_scales(
         n_cells (int): for testing, only use first n_cells in cells dataframe
         mtype (str): name of mtype to use (for testing only)
     """
-    from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
+    from bluepyemodel.generalisation.ais_synthesis import synthesize_ais
 
     # Initialize the parallel library. If using dask, it must be called at the beginning.
     parallel_factory = init_parallel_factory(parallel_lib)
 
     # 1) load release data, cells and compile mechanisms
     L.info("Load release data, cells and compile mechanisms.")
-    cells = _load_cells(circuit_morphologies_mvd3, mtype, n_cells)
+    cells = _load_cells(circuit_morphologies, mtype, n_cells)
 
     release_paths = get_release_paths(release_path)
     with open(release_paths["ais_model_path"], "r") as ais_file:
@@ -307,7 +317,7 @@ def get_me_combos_scales(
     L.info("Assign emodels to each rows and restructure dataframe.")
     cells = _create_emodel_column(cells, etype_emodel_map)
     if morphology_path is None:
-        morphology_path = Path(circuit_morphologies_mvd3).parent
+        morphology_path = Path(circuit_morphologies).parent
     cells["morphology_path"] = str(morphology_path) + "/" + cells["morphology"] + ".asc"
     cells["gid"] = cells.index
     morphs_combos_df = cells[
@@ -324,8 +334,8 @@ def get_me_combos_scales(
         target_rhos,
         parallel_factory=parallel_factory,
         scales_params=ais_models["scales_params"],
-        combos_db_filename=Path(sql_tmp_path) / "synth_db.sql",
-        continu=continu,
+        db_url=Path(sql_tmp_path) / "synth_db.sql",
+        resume=resume,
     )
 
     # 4) save all values in .tsv
@@ -349,7 +359,7 @@ def get_me_combos_scales(
 @click.option("--parallel-lib", default="multiprocessing", type=str)
 @click.option("--bglibpy-template-format", default="v6_ais_scaler", type=str)
 @click.option("--emodels-hoc-dir", type=str)
-@click.option("--continu", is_flag=True)
+@click.option("--resume", is_flag=True)
 def get_me_combos_currents(
     mecombos_path,
     combos_df_path,
@@ -361,7 +371,7 @@ def get_me_combos_currents(
     parallel_lib,
     bglibpy_template_format,
     emodels_hoc_dir,
-    continu,
+    resume,
 ):
     """For each me-combos, compute the thresholds currents.
 
@@ -379,7 +389,13 @@ def get_me_combos_currents(
         emodels_hoc_dir (str): paths to hoc files, if None hoc from release path will be used
 
     """
-    # Initialize the parallel library. If using dask, it must be called at the beginning.
+    if protocol_config_path is None:
+        from bluepyemodel.generalisation.evaluators import evaluate_currents
+    else:
+        from bluepyemodel.generalisation.bglibpy_evaluators import evaluate_currents_bglibpy
+
+    # Initialize the parallel library. If using dask, it must be called at the beginning,
+    # but after nueuron imports.
     parallel_factory = init_parallel_factory(parallel_lib)
 
     # 1) load release data, cells and compile mechanisms
@@ -388,7 +404,6 @@ def get_me_combos_currents(
     # 2) compute holding and threshold currents
     L.info("Compute holding and threshold currents.")
     if protocol_config_path is None:
-        from bluepyemodel.ais_synthesis.evaluators import evaluate_currents
 
         release_paths = get_release_paths(release_path)
         emodel_db = _get_database(emodel_api, release_paths["emodel_path"])
@@ -398,11 +413,9 @@ def get_me_combos_currents(
             combos_df,
             emodel_db,
             parallel_factory=parallel_factory,
-            combos_db_filename=Path(sql_tmp_path) / "current_db.sql",
+            db_url=Path(sql_tmp_path) / "current_db.sql",
         )
     else:
-        from bluepyemodel.ais_synthesis.bglibpy_evaluators import evaluate_currents_bglibpy
-
         with open(protocol_config_path, "r") as prot_file:
             protocol_config = yaml.safe_load(prot_file)
 
@@ -416,9 +429,9 @@ def get_me_combos_currents(
             protocol_config,
             emodels_hoc_dir,
             parallel_factory=parallel_factory,
-            combos_db_filename=Path(sql_tmp_path) / "current_db.sql",
+            db_url=Path(sql_tmp_path) / "current_db.sql",
             template_format=bglibpy_template_format,
-            continu=continu,
+            resume=resume,
         )
 
     # 3) save all values in .tsv
@@ -464,8 +477,7 @@ def fix_ais(combo, out_path="fixed_cells_test", morph_name="combo_name"):
             taper_function,
             strength=ais_model[1],
             taper_scale=ais_model[2],
-            terminal_diameter=ais_model[3],
-            scale=combo.AIS_scale,
+            terminal_diameter=ais_model[3] * combo.AIS_scale,
         )
         modify_ais(morphology, _taper_func)
     else:
@@ -473,11 +485,6 @@ def fix_ais(combo, out_path="fixed_cells_test", morph_name="combo_name"):
 
     morphology = Morphology(morphology, morphio.Option.nrn_order)  # ensures NEURON order
     morphology.write(str(Path(out_path) / combo[morph_name]) + ".asc")
-
-
-def taper_function(distance, strength, taper_scale, terminal_diameter, scale=1.0):
-    """Function to model tappered AIS."""
-    return strength * np.exp(-distance / taper_scale) + terminal_diameter * scale
 
 
 def modify_ais(morphology, taper_func, L_target=65):
@@ -527,7 +534,7 @@ def _create_etype_column(cells, cell_composition):
 @click.option("--cell-composition-path", type=click.Path(exists=True), required=False)
 @click.option("--sql-tmp-path", default="tmp", type=str)
 @click.option("--parallel-lib", default="multiprocessing")
-@click.option("--continu", is_flag=True)
+@click.option("--resume", is_flag=True)
 def set_me_combos_scales_inplace(  # pylint: disable-all
     mecombos_path,
     to_fix_combos_path,
@@ -540,7 +547,7 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
     cell_composition_path,
     sql_tmp_path,
     parallel_lib,
-    continu,
+    resume,
 ):
     """Similar function to get_me_combos_scales, but modifies the morphologies directly.
 
@@ -558,7 +565,7 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
         sql_tmp_path (str): path to a folder to save sql files used during computations
         parallel_lib (str): parallel library
     """
-    from bluepyemodel.ais_synthesis.ais_synthesis import synthesize_ais
+    from bluepyemodel.generalisation.ais_synthesis import synthesize_ais
 
     # Initialize the parallel library. If using dask, it must be called at the beginning.
     parallel_factory = init_parallel_factory(parallel_lib)
@@ -640,8 +647,8 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
         target_rhos,
         parallel_factory=parallel_factory,
         scales_params=ais_models["scales_params"],
-        combos_db_filename=Path(sql_tmp_path) / "synth_db.sql",
-        continu=continu,
+        db_url=Path(sql_tmp_path) / "synth_db.sql",
+        resume=resume,
     )
 
     # 3) Modify morphologies
@@ -666,9 +673,9 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
 
 
 @cli.command("update_sonata")
-@click.option("--input-sonata-path", type=click.Path(exists=True), required=False)
-@click.option("--output-sonata-path", type=click.Path(exists=True), required=False)
-@click.option("--mecombo-emodel-path", type=click.Path(exists=True), required=False)
+@click.option("--input-sonata-path", type=click.Path(exists=True), required=True)
+@click.option("--output-sonata-path", type=click.Path(exists=False), required=True)
+@click.option("--mecombo-emodel-path", type=click.Path(exists=True), required=True)
 def update_sonata(input_sonata_path, output_sonata_path, mecombo_emodel_path):
     """Update sonata file add threshols current, holding current and AIS_scaler.
 

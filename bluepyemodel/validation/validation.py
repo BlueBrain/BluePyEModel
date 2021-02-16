@@ -78,7 +78,8 @@ def validate(
             logger.warning("Validation function not  specified, will use validate_max_score.")
             validation_function = validation_functions.validate_max_score
 
-        name_validation_protocols = emodel_db.get_name_validation_protocols(emodel)
+        emodel_db.set_emodel(emodel)
+        name_validation_protocols = emodel_db.get_name_validation_protocols()
 
         logger.info("In validate, %s emodels found to validate.", len(emodels))
 

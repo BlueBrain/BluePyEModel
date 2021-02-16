@@ -70,7 +70,6 @@ class SinglecellAPI(DatabaseAPI):
 
     def set_emodel(self, emodel):
         """ Setter for the name of the emodel. """
-
         if emodel not in self.get_all_recipes():
             raise Exception("Cannot set the emodel name to %s which does not exist in the recipes.")
 
@@ -444,39 +443,33 @@ class SinglecellAPI(DatabaseAPI):
 
         return params_definition, mech_definition, list(set(mech_names))
 
-    def _handle_extra_recording(self, extra_recordings):
+    def _handle_extra_recording(self, extra_recordings, sec_index=None):
         """ Fetch the information needed to be able to use the extra recordings. """
-
         extra_recordings_out = []
-
         for extra in extra_recordings:
-
             if extra["type"] == "somadistanceapic":
-
-                morphologies = self.get_morphologies()
-                morph_name = morphologies[0]["name"]
-                p = self.emodel_dir / "apical_points_isec.json"
-
-                if p.exists():
-
-                    extra["sec_index"] = json.load(open(str(p)))[morph_name]
-
-                    if extra["seclist_name"]:
-                        extra["sec_name"] = seclist_to_sec[extra["seclist_name"]]
+                if sec_index is None:
+                    apical_point_isec = self.emodel_dir / "apical_points_isec.json"
+                    if apical_point_isec.exists():
+                        morph_name = self.get_morphologies()[0]["name"]
+                        sec_index = json.load(open(str(apical_point_isec)))[morph_name]
                     else:
-                        raise Exception("Cannot get section name from seclist_name.")
+                        raise Exception(
+                            "No apical_points_isec.json found for extra_recordings of type "
+                            "somadistanceapic."
+                        )
 
+                extra["sec_index"] = sec_index
+                if extra["seclist_name"]:
+                    extra["sec_name"] = seclist_to_sec[extra["seclist_name"]]
                 else:
-                    raise Exception(
-                        "No apical_points_isec.json found for extra_recordings of type "
-                        "somadistanceapic."
-                    )
+                    raise Exception("Cannot get section name from seclist_name.")
 
             extra_recordings_out.append(extra)
 
         return extra_recordings_out
 
-    def _read_protocol(self, protocol):
+    def _read_protocol(self, protocol, sec_index=None):
 
         stimulus_def = protocol["step"]
         stimulus_def["holding_current"] = protocol["holding"]["amp"]
@@ -485,12 +478,12 @@ class SinglecellAPI(DatabaseAPI):
 
         if "extra_recordings" in protocol:
             protocol_definition["extra_recordings"] = self._handle_extra_recording(
-                protocol["extra_recordings"]
+                protocol["extra_recordings"], sec_index=sec_index
             )
 
         return protocol_definition
 
-    def _read_legacy_protocol(self, protocol, protocol_name):
+    def _read_legacy_protocol(self, protocol, protocol_name, sec_index=None):
 
         if protocol_name in ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]:
             return None
@@ -508,35 +501,40 @@ class SinglecellAPI(DatabaseAPI):
 
         if "extra_recordings" in protocol:
             protocol_definition["extra_recordings"] = self._handle_extra_recording(
-                protocol["extra_recordings"]
+                protocol["extra_recordings"], sec_index=sec_index
             )
 
         return protocol_definition
 
-    def get_protocols(self, include_validation=False):
+    def get_protocols(self, include_validation=False, sec_index=None, extra_recordings=True):
         """Get the protocols from the configuration file and put them in the format required by
         MainProtocol.
 
         Args:
             include_validation (bool): if True, returns the protocols for validation as well as
                 the ones for optimisation.
+            sec_index (int): apical sec index for bap recordings
+            extra_recordings (bool): setup or not extra recordings (such as bAP)
 
         Returns:
             protocols_out (dict): protocols definitions
         """
-
         protocols = self._get_json("protocol")
 
         protocols_out = {}
-
         for protocol_name, protocol in protocols.items():
+
+            if not extra_recordings and "extra_recordings" in protocol:
+                del protocol["extra_recordings"]
 
             if "validation" in protocol:
                 if not include_validation and protocol["validation"]:
                     continue
-                protocol_definition = self._read_protocol(protocol)
+                protocol_definition = self._read_protocol(protocol, sec_index=sec_index)
             else:
-                protocol_definition = self._read_legacy_protocol(protocol, protocol_name)
+                protocol_definition = self._read_legacy_protocol(
+                    protocol, protocol_name, sec_index=sec_index
+                )
 
             if protocol_definition:
                 protocols_out[protocol_name] = protocol_definition
@@ -657,9 +655,9 @@ class SinglecellAPI(DatabaseAPI):
         return morphology_definition
 
     def format_emodel_data(self, model_data):
-
+        """Format emodel data."""
         out_data = {
-            "emodel": model_data["emodel"],
+            "emodel": self.emodel,
             "fitness": model_data["score"],
             "parameters": model_data["params"],
             "scores": model_data["fitness"],
@@ -684,7 +682,7 @@ class SinglecellAPI(DatabaseAPI):
 
         return out_data
 
-    def get_emodel(self, emodel):
+    def get_emodel(self):
         """Get dict with parameter of single emodel (including seed if any)
 
         WARNING: this search is based on the name of the model and not the name of the emodel
@@ -695,11 +693,10 @@ class SinglecellAPI(DatabaseAPI):
         """
 
         final = self.get_final()
+        if self.emodel in final:
+            return self.format_emodel_data(final[self.emodel])
 
-        if emodel in final:
-            return self.format_emodel_data(final[emodel])
-
-        logger.warning("Could not find models for emodel %s", emodel)
+        logger.warning("Could not find models for emodel %s", self.emodel)
 
         return None
 
@@ -733,7 +730,7 @@ class SinglecellAPI(DatabaseAPI):
 
         final = self.get_final()
 
-        return {mod_name: mod["emodel"] for mod_name, mod in final.items()}
+        return {mod_name: mod.get("emodel", mod_name) for mod_name, mod in final.items()}
 
     def has_protocols_and_features(self):
         """Check if the efeatures and protocol exist."""

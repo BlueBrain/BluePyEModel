@@ -1,9 +1,9 @@
 """Compute the threshold and holding current using bglibpy, adapted from BluePyThresh."""
 import logging
 from copy import copy
-from functools import partial
 from pathlib import Path
 
+import bglibpy
 from bluepyparallel.evaluator import evaluate
 
 logger = logging.getLogger(__name__)
@@ -103,7 +103,6 @@ def binsearch_threshold_current(
 
 def run_spike_sim(cell, config, holding_current, step_current):
     """Run simulation on a cell and compute number of spikes."""
-    import bglibpy
     import efel
 
     cell.add_step(0, config["step_stop"], holding_current)
@@ -172,8 +171,6 @@ def calculate_holding_current(cell, config):
 
     adapted from: bglibpy.tools.holding_current_subprocess,
     """
-    import bglibpy
-
     vclamp = bglibpy.neuron.h.SEClamp(0.5, sec=cell.soma)
     vclamp.rs = 0.01
     vclamp.dur1 = 2000
@@ -193,11 +190,9 @@ def _current_bglibpy_evaluation(
     template_format="v6_ais_scaler",
 ):
     """Compute the threshold and holding currents using bglibpy."""
-    import bglibpy
-
-    AIS_scale = None
+    AIS_scaler = None
     if template_format == "v6_ais_scaler":
-        AIS_scale = combo["AIS_scale"]
+        AIS_scaler = combo["AIS_scaler"]
     cell_kwargs = {
         "template_filename": str(Path(emodels_hoc_dir) / f"{combo['emodel']}.hoc"),
         "morphology_name": Path(combo[morphology_path]).name,
@@ -206,7 +201,7 @@ def _current_bglibpy_evaluation(
         "extra_values": {
             "holding_current": None,
             "threshold_current": None,
-            "AIS_scaler": AIS_scale,
+            "AIS_scaler": AIS_scaler,
         },
     }
     cell = bglibpy.Cell(**cell_kwargs)
@@ -231,27 +226,24 @@ def evaluate_currents_bglibpy(
     morphs_combos_df,
     protocol_config,
     emodels_hoc_dir,
-    task_ids=None,
     morphology_path="morphology_path",
-    continu=False,
-    combos_db_filename="eval_db.sql",
+    resume=False,
+    db_url="eval_db.sql",
     parallel_factory=None,
     template_format="v6_ais_scaler",
 ):
     """Compute the threshold and holding currents using bglibpy."""
-    current_evaluation_bglibpy = partial(
-        _current_bglibpy_evaluation,
-        protocol_config=protocol_config,
-        emodels_hoc_dir=emodels_hoc_dir,
-        morphology_path=morphology_path,
-        template_format=template_format,
-    )
     return evaluate(
         morphs_combos_df,
-        current_evaluation_bglibpy,
+        _current_bglibpy_evaluation,
         new_columns=[["holding_current", 0.0], ["threshold_current", 0.0]],
-        task_ids=task_ids,
-        continu=continu,
+        resume=resume,
         parallel_factory=parallel_factory,
-        db_filename=combos_db_filename,
+        db_url=db_url,
+        func_kwargs=dict(
+            protocol_config=protocol_config,
+            emodels_hoc_dir=emodels_hoc_dir,
+            morphology_path=morphology_path,
+            template_format=template_format,
+        ),
     )

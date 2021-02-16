@@ -8,26 +8,26 @@ import pandas as pd
 import yaml
 from matplotlib.backends.backend_pdf import PdfPages
 
-from bluepyemodel.ais_synthesis.plotting import plot_ais_resistance_models
-from bluepyemodel.ais_synthesis.plotting import plot_ais_taper_models
-from bluepyemodel.ais_synthesis.plotting import plot_feature_select
-from bluepyemodel.ais_synthesis.plotting import plot_feature_summary_select
-from bluepyemodel.ais_synthesis.plotting import plot_frac_exceptions
-from bluepyemodel.ais_synthesis.plotting import plot_summary_select
-from bluepyemodel.ais_synthesis.plotting import plot_synth_ais_evaluations
-from bluepyemodel.ais_synthesis.plotting import plot_target_rho_axon
-from bluepyemodel.tasks.ais_synthesis.ais_model import AisResistanceModel
-from bluepyemodel.tasks.ais_synthesis.ais_model import AisShapeModel
-from bluepyemodel.tasks.ais_synthesis.ais_model import TargetRhoAxon
-from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
-from bluepyemodel.tasks.ais_synthesis.config import PlotLocalTarget
-from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateGeneric
-from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateSynthesis
-from bluepyemodel.tasks.ais_synthesis.select import ApplyGenericMegating
-from bluepyemodel.tasks.ais_synthesis.select import ApplyMegating
-from bluepyemodel.tasks.ais_synthesis.select import SelectCombos
-from bluepyemodel.tasks.ais_synthesis.select import SelectGenericCombos
-from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
+from bluepyemodel.generalisation.plotting import plot_ais_resistance_models
+from bluepyemodel.generalisation.plotting import plot_ais_taper_models
+from bluepyemodel.generalisation.plotting import plot_feature_select
+from bluepyemodel.generalisation.plotting import plot_feature_summary_select
+from bluepyemodel.generalisation.plotting import plot_frac_exceptions
+from bluepyemodel.generalisation.plotting import plot_summary_select
+from bluepyemodel.generalisation.plotting import plot_synth_ais_evaluations
+from bluepyemodel.generalisation.plotting import plot_target_rho_axon
+from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
+from bluepyemodel.tasks.generalisation.ais_model import AisShapeModel
+from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
+from bluepyemodel.tasks.generalisation.base_task import BaseTask
+from bluepyemodel.tasks.generalisation.config import PlotLocalTarget
+from bluepyemodel.tasks.generalisation.evaluations import EvaluateGeneric
+from bluepyemodel.tasks.generalisation.evaluations import EvaluateSynthesis
+from bluepyemodel.tasks.generalisation.select import ApplyGenericMegating
+from bluepyemodel.tasks.generalisation.select import ApplyMegating
+from bluepyemodel.tasks.generalisation.select import SelectCombos
+from bluepyemodel.tasks.generalisation.select import SelectGenericCombos
+from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
 

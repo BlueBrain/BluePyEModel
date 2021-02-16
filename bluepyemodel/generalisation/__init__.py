@@ -1,1 +1,1 @@
-"""Generalisation of emodels."""
+"""AIS synthesis module."""

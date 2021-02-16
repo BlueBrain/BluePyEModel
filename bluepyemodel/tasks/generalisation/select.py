@@ -5,15 +5,15 @@ import luigi
 import pandas as pd
 import yaml
 
-from bluepyemodel.ais_synthesis.select import apply_megating
-from bluepyemodel.ais_synthesis.select import select_best_emodel
-from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
-from bluepyemodel.tasks.ais_synthesis.config import SelectConfig
-from bluepyemodel.tasks.ais_synthesis.config import SelectLocalTarget
-from bluepyemodel.tasks.ais_synthesis.gather import GatherExemplarEvaluations
-from bluepyemodel.tasks.ais_synthesis.gather import GatherGenericEvaluations
-from bluepyemodel.tasks.ais_synthesis.gather import GatherSynthEvaluations
-from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
+from bluepyemodel.generalisation.select import apply_megating
+from bluepyemodel.generalisation.select import select_best_emodel
+from bluepyemodel.tasks.generalisation.base_task import BaseTask
+from bluepyemodel.tasks.generalisation.config import SelectConfig
+from bluepyemodel.tasks.generalisation.config import SelectLocalTarget
+from bluepyemodel.tasks.generalisation.gather import GatherExemplarEvaluations
+from bluepyemodel.tasks.generalisation.gather import GatherGenericEvaluations
+from bluepyemodel.tasks.generalisation.gather import GatherSynthEvaluations
+from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
 

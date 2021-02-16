@@ -7,15 +7,15 @@ import pandas as pd
 import yaml
 from bluepyparallel import init_parallel_factory
 
-from bluepyemodel.ais_synthesis.ais_model import build_ais_diameter_models
-from bluepyemodel.ais_synthesis.ais_model import build_ais_resistance_models
-from bluepyemodel.ais_synthesis.ais_model import find_target_rho_axon
-from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
-from bluepyemodel.tasks.ais_synthesis.config import ModelLocalTarget
-from bluepyemodel.tasks.ais_synthesis.config import ScaleConfig
-from bluepyemodel.tasks.ais_synthesis.morph_combos import ApplySubstitutionRules
-from bluepyemodel.tasks.ais_synthesis.morph_combos import CreateMorphCombosDF
-from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
+from bluepyemodel.generalisation.ais_model import build_ais_diameter_models
+from bluepyemodel.generalisation.ais_model import build_ais_resistance_models
+from bluepyemodel.generalisation.ais_model import find_target_rho_axon
+from bluepyemodel.tasks.generalisation.base_task import BaseTask
+from bluepyemodel.tasks.generalisation.config import ModelLocalTarget
+from bluepyemodel.tasks.generalisation.config import ScaleConfig
+from bluepyemodel.tasks.generalisation.morph_combos import ApplySubstitutionRules
+from bluepyemodel.tasks.generalisation.morph_combos import CreateMorphCombosDF
+from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +87,8 @@ class AisResistanceModel(BaseTask):
             ScaleConfig().scales_params,
             morphology_path=self.morphology_path,
             parallel_factory=parallel_factory,
-            continu=self.continu,
-            combos_db_filename=self.set_tmp(self.add_emodel(self.fit_db_path)),
+            resume=self.resume,
+            db_url=self.set_tmp(self.add_emodel(self.fit_db_path)),
         )
 
         ensure_dir(self.set_tmp(self.add_emodel(self.fit_df_path)))
@@ -140,8 +140,8 @@ class TargetRhoAxon(BaseTask):
             ais_models,
             ScaleConfig().scales_params,
             morphology_path=self.morphology_path,
-            combos_db_filename=self.set_tmp(self.add_emodel(self.rho_scan_db_path)),
-            continu=self.continu,
+            db_url=self.set_tmp(self.add_emodel(self.rho_scan_db_path)),
+            resume=self.resume,
             parallel_factory=parallel_factory,
         )
 

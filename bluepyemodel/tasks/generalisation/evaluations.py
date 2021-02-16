@@ -4,14 +4,14 @@ import pandas as pd
 import yaml
 from bluepyparallel import init_parallel_factory
 
-from bluepyemodel.ais_synthesis.evaluators import evaluate_combos_rho
-from bluepyemodel.ais_synthesis.utils import get_scores
-from bluepyemodel.tasks.ais_synthesis.ais_synthesis import SynthesizeAis
-from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
-from bluepyemodel.tasks.ais_synthesis.config import EvaluationLocalTarget
-from bluepyemodel.tasks.ais_synthesis.config import SelectConfig
-from bluepyemodel.tasks.ais_synthesis.morph_combos import CreateMorphCombosDF
-from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
+from bluepyemodel.generalisation.evaluators import evaluate_combos_rho
+from bluepyemodel.generalisation.utils import get_scores
+from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAis
+from bluepyemodel.tasks.generalisation.base_task import BaseTask
+from bluepyemodel.tasks.generalisation.config import EvaluationLocalTarget
+from bluepyemodel.tasks.generalisation.config import SelectConfig
+from bluepyemodel.tasks.generalisation.morph_combos import CreateMorphCombosDF
+from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 
 class EvaluateSynthesis(BaseTask):
@@ -31,6 +31,7 @@ class EvaluateSynthesis(BaseTask):
         """Run."""
 
         synth_combos_df = pd.read_csv(self.input()["synth_ais"].path)
+        synth_combos_df = synth_combos_df.drop(columns=["rin_no_axon", "exception"])
         synth_combos_df = synth_combos_df[synth_combos_df.emodel == self.emodel]
 
         eval_db_path = self.set_tmp(self.add_emodel(self.eval_db_path))
@@ -39,12 +40,11 @@ class EvaluateSynthesis(BaseTask):
         synth_combos_df = evaluate_combos_rho(
             synth_combos_df,
             self.emodel_db,
-            emodels=[self.emodel],
             morphology_path=self.morphology_path,
-            continu=self.continu,
+            resume=self.resume,
             parallel_factory=parallel_factory,
             save_traces=self.save_traces,
-            combos_db_filename=eval_db_path,
+            db_url=eval_db_path,
         )
 
         megate_thresholds = yaml.safe_load(open(SelectConfig().megate_thresholds_path, "r"))
@@ -84,12 +84,11 @@ class EvaluateGeneric(BaseTask):
         morphs_combos_df = evaluate_combos_rho(
             morphs_combos_df,
             self.emodel_db,
-            emodels=[self.emodel],
             morphology_path=self.morphology_path,
-            continu=self.continu,
+            resume=self.resume,
             parallel_factory=parallel_factory,
             save_traces=self.save_traces,
-            combos_db_filename=eval_db_path,
+            db_url=eval_db_path,
         )
         megate_thresholds = yaml.safe_load(open(SelectConfig().megate_thresholds_path, "r"))
         morphs_combos_with_scores_df = get_scores(morphs_combos_df, megate_thresholds["ignore"])
@@ -135,12 +134,11 @@ class EvaluateExemplars(BaseTask):
         morphs_combos_df = evaluate_combos_rho(
             morphs_combos_df,
             self.emodel_db,
-            emodels=None,
             morphology_path=self.morphology_path,
-            continu=self.continu,
+            resume=self.resume,
             parallel_factory=parallel_factory,
             save_traces=self.save_traces,
-            combos_db_filename=self.set_tmp(self.add_emodel(self.eval_db_path)),
+            db_url=self.set_tmp(self.add_emodel(self.eval_db_path)),
         )
 
         megate_thresholds = yaml.safe_load(open(SelectConfig().megate_thresholds_path, "r"))

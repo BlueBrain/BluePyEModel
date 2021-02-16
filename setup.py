@@ -16,7 +16,7 @@ with open("README.rst", encoding="utf-8") as f:
 
 
 EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow", "bbp-workflow-cli"]
-EXTRA_GENERALISATION = ["bluepyparallel"]
+EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3"]
 EXTRA_NEXUS = ["nexusforge"]
 
 doc_reqs = [

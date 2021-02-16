@@ -8,8 +8,8 @@ import libsonata as sonata
 import numpy as np
 import yaml
 
-from bluepyemodel.ais_synthesis.bglibpy_evaluators import calculate_holding_current
-from bluepyemodel.ais_synthesis.bglibpy_evaluators import calculate_threshold_current
+from bluepyemodel.generalisation.bglibpy_evaluators import calculate_holding_current
+from bluepyemodel.generalisation.bglibpy_evaluators import calculate_threshold_current
 
 
 def _get_cell_kwargs_custom_template(

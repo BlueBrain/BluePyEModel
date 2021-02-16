@@ -7,7 +7,7 @@ class EmodelAPIConfig(luigi.Config):
     """Configuration of emodel api database."""
 
     api = luigi.Parameter(default="singlecell")
-    working_dir = luigi.Parameter(default="config")
+    emodel_dir = luigi.Parameter(default="config")
     final_path = luigi.Parameter(default=None)
 
 

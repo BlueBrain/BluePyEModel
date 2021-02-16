@@ -24,7 +24,6 @@ def ipyparallel_map_function(ipython_profile="IPYTHON_PROFILE"):
     Returns:
         map
     """
-    print(os.getenv(ipython_profile))
     if os.getenv(ipython_profile):
         from ipyparallel import Client
 

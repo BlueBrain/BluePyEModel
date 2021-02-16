@@ -14,11 +14,11 @@ from neurom import load_neuron
 from neurom import viewer
 from tqdm import tqdm
 
-from .ais_model import taper_function
-from .evaluators import get_combo_hash
-from .utils import get_emodels
-from .utils import get_mtypes
-from .utils import get_scores
+from bluepyemodel.generalisation.ais_model import taper_function
+from bluepyemodel.generalisation.evaluators import get_combo_hash
+from bluepyemodel.generalisation.utils import get_emodels
+from bluepyemodel.generalisation.utils import get_mtypes
+from bluepyemodel.generalisation.utils import get_scores
 
 matplotlib.use("Agg")
 
@@ -154,12 +154,12 @@ def plot_ais_resistance_models(fit_df, ais_models, pdf_filename="scan_scales.pdf
                 me_mask = fit_df.emodel == emodel
                 if mtype != "all":
                     me_mask = me_mask & (fit_df.mtype == mtype)
-                fit_df[me_mask].plot(x="AIS_scale", y="rin_ais", marker="+")
+                fit_df[me_mask].plot(x="AIS_scaler", y="rin_ais", marker="+")
                 plt.plot(
-                    fit_df[me_mask].AIS_scale,
+                    fit_df[me_mask].AIS_scaler,
                     10
                     ** np.poly1d(ais_models[mtype]["resistance"][emodel]["polyfit_params"])(
-                        np.log10(fit_df[me_mask].AIS_scale)
+                        np.log10(fit_df[me_mask].AIS_scaler)
                     ),
                     "-o",
                     ms=0.5,
@@ -198,7 +198,7 @@ def plot_target_rho_axon(
                 if len(rho_scan_df[me_mask]) > 0:
                     plt.figure()
                     ax = plt.gca()
-                    scale_mask = rho_scan_df.AIS_scale == 1
+                    scale_mask = rho_scan_df.AIS_scaler == 1
                     rho_scan_df[me_mask & ~scale_mask].plot(
                         x="rho_axon", y="median_score", ls="-", marker="+", ax=ax
                     )

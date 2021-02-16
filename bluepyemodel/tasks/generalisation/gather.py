@@ -3,17 +3,17 @@ import luigi
 import pandas as pd
 import yaml
 
-from bluepyemodel.tasks.ais_synthesis.ais_model import AisResistanceModel
-from bluepyemodel.tasks.ais_synthesis.ais_model import AisShapeModel
-from bluepyemodel.tasks.ais_synthesis.ais_model import TargetRhoAxon
-from bluepyemodel.tasks.ais_synthesis.ais_synthesis import SynthesizeAis
-from bluepyemodel.tasks.ais_synthesis.base_task import BaseTask
-from bluepyemodel.tasks.ais_synthesis.config import GatherLocalTarget
-from bluepyemodel.tasks.ais_synthesis.config import ScaleConfig
-from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateExemplars
-from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateGeneric
-from bluepyemodel.tasks.ais_synthesis.evaluations import EvaluateSynthesis
-from bluepyemodel.tasks.ais_synthesis.utils import ensure_dir
+from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
+from bluepyemodel.tasks.generalisation.ais_model import AisShapeModel
+from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
+from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAis
+from bluepyemodel.tasks.generalisation.base_task import BaseTask
+from bluepyemodel.tasks.generalisation.config import GatherLocalTarget
+from bluepyemodel.tasks.generalisation.config import ScaleConfig
+from bluepyemodel.tasks.generalisation.evaluations import EvaluateExemplars
+from bluepyemodel.tasks.generalisation.evaluations import EvaluateGeneric
+from bluepyemodel.tasks.generalisation.evaluations import EvaluateSynthesis
+from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 
 class GatherAisModels(BaseTask):

@@ -2,14 +2,13 @@
 import json
 import logging
 import os
-from functools import partial
 from pathlib import Path
 
 import numpy as np
 from bluepyparallel import evaluate
 
-from .evaluators import evaluate_somadend_rin
-from .utils import get_emodels
+from bluepyemodel.generalisation.evaluators import evaluate_somadend_rin
+from bluepyemodel.generalisation.utils import get_emodels
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ def _debug_plot(p, scale_min, scale_max, rin_ais, scale, mtype, task_id):
     plt.suptitle(mtype)
     plt.xscale("log")
     plt.yscale("log")
-    plt.savefig("figures_debug/AIS_scale_" + str(task_id) + ".png")
+    plt.savefig("figures_debug/AIS_scaler_" + str(task_id) + ".png")
     plt.close()
 
 
@@ -71,7 +70,7 @@ def _synth_combo(combo, ais_models, target_rhos, scale_min, scale_max):
     #    _debug_plot(p, scale_min, scale_max, rin_ais, scale, mtype, task_id)
     return {
         "ais_failed": ais_failed,
-        "AIS_scale": scale,
+        "AIS_scaler": scale,
         "AIS_model": json.dumps(ais_models[mtype]["AIS"]),
     }
 
@@ -98,10 +97,10 @@ def synthesize_ais(
     target_rhos,
     emodels=None,
     morphology_path="morphology_path",
-    continu=False,
+    resume=False,
     parallel_factory=None,
     scales_params=None,
-    combos_db_filename="synth_db.sql",
+    db_url="synth_db.sql",
 ):
     """Synthesize AIS to match target rho_axon.
 
@@ -111,7 +110,7 @@ def synthesize_ais(
         ais_models (dict): dict with ais models
         target_rhos (dict): dict with target rhos
         emodels (list/str): list of emodels to consider, or 'all'
-        continu (bool): to ecrase previous AIS Rin computations
+        resume (bool): to ecrase previous AIS Rin computations
         scales_params (dict): parmeter for scales of AIS to use
         parallel_factory (ParallelFactory): parallel factory instance
     """
@@ -124,30 +123,24 @@ def synthesize_ais(
         scale_min = 10 ** scales_params["min"]
         scale_max = 10 ** scales_params["max"]
 
-    task_ids = morphs_combos_df[morphs_combos_df.emodel.isin(emodels)].index
     morphs_combos_df = evaluate_somadend_rin(
         morphs_combos_df,
         emodel_db,
-        task_ids=task_ids,
         morphology_path=morphology_path,
-        continu=continu,
+        resume=resume,
         parallel_factory=parallel_factory,
-        combos_db_filename=combos_db_filename,
-    )
-
-    synth_combo = partial(
-        _synth_combo,
-        ais_models=_clean_ais_model(ais_models),
-        target_rhos=target_rhos,
-        scale_min=scale_min,
-        scale_max=scale_max,
+        db_url=db_url,
     )
     return evaluate(
         morphs_combos_df,
-        synth_combo,
-        new_columns=[["ais_failed", 1], ["AIS_scale", 1.0], ["AIS_model", ""]],
-        task_ids=task_ids,
-        continu=continu,
+        _synth_combo,
+        new_columns=[["ais_failed", 1], ["AIS_scaler", 1.0], ["AIS_model", ""]],
+        resume=resume,
         parallel_factory=parallel_factory,
-        no_sql=True,  # each evaluation is fast, so we won't use sql backend for massive speedup
+        func_kwargs=dict(
+            ais_models=_clean_ais_model(ais_models),
+            target_rhos=target_rhos,
+            scale_min=scale_min,
+            scale_max=scale_max,
+        ),
     )
