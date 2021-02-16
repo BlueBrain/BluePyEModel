@@ -50,6 +50,7 @@ class ExtractEFeatures(WorkflowTask):
             the resting membrane potential. Only used when db_api is 'singlecell'.
         validation_protocols (dict): Of the form {"ecodename": [targets]}. Only used
             when db_api is 'singlecell'.
+        plot (bool): True to plot the traces and the efeatures.
     """
 
     emodel = luigi.Parameter()
@@ -60,6 +61,7 @@ class ExtractEFeatures(WorkflowTask):
     name_Rin_protocol = luigi.Parameter(default=None)
     name_rmp_protocol = luigi.Parameter(default=None)
     validation_protocols = luigi.DictParameter(default=None)
+    plot = BoolParameterCustom(default=False)
 
     def run(self):
         """"""
@@ -73,6 +75,7 @@ class ExtractEFeatures(WorkflowTask):
             name_Rin_protocol=self.name_Rin_protocol,
             name_rmp_protocol=self.name_rmp_protocol,
             validation_protocols=self.validation_protocols,
+            plot=self.plot,
         )
 
     def output(self):

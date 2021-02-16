@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import tarfile
 import time
+from multiprocessing import pool
 from pathlib import Path
 
 from git import Repo
@@ -55,7 +56,7 @@ class NoDaemonProcess(multiprocessing.Process):
     daemon = property(_get_daemon, _set_daemon)
 
 
-class NestedPool(multiprocessing.pool.Pool):  # pylint: disable=abstract-method
+class NestedPool(pool.Pool):  # pylint: disable=abstract-method
     """Class that represents a MultiProcessing nested pool"""
 
     Process = NoDaemonProcess
