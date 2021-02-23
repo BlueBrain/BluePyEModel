@@ -179,7 +179,7 @@ class PostgreSQL_API(DatabaseAPI):
                 if isinstance(entry[k], dict):
                     entry[k] = Json(entry[k])
 
-            replace_keys_values = tuple([entry[rk] for rk in replace_keys])
+            replace_keys_values = tuple(entry[rk] for rk in replace_keys)
 
             # Check of entry is in table
             query_exist = "SELECT 1 FROM {}_{} WHERE ".format(self.project_name, table)
@@ -915,7 +915,7 @@ class PostgreSQL_API(DatabaseAPI):
 
         morphology_definition = self.fetch(
             table="morphologies",
-            conditions={"name": tuple([m["name"] for m in morphologies.to_dict(orient="records")])},
+            conditions={"name": tuple(m["name"] for m in morphologies.to_dict(orient="records"))},
         )
         morphology_definition = morphology_definition.to_dict(orient="records")
 

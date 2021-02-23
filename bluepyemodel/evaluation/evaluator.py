@@ -517,7 +517,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
 
                     stim_amp = protocol.amplitude
 
-                    if "stim_start" and "stim_end" in f:
+                    if "stim_start" in f and "stim_end" in f:
                         stim_start = f["stim_start"]
                         stim_end = f["stim_end"]
                     else:

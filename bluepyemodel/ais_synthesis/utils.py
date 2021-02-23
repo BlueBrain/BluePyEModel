@@ -34,7 +34,7 @@ def _filter_features(combo, features=None, method="ignore"):
                     if feat in key.split("."):
                         del combo["scores"][key]
             elif method == "keep":
-                if not any([feat in key.split(".") for feat in features]):
+                if not any(feat in key.split(".") for feat in features):
                     if key in combo["scores"]:
                         del combo["scores"][key]
     return combo

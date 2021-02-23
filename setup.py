@@ -27,7 +27,7 @@ setup(
         "gitpython",
         "luigi",
         "bluepyopt @ git+http://github.com/BlueBrain/BluePyOpt@CMA_clean#egg=bluepyopt",
-        "bluepyefe @ git+ssh://bbpcode.epfl.ch/analysis/BluePyEfe@BPE2#egg=bluepyefe",
+        "bluepyefe @ git+http://github.com/BlueBrain/BluePyEfe@BPE2#egg=bluepyefe",
         "efel",
         "psycopg2",
         "nexusforge",
@@ -35,7 +35,7 @@ setup(
         "neuron",
         "morph_tool",
         "luigi-tools",
-        "BluePyParallel",
+        "bluepyparallel @ git+ssh://bbpcode.epfl.ch/cells/BluePyParallel#egg=bluepyparallel"
     ],
     packages=find_packages(),
     entry_points={

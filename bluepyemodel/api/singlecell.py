@@ -47,7 +47,6 @@ class Singlecell_API(DatabaseAPI):
         else:
             self.final_path = Path(final_path)
 
-        self.fix_final_compatibility()
         self._seeds = {}
 
     def set_seed(self, emodel, seed, species=None):
@@ -82,33 +81,6 @@ class Singlecell_API(DatabaseAPI):
 
         with open(self.final_path, "w+") as fp:
             json.dump(final, fp, indent=2)
-
-    def fix_final_compatibility(self):
-        """ Ensures that the base emodel name exists in each entry (for compatibility)"""
-        if self.final_path.exists():
-
-            final = self.get_final()
-
-            for emodel in final:
-                if "emodel" not in final[emodel]:
-
-                    splitted = emodel.split("_")
-
-                    if splitted[-1].isnumeric():
-                        seed = int(splitted[-1])
-                        emodel = "_".join(emodel.split("_")[:-1])
-                    else:
-                        seed = None
-
-                    if seed and "seed" not in final[emodel]:
-                        final[emodel]["seed"] = seed
-
-                    final[emodel]["emodel"] = str(emodel)
-
-            self.save_final(final)
-
-        else:
-            logger.warning("%s does not exist.", self.final_path)
 
     def _get_json(self, emodel, recipe_entry):
         """Helper function to load a  json using path in recipe."""
