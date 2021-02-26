@@ -16,7 +16,7 @@ from bluepyemodel.emodel_pipeline.utils import read_checkpoint
 from bluepyemodel.evaluation import evaluator
 from bluepyemodel.evaluation import model
 from bluepyemodel.optimisation import optimisation
-from bluepyemodel.validation import validation
+from bluepyemodel.validation import validation_functions as validation
 
 logger = logging.getLogger(__name__)
 
@@ -222,6 +222,52 @@ def get_responses(to_run):
     eva.cell_model.unfreeze(params)
 
     return eva.run_protocols(protocols=eva.fitness_protocols.values(), param_values=params)
+
+
+def compute_responses(
+    emodel_db,
+    emodel,
+    species,
+    cell_evaluator,
+    map_function,
+):
+    """Compute the responses of the emodel to the optimisation and validation protocols.
+
+    Args:
+        emodel_db (DatabaseAPI): API used to access the database.
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        cell_evaluator (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
+        map_function (map): used to parallelize the evaluation of the
+            individual in the population.
+    Returns:
+        emodels (list): list of emodels.
+    """
+
+    emodels = emodel_db.get_emodels([emodel], species)
+    if emodels:
+
+        logger.info("In compute_responses, %s emodels found to evaluate.", len(emodels))
+
+        to_run = []
+        for mo in emodels:
+            to_run.append(
+                {
+                    "evaluator": copy.deepcopy(cell_evaluator),
+                    "parameters": mo["parameters"],
+                }
+            )
+
+        responses = list(map_function(get_responses, to_run))
+
+        for mo, r in zip(emodels, responses):
+            mo["responses"] = r
+
+    else:
+        logger.warning("In compute_responses, no emodel for %s %s", emodel, species)
+
+    return emodels
 
 
 def update_gitignore():
@@ -769,63 +815,55 @@ class EModel_pipeline:
 
     def compute_responses(
         self,
+        cell_evaluator=None,
+        map_function=None,
         stochasticity=False,
         copy_mechanisms=False,
         compile_mechanisms=False,
         additional_protocols=None,
     ):
-        """Compute the responses of the emodel to the optimisation and validation protocols.
+        """Wrapper around compute_responses.
+
+        Compute the responses of the emodel to the optimisation and validation protocols.
 
         Args:
+            cell_evaluator (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
+            map_function (map): used to parallelize the evaluation of the
+                individual in the population.
             stochasticity (bool): should channels behave stochastically if they can.
             copy_mechanisms (bool): should the mod files be copied in the local
                 mechanisms_dir directory.
             compile_mechanisms (bool): should the mod files be compiled.
             additional_protocols (dict): definition of supplementary protocols. See
                 examples/optimisation for usage.
-
         Returns:
             emodels (list): list of emodels.
         """
+        # create evaluator if not given
+        if cell_evaluator is None:
+            if additional_protocols is None:
+                additional_protocols = {}
 
-        map_function = ipyparallel_map_function("USEIPYP")
+            cell_evaluator = self.get_evaluator(
+                stochasticity=stochasticity,
+                copy_mechanisms=copy_mechanisms,
+                compile_mechanisms=compile_mechanisms,
+                include_validation_protocols=True,
+                additional_protocols=additional_protocols,
+            )
 
-        if additional_protocols is None:
-            additional_protocols = {}
-
-        _evaluator = self.get_evaluator(
-            stochasticity=stochasticity,
-            copy_mechanisms=copy_mechanisms,
-            compile_mechanisms=compile_mechanisms,
-            include_validation_protocols=True,
-            additional_protocols=additional_protocols,
-        )
+        if map_function is None:
+            map_function = ipyparallel_map_function("USEIPYP")
 
         db = self.connect_db()
 
-        emodels = db.get_emodels([self.emodel], self.species)
-        if emodels:
-
-            logger.info("In compute_responses, %s emodels found to evaluate.", len(emodels))
-
-            to_run = []
-            for mo in emodels:
-                to_run.append(
-                    {
-                        "evaluator": copy.deepcopy(_evaluator),
-                        "parameters": mo["parameters"],
-                    }
-                )
-
-            responses = list(map_function(get_responses, to_run))
-
-            for mo, r in zip(emodels, responses):
-                mo["responses"] = r
-
-        else:
-            logger.warning("In compute_responses, no emodel for %s %s", self.emodel, self.species)
-
-        return emodels
+        return compute_responses(
+            db,
+            self.emodel,
+            self.species,
+            cell_evaluator,
+            map_function,
+        )
 
     def validate(
         self,
@@ -856,20 +894,15 @@ class EModel_pipeline:
             include_validation_protocols=True,
         )
 
-        emodels = self.compute_responses(
-            stochasticity=stochasticity,
-            copy_mechanisms=copy_mechanisms,
-            compile_mechanisms=compile_mechanisms,
-            additional_protocols=None,
-        )
+        emodels = self.compute_responses(_evaluator)
 
         db = self.connect_db()
 
         if emodels:
 
             if validation_function is None:
-                logger.warning("Validation function not  specified, will use max_score.")
-                validation_function = validation.max_score
+                logger.warning("Validation function not  specified, will use validate_max_score.")
+                validation_function = validation.validate_max_score
 
             name_validation_protocols = db.get_name_validation_protocols(self.emodel, self.species)
 
@@ -938,12 +971,7 @@ class EModel_pipeline:
             additional_protocols=additional_protocols,
         )
 
-        emodels = self.compute_responses(
-            stochasticity=stochasticity,
-            copy_mechanisms=copy_mechanisms,
-            compile_mechanisms=compile_mechanisms,
-            additional_protocols=additional_protocols,
-        )
+        emodels = self.compute_responses(_evaluator)
 
         stimuli = _evaluator.fitness_protocols["main_protocol"].subprotocols()
 

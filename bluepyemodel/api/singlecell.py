@@ -285,6 +285,17 @@ class Singlecell_API(DatabaseAPI):
         with open(recipes_path, "r") as f:
             return json.load(f)[emodel]
 
+    def get_model_name_for_final(self, emodel, githash, seed):
+        """Return model name used as key in final.json."""
+        if githash:
+            return "{}__{}__{}".format(emodel, githash, seed)
+
+        logger.warning(
+            "Githash is %s. It is strongly advised to use githash in the future.",
+            githash,
+        )
+        return "{}__{}".format(emodel, seed)
+
     def store_emodel(
         self,
         emodel,
@@ -317,14 +328,7 @@ class Singlecell_API(DatabaseAPI):
             "githash": str(githash),
         }
 
-        if githash:
-            model_name = "{}__{}__{}".format(emodel, githash, seed)
-        else:
-            logger.warning(
-                "Githash is %s. It is highly advise the use githash in the future.",
-                githash,
-            )
-            model_name = "{}__{}".format(emodel, seed)
+        model_name = self.get_model_name_for_final(emodel, githash, seed)
 
         final[model_name] = entry
 
@@ -673,11 +677,38 @@ class Singlecell_API(DatabaseAPI):
         )
         return features_exists and protocols_exists
 
-    def optimisation_state(self, emodel, checkpoint_dir, species=None, seed=1):
-        """Return the state of the opttimisation.
+    def optimisation_state(self, emodel, checkpoint_dir, species=None, seed=1, githash=""):
+        """Return the state of the optimisation.
 
         TODO: - should return three states: completed, in progress, empty
               - better management of checkpoints
         """
-        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{seed}.pkl"
+        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{githash}_{seed}.pkl"
         return checkpoint_path.is_file()
+
+    def has_best_model(self, emodel, seed, githash):
+        """Check if the best model has been stored."""
+        final = self.get_final()
+
+        model_name = self.get_model_name_for_final(emodel, githash, seed)
+
+        return model_name in final
+
+    def is_checked_by_validation(self, emodel, seed, githash):
+        """Check if the emodel with a given seed has been checked by Validation task."""
+        final = self.get_final()
+
+        model_name = self.get_model_name_for_final(emodel, githash, seed)
+
+        return final.get(model_name, {}).get("validation_fitness") is not None
+
+    def is_validated(self, emodel, githash, n_models_to_pass_validation):
+        """Check if the emodel is validated."""
+        n_validated = 0
+        final = self.get_final()
+
+        for _, entry in final.items():
+            if entry["githash"] == githash and entry["emodel"] == emodel and entry["validated"]:
+                n_validated += 1
+
+        return n_validated >= n_models_to_pass_validation

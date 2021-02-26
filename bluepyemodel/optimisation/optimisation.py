@@ -6,6 +6,7 @@ from pathlib import Path
 
 import bluepyopt
 
+from bluepyemodel.emodel_pipeline.utils import read_checkpoint
 from bluepyemodel.evaluation import model
 from bluepyemodel.evaluation.evaluator import create_evaluator
 
@@ -16,9 +17,9 @@ def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
     """Setup the bluepyopt optimiser.
 
     Args:
-        evaluator (CellEvaluator): evaluator used to compute the scores
+        evaluator (CellEvaluator): evaluator used to compute the scores.
         map_function (map): used to parallelize the evaluation of the
-            individual in the ppopulation
+            individual in the population.
         params (dict): optimization meta-parameters.
         optimizer (str): name of the optimiser, has to be "IBEA", "SO-CMA" or
             "MO-CMA".
@@ -123,20 +124,34 @@ def compile_mechs(mechanisms_dir):
         )
 
 
+def copy_and_compile_mechanisms(db, emodel, species, copy_mechanisms, mechanisms_dir, githash=""):
+    """Copy mechs if asked, and compile them."""
+    if githash:
+        raise Exception(
+            "Compile mechanisms and the use of githash are not compatible "
+            "yet. Please pre-compile the mechanisms and re-run with "
+            "compile_mechanisms=False."
+        )
+    if copy_mechanisms:
+        _, _, mechanism_names = db.get_parameters(emodel, species)
+        mechanism_paths = db.get_mechanism_paths(mechanism_names)
+        if not (mechanism_paths):
+            raise Exception("No mechanisms paths for emodel %s" % emodel)
+        copy_mechs(mechanism_paths, mechanisms_dir)
+
+    compile_mechs(mechanisms_dir)
+
+
 def _get_evaluator_from_db(
     emodel,
     species,
     db,
-    mechanisms_dir=None,
     morphology_modifiers=None,
     stochasticity=False,
-    copy_mechanisms=False,
-    compile_mechanisms=False,
     include_validation_protocols=False,
     additional_protocols=None,
     optimisation_rules=None,
     timeout=600,
-    githash=None,
 ):
     """Create an evaluator for the emodel.
 
@@ -169,15 +184,8 @@ def _get_evaluator_from_db(
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
     """
-    if compile_mechanisms and githash:
-        raise Exception(
-            "Compile mechanisms and the use of githash are not compatible "
-            "yet. Please pre-compile the mechanisms and re-run with "
-            "compile_mechanisms=False."
-        )
-
     # Get the data
-    parameters, mechanisms, mechanism_names = db.get_parameters(emodel, species)
+    parameters, mechanisms, _ = db.get_parameters(emodel, species)
     if not (parameters) or not (mechanisms):
         raise Exception("No parameters for emodel %s" % emodel)
 
@@ -194,15 +202,6 @@ def _get_evaluator_from_db(
         raise Exception("No protocols for emodel %s" % emodel)
     if additional_protocols:
         protocols.update(additional_protocols)
-
-    if copy_mechanisms:
-        mechanism_paths = db.get_mechanism_paths(mechanism_names)
-        if not (mechanism_paths):
-            raise Exception("No mechanisms paths for emodel %s" % emodel)
-        copy_mechs(mechanism_paths, mechanisms_dir)
-
-    if compile_mechanisms:
-        compile_mechs(mechanisms_dir)
 
     cell_models = model.create_cell_models(
         emodel=emodel,
@@ -227,11 +226,8 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     emodel,
     seed,
     species=None,
-    mechanisms_dir=None,
     morphology_modifiers=None,
     stochasticity=False,
-    copy_mechanisms=False,
-    compile_mechanisms=False,
     include_validation_protocols=False,
     optimisation_rules=None,
     timeout=None,
@@ -241,29 +237,94 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     max_ngen=1000,
     checkpoint_dir=None,
     continue_opt=False,
+    githash="",
 ):
     emodel_db.set_seed(emodel, seed, species=species)
-    _evaluator = _get_evaluator_from_db(
+    cell_evaluator = _get_evaluator_from_db(
         emodel=emodel,
         species=species,
         db=emodel_db,
-        mechanisms_dir=mechanisms_dir,
         morphology_modifiers=morphology_modifiers,
         stochasticity=stochasticity,
-        copy_mechanisms=copy_mechanisms,
-        compile_mechanisms=compile_mechanisms,
         include_validation_protocols=include_validation_protocols,
         optimisation_rules=optimisation_rules,
         timeout=timeout,
     )
 
-    opt = setup_optimizer(_evaluator, mapper, opt_params, optimizer=optimizer)
+    # turn FrozenOrderedDict into Dict to be able to append seed data
+    opt_params = dict(opt_params)
+    opt_params["seed"] = seed
+    opt = setup_optimizer(cell_evaluator, mapper, opt_params, optimizer=optimizer)
 
-    checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{seed}.pkl"
+    checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{githash}_{seed}.pkl"
 
     run_optimization(
         optimizer=opt,
         checkpoint_path=checkpoint_path,
         max_ngen=max_ngen,
         continue_opt=continue_opt,
+    )
+
+
+def store_best_model(
+    emodel_db,
+    emodel,
+    species,
+    seed,
+    stochasticity=False,
+    include_validation_protocols=False,
+    optimisation_rules=None,
+    optimizer="MO-CMA",
+    checkpoint_dir="./checkpoints",
+    githash="",
+):
+    """Store the best model from an optimization. Reads a checkpoint file generated
+        by BluePyOpt and store the best individual of the hall of fame.
+
+    Args:
+        emodel_db (DatabaseAPI): API used to access the database.
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        seed (int): seed used in the optimisation.
+        stochasticity (bool): should channels behave stochastically if they can.
+        include_validation_protocols (bool): should the validation protocols
+            and validation efeatures be added to the evaluator.
+        optimisation_rules (list): list of Rules. TO DEPRECATE: should be done
+            in the api.
+        optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
+            "MO-CMA".
+        checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
+        githash (str): if provided, the pipeline will work in the directory
+                working_dir/run/githash. Needed when continuing work or resuming
+                optimisations.
+    """
+    cell_evaluator = _get_evaluator_from_db(
+        emodel=emodel,
+        species=species,
+        db=emodel_db,
+        stochasticity=stochasticity,
+        include_validation_protocols=include_validation_protocols,
+        optimisation_rules=optimisation_rules,  # for fitness calculator
+    )
+
+    checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{githash}_{seed}.pkl"
+    run = read_checkpoint(checkpoint_path)
+
+    best_model = run["halloffame"][0]
+    feature_names = [obj.name for obj in cell_evaluator.fitness_calculator.objectives]
+    param_names = list(cell_evaluator.param_names)
+
+    scores = dict(zip(feature_names, best_model.fitness.values))
+    params = dict(zip(param_names, best_model))
+
+    emodel_db.store_emodel(
+        emodel,
+        scores,
+        params,
+        optimizer_name=optimizer,
+        seed=seed,
+        githash=githash,
+        validated=False,
+        species=species,
     )

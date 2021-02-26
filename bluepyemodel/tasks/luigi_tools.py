@@ -61,6 +61,10 @@ class WorkflowTarget(luigi.Target, ABC):
         self.emodel_db = api.get_db(EmodelAPIConfig().api, **EmodelAPIConfig().api_args)
 
 
+class WorkflowWrapperTask(WorkflowTask, luigi.WrapperTask):
+    """Base wrapper class with global parameters."""
+
+
 class BoolParameterCustom(luigi.BoolParameter):
     """Class to make luigi BoolParameter compatible with luigi-tools's copy-params."""
 
@@ -71,6 +75,48 @@ class BoolParameterCustom(luigi.BoolParameter):
         if value == _no_default_value:
             return _no_default_value
         return self.normalize(value)
+
+    def parse(self, val):
+        """
+        Parses a ``bool`` from the string, matching 'true' or 'false' ignoring case.
+        """
+        if val == _no_default_value:
+            return _no_default_value
+        return super().parse(val)
+
+
+class ListParameterCustom(luigi.ListParameter):
+    """Class to make luigi ListParameter compatible with luigi-tools's copy-params.
+
+    When a class that has copy-params is yielded, this class should replace luigi.ListParameter.
+    """
+
+    def parse(self, x):
+        """
+        Parse an individual value from the input.
+
+        Do not parse if value is None or _no_default_value
+
+        :param str x: the value to parse.
+        :return: the parsed value.
+        """
+        if x is None:
+            return None
+        if x == _no_default_value:
+            return _no_default_value
+        return super().parse(x)
+
+    def serialize(self, x):
+        """
+        Opposite of :py:meth:`parse`.
+
+        Converts the value ``x`` to a string unless x is _no_default_value.
+
+        :param x: the value to serialize.
+        """
+        if x == _no_default_value:
+            return _no_default_value
+        return super().serialize(x)
 
 
 #################

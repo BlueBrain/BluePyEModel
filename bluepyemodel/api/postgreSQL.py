@@ -999,7 +999,12 @@ class PostgreSQL_API(DatabaseAPI):
         return flag_hold and flag_thresh and present_features / tot_features > 0.8
 
     def optimisation_state(
-        self, emodel, checkpoint_dir, species=None, seed=1
+        self,
+        emodel,
+        checkpoint_dir,
+        species=None,
+        seed=1,
+        githash="",
     ):  # pylint: disable=unused-argument
         """Return the state of the opttimisation.
 

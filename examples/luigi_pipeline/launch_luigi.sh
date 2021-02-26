@@ -1,5 +1,3 @@
-python write_config_dict.py
-
 # luigi --module bluepyemodel.tasks.emodel_creation.optimisation ExtractEFeatures --local-scheduler
 
 # export IPYTHONDIR=${PWD}/.ipython
@@ -10,4 +8,4 @@ python write_config_dict.py
 # sleep 5
 # srun ipengine --profile=${IPYTHON_PROFILE} --timeout=1000  &
 
-luigi --module bluepyemodel.tasks.emodel_creation.optimisation Optimize --local-scheduler
+luigi --module bluepyemodel.tasks.emodel_creation.optimisation EModelCreation --emodel=L5PC --species=rat --seed=11 --local-scheduler

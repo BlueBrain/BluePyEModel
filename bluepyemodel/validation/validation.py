@@ -1,33 +1,117 @@
-"""Validation functions."""
+"""Validate function."""
 
 import logging
 
-import numpy
+from bluepyemodel.emodel_pipeline.emodel_pipeline import compute_responses
+from bluepyemodel.optimisation import _get_evaluator_from_db
+from bluepyemodel.validation import validation_functions
 
 logger = logging.getLogger(__name__)
 
 
-def max_score(model, threshold=5.0, validation_protocols_only=False):
-    """ Decides if a models passes validation or not."""
+def validate(
+    emodel_db,
+    emodel,
+    species,
+    mapper,
+    validation_function=None,
+    stochasticity=False,
+    morphology_modifiers=None,
+    additional_protocols=None,
+    threshold=5.0,
+    validation_protocols_only=False,
+):
+    """Compute the scores and traces for the optimisation and validation
+    protocols and perform validation.
 
-    if validation_protocols_only:
-        if max(model["scores_validation"].values()) < threshold:
-            return True
-    else:
-        if max(model["scores"].values()) < threshold:
-            return True
+    Args:
+        emodel_db (DatabaseAPI): API used to access the database.
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        mapper (map): used to parallelize the evaluation of the
+            individual in the population.
+        validation_function (str): function used to decide if a model
+            passes validation or not. Should rely on emodel['scores'] and
+            emodel['scores_validation']. See bluepyemodel/validation for examples.
+            Should be a function name in bluepyemodel.validation.validation_functions
+        stochasticity (bool): should channels behave stochastically if they can.
+        copy_mechanisms (bool): should the mod files be copied in the local
+            mechanisms_dir directory.
+        compile_mechanisms (bool): should the mod files be compiled.
+        mechanisms_dir (str): path of the directory in which the mechanisms
+            will be copied and/or compiled. It has to be a subdirectory of
+            working_dir.
+        morphology_modifiers (list): list of python functions that will be
+            applied to all the morphologies.
+        additional_protocols (dict): definition of supplementary protocols. See
+            examples/optimisation for usage.
+        threshold (float): threshold under which the validation function returns True.
+        validation_protocols_only (bool): True to only use validation protocols
+            during validation.
 
-    return False
+    Returns:
+        emodels (list): list of emodels.
+    """
+    if additional_protocols is None:
+        additional_protocols = {}
 
+    cell_evaluator = _get_evaluator_from_db(
+        emodel,
+        species,
+        emodel_db,
+        stochasticity=stochasticity,
+        morphology_modifiers=morphology_modifiers,
+        include_validation_protocols=True,
+        additional_protocols=additional_protocols,
+    )
 
-def mean_score(model, threshold=5.0, validation_protocols_only=False):
-    """ Decides if a models passes validation or not."""
+    emodels = compute_responses(
+        emodel_db,
+        emodel,
+        species,
+        cell_evaluator,
+        mapper,
+    )
 
-    if validation_protocols_only:
-        if numpy.mean(model["scores_validation"].values()) < threshold:
-            return True
-    else:
-        if numpy.mean(model["scores"].values()) < threshold:
-            return True
+    if emodels:
 
-    return False
+        if validation_function:
+            validation_function = getattr(validation_functions, validation_function)
+        else:
+            logger.warning("Validation function not  specified, will use validate_max_score.")
+            validation_function = validation_functions.validate_max_score
+
+        name_validation_protocols = emodel_db.get_name_validation_protocols(emodel, species)
+
+        logger.info("In validate, %s emodels found to validate.", len(emodels))
+
+        for mo in emodels:
+
+            mo["scores"] = cell_evaluator.fitness_calculator.calculate_scores(mo["responses"])
+
+            mo["scores_validation"] = {}
+            for feature_names, score in mo["scores"].items():
+                for p in name_validation_protocols:
+                    if p in feature_names:
+                        mo["scores_validation"][feature_names] = score
+
+            # turn bool_ into bool to be json serializable
+            validated = bool(validation_function(mo, threshold, validation_protocols_only))
+
+            emodel_db.store_emodel(
+                emodel=emodel,
+                species=species,
+                scores=mo["scores"],
+                params=mo["parameters"],
+                optimizer_name=mo["optimizer"],
+                seed=mo["seed"],
+                githash=mo["githash"],
+                validated=validated,
+                scores_validation=mo["scores_validation"],
+            )
+
+        return emodels
+
+    logger.warning("In compute_scores, no emodel for %s %s", emodel, species)
+    return []

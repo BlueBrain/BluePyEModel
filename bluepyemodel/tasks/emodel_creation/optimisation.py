@@ -1,19 +1,27 @@
 """Luigi tasks for emodel optimisation."""
 import logging
+from pathlib import Path
 
 import luigi
+from luigi_tools.task import ParamRef
+from luigi_tools.task import copy_params
 
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
+from bluepyemodel.optimisation import copy_and_compile_mechanisms
 from bluepyemodel.optimisation import setup_and_run_optimisation
+from bluepyemodel.optimisation import store_best_model
+from bluepyemodel.tasks.emodel_creation.config import OptimizeConfig
 from bluepyemodel.tasks.luigi_tools import BoolParameterCustom
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
+from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
+from bluepyemodel.validation.validation import validate
 
 logger = logging.getLogger(__name__)
 
 
 class EfeaturesProtocolsTarget(WorkflowTarget):
-    """Target to check if efeatures and protocols are present in the postgreSQL database."""
+    """Target to check if efeatures and protocols are present in the database."""
 
     def __init__(self, emodel, species=None):
         """Constructor.
@@ -40,8 +48,6 @@ class ExtractEFeatures(WorkflowTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         species (str): name of the species.
-        config_dict (dict): BluePyEfe configuration dictionnary. Only required if
-            db_api is 'singlecell'
         threshold_nvalue_save (int): lower bounds of the number of values required
             to save an efeature.
         name_Rin_protocol (str): name of the protocol that should be used to compute
@@ -57,7 +63,6 @@ class ExtractEFeatures(WorkflowTask):
     species = luigi.Parameter(default=None)
 
     threshold_nvalue_save = luigi.IntParameter(default=1)
-    config_dict = luigi.Parameter(default=None)
     name_Rin_protocol = luigi.Parameter(default=None)
     name_rmp_protocol = luigi.Parameter(default=None)
     validation_protocols = luigi.DictParameter(default=None)
@@ -83,8 +88,43 @@ class ExtractEFeatures(WorkflowTask):
         return EfeaturesProtocolsTarget(self.emodel, species=self.species)
 
 
+class CompileMechanisms(WorkflowTask):
+    """Luigi wrapper for optimisation.copy_and_compile_mechs
+
+    Parameters:
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        mechanisms_dir (str): path of the directory in which the mechanisms
+            will be copied and/or compiled. It has to be a subdirectory of
+            working_dir.
+        copy_mechanisms (bool): should the mod files be copied in the local
+            mechanisms_dir directory.
+    """
+
+    emodel = luigi.Parameter()
+    species = luigi.Parameter(default=None)
+    mechanisms_dir = luigi.Parameter(default="mechanisms")
+    copy_mechanisms = BoolParameterCustom(default=False)
+
+    def run(self):
+        """"""
+        copy_and_compile_mechanisms(
+            self.emodel_db,
+            self.emodel,
+            self.species,
+            self.copy_mechanisms,
+            self.mechanisms_dir,
+            githash="",
+        )
+
+    def output(self):
+        """"""
+        return luigi.LocalTarget(Path("x86_64") / "special")
+
+
 class OptimisationTarget(WorkflowTarget):
-    """Target to check if an optimisation is present in the postgreSQL database."""
+    """Target to check if an optimisation is present in the database."""
 
     def __init__(
         self,
@@ -112,10 +152,27 @@ class OptimisationTarget(WorkflowTarget):
     def exists(self):
         """Check if the model is completed."""
         return self.emodel_db.optimisation_state(
-            self.emodel, self.checkpoint_dir, species=self.species, seed=self.seed
+            self.emodel,
+            self.checkpoint_dir,
+            species=self.species,
+            seed=self.seed,
+            githash="",
         )
 
 
+@copy_params(
+    mechanisms_dir=ParamRef(OptimizeConfig),
+    morphology_modifiers=ParamRef(OptimizeConfig),
+    max_ngen=ParamRef(OptimizeConfig),
+    stochasticity=ParamRef(OptimizeConfig),
+    copy_mechanisms=ParamRef(OptimizeConfig),
+    compile_mechanisms=ParamRef(OptimizeConfig),
+    opt_params=ParamRef(OptimizeConfig),
+    optimizer=ParamRef(OptimizeConfig),
+    checkpoint_dir=ParamRef(OptimizeConfig),
+    continue_opt=ParamRef(OptimizeConfig),
+    timeout=ParamRef(OptimizeConfig),
+)
 class Optimize(WorkflowTask):
     """Luigi wrapper for emodel_pipeline.emodel_creation.optimize
 
@@ -124,46 +181,26 @@ class Optimize(WorkflowTask):
             under which the configuration data are stored.
         species (str): name of the species.
         seed (int): seed used in the optimisation.
-        mechanisms_dir (str): path of the directory in which the mechanisms
-            will be copied and/or compiled. It has to be a subdirectory of
-            working_dir.
-        morphology_modifiers (list): list of python functions that will be
-            applied to all the morphologies.
-        max_ngen (int): maximum number of generations of the evolutionary process.
-        stochasticity (bool): should channels behave stochastically if they can.
-        copy_mechanisms (bool): should the mod files be copied in the local
-            mechanisms_dir directory.
-        compile_mechanisms (bool): should the mod files be compiled.
-        opt_params (dict): optimisation parameters. Keys have to match the
-            optimizer's call.
-        optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
-            "MO-CMA".
-        checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
-        continue_opt (bool): should the optimization restart from a previously
-            created checkpoint file.
-        timeout (float): duration (in second) after which the evaluation of a
-            protocol will be interrupted.
     """
 
-    emodel = luigi.Parameter()
+    # if default not set, crashes when parameters are read by luigi_tools.copy_params
+    emodel = luigi.Parameter(default=None)
     species = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
 
-    mechanisms_dir = luigi.Parameter(default="mechanisms")
-    morphology_modifiers = luigi.ListParameter(default=None)
-    max_ngen = luigi.IntParameter(default=1000)
-    stochasticity = BoolParameterCustom(default=False)
-    copy_mechanisms = BoolParameterCustom(default=False)
-    compile_mechanisms = BoolParameterCustom(default=False)
-    opt_params = luigi.DictParameter(default=None)
-    optimizer = luigi.Parameter(default="MO-CMA")
-    checkpoint_dir = luigi.Parameter("./checkpoints/")
-    continue_opt = BoolParameterCustom(default=False)
-    timeout = luigi.IntParameter(default=600)
-
     def requires(self):
         """"""
-        return ExtractEFeatures(emodel=self.emodel, species=self.species)
+        targets = [ExtractEFeatures(emodel=self.emodel, species=self.species)]
+        if self.compile_mechanisms:
+            targets.append(
+                CompileMechanisms(
+                    emodel=self.emodel,
+                    species=self.species,
+                    mechanisms_dir=self.mechanisms_dir,
+                    copy_mechanisms=self.copy_mechanisms,
+                )
+            )
+        return targets
 
     def run(self):
         """"""
@@ -173,11 +210,8 @@ class Optimize(WorkflowTask):
             self.emodel,
             self.seed,
             species=self.species,
-            mechanisms_dir=self.mechanisms_dir,
             morphology_modifiers=self.morphology_modifiers,
             stochasticity=self.stochasticity,
-            copy_mechanisms=self.copy_mechanisms,
-            compile_mechanisms=self.compile_mechanisms,
             include_validation_protocols=False,
             optimisation_rules=None,
             timeout=self.timeout,
@@ -187,6 +221,7 @@ class Optimize(WorkflowTask):
             max_ngen=self.max_ngen,
             checkpoint_dir=self.checkpoint_dir,
             continue_opt=self.continue_opt,
+            githash="",
         )
 
     def output(self):
@@ -197,3 +232,264 @@ class Optimize(WorkflowTask):
             checkpoint_dir=self.checkpoint_dir,
             seed=self.seed,
         )
+
+
+class BestModelTarget(WorkflowTarget):
+    """Check if the best model from optimisation is present in the database."""
+
+    def __init__(
+        self,
+        emodel,
+        seed=1,
+    ):
+        """Constructor.
+
+        Args:
+           emodel (str): name of the emodel. Has to match the name of the emodel
+               under which the configuration data are stored.
+           seed (int): seed used in the optimisation.
+        """
+        super().__init__()
+
+        self.emodel = emodel
+        self.seed = seed
+
+    def exists(self):
+        """Check if the best model is stored."""
+        return self.emodel_db.has_best_model(emodel=self.emodel, seed=self.seed, githash="")
+
+
+class ValidationTarget(WorkflowTarget):
+    """Check if validation has been performed on the model.
+
+    Return True if Validation task has already been performed on the model,
+        even if the model is not validated.
+    """
+
+    def __init__(self, emodel, seed, batch_size):
+        """Constructor.
+
+        Args:
+           emodel (str): name of the emodel. Has to match the name of the emodel
+                under which the configuration data are stored.
+            seed (int): seed used in the optimisation.
+            batch_size (int): number of seeds to optimize at the same time before each validation.
+        """
+        super().__init__()
+
+        self.emodel = emodel
+        self.seed = seed
+        self.batch_size = batch_size
+
+    def exists(self):
+        """Check if the model is completed for all given seeds."""
+        checked_for_all_seeds = [
+            self.emodel_db.is_checked_by_validation(emodel=self.emodel, seed=seed, githash="")
+            for seed in range(self.seed, self.seed + self.batch_size)
+        ]
+        return all(checked_for_all_seeds)
+
+
+@copy_params(
+    stochasticity=ParamRef(OptimizeConfig),
+    copy_mechanisms=ParamRef(OptimizeConfig),
+    compile_mechanisms=ParamRef(OptimizeConfig),
+    mechanisms_dir=ParamRef(OptimizeConfig),
+    morphology_modifiers=ParamRef(OptimizeConfig),
+    optimizer=ParamRef(OptimizeConfig),
+    checkpoint_dir=ParamRef(OptimizeConfig),
+)
+class Validation(WorkflowTask):
+    """Luigi wrapper for store_best_model and validation.
+
+    Store best model is not a separate task, because it would create
+        tasks running in parallel and writing in the same file, which is prone to errors.
+
+    Parameters:
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        seed (int): seed used in the optimisation.
+        batch_size (int): number of seeds to optimize at the same time before each validation.
+        additional_protocols (dict): definition of supplementary protocols. See
+            examples/optimisation for usage.
+        threshold (float): threshold under which the validation function returns True.
+        validation_protocols_only (bool): True to only use validation protocols
+            during validation.
+        validation_function (str): function used to decide if a model
+            passes validation or not. Should rely on emodel['scores'] and
+            emodel['scores_validation']. See bluepyemodel/validation for examples.
+            Should be a function name in bluepyemodel.validation.validation_functions
+    """
+
+    emodel = luigi.Parameter()
+    species = luigi.Parameter(default="")
+    seed = luigi.IntParameter(default=42)
+    batch_size = luigi.IntParameter(default=1)
+    additional_protocols = luigi.DictParameter(default=None)
+    threshold = luigi.FloatParameter(default=5.0)
+    validation_protocols_only = BoolParameterCustom(default=False)
+    # default should be string and not None, because
+    # when this task is yielded, the default is serialized
+    # and None becomes 'None'
+    validation_function = luigi.Parameter(default="")
+
+    def requires(self):
+        """"""
+        to_run = []
+        if self.compile_mechanisms:
+            to_run.append(
+                CompileMechanisms(
+                    emodel=self.emodel,
+                    species=self.species,
+                    mechanisms_dir=self.mechanisms_dir,
+                    copy_mechanisms=self.copy_mechanisms,
+                )
+            )
+        for seed in range(self.seed, self.seed + self.batch_size):
+            to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
+        return to_run
+
+    def run(self):
+        """"""
+        for seed in range(self.seed, self.seed + self.batch_size):
+            store_best_model(
+                self.emodel_db,
+                self.emodel,
+                self.species,
+                seed,
+                stochasticity=self.stochasticity,
+                include_validation_protocols=False,
+                optimisation_rules=None,
+                optimizer=self.optimizer,
+                checkpoint_dir=self.checkpoint_dir,
+                githash="",
+            )
+
+        mapper = self.get_mapper()
+        validate(
+            self.emodel_db,
+            self.emodel,
+            self.species,
+            mapper,
+            validation_function=self.validation_function,
+            stochasticity=self.stochasticity,
+            morphology_modifiers=self.morphology_modifiers,
+            additional_protocols=self.additional_protocols,
+            threshold=self.threshold,
+            validation_protocols_only=self.validation_protocols_only,
+        )
+
+    def output(self):
+        """"""
+        targets = []
+        for seed in range(self.seed, self.seed + self.batch_size):
+            targets.append(BestModelTarget(emodel=self.emodel, seed=seed))
+        targets.append(
+            ValidationTarget(
+                emodel=self.emodel,
+                seed=self.seed,
+                batch_size=self.batch_size,
+            )
+        )
+        return targets
+
+
+class EModelCreationTarget(WorkflowTarget):
+    """Check if the the model is validated for any seed."""
+
+    def __init__(self, emodel, n_models_to_pass_validation):
+        """Constructor.
+
+        Args:
+           emodel (str): name of the emodel. Has to match the name of the emodel
+               under which the configuration data are stored.
+            n_models_to_pass_validation (int): minimum number of models to pass validation
+                to consider the task as validated.
+        """
+        super().__init__()
+
+        self.emodel = emodel
+        self.n_models_to_pass_validation = n_models_to_pass_validation
+
+    def exists(self):
+        """Check if the model is completed."""
+        return self.emodel_db.is_validated(
+            emodel=self.emodel,
+            githash="",
+            n_models_to_pass_validation=self.n_models_to_pass_validation,
+        )
+
+
+class EModelCreation(WorkflowTask):
+    """Main Wrokflow Task. Creates an emodel.
+
+    Parameters:
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        seed (int): seed used in the optimisation.
+        batch_size (int): number of seeds to optimize at the same time before each validation.
+        max_n_batch (int): maximum number of batches. Used only if limit_batches is True.
+        limit_batches (bool): whether to limit the number of batches or not.
+        n_models_to_pass_validation (int): minimum number of models to pass validation
+            to consider the task as validated.
+    """
+
+    emodel = luigi.Parameter()
+    species = luigi.Parameter(default=None)
+    seed = luigi.IntParameter(default=1)
+    batch_size = luigi.IntParameter(default=10)
+    max_n_batch = luigi.IntParameter(default=10)
+    limit_batches = BoolParameterCustom(default=True)
+    n_models_to_pass_validation = luigi.IntParameter(default=1)
+
+    def run(self):
+        """Optimize e-models by batches of 10 until one is validated."""
+        seed = self.seed
+
+        while not self.output().exists():
+            # limit the number of batch
+            if self.limit_batches and seed > self.seed + self.max_n_batch * self.batch_size:
+                break
+
+            yield (
+                Validation(
+                    emodel=self.emodel,
+                    species=self.species,
+                    seed=seed,
+                    batch_size=self.batch_size,
+                )
+            )
+            seed += self.batch_size
+
+    def output(self):
+        """"""
+        return EModelCreationTarget(
+            emodel=self.emodel,
+            n_models_to_pass_validation=self.n_models_to_pass_validation,
+        )
+
+
+class OptimizeWrapper(WorkflowWrapperTask):
+    """Luigi wrapper for launching multiple seeds to optimize.
+
+    Parameters:
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        seed (int): seed used in the optimisation.
+        batch_size (int): number of seeds to optimize at the same time before each validation.
+    """
+
+    emodel = luigi.Parameter()
+    species = luigi.Parameter(default=None)
+    seed = luigi.IntParameter(default=42)
+    batch_size = luigi.IntParameter(default=10)
+
+    def requires(self):
+        """"""
+        to_run = []
+        for seed in range(self.seed, self.seed + self.batch_size):
+            to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
+        return to_run
