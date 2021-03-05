@@ -274,8 +274,8 @@ def define_protocol(
                 location = NrnSecSomaDistanceCompLocation(
                     name=recording_definition["name"],
                     soma_distance=recording_definition["somadistance"],
-                    sec_index=recording_definition["sec_index"],
-                    sec_name=recording_definition["sec_name"],
+                    sec_index=recording_definition.get("sec_index", None),
+                    sec_name=recording_definition.get("sec_name", None),
                 )
 
             elif recording_definition["type"] == "nrnseclistcomp":
@@ -498,7 +498,6 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     features = []
 
     for name, definition in protocols_definition.items():
-
         protocol = define_protocol(name, definition, stochasticity)
 
         if definition["type"] == "StepThresholdProtocol":
@@ -517,7 +516,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
 
                     stim_amp = protocol.amplitude
 
-                    if "stim_start" and "stim_end" in f:
+                    if "stim_start" in f and "stim_end" in f:
                         stim_start = f["stim_start"]
                         stim_end = f["stim_end"]
                     else:

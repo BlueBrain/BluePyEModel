@@ -208,7 +208,7 @@ def save_mecombos(combos_df, output, with_scaler=True):
         combos_df = combos_df.rename(columns={"mtype": "fullmtype"})
     if "morph_name" not in combos_df.columns:
         combos_df = combos_df.rename(columns={"morphology": "morph_name"})
-    combos_df["layer"] = combos_df["layer"].astype(int)
+    combos_df["layer"] = combos_df["layer"].astype(str)
     combos_df = _add_combo_name(combos_df)
     columns = [
         "morph_name",
