@@ -106,7 +106,7 @@ def get_evaluator_from_db(
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
     """
-
+    db.set_emodel(emodel)
     parameters, mechanisms, _ = db.get_parameters()
     if not (parameters) or not (mechanisms):
         raise Exception("No parameters for emodel %s" % emodel)
@@ -125,16 +125,16 @@ def get_evaluator_from_db(
     if additional_protocols:
         protocols.update(additional_protocols)
 
-    cell_models = model.create_cell_models(
-        emodel=emodel,
-        morphologies=morphologies,
+    cell_model = model.create_cell_model(
+        name=emodel,
+        morphology=morphologies,
         mechanisms=mechanisms,
         parameters=parameters,
         morph_modifiers=morphology_modifiers,
     )
 
     return create_evaluator(
-        cell_model=cell_models[0],
+        cell_model=cell_model,
         protocols_definition=protocols,
         features_definition=efeatures,
         stochasticity=stochasticity,

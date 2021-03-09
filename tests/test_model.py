@@ -7,7 +7,7 @@ class TestModel(unittest.TestCase):
     def test_multi_locations(self):
 
         section = "alldend"
-        locations = model.multi_locations(section)
+        locations = model.multi_locations(section, {})
 
         self.assertIsInstance(locations[0], ephys.locations.NrnSeclistLocation)
         self.assertEqual(len(locations), 2)

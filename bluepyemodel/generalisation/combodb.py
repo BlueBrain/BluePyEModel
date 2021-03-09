@@ -125,7 +125,7 @@ def add_for_optimisation_flag(emodel_db, morphs_combos_df):
     morphs_combos_df["for_optimisation"] = False
     for emodel in morphs_combos_df.emodel.unique():
         emodel_db.emodel = "_".join(emodel.split("_")[:2])
-        morphology = emodel_db.get_morphologies()[0]["name"]
+        morphology = emodel_db.get_morphologies()["name"]
 
         if len(morphs_combos_df[morphs_combos_df["name"] == morphology]) == 0:
             raise Exception(f"Exemplar for {emodel} named {morphology} does not exist")

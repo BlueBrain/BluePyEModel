@@ -56,7 +56,6 @@ def compute_if_curve(cell_kwargs, params=None, absolute=True, folder="traces"):
     """Compute if curve of a cell.
 
     With absolute=False, current is in firaction of threshold currentt"""
-    print(cell_kwargs)
     cell = get_cell(**cell_kwargs)
 
     sim_params = dict(
@@ -97,35 +96,39 @@ def compute_if_curve(cell_kwargs, params=None, absolute=True, folder="traces"):
         name += cell_kwargs["morphology_name"]
     if "gid" in cell_kwargs:
         name += str(cell_kwargs["gid"])
+    Path(folder).mkdir(exist_ok=True, parents=True)
     plt.savefig(Path(folder) / f"{name}.pdf")
     plt.close()
     return res_df
 
 
-def _eval_if_curve(data, params=None, absolute=None):
+def _eval_if_curve(data, params=None, absolute=None, folder="traces"):
     """Wrapper for parallelisation."""
-    res = compute_if_curve(json.loads(data["cell_kwargs"]), params=params, absolute=absolute)
-    out = {
+    res = compute_if_curve(
+        json.loads(data["cell_kwargs"]), params=params, absolute=absolute, folder=folder
+    )
+    return {
         "current": json.dumps(res["current"].tolist()),
         "freq": json.dumps(res["freq"].tolist()),
     }
-    print("out", out)
-    return out
 
 
-def compute_if_curves(cell_df, params=None, absolute=True, parallel="multiprocessing"):
+def compute_if_curves(
+    cell_df, params=None, absolute=True, parallel="multiprocessing", folder="traces"
+):
     """Compute if curve of several cell in parallel.
 
-    With absolute=False, current is in firaction of threshold currentt.
+    With absolute=False, current is in fraction of threshold currentt.
     """
     new_columns = [["current", ""], ["freq", ""]]
     parallel_factory = init_parallel_factory(parallel)
-    _eval = partial(_eval_if_curve, params=params, absolute=absolute)
+    _eval = partial(_eval_if_curve, params=params, absolute=absolute, folder=folder)
     return evaluate(cell_df, _eval, new_columns, parallel_factory=parallel_factory)
 
 
 def plot_if_curves(result, folder="if_curves"):
     """Plot if curve."""
+    Path(folder).mkdir(exist_ok=True, parents=True)
     for gid in tqdm(result.index):
         df = pd.DataFrame()
         df["current"] = json.loads(result.loc[gid, "current"])

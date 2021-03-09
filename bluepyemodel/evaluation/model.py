@@ -2,7 +2,7 @@
 
 import collections
 import logging
-from pathlib import Path
+from importlib.machinery import SourceFileLoader
 
 import bluepyopt.ephys as ephys
 from bluepyopt.ephys.morphologies import NrnFileMorphology
@@ -13,7 +13,7 @@ from .modifiers import replace_axon_with_taper
 logger = logging.getLogger(__name__)
 
 
-def multi_locations(section_name):
+def multi_locations(section_name, definition):
     """Define a list of locations from a section names.
 
     Args:
@@ -23,34 +23,19 @@ def multi_locations(section_name):
         list: list of NrnSeclistLocation
 
     """
+    multiloc_map = {
+        "alldend": ["apical", "basal"],
+        "somadend": ["apical", "basal", "somatic"],
+        "somaxon": ["axonal", "somatic"],
+        "allact": ["apical", "basal", "somatic", "axonal"],
+    }
+    if "multiloc_map" in definition and definition["multiloc_map"] is not None:
+        multiloc_map.update(definition["multiloc_map"])
 
-    if section_name == "alldend":
-        seclist_locs = [
-            ephys.locations.NrnSeclistLocation("apical", seclist_name="apical"),
-            ephys.locations.NrnSeclistLocation("basal", seclist_name="basal"),
-        ]
-    elif section_name == "somadend":
-        seclist_locs = [
-            ephys.locations.NrnSeclistLocation("apical", seclist_name="apical"),
-            ephys.locations.NrnSeclistLocation("basal", seclist_name="basal"),
-            ephys.locations.NrnSeclistLocation("somatic", seclist_name="somatic"),
-        ]
-    elif section_name == "somaxon":
-        seclist_locs = [
-            ephys.locations.NrnSeclistLocation("axonal", seclist_name="axonal"),
-            ephys.locations.NrnSeclistLocation("somatic", seclist_name="somatic"),
-        ]
-    elif section_name == "allact":
-        seclist_locs = [
-            ephys.locations.NrnSeclistLocation("apical", seclist_name="apical"),
-            ephys.locations.NrnSeclistLocation("basal", seclist_name="basal"),
-            ephys.locations.NrnSeclistLocation("somatic", seclist_name="somatic"),
-            ephys.locations.NrnSeclistLocation("axonal", seclist_name="axonal"),
-        ]
-    else:
-        seclist_locs = [ephys.locations.NrnSeclistLocation(section_name, seclist_name=section_name)]
-
-    return seclist_locs
+    return [
+        ephys.locations.NrnSeclistLocation(sec, seclist_name=sec)
+        for sec in multiloc_map.get(section_name, [section_name])
+    ]
 
 
 def define_parameters(definitions):
@@ -76,67 +61,44 @@ def define_parameters(definitions):
     Returns:
         list: list of NrnParameter
     """
-
-    parameters = []
-
     # set distributions
     distributions = collections.OrderedDict()
     distributions["uniform"] = ephys.parameterscalers.NrnSegmentLinearScaler()
 
     distributions_definitions = definitions["distributions"]
     for distribution, definition in distributions_definitions.items():
-
-        if "parameters" in definition:
-            dist_param_names = definition["parameters"]
-        else:
-            dist_param_names = None
-
-        if "soma_ref_location" in definition:
-            soma_ref_location = definition["soma_ref_location"]
-        else:
-            soma_ref_location = 0.5
-
         distributions[distribution] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
             name=distribution,
             distribution=definition["fun"],
-            dist_param_names=dist_param_names,
-            soma_ref_location=soma_ref_location,
+            dist_param_names=definition.get("parameters", None),
+            soma_ref_location=definition.get("soma_ref_location", 0.5),
         )
 
     params_definitions = definitions["parameters"]
-    if "__comment" in params_definitions:
-        del params_definitions["__comment"]
+    params_definitions.pop("__comment", None)
 
+    parameters = []
     for sectionlist, params in params_definitions.items():
-
-        if sectionlist == "global":
-            seclist_locs = None
-            is_global = True
-            is_dist = False
-        elif "distribution_" in sectionlist:
-            is_dist = True
-            seclist_locs = None
-            is_global = False
-            dist_name = sectionlist.split("distribution_")[1]
-            dist = distributions[dist_name]
+        dist = None
+        seclist_locs = None
+        if "distribution_" in sectionlist:
+            dist = distributions[sectionlist.split("distribution_")[1]]
         else:
-            seclist_locs = multi_locations(sectionlist)
-            is_global = False
-            is_dist = False
+            seclist_locs = multi_locations(sectionlist, definitions)
 
         for param_config in params:
             param_name = param_config["name"]
 
             if isinstance(param_config["val"], (list, tuple)):
                 is_frozen = False
-                bounds = param_config["val"]
                 value = None
+                bounds = param_config["val"]
             else:
                 is_frozen = True
                 value = param_config["val"]
                 bounds = None
 
-            if is_global:
+            if sectionlist == "global":
                 parameters.append(
                     ephys.parameters.NrnGlobalParameter(
                         name=param_name,
@@ -146,7 +108,7 @@ def define_parameters(definitions):
                         value=value,
                     )
                 )
-            elif is_dist:
+            elif dist:
                 parameters.append(
                     ephys.parameters.MetaParameter(
                         name="%s.%s" % (param_name, sectionlist),
@@ -158,39 +120,30 @@ def define_parameters(definitions):
                     )
                 )
 
+            elif "dist" in param_config:
+                parameters.append(
+                    ephys.parameters.NrnRangeParameter(
+                        name="%s.%s" % (param_name, sectionlist),
+                        param_name=param_name,
+                        value_scaler=distributions[param_config["dist"]],
+                        value=value,
+                        bounds=bounds,
+                        frozen=is_frozen,
+                        locations=seclist_locs,
+                    )
+                )
             else:
-
-                if "dist" in param_config:
-                    dist = distributions[param_config["dist"]]
-                    use_range = True
-                else:
-                    dist = distributions["uniform"]
-                    use_range = False
-
-                if use_range:
-                    parameters.append(
-                        ephys.parameters.NrnRangeParameter(
-                            name="%s.%s" % (param_name, sectionlist),
-                            param_name=param_name,
-                            value_scaler=dist,
-                            value=value,
-                            bounds=bounds,
-                            frozen=is_frozen,
-                            locations=seclist_locs,
-                        )
+                parameters.append(
+                    ephys.parameters.NrnSectionParameter(
+                        name="%s.%s" % (param_name, sectionlist),
+                        param_name=param_name,
+                        value_scaler=distributions["uniform"],
+                        value=value,
+                        bounds=bounds,
+                        frozen=is_frozen,
+                        locations=seclist_locs,
                     )
-                else:
-                    parameters.append(
-                        ephys.parameters.NrnSectionParameter(
-                            name="%s.%s" % (param_name, sectionlist),
-                            param_name=param_name,
-                            value_scaler=dist,
-                            value=value,
-                            bounds=bounds,
-                            frozen=is_frozen,
-                            locations=seclist_locs,
-                        )
-                    )
+                )
 
     return parameters
 
@@ -219,14 +172,13 @@ def define_mechanisms(mechanisms_definition):
     Returns:
         list: list of NrnMODMechanism
     """
+    multiloc_map = {"multiloc_map": mechanisms_definition.get("multiloc_map", None)}
+    mechanisms_definition.pop("multiloc_map", None)
 
     mechanisms = []
     for sectionlist, channels in mechanisms_definition.items():
-
-        seclist_locs = multi_locations(sectionlist)
-
+        seclist_locs = multi_locations(sectionlist, multiloc_map)
         for channel, stoch in zip(channels["mech"], channels["stoch"]):
-
             mechanisms.append(
                 ephys.mechanisms.NrnMODMechanism(
                     name="%s.%s" % (channel, sectionlist),
@@ -269,6 +221,15 @@ def define_morphology(
         morph_modifiers_hoc = [replace_axon_hoc]  # TODO: check the hoc is correct
         logger.warning("No morphology modifiers provided, replace_axon_with_taper will be used.")
 
+    for i, morph_modifier in enumerate(morph_modifiers):
+        if isinstance(morph_modifier, str):
+            # pylint: disable=deprecated-method,no-value-for-parameter
+            modifier_module = SourceFileLoader("morph_modifier", morph_modifier).load_module()
+            morph_modifiers[i] = modifier_module.replace_axon
+
+        elif not callable(morph_modifier):
+            raise Exception("A morph modifier is not collable nor a str")
+
     return NrnFileMorphology(
         morphology_path,
         do_replace_axon=False,
@@ -281,7 +242,7 @@ def define_morphology(
 
 def create_cell_model(
     name,
-    morph_path,
+    morphology,
     mechanisms,
     parameters,
     morph_modifiers=None,
@@ -293,7 +254,7 @@ def create_cell_model(
 
     Args:
         name (str): name of the model
-        morph_path (str): path a morphology file
+        morphology (dict): morphology from emodel api .get_morphologies()
         mechanisms (dict): see docstring of function define_mechanisms for the
             format
         parameters (dict):  see docstring of function define_parameters for the
@@ -305,66 +266,23 @@ def create_cell_model(
         CellModel
     """
     morph = define_morphology(
-        str(morph_path),
+        morphology["path"],
         do_set_nseg=True,
         nseg_frequency=40,
         morph_modifiers=morph_modifiers,
         morph_modifiers_hoc=morph_modifiers_hoc,
     )
 
-    mechs = define_mechanisms(mechanisms)
-    params = define_parameters(parameters)
+    if seclist_names is None:
+        seclist_names = morphology.get("seclist_names", None)
+    if secarray_names is None:
+        secarray_names = morphology.get("secarray_names", None)
 
     return ephys.models.CellModel(
         name=name,
         morph=morph,
-        mechs=mechs,
-        params=params,
+        mechs=define_mechanisms(mechanisms),
+        params=define_parameters(parameters),
         seclist_names=seclist_names,
         secarray_names=secarray_names,
     )
-
-
-def create_cell_models(emodel, morphologies, mechanisms, parameters, morph_modifiers=None):
-    """Create cell models based on morphologies. The same mechanisms and
-    parameters will be used for all morphologies
-
-    Args:
-        emodel (str): name of the e-model
-        morphologies (list): list of morphologies of the format
-            morphologies = [{'name': morph_name, 'path': morph_path}]
-        mechanisms (dict): see docstring of function define_mechanisms for the
-            format
-        parameters (dict):  see docstring of function define_parameters for the
-            format
-        morph_modifiers (list): list of morphology modifiers
-    """
-    cell_models = []
-    for morphology in morphologies:
-
-        morph_name = morphology["name"]
-        morph_path = Path(morphology["path"])
-
-        seclist_names = None
-        if "seclist_names" in morphology:
-            seclist_names = morphology["seclist_names"]
-
-        secarray_names = None
-        if "secarray_names" in morphology:
-            secarray_names = morphology["secarray_names"]
-
-        name = "{}_{}".format(emodel, morph_name)
-
-        cell_models.append(
-            create_cell_model(
-                name=name,
-                morph_path=morph_path,
-                mechanisms=mechanisms,
-                parameters=parameters,
-                morph_modifiers=morph_modifiers,
-                seclist_names=seclist_names,
-                secarray_names=secarray_names,
-            )
-        )
-
-    return cell_models

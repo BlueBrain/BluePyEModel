@@ -2,6 +2,7 @@
 import logging
 
 import numpy
+from bluepyefe.recording import _set_efel_settings
 from bluepyopt.ephys.efeatures import eFELFeature
 from bluepyopt.ephys.evaluators import CellEvaluator
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
@@ -58,6 +59,7 @@ class eFELFeatureBPEM(eFELFeature):
         interp_step=None,
         double_settings=None,
         int_settings=None,
+        efel_settings=None,
     ):
         """Constructor
 
@@ -91,6 +93,7 @@ class eFELFeatureBPEM(eFELFeature):
             int_settings,
             max_score=250.0,
         )
+        self.efel_settings = efel_settings
 
     def calculate_bpo_feature(self, responses):
         """Return internal feature which is directly passed as a response"""
@@ -110,9 +113,8 @@ class eFELFeatureBPEM(eFELFeature):
 
         return abs(feature_value - self.exp_mean) / self.exp_std
 
-    def calculate_features(self, responses, raise_warnings=False):
+    def calculate_feature(self, responses, raise_warnings=False):
         """Calculate feature value"""
-
         if self.efel_feature_name.startswith("bpo_"):
             feature_values = numpy.array(self.calculate_bpo_feature(responses))
 
@@ -122,7 +124,9 @@ class eFELFeatureBPEM(eFELFeature):
             if efel_trace is None:
                 feature_values = None
             else:
-                self._setup_efel()
+                # we have to update it here, as this is changed on the fly
+                self.efel_settings["stimulus_current"] = self.stimulus_current
+                _set_efel_settings(self.efel_settings)
 
                 import efel
 
@@ -137,7 +141,6 @@ class eFELFeatureBPEM(eFELFeature):
                 efel.reset()
 
         logger.debug("Calculated values for %s: %s", self.name, str(feature_values))
-
         return feature_values
 
     def calculate_score(self, responses, trace_check=False):
@@ -151,7 +154,7 @@ class eFELFeatureBPEM(eFELFeature):
 
         else:
 
-            feature_values = self.calculate_features(responses)
+            feature_values = self.calculate_feature(responses)
             if (feature_values is None) or (len(feature_values) == 0):
                 score = self.max_score
             else:
@@ -163,7 +166,6 @@ class eFELFeatureBPEM(eFELFeature):
                 logger.debug("Calculated score for %s: %f", self.name, score)
 
             score = numpy.min([score, self.max_score])
-
         return score
 
 
@@ -202,7 +204,7 @@ def define_feature(
     )
 
     if meanstd[1] < 0.01 * meanstd[0]:
-        logger.warning(
+        logger.debug(
             "E-feature %s has a standard deviation inferior to 1%% of its mean.", feature_name
         )
 
@@ -211,17 +213,10 @@ def define_feature(
     else:
         recording_names = {"": recording_name}
 
-    if "strict_stim" in feature_definition:
-        strict_stim = feature_definition["strict_stim"]
-    else:
-        strict_stim = True
+    efel_settings = feature_definition.get("efel_settings", {})
+    efel_settings["stimulus_current"] = stim_amp
 
-    if "threshold" in feature_definition:
-        threshold = feature_definition["threshold"]
-    else:
-        threshold = -30
-
-    feature = eFELFeatureBPEM(
+    return eFELFeatureBPEM(
         feature_name,
         efel_feature_name=efel_feature_name,
         recording_names=recording_names,
@@ -229,12 +224,8 @@ def define_feature(
         stim_end=stim_end,
         exp_mean=meanstd[0],
         exp_std=meanstd[1],
-        stimulus_current=stim_amp,
-        threshold=threshold,
-        int_settings={"strict_stiminterval": strict_stim},
+        efel_settings=efel_settings,
     )
-
-    return feature
 
 
 def define_protocol(
@@ -508,25 +499,24 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
 
         # Define the efeatures associated to the protocol
         if name in features_definition:
-            f_definition = features_definition[name]
-            for recording_name, feature_configs in f_definition.items():
+            for recording_name, feature_configs in features_definition[name].items():
 
-                for f in feature_configs:
+                for feature_config in feature_configs:
 
                     stim_amp = protocol.amplitude
+                    stim_start = feature_config.get("stim_start", protocol.stim_start)
+                    stim_end = feature_config.get("stim_end", protocol.stim_end)
 
-                    if "stim_start" in f and "stim_end" in f:
-                        stim_start = f["stim_start"]
-                        stim_end = f["stim_end"]
-                    else:
-                        stim_start = protocol.stim_start
-                        stim_end = protocol.stim_end
-
-                        if "bAP" in name:
-                            stim_end = protocol.total_duration
+                    if "bAP" in name:
+                        stim_end = protocol.total_duration
 
                     feature = define_feature(
-                        f, stim_start, stim_end, stim_amp, protocol.name, recording_name
+                        feature_config,
+                        stim_start,
+                        stim_end,
+                        stim_amp,
+                        protocol.name,
+                        recording_name,
                     )
                     features.append(feature)
 
@@ -630,7 +620,6 @@ def create_evaluator(
         features_definition,
         stochasticity,
     )
-
     fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}
 

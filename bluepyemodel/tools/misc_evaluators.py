@@ -1,41 +1,97 @@
 """Module with some custom evaluator functions."""
-import os
+import json
 import pickle
-from copy import copy
+from functools import partial
+from hashlib import sha256
 from pathlib import Path
 
-from bluepyemodel.evaluation.evaluator import create_evaluator
-from bluepyemodel.generalisation.evaluators import get_emodel_data
+import numpy as np
+from bluepyparallel import evaluate
+
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 
 
-def save_traces(trace_folder, responses, filename="trace.pkl"):
-    """Save traces in a pickle using hashed id from combo data."""
-    if not Path(trace_folder).exists():
-        os.mkdir(trace_folder)
-    pickle.dump(responses, open(filename, "wb"))
-
-
-def trace_evaluation(
+def single_feature_evaluation(
     combo,
     emodel_db,
     morph_modifiers=None,
     morphology_path="morphology_path",
     stochasticity=False,
     timeout=1000,
+    trace_data_path=None,
 ):
     """Evaluating single protocol and save traces."""
+    emodel_db.emodel = combo["emodel"]
+    emodel_db.morph_path = combo[morphology_path]
 
-    cell, protocols, features, parameters = get_emodel_data(
-        emodel_db, combo, morphology_path, copy(morph_modifiers)
+    evaluator = get_evaluator_from_db(
+        combo["emodel"], emodel_db, morph_modifiers, stochasticity=stochasticity, timeout=timeout
     )
-    _evaluator = create_evaluator(
-        cell_model=cell,
-        protocols_definition=protocols,
-        features_definition=features,
+    responses = evaluator.run_protocols(
+        evaluator.fitness_protocols.values(), emodel_db.get_emodel()["parameters"]
+    )
+    features = evaluator.fitness_calculator.calculate_values(responses)
+    scores = evaluator.fitness_calculator.calculate_scores(responses)
+
+    for f, val in features.items():
+        if isinstance(val, np.ndarray):
+            features[f] = np.mean(val)
+        else:
+            features[f] = None
+
+    if trace_data_path is not None:
+        Path(trace_data_path).mkdir(exist_ok=True, parents=True)
+        stimuli = evaluator.fitness_protocols["main_protocol"].subprotocols()
+        hash_id = sha256(json.dumps(combo).encode()).hexdigest()
+        trace_data_path = f"{trace_data_path}/trace_data_{hash_id}.pkl"
+        pickle.dump([stimuli, responses], open(trace_data_path, "wb"))
+
+    return {
+        "features": json.dumps(features),
+        "scores": json.dumps(scores),
+        "trace_data": trace_data_path,
+    }
+
+
+def feature_evaluation(
+    morphs_combos_df,
+    emodel_db,
+    morphology_path="morphology_path",
+    resume=False,
+    db_url="scores_db.sql",
+    parallel_factory=None,
+    morph_modifiers=None,
+    trace_data_path=None,
+    stochasticity=False,
+):
+    """Compute the features and the scores on the combos dataframe.
+
+    Args:
+        morphs_combos_df (DataFrame): each row reprensents a computation
+        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        morphology_path (str): entry from dataframe with morphology paths
+        continu (bool): if True, it will use only compute the empty rows of the database,
+            if False, it will ecrase or generate the database
+        db_url (str): filename for the combos sqlite database
+        parallel_factory (ParallelFactory): parallel factory instance
+
+    Returns:
+        pandas.DataFrame: original combos with computed scores and features
+    """
+    evaluation_function = partial(
+        single_feature_evaluation,
+        emodel_db=emodel_db,
+        morphology_path=morphology_path,
+        morph_modifiers=morph_modifiers,
+        trace_data_path=trace_data_path,
         stochasticity=stochasticity,
-        timeout=timeout,
     )
 
-    stimuli = _evaluator.fitness_protocols["main_protocol"].subprotocols()
-    responses = _evaluator.run_protocols(_evaluator.fitness_protocols.values(), parameters)
-    return protocols, stimuli, responses
+    return evaluate(
+        morphs_combos_df,
+        evaluation_function,
+        new_columns=[["features", ""], ["scores", ""], ["trace_data", ""]],
+        resume=resume,
+        parallel_factory=parallel_factory,
+        db_url=db_url,
+    )

@@ -143,7 +143,7 @@ class DatabaseAPI:
         from morph_tool import nrnhines
         from morphio import Morphology
 
-        morph_path = self.get_morphologies()[0]["path"]
+        morph_path = self.get_morphologies()["path"]
         cell = nrnhines.get_NRN_cell(morph_path)
         point = apical_point.apical_point_position(Morphology(morph_path))
         return nrnhines.point_to_section_end(cell.icell.apical, point)

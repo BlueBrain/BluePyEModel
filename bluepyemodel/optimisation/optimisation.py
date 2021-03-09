@@ -85,7 +85,8 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     opt_params=None,
     optimizer="MO-CMA",
     max_ngen=1000,
-    checkpoint_dir=None,
+    checkpoint_dir=".",
+    checkpoint_path=None,
     continue_opt=False,
     githash="",
     terminator=None,
@@ -100,12 +101,14 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
         timeout=timeout,
     )
 
-    # turn FrozenOrderedDict into Dict to be able to append seed data
-    opt_params = dict(opt_params)
+    if opt_params is None:
+        opt_params = {"offspring_size": 10, "weight_hv": 0.4}
+
     opt_params["seed"] = seed
     opt = setup_optimizer(cell_evaluator, mapper, opt_params, optimizer=optimizer)
 
-    checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{githash}_{seed}.pkl"
+    if checkpoint_path is None:
+        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{githash}_{seed}.pkl"
 
     run_optimization(
         optimizer=opt,

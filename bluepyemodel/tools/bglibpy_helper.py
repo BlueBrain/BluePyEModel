@@ -1,5 +1,4 @@
 """Helper functions to use bglibpy."""
-import json
 from pathlib import Path
 
 import bglibpy
@@ -32,12 +31,9 @@ def _get_cell_kwargs_custom_template(
 
 def _get_cell_kwargs_from_sim(ssim, cell, scale=None):
     """Create bglibpy kwargs from ssim object."""
-    emodels_hoc_dir = Path(ssim.bc.Run["METypePath"])
     morph_dir = ssim.bc.Run["MorphologyPath"]
-    print(cell.template_name)
-    emodel = "_".join(cell.template_name.split("_")[:-1])
     cell_kwargs = {
-        "template_filename": str(emodels_hoc_dir / f"{emodel}.hoc"),
+        "template_filename": ssim.fetch_cell_kwargs(cell.gid)["template_filename"],
         "morphology_name": cell.morphology_name,
         "morph_dir": str(Path(morph_dir) / "ascii"),
         "template_format": "v6_ais_scaler" if scale is not None else "v6",
@@ -152,13 +148,13 @@ def get_cell(
         _copy_cell_attrs(_cell, cell)
 
         if add_synapses and out_h5 is not None:
-            print("adding synapses")
+            # print("adding synapses")
             cell = _add_synapses(_cell, cell, ssim, out_h5)
 
         _cell.delete()
 
-    print("cell_kwargs: ", json.dumps(cell_kwargs, indent=4))
-    print(f"threshold = {cell.threshold}, holding = {cell.hypamp}")
+    # print("cell_kwargs: ", json.dumps(cell_kwargs, indent=4), gid)
+    # print(f"threshold = {cell.threshold}, holding = {cell.hypamp}")
     _add_recordings(cell)
     return cell
 

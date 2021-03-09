@@ -63,6 +63,8 @@ class SinglecellAPI(DatabaseAPI):
         self.legacy_dir_structure = legacy_dir_structure
         self.extract_config = extract_config
 
+        self.morph_path = None
+
         if final_path is None:
             self.final_path = self.emodel_dir / "final.json"
         else:
@@ -80,16 +82,12 @@ class SinglecellAPI(DatabaseAPI):
         self.emodel = emodel
 
     def get_final(self, lock_file=True):
-        """Get emodels from json"""
-
+        """Get emodel dictionary from final.json."""
         if self.final_path is None:
             raise Exception("Final_path is None")
 
-        p = Path(self.final_path)
-        p_tmp = p.with_name(p.stem + "_tmp" + p.suffix)
-
-        if not (p.is_file()):
-            logger.info("%s does not exist and will be create", self.final_path)
+        if not self.final_path.is_file():
+            logger.info("%s does not exist and will be created", self.final_path)
             return {}
 
         try:
@@ -105,8 +103,10 @@ class SinglecellAPI(DatabaseAPI):
             try:
                 if lock_file:
                     self.rw_lock_final_tmp.acquire_read_lock()
-
-                with open(p_tmp, "r") as f:
+                _tmp_final_path = self.final_path.with_name(
+                    self.final_path.stem + "_tmp" + self.final_path.suffix
+                )
+                with open(_tmp_final_path, "r") as f:
                     final = json.load(f)
 
                 if lock_file:
@@ -122,9 +122,6 @@ class SinglecellAPI(DatabaseAPI):
         if self.final_path is None:
             raise Exception("Final_path is None")
 
-        p = Path(self.final_path)
-        p_tmp = p.with_name(p.stem + "_tmp" + p.suffix)
-
         if lock_file:
             self.rw_lock_final.acquire_write_lock()
 
@@ -135,7 +132,7 @@ class SinglecellAPI(DatabaseAPI):
             self.rw_lock_final.release_write_lock()
             self.rw_lock_final_tmp.acquire_write_lock()
 
-        with open(p_tmp, "w+") as fp:
+        with open(self.final_path.with_name(self.final_path.stem + "_tmp.json"), "w+") as fp:
             json.dump(final, fp, indent=2)
 
         if lock_file:
@@ -172,15 +169,11 @@ class SinglecellAPI(DatabaseAPI):
         if self.legacy_dir_structure:
             emodel = "_".join(self.emodel.split("_")[:2])
             json_path = self.emodel_dir / emodel / json_path
-
-        else:
-            if not json_path.is_absolute():
-                json_path = str(Path(self.emodel_dir) / json_path)
+        elif not json_path.is_absolute():
+            json_path = self.emodel_dir / json_path
 
         with open(json_path, "r") as f:
-            data = json.load(f)
-
-        return data
+            return json.load(f)
 
     def get_extraction_metadata(self):
         """Get the configuration parameters used for feature extraction.
@@ -278,7 +271,6 @@ class SinglecellAPI(DatabaseAPI):
 
             # Handle the features related to RMP, Rin and threshold and holding current.
             for efeat in out_features[protocol]["soma.v"]:
-
                 if protocol == name_rmp_protocol and efeat["feature"] == "voltage_base":
                     out_features["RMPProtocol"] = {
                         "soma.v": [
@@ -315,9 +307,8 @@ class SinglecellAPI(DatabaseAPI):
         features_path = Path(self.get_recipes()["features"])
         features_path.parent.mkdir(parents=True, exist_ok=True)
 
-        s = json.dumps(out_features, indent=2, cls=NumpyEncoder)
         with open(str(features_path), "w") as f:
-            f.write(s)
+            f.write(json.dumps(out_features, indent=2, cls=NumpyEncoder))
 
     def store_protocols(self, stimuli, validation_protocols):
         """Save the protocols obtained from BluePyEfe.
@@ -348,9 +339,8 @@ class SinglecellAPI(DatabaseAPI):
         protocols_path = Path(self.get_recipes()["protocol"])
         protocols_path.parent.mkdir(parents=True, exist_ok=True)
 
-        s = json.dumps(stimuli, indent=2, cls=NumpyEncoder)
         with open(str(protocols_path), "w") as f:
-            f.write(s)
+            f.write(json.dumps(stimuli, indent=2, cls=NumpyEncoder))
 
     def get_model_name_for_final(self, githash, seed):
         """Return model name used as key in final.json."""
@@ -396,9 +386,16 @@ class SinglecellAPI(DatabaseAPI):
 
         with self.rw_lock_final.write_lock():
             with self.rw_lock_final_tmp.write_lock():
-                final = self.get_final(lock_file=False)
 
-                entry = {
+                final = self.get_final(lock_file=False)
+                model_name = self.get_model_name_for_final(githash, seed)
+
+                if model_name in final:
+                    logger.warning(
+                        "Entry %s was already in the final.json and will be overwritten", model_name
+                    )
+
+                final[model_name] = {
                     "emodel": self.emodel,
                     "score": sum(list(scores.values())),
                     "params": params,
@@ -409,15 +406,6 @@ class SinglecellAPI(DatabaseAPI):
                     "seed": int(seed),
                     "githash": str(githash),
                 }
-
-                model_name = self.get_model_name_for_final(githash, seed)
-
-                if model_name in final:
-                    logger.warning(
-                        "Entry %s was already in the final.json and will be overwritten", model_name
-                    )
-
-                final[model_name] = entry
 
                 self.save_final(final, lock_file=False)
 
@@ -438,27 +426,18 @@ class SinglecellAPI(DatabaseAPI):
             "parameters": parameters["parameters"],
         }
 
-        if "__comment" in params_definition["parameters"]:
-            params_definition["parameters"].pop("__comment")
+        params_definition["parameters"].pop("__comment", None)
 
         mech_definition = parameters["mechanisms"]
         mech_names = []
 
         for mechanisms in mech_definition.values():
+            if "mech" in mechanisms:
+                mech_names += mechanisms["mech"]
+                mechanisms["stoch"] = ["Stoch" in mech_name for mech_name in mechanisms["mech"]]
 
-            mech_names += mechanisms["mech"]
-
-            stochastic = []
-
-            for mech_name in mechanisms["mech"]:
-
-                if "Stoch" in mech_name:
-                    stochastic.append(True)
-                else:
-                    stochastic.append(False)
-
-            mechanisms["stoch"] = stochastic
-
+        params_definition["multiloc_map"] = self.get_recipes().get("multiloc_map", None)
+        mech_definition["multiloc_map"] = self.get_recipes().get("multiloc_map", None)
         return params_definition, mech_definition, list(set(mech_names))
 
     def _handle_extra_recording(self, extra_recordings, sec_index=None):
@@ -469,7 +448,7 @@ class SinglecellAPI(DatabaseAPI):
                 if sec_index is None:
                     apical_point_isec = self.emodel_dir / "apical_points_isec.json"
                     if apical_point_isec.exists():
-                        morph_name = self.get_morphologies()[0]["name"]
+                        morph_name = self.get_morphologies()["name"]
                         sec_index = json.load(open(str(apical_point_isec)))[morph_name]
                     else:
                         sec_index = self.get_apical_point()
@@ -582,7 +561,6 @@ class SinglecellAPI(DatabaseAPI):
         """
 
         efeatures = self._get_json("features")
-        protocols = self._get_json("protocol")
 
         efeatures_out = {
             "RMPProtocol": {"soma.v": []},
@@ -606,10 +584,6 @@ class SinglecellAPI(DatabaseAPI):
                     continue
 
                 for efeat in efeatures[prot_name][loc]:
-
-                    if "bAP" in prot_name:
-                        efeat["stim_start"] = protocols[prot_name]["stimuli"]["step"]["delay"]
-                        efeat["stim_end"] = protocols[prot_name]["stimuli"]["step"]["totduration"]
 
                     if prot_name == "Rin" and efeat["feature"] == "ohmic_input_resistance_vb_ssse":
                         efeatures_out["RinProtocol"]["soma.v"].append(efeat)
@@ -652,21 +626,21 @@ class SinglecellAPI(DatabaseAPI):
 
         morphology_definition = []
 
-        for morph_def in recipes["morphology"]:
+        morph_def = recipes["morphology"][0]
 
-            morph_path = Path(recipes["morph_path"]) / morph_def[1]
+        if self.morph_path is None:
+            self.morph_path = Path(recipes["morph_path"]) / morph_def[1]
+            if not self.morph_path.is_absolute():
+                self.morph_path = Path(self.emodel_dir) / self.morph_path
+        else:
+            self.morph_path = Path(self.morph_path)
 
-            if not morph_path.is_absolute():
-                morph_path = str(Path(self.emodel_dir) / morph_path)
+        morphology_definition = {"name": self.morph_path.stem, "path": str(self.morph_path)}
+        if "seclist_names" in recipes:
+            morphology_definition["seclist_names"] = recipes["seclist_names"]
 
-            morphology_definition.append({"name": morph_def[1][:-4], "path": str(morph_path)})
-
-            if "seclist_names" in recipes:
-                morphology_definition[-1]["seclist_names"] = recipes["seclist_names"]
-
-            if "secarray_names" in recipes:
-                morphology_definition[-1]["secarray_names"] = recipes["secarray_names"]
-
+        if "secarray_names" in recipes:
+            morphology_definition["secarray_names"] = recipes["secarray_names"]
         return morphology_definition
 
     def format_emodel_data(self, model_data):

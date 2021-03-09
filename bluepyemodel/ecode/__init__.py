@@ -1,6 +1,7 @@
 """eCode init script"""
 
 from .apwaveform import APWaveform
+from .comb import Comb
 from .dehyperpol import DeHyperpol
 from .firepattern import FirePattern
 from .hyperdepol import HyperDepol
@@ -39,4 +40,5 @@ eCodes = {
     "apthresh": Ramp,
     "sinespec": SineSpec,
     "subwhitenoise": SubWhiteNoise,
+    "highfreq": Comb,
 }
