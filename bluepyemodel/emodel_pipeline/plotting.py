@@ -129,28 +129,29 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
 
         axs[idx, 0].set_title(t)
 
-        # Plot voltage
-        axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
-        axs[idx, 0].set_xlabel("Time (ms)")
-        axs[idx, 0].set_ylabel("Voltage (mV)")
+        if responses[t]:
+            # Plot voltage
+            axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
+            axs[idx, 0].set_xlabel("Time (ms)")
+            axs[idx, 0].set_ylabel("Voltage (mV)")
 
-        # Plot current
-        basename = t.split(".")[0]
-        if basename in stimuli:
+            # Plot current
+            basename = t.split(".")[0]
+            if basename in stimuli:
 
-            if hasattr(stimuli[basename], "stimulus"):
+                if hasattr(stimuli[basename], "stimulus"):
 
-                if stimuli[basename].threshold_based and threshold and holding:
-                    stimuli[basename].stimulus.holding_current = holding
-                    stimuli[basename].stimulus.threshold_current = threshold
+                    if stimuli[basename].threshold_based and threshold and holding:
+                        stimuli[basename].stimulus.holding_current = holding
+                        stimuli[basename].stimulus.threshold_current = threshold
 
-                axs_c.append(axs[idx, 0].twinx())
-                axs_c[-1].set_xlabel("Time (ms)")
-                axs_c[-1].set_ylabel("Current (nA)")
+                    axs_c.append(axs[idx, 0].twinx())
+                    axs_c[-1].set_xlabel("Time (ms)")
+                    axs_c[-1].set_ylabel("Current (nA)")
 
-                time, current = stimuli[basename].stimulus.generate()
-                axs_c[-1].plot(time, current, color="gray", alpha=0.6)
-                axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
+                    time, current = stimuli[basename].stimulus.generate()
+                    axs_c[-1].plot(time, current, color="gray", alpha=0.6)
+                    axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
 
         idx += 1
 

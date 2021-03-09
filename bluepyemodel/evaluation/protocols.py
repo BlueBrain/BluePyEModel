@@ -250,7 +250,7 @@ class SearchHoldingCurrent:
 
         recordings = [
             ephys.recordings.CompRecording(
-                name="%s.%s.%s" % ("SearchHoldingCurrent", self.location.name, "v"),
+                name=self.target_voltage.recording_names[""],
                 location=self.location,
                 variable="v",
             )
