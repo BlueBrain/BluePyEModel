@@ -10,6 +10,10 @@ if sys.version_info < (3, 6):
 
 VERSION = imp.load_source("", "bluepyemodel/version.py").__version__
 
+EXTRA_LUIGI = ["luigi", "luigi-tools"]
+EXTRA_GENERALISATION = ["bluepyparallel"]
+EXTRA_NEXUS = ["nexusforge"]
+
 setup(
     name="BluePyEModel",
     author="BlueBrain cells",
@@ -25,22 +29,22 @@ setup(
         "tqdm",
         "pyyaml",
         "gitpython",
-        "luigi",
         "bluepyopt @ git+http://github.com/BlueBrain/BluePyOpt@CMA_clean#egg=bluepyopt",
         "bluepyefe @ git+http://github.com/BlueBrain/BluePyEfe@BPE2#egg=bluepyefe",
         "efel",
         "psycopg2",
-        "nexusforge",
         "bluepy",
         "neuron",
         "morph_tool",
-        "luigi-tools",
-        "bluepyparallel @ git+ssh://bbpcode.epfl.ch/cells/BluePyParallel#egg=bluepyparallel"
     ],
-    packages=find_packages(),
-    entry_points={
-        "console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"]
+    extras_require={
+        "luigi": EXTRA_LUIGI,
+        "generalisation": EXTRA_GENERALISATION,
+        "nexus": EXTRA_NEXUS,
+        "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS,
     },
+    packages=find_packages(),
+    entry_points={"console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"]},
     include_package_data=True,
     package_data={"": ["data/*.npy"]},
 )
