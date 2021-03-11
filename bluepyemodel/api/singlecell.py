@@ -700,7 +700,7 @@ class Singlecell_API(DatabaseAPI):
 
         model_name = self.get_model_name_for_final(emodel, githash, seed)
 
-        return final.get(model_name, {}).get("validation_fitness") is not None
+        return bool(final.get(model_name, {}).get("validation_fitness"))
 
     def is_validated(self, emodel, githash, n_models_to_pass_validation):
         """Check if the emodel is validated."""
