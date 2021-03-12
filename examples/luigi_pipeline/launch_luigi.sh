@@ -21,7 +21,6 @@
 # catch signal here and send a SIGUSR1 to the python script
 # because signals are usually not sent to other processes (here python) (except SIGINT)
 # http://mywiki.wooledge.org/SignalTrap#When_is_the_signal_handled.3F
-# trap 'echo signal recieved!; kill "${PID}"; wait "${PID}"; handler' USR1 SIGTERM
 trap 'kill -SIGUSR1 "${PID}"; wait "${PID}"; handler' USR1
 
 # execute python script in the background to be able to catch signals with trap

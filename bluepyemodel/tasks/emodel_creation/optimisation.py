@@ -298,7 +298,12 @@ class StoreBestModels(WorkflowTask):
         """"""
         for seed in range(self.seed, self.seed + self.batch_size):
             # can have unfulfilled dependecies if slurm has send signal near time limit.
-            if BestModelTarget(emodel=self.emodel, seed=seed).exists():
+            if OptimisationTarget(
+                emodel=self.emodel,
+                species=self.species,
+                seed=seed,
+                checkpoint_dir=self.checkpoint_dir,
+            ).exists():
                 store_best_model(
                     self.emodel_db,
                     self.emodel,
@@ -396,7 +401,11 @@ class Validation(WorkflowTask):
 
     def requires(self):
         """"""
-        to_run = [StoreBestModels(emodel=self.emodel, species=self.species, seed=self.seed)]
+        to_run = [
+            StoreBestModels(
+                emodel=self.emodel, species=self.species, seed=self.seed, batch_size=self.batch_size
+            )
+        ]
         if self.compile_mechanisms:
             to_run.append(
                 CompileMechanisms(
