@@ -65,12 +65,21 @@ class Singlecell_API(DatabaseAPI):
             raise Exception("Final_path is None")
 
         p = Path(self.final_path)
+        p_tmp = p.with_name(p.stem + "_tmp" + p.suffix)
+
         if not (p.is_file()):
             logger.info("%s does not exist and will be create", self.final_path)
             return {}
 
-        with open(self.final_path, "r") as f:
-            final = json.load(f)
+        try:
+            with open(self.final_path, "r") as f:
+                final = json.load(f)
+        except json.decoder.JSONDecodeError:
+            try:
+                with open(p_tmp, "r") as f:
+                    final = json.load(f)
+            except (json.decoder.JSONDecodeError, FileNotFoundError):
+                logger.error("Cannot load final. final.json does not exist or is corrupted.")
 
         return final
 
@@ -80,6 +89,13 @@ class Singlecell_API(DatabaseAPI):
             raise Exception("Final_path is None")
 
         with open(self.final_path, "w+") as fp:
+            json.dump(final, fp, indent=2)
+
+        # also save in final_tmp.json
+        p = Path(self.final_path)
+        p_tmp = p.with_name(p.stem + "_tmp" + p.suffix)
+
+        with open(p_tmp, "w+") as fp:
             json.dump(final, fp, indent=2)
 
     def _get_json(self, emodel, recipe_entry):

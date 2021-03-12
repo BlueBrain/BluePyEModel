@@ -48,7 +48,7 @@ def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
     raise Exception("Unknown optimizer: {}".format(optimizer))
 
 
-def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt):
+def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, terminator=None):
     """Run the optimisation.
 
     Args:
@@ -56,6 +56,8 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt):
         checkpoint_dir (Path): path to which the checkpoint will be saved.
         max_ngen (int): maximum number of generation for which the
             evolutionary strategy will run.
+        terminator (multiprocessing.Event): end optimisation when is set.
+            Not taken into account if None.
 
     Returns:
         None
@@ -64,7 +66,10 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt):
 
     logger.info("Running optimisation ...")
     pop, hof, log, history = optimizer.run(
-        max_ngen=max_ngen, cp_filename=str(checkpoint_path), continue_cp=continue_opt
+        max_ngen=max_ngen,
+        cp_filename=str(checkpoint_path),
+        continue_cp=continue_opt,
+        terminator=terminator,
     )
     logger.info("Running optimisation ... Done.")
 
@@ -238,6 +243,7 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     checkpoint_dir=None,
     continue_opt=False,
     githash="",
+    terminator=None,
 ):
     emodel_db.set_seed(emodel, seed, species=species)
     cell_evaluator = _get_evaluator_from_db(
@@ -263,6 +269,7 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
         checkpoint_path=checkpoint_path,
         max_ngen=max_ngen,
         continue_opt=continue_opt,
+        terminator=terminator,
     )
 
 

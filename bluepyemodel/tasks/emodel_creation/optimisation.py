@@ -1,5 +1,5 @@
 """Luigi tasks for emodel optimisation."""
-import logging
+import multiprocessing
 from pathlib import Path
 
 import luigi
@@ -16,8 +16,6 @@ from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
 from bluepyemodel.validation.validation import validate
-
-logger = logging.getLogger(__name__)
 
 
 class EfeaturesProtocolsTarget(WorkflowTarget):
@@ -181,12 +179,17 @@ class Optimize(WorkflowTask):
             under which the configuration data are stored.
         species (str): name of the species.
         seed (int): seed used in the optimisation.
+        graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
+            Has to use multiprocessing event for communicating between processes
+            when there is more than 1 luigi worker.
+            When set, will gracefully exit main loop in Optimize (in deap algorithm).
     """
 
     # if default not set, crashes when parameters are read by luigi_tools.copy_params
     emodel = luigi.Parameter(default=None)
     species = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
+    graceful_killer = multiprocessing.Event()
 
     def requires(self):
         """"""
@@ -204,25 +207,28 @@ class Optimize(WorkflowTask):
 
     def run(self):
         """"""
-        mapper = self.get_mapper()
-        setup_and_run_optimisation(
-            self.emodel_db,
-            self.emodel,
-            self.seed,
-            species=self.species,
-            morphology_modifiers=self.morphology_modifiers,
-            stochasticity=self.stochasticity,
-            include_validation_protocols=False,
-            optimisation_rules=None,
-            timeout=self.timeout,
-            mapper=mapper,
-            opt_params=self.opt_params,  # these should be real parameters from luigi.cfg
-            optimizer=self.optimizer,
-            max_ngen=self.max_ngen,
-            checkpoint_dir=self.checkpoint_dir,
-            continue_opt=self.continue_opt,
-            githash="",
-        )
+        # terminate = GracefulKiller()
+        if not self.graceful_killer.is_set():
+            mapper = self.get_mapper()
+            setup_and_run_optimisation(
+                self.emodel_db,
+                self.emodel,
+                self.seed,
+                species=self.species,
+                morphology_modifiers=self.morphology_modifiers,
+                stochasticity=self.stochasticity,
+                include_validation_protocols=False,
+                optimisation_rules=None,
+                timeout=self.timeout,
+                mapper=mapper,
+                opt_params=self.opt_params,  # these should be real parameters from luigi.cfg
+                optimizer=self.optimizer,
+                max_ngen=self.max_ngen,
+                checkpoint_dir=self.checkpoint_dir,
+                continue_opt=self.continue_opt,
+                githash="",
+                terminator=self.graceful_killer,
+            )
 
     def output(self):
         """"""
@@ -257,6 +263,61 @@ class BestModelTarget(WorkflowTarget):
     def exists(self):
         """Check if the best model is stored."""
         return self.emodel_db.has_best_model(emodel=self.emodel, seed=self.seed, githash="")
+
+
+@copy_params(
+    stochasticity=ParamRef(OptimizeConfig),
+    optimizer=ParamRef(OptimizeConfig),
+    checkpoint_dir=ParamRef(OptimizeConfig),
+)
+class StoreBestModels(WorkflowTask):
+    """Luigi wrapper for store_best_model.
+
+    Parameters:
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        seed (int): seed used in the optimisation.
+        batch_size (int): number of seeds to optimize at the same time before each validation.
+    """
+
+    emodel = luigi.Parameter()
+    species = luigi.Parameter(default="")
+    seed = luigi.IntParameter(default=42)
+    batch_size = luigi.IntParameter(default=1)
+
+    def requires(self):
+        """"""
+        to_run = []
+
+        for seed in range(self.seed, self.seed + self.batch_size):
+            to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
+        return to_run
+
+    def run(self):
+        """"""
+        for seed in range(self.seed, self.seed + self.batch_size):
+            # can have unfulfilled dependecies if slurm has send signal near time limit.
+            if BestModelTarget(emodel=self.emodel, seed=seed).exists():
+                store_best_model(
+                    self.emodel_db,
+                    self.emodel,
+                    self.species,
+                    seed,
+                    stochasticity=self.stochasticity,
+                    include_validation_protocols=False,
+                    optimisation_rules=None,
+                    optimizer=self.optimizer,
+                    checkpoint_dir=self.checkpoint_dir,
+                    githash="",
+                )
+
+    def output(self):
+        """"""
+        targets = []
+        for seed in range(self.seed, self.seed + self.batch_size):
+            targets.append(BestModelTarget(emodel=self.emodel, seed=seed))
+        return targets
 
 
 class ValidationTarget(WorkflowTarget):
@@ -296,14 +357,9 @@ class ValidationTarget(WorkflowTarget):
     compile_mechanisms=ParamRef(OptimizeConfig),
     mechanisms_dir=ParamRef(OptimizeConfig),
     morphology_modifiers=ParamRef(OptimizeConfig),
-    optimizer=ParamRef(OptimizeConfig),
-    checkpoint_dir=ParamRef(OptimizeConfig),
 )
 class Validation(WorkflowTask):
-    """Luigi wrapper for store_best_model and validation.
-
-    Store best model is not a separate task, because it would create
-        tasks running in parallel and writing in the same file, which is prone to errors.
+    """Luigi wrapper for validation.
 
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
@@ -320,6 +376,9 @@ class Validation(WorkflowTask):
             passes validation or not. Should rely on emodel['scores'] and
             emodel['scores_validation']. See bluepyemodel/validation for examples.
             Should be a function name in bluepyemodel.validation.validation_functions
+        graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
+            Has to use multiprocessing event for communicating between processes
+            when there is more than 1 luigi worker. Skip task if set.
     """
 
     emodel = luigi.Parameter()
@@ -333,10 +392,11 @@ class Validation(WorkflowTask):
     # when this task is yielded, the default is serialized
     # and None becomes 'None'
     validation_function = luigi.Parameter(default="")
+    graceful_killer = multiprocessing.Event()
 
     def requires(self):
         """"""
-        to_run = []
+        to_run = [StoreBestModels(emodel=self.emodel, species=self.species, seed=self.seed)]
         if self.compile_mechanisms:
             to_run.append(
                 CompileMechanisms(
@@ -346,53 +406,30 @@ class Validation(WorkflowTask):
                     copy_mechanisms=self.copy_mechanisms,
                 )
             )
-        for seed in range(self.seed, self.seed + self.batch_size):
-            to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
         return to_run
 
     def run(self):
         """"""
-        for seed in range(self.seed, self.seed + self.batch_size):
-            store_best_model(
+        if not self.graceful_killer.is_set():
+            mapper = self.get_mapper()
+            validate(
                 self.emodel_db,
                 self.emodel,
                 self.species,
-                seed,
+                mapper,
+                validation_function=self.validation_function,
                 stochasticity=self.stochasticity,
-                include_validation_protocols=False,
-                optimisation_rules=None,
-                optimizer=self.optimizer,
-                checkpoint_dir=self.checkpoint_dir,
-                githash="",
+                morphology_modifiers=self.morphology_modifiers,
+                additional_protocols=self.additional_protocols,
+                threshold=self.threshold,
+                validation_protocols_only=self.validation_protocols_only,
             )
 
-        mapper = self.get_mapper()
-        validate(
-            self.emodel_db,
-            self.emodel,
-            self.species,
-            mapper,
-            validation_function=self.validation_function,
-            stochasticity=self.stochasticity,
-            morphology_modifiers=self.morphology_modifiers,
-            additional_protocols=self.additional_protocols,
-            threshold=self.threshold,
-            validation_protocols_only=self.validation_protocols_only,
-        )
+        assert self.output().exists()
 
     def output(self):
         """"""
-        targets = []
-        for seed in range(self.seed, self.seed + self.batch_size):
-            targets.append(BestModelTarget(emodel=self.emodel, seed=seed))
-        targets.append(
-            ValidationTarget(
-                emodel=self.emodel,
-                seed=self.seed,
-                batch_size=self.batch_size,
-            )
-        )
-        return targets
+        return ValidationTarget(emodel=self.emodel, seed=self.seed, batch_size=self.batch_size)
 
 
 class EModelCreationTarget(WorkflowTarget):
@@ -434,6 +471,9 @@ class EModelCreation(WorkflowTask):
         limit_batches (bool): whether to limit the number of batches or not.
         n_models_to_pass_validation (int): minimum number of models to pass validation
             to consider the task as validated.
+        graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
+            Has to use multiprocessing event for communicating between processes
+            when there is more than 1 luigi worker. Exit loop if set.
     """
 
     emodel = luigi.Parameter()
@@ -443,12 +483,13 @@ class EModelCreation(WorkflowTask):
     max_n_batch = luigi.IntParameter(default=10)
     limit_batches = BoolParameterCustom(default=True)
     n_models_to_pass_validation = luigi.IntParameter(default=1)
+    graceful_killer = multiprocessing.Event()
 
     def run(self):
         """Optimize e-models by batches of 10 until one is validated."""
         seed = self.seed
 
-        while not self.output().exists():
+        while not self.output().exists() and not self.graceful_killer.is_set():
             # limit the number of batch
             if self.limit_batches and seed > self.seed + self.max_n_batch * self.batch_size:
                 break
@@ -462,6 +503,8 @@ class EModelCreation(WorkflowTask):
                 )
             )
             seed += self.batch_size
+
+        assert self.output().exists()
 
     def output(self):
         """"""
