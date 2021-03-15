@@ -5,7 +5,7 @@ def get_db(api, **kwargs):
     """Returns a DatabaseAPI object.
 
     Args:
-        api (str): name of the api to use, can be 'sql', 'nexus' or 'singlecell'.
+        api (str): name of the api to use, can be nexus' or 'singlecell'.
         kwargs (dict): extra arguments to pass to api constructors, see below.
 
     For singlecell:
@@ -26,10 +26,6 @@ def get_db(api, **kwargs):
         DatabaseAPI
 
     """
-    if api == "sql":
-        from bluepyemodel.api.postgreSQL import PostgreSQL_API
-
-        return PostgreSQL_API(project_name=kwargs["project_name"])
 
     if api == "nexus":
         from bluepyemodel.api.nexus import Nexus_API

@@ -11,6 +11,7 @@ from pathlib import Path
 import bluepyefe.extract
 from git import Repo
 
+from bluepyemodel.api import get_db
 from bluepyemodel.emodel_pipeline import plotting
 from bluepyemodel.emodel_pipeline.utils import read_checkpoint
 from bluepyemodel.evaluation import evaluator
@@ -20,53 +21,11 @@ from bluepyemodel.validation import validation_functions as validation
 
 logger = logging.getLogger(__name__)
 
+# pylint: disable=W0612,W0613
+
 mechanisms_dir = "mechanisms"
 run_dir = "run"
 final_path = "final.json"
-
-
-def connect_db(
-    db_api,
-    recipes_path=None,
-    working_dir=None,
-    project_name=None,
-    forge_path=None,
-):
-    """Returns a DatabaseAPI object.
-
-    Args:
-        db_api (str): name of the api to use, can be 'sql', 'nexus'
-            or 'singlecell'.
-        recipe_path (str): path to the file containing the recipes. Only
-            needed when working with db_api='singlecell'.
-        working_dir (str): path of the directory containing the parameters,
-            features and parameters config files. Only needed when working
-            with db_api='singlecell'.
-        project_name (str): name of the project. Used as prefix to create the tables
-            of the postgreSQL database. Only needed when working with db_api='sql'.
-
-    Returns:
-        Database
-
-    """
-    if db_api == "sql":
-        from bluepyemodel.api.postgreSQL import PostgreSQL_API
-
-        return PostgreSQL_API(project_name=project_name)
-
-    if db_api == "nexus":
-        from bluepyemodel.api.nexus import Nexus_API
-
-        return Nexus_API(forge_path)
-
-    if db_api == "singlecell":
-        from bluepyemodel.api.singlecell import Singlecell_API
-
-        return Singlecell_API(
-            emodel_dir=working_dir, recipes_path=recipes_path, final_path=final_path
-        )
-
-    raise Exception(f"Unknown api: {db_api}")
 
 
 def extract_save_features_protocols(
@@ -398,7 +357,6 @@ class EModel_pipeline:
         species,
         db_api,
         recipes_path=None,
-        project_name=None,
         forge_path=None,
         use_git=False,
         githash=None,
@@ -407,51 +365,31 @@ class EModel_pipeline:
         """Initialize the emodel_pipeline.
 
         Args:
-            emodel (str): name of the emodel. Has to match the name of the emodel
-                under which the configuration data are stored.
+            emodel (str): name of the emodel. Has to match the name of the emodel under which the
+                configuration data are stored.
             species (str): name of the species.
-            db_api (str): name of the API used to access the data, can be "sql",
-                "nexus" or "singlecell". "singlecell" expect the configuration to be
-                defined in a "config" directory containing recipes as in proj38. "sql"
-                expect the configuration to be defined in the PostreSQL table whose
-                name can be find ontop of the file bluepyemodel/api/sql.py. "nexus"
-                expect the configuration to be defined on Nexus using NexusForge,
-                see bluepyemodel/api/nexus.py.
-            recipes_path (str): path of the recipes.json, only needed if
-                db_api="singlecell".
-            project_name (str): name of the project, only needed if db_api="sql".
-            forge_path (str): path to the .yml used to connect to Nexus Forge,
-                only needed if db_api="nexus".
+            db_api (str): name of the API used to access the data, can be "nexus" or "singlecell".
+                "singlecell" expect the configuration to be  defined in a "config" directory
+                containing recipes as in proj38. "nexus" expect the configuration to be defined
+                on Nexus using NexusForge, see bluepyemodel/api/nexus.py.
+            recipes_path (str): path of the recipes.json, only needed if db_api="singlecell".
+            forge_path (str): path to the .yml used to connect to Nexus Forge, only needed if
+                db_api="nexus".
             use_git (bool): if True, work will be perfomed in a sub-directory:
-                working_dir/run/githash. If use_git is True and githash is None,
-                a new githash will be generated. The pipeline will expect a git
-                repository to exist in working_dir.
+                working_dir/run/githash. If use_git is True and githash is None, a new githash will
+                be generated. The pipeline will expect a git repository to exist in working_dir.
             githash (str): if provided, the pipeline will work in the directory
-                working_dir/run/githash. Needed when continuing work or resuming
-                optimisations.
-            morphology_modifiers (list): list of python functions that will be
-                applied to all the morphologies.
-
+                working_dir/run/githash. Needed when continuing work or resuming optimisations.
+            morphology_modifiers (list): list of python functions that will be  applied to all the
+                morphologies.
         """
 
         self.emodel = emodel
         self.species = species
-
-        if db_api not in ["sql", "nexus", "singlecell"]:
-            raise Exception(
-                "DB API {} does not exist. Must be 'sql', 'nexus' "
-                "or 'singlecell'.".format(db_api)
-            )
         self.db_api = db_api
-
-        if project_name is None and self.db_api == "sql":
-            raise Exception("If using DB API 'sql', argument project_name has to be defined.")
-        if forge_path is None and self.db_api == "nexus":
-            raise Exception("If using DB API 'sqnexusl', argument forge_path has to be defined.")
 
         self.morphology_modifiers = morphology_modifiers
         self.recipes_path = recipes_path
-        self.project_name = project_name
         self.forge_path = forge_path
 
         if use_git:
@@ -491,11 +429,11 @@ class EModel_pipeline:
         """
         Instantiate the api from which the pipeline will get and store the data.
         """
-        return connect_db(
+        return get_db(
             self.db_api,
+            emodel_dir=self.working_dir,
             recipes_path=self.recipes_path,
-            working_dir=self.working_dir,
-            project_name=self.project_name,
+            final_path=final_path,
             forge_path=self.forge_path,
         )
 
@@ -520,15 +458,14 @@ class EModel_pipeline:
                 and validation efeatures be added to the evaluator.
             additional_protocols (dict): definition of supplementary protocols. See
                 examples/optimisation for usage.
-            optimisation_rules (list): list of Rules. TO DEPRECATE: should be done
-                in the api.
-            timeout (float): duration (in second) after which the evaluation of a
-                protocol will be interrupted.
+            optimisation_rules (list): list of Rules. TO DEPRECATE: should be done in the api.
+            timeout (float): duration (in second) after which the evaluation of a protocol will
+                be interrupted.
 
         Returns:
-            MultiEvaluator
-
+            Evaluator
         """
+
         db = self.connect_db()
 
         if compile_mechanisms and self.githash:
@@ -560,13 +497,12 @@ class EModel_pipeline:
             raise Exception("No protocols for emodel %s" % self.emodel)
         if additional_protocols:
             protocols.update(additional_protocols)
-        db.close()
 
-        if copy_mechanisms:
-            mechanism_paths = db.get_mechanism_paths(mechanism_names)
-            if not (mechanism_paths):
-                raise Exception("No mechanisms paths for emodel %s" % self.emodel)
-            copy_mechs(mechanism_paths, mechanisms_dir)
+        # if copy_mechanisms:
+        #    mechanism_paths = db.get_mechanism_paths(mechanism_names)
+        #    if not (mechanism_paths):
+        #        raise Exception("No mechanisms paths for emodel %s" % self.emodel)
+        #    copy_mechs(mechanism_paths, mechanisms_dir)
 
         if compile_mechanisms:
             compile_mechs(self.working_dir, self.githash)
@@ -674,8 +610,6 @@ class EModel_pipeline:
             validation_protocols=validation_protocols,
         )
 
-        db.close()
-
         return efeatures, stimuli, current
 
     def optimize(
@@ -770,12 +704,10 @@ class EModel_pipeline:
 
         Args:
             stochasticity (bool): should channels behave stochastically if they can.
-            opt_params (dict): optimisation parameters. Keys have to match the
-                optimizer's call.
-            optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
-                "MO-CMA".
-            checkpoint_path (str): path to the BluePyOpt checkpoint file from which
-                the best model will be read and stored.
+            opt_params (dict): optimisation parameters. Keys have to match the optimizer's call.
+            optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA", "MO-CMA".
+            checkpoint_path (str): path to the BluePyOpt checkpoint file from which the best model
+                will be read and stored.
         """
         if opt_params is None:
             opt_params = {}
@@ -810,8 +742,6 @@ class EModel_pipeline:
             validated=False,
             species=self.species,
         )
-
-        db.close()
 
     def compute_responses(
         self,

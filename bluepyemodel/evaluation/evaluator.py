@@ -274,8 +274,8 @@ def define_protocol(
                 location = NrnSecSomaDistanceCompLocation(
                     name=recording_definition["name"],
                     soma_distance=recording_definition["somadistance"],
-                    sec_index=recording_definition.get("sec_index", None),
-                    sec_name=recording_definition.get("sec_name", None),
+                    sec_index=recording_definition["sec_index"],
+                    sec_name=recording_definition["sec_name"],
                 )
 
             elif recording_definition["type"] == "nrnseclistcomp":

@@ -409,7 +409,10 @@ class Singlecell_API(DatabaseAPI):
                         raise Exception("Cannot get section name from seclist_name.")
 
                 else:
-                    logger.debug("No apical_points_isec.json found, bAP will be skipped")
+                    raise Exception(
+                        "No apical_points_isec.json found for extra_recordings of type "
+                        "somadistanceapic."
+                    )
 
             extra_recordings_out.append(extra)
 

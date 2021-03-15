@@ -18,6 +18,8 @@ from bluepyemodel.tasks.utils import generate_githash
 from bluepyemodel.tasks.utils import generate_versions
 from bluepyemodel.tasks.utils import update_gitignore
 
+# pylint: disable=W0107
+
 logger = logging.getLogger(__name__)
 
 
@@ -47,8 +49,8 @@ class WorkflowTask(_WorkflowTask):
         return map
 
     def on_sucess(self):
-        """Close emodel db once we are done."""
-        self.emodel_db.close()
+        """Close emodel db once we are done. -> Deprecated"""
+        pass
 
 
 class WorkflowTarget(luigi.Target, ABC):

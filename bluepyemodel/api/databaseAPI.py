@@ -152,6 +152,3 @@ class DatabaseAPI:
         Returns:
             dict: keys are emodel names with seed, values are names without seed.
         """
-
-    def close(self):
-        """Close the database."""
