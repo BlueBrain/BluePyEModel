@@ -118,7 +118,7 @@ import bluepyemodel.tasks
 
 SKIP = [
     r".*\.L",
-    r".*tasks\..*\.requires",
+    r".*tasks\..*\.requires$",
     r".*tasks\..*\.run",
     r".*tasks\..*\.output",
 ]
