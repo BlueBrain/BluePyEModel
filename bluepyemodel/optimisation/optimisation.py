@@ -245,7 +245,7 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     githash="",
     terminator=None,
 ):
-    emodel_db.set_seed(emodel, seed, species=species)
+
     cell_evaluator = _get_evaluator_from_db(
         emodel=emodel,
         species=species,

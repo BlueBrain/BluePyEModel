@@ -17,7 +17,7 @@ logger = logging.getLogger("__main__")
 
 
 class Nexus_API(DatabaseAPI):
-    """API using Nexus Forge"""
+    """Access point to Nexus Knowledge Graph through Nexus Forge"""
 
     def __init__(
         self,
