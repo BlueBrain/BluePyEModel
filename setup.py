@@ -15,7 +15,7 @@ with open("README.rst", encoding="utf-8") as f:
     README = f.read()
 
 
-EXTRA_LUIGI = ["luigi", "luigi-tools"]
+EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow", "bbp-workflow-cli"]
 EXTRA_GENERALISATION = ["bluepyparallel"]
 EXTRA_NEXUS = ["nexusforge"]
 
@@ -57,7 +57,8 @@ setup(
         "generalisation": EXTRA_GENERALISATION,
         "nexus": EXTRA_NEXUS,
         "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS,
-        "docs": doc_reqs},
+        "docs": doc_reqs,
+    },
     packages=find_packages(),
     entry_points={"console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"]},
     include_package_data=True,

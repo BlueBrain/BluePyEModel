@@ -62,6 +62,17 @@ class NestedPool(pool.Pool):  # pylint: disable=abstract-method
     Process = NoDaemonProcess
 
 
+def get_mapper(backend):
+    """Get a mapper for parallel computations."""
+    if backend == "ipyparallel":
+        return ipyparallel_map_function()
+
+    if backend == "multiprocessing":
+        nested_pool = NestedPool()
+        return nested_pool.map
+    return map
+
+
 #################
 # UNSUSED BELOW #
 #################

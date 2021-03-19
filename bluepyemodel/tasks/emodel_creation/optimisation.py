@@ -8,14 +8,13 @@ from luigi_tools.task import copy_params
 
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
 from bluepyemodel.optimisation import copy_and_compile_mechanisms
-from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tasks.emodel_creation.config import OptimizeConfig
 from bluepyemodel.tasks.luigi_tools import BoolParameterCustom
+from bluepyemodel.tasks.luigi_tools import IPyParallelTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
-from bluepyemodel.validation.validation import validate
 
 
 class EfeaturesProtocolsTarget(WorkflowTarget):
@@ -171,7 +170,7 @@ class OptimisationTarget(WorkflowTarget):
     continue_opt=ParamRef(OptimizeConfig),
     timeout=ParamRef(OptimizeConfig),
 )
-class Optimize(WorkflowTask):
+class Optimize(WorkflowTask, IPyParallelTask):
     """Luigi wrapper for emodel_pipeline.emodel_creation.optimize
 
     Parameters:
@@ -206,29 +205,93 @@ class Optimize(WorkflowTask):
         return targets
 
     def run(self):
-        """"""
-        # terminate = GracefulKiller()
-        if not self.graceful_killer.is_set():
-            mapper = self.get_mapper()
-            setup_and_run_optimisation(
-                self.emodel_db,
-                self.emodel,
-                self.seed,
-                species=self.species,
-                morphology_modifiers=self.morphology_modifiers,
-                stochasticity=self.stochasticity,
-                include_validation_protocols=False,
-                optimisation_rules=None,
-                timeout=self.timeout,
-                mapper=mapper,
-                opt_params=self.opt_params,  # these should be real parameters from luigi.cfg
-                optimizer=self.optimizer,
-                max_ngen=self.max_ngen,
-                checkpoint_dir=self.checkpoint_dir,
-                continue_opt=self.continue_opt,
-                githash="",
-                terminator=self.graceful_killer,
-            )
+        """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
+        attrs = [
+            "backend",
+            "emodel",
+            "seed",
+            "species",
+            "morphology_modifiers",
+            "stochasticity",
+            "timeout",
+            "opt_params",
+            "optimizer",
+            "max_ngen",
+            "checkpoint_dir",
+            "continue_opt",
+        ]
+        self.prepare_args_for_remote_script(attrs)
+
+        super().run()
+
+    def remote_script(self):
+        """Catch arguments from parsing, and run optimisation."""
+        # This function will be copied into a file, and then
+        # arguments will be passed to it from command line
+        # so arguments should be read using argparse.
+        # All functions used should be imported.
+        # Class methods and attributes cannot be used.
+
+        # -- imports -- #
+        import argparse
+        import json
+
+        from bluepyemodel import api
+        from bluepyemodel.optimisation import setup_and_run_optimisation
+        from bluepyemodel.tasks.utils import get_mapper
+
+        # -- parsing -- #
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--backend", default=None, type=str)
+        parser.add_argument("--api_from_config", default="singlecell", type=str)
+        parser.add_argument(
+            "--api_args_from_config",
+            default=", ".join(
+                (
+                    '{"emodel_dir": None',
+                    '"recipes_path": None',
+                    '"final_path": None',
+                    '"legacy_dir_structure": None',
+                    '"extract_config": None}',
+                )
+            ),
+            type=json.loads,
+        )
+        parser.add_argument("--emodel", default=None, type=str)
+        parser.add_argument("--seed", default=42, type=int)
+        parser.add_argument("--species", default=None, type=str)
+        parser.add_argument("--morphology_modifiers", default=None, type=json.loads)
+        parser.add_argument("--stochasticity", default=False, action="store_true")
+        parser.add_argument("--timeout", default=600, type=int)
+        parser.add_argument("--opt_params", default=None, type=json.loads)
+        parser.add_argument("--optimizer", default="MO-CMA", type=str)
+        parser.add_argument("--max_ngen", default=1000, type=int)
+        parser.add_argument("--checkpoint_dir", default="./checkpoints/", type=str)
+        parser.add_argument("--continue_opt", default=False, action="store_true")
+
+        args = parser.parse_args()
+
+        # -- run optimisation -- #
+        mapper = get_mapper(args.backend)
+        emodel_db = api.get_db(args.api_from_config, **args.api_args_from_config)
+        setup_and_run_optimisation(
+            emodel_db,
+            args.emodel,
+            args.seed,
+            species=args.species,
+            morphology_modifiers=args.morphology_modifiers,
+            stochasticity=args.stochasticity,
+            include_validation_protocols=False,
+            optimisation_rules=None,
+            timeout=args.timeout,
+            mapper=mapper,
+            opt_params=args.opt_params,  # these should be real parameters from luigi.cfg
+            optimizer=args.optimizer,
+            max_ngen=args.max_ngen,
+            checkpoint_dir=args.checkpoint_dir,
+            continue_opt=args.continue_opt,
+            githash="",
+        )
 
     def output(self):
         """"""
@@ -363,7 +426,7 @@ class ValidationTarget(WorkflowTarget):
     mechanisms_dir=ParamRef(OptimizeConfig),
     morphology_modifiers=ParamRef(OptimizeConfig),
 )
-class Validation(WorkflowTask):
+class Validation(WorkflowTask, IPyParallelTask):
     """Luigi wrapper for validation.
 
     Parameters:
@@ -418,23 +481,76 @@ class Validation(WorkflowTask):
         return to_run
 
     def run(self):
-        """"""
-        if not self.graceful_killer.is_set():
-            mapper = self.get_mapper()
-            validate(
-                self.emodel_db,
-                self.emodel,
-                self.species,
-                mapper,
-                validation_function=self.validation_function,
-                stochasticity=self.stochasticity,
-                morphology_modifiers=self.morphology_modifiers,
-                additional_protocols=self.additional_protocols,
-                threshold=self.threshold,
-                validation_protocols_only=self.validation_protocols_only,
-            )
+        """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
+        attrs = [
+            "backend",
+            "emodel",
+            "species",
+            "morphology_modifiers",
+            "stochasticity",
+            "validation_function",
+            "additional_protocols",
+            "threshold",
+            "validation_protocols_only",
+        ]
+        self.prepare_args_for_remote_script(attrs)
 
-        assert self.output().exists()
+        super().run()
+
+    def remote_script(self):
+        """Catch arguments from parsing, and run validation."""
+        # -- imports -- #
+        import argparse
+        import json
+
+        from bluepyemodel import api
+        from bluepyemodel.tasks.utils import get_mapper
+        from bluepyemodel.validation.validation import validate
+
+        # -- parsing -- #
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--backend", default=None, type=str)
+        parser.add_argument("--api_from_config", default="singlecell", type=str)
+        parser.add_argument(
+            "--api_args_from_config",
+            default=", ".join(
+                (
+                    '{"emodel_dir": None',
+                    '"recipes_path": None',
+                    '"final_path": None',
+                    '"legacy_dir_structure": None',
+                    '"extract_config": None}',
+                )
+            ),
+            type=json.loads,
+        )
+        parser.add_argument("--emodel", default=None, type=str)
+        parser.add_argument("--species", default=None, type=str)
+        parser.add_argument("--morphology_modifiers", default=None, type=json.loads)
+        parser.add_argument("--stochasticity", default=False, action="store_true")
+        parser.add_argument("--validation_function", default="", type=str)
+        parser.add_argument("--additional_protocols", default=None, type=json.loads)
+        parser.add_argument("--threshold", default=5.0, type=float)
+        parser.add_argument("--validation_protocols_only", default=False, action="store_true")
+
+        args = parser.parse_args()
+
+        # -- run validation -- #
+        mapper = get_mapper(args.backend)
+        emodel_db = api.get_db(args.api_from_config, **args.api_args_from_config)
+
+        validate(
+            emodel_db,
+            args.emodel,
+            args.species,
+            mapper,
+            validation_function=args.validation_function,
+            stochasticity=args.stochasticity,
+            morphology_modifiers=args.morphology_modifiers,
+            additional_protocols=args.additional_protocols,
+            threshold=args.threshold,
+            validation_protocols_only=args.validation_protocols_only,
+        )
 
     def output(self):
         """"""

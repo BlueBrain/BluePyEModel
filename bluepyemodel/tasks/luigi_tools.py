@@ -1,4 +1,5 @@
 """Luigi tool module."""
+import json
 import logging
 import os
 from abc import ABC
@@ -6,6 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import luigi
+from bbp_workflow.task import IPyParallelTask as _IPyParallelTask
 from luigi.parameter import MissingParameterException
 from luigi.parameter import _no_value
 from luigi_tools.task import WorkflowTask as _WorkflowTask
@@ -16,6 +18,7 @@ from bluepyemodel.tasks.config import EmodelAPIConfig
 from bluepyemodel.tasks.utils import change_cwd
 from bluepyemodel.tasks.utils import generate_githash
 from bluepyemodel.tasks.utils import generate_versions
+from bluepyemodel.tasks.utils import get_mapper
 from bluepyemodel.tasks.utils import update_gitignore
 
 # pylint: disable=W0107
@@ -36,17 +39,7 @@ class WorkflowTask(_WorkflowTask):
 
     def get_mapper(self):
         """Get a mapper for parallel computations."""
-        if self.backend == "ipyparallel":
-            from bluepyemodel.tasks.utils import ipyparallel_map_function
-
-            return ipyparallel_map_function()
-
-        if self.backend == "multiprocessing":
-            from bluepyemodel.tasks.utils import NestedPool
-
-            pool = NestedPool()
-            return pool.map
-        return map
+        return get_mapper(self.backend)
 
     def on_sucess(self):
         """Close emodel db once we are done. -> Deprecated"""
@@ -65,6 +58,48 @@ class WorkflowTarget(luigi.Target, ABC):
 
 class WorkflowWrapperTask(WorkflowTask, luigi.WrapperTask):
     """Base wrapper class with global parameters."""
+
+
+class IPyParallelTask(_IPyParallelTask):
+    """Wrapper around IPyParallelTask to get chdir param from [DEFAULT] in config."""
+
+    chdir = luigi.configuration.get_config().get("DEFAULT", "chdir")
+
+    def prepare_args_for_remote_script(self, attrs):
+        """Prepare self.args, which is used to pass arguments to remote_script."""
+        # start with '--' to separate ipython arguments from parsing arguments
+        self.args = "--"
+
+        for attr in attrs:
+            if hasattr(self, attr):
+
+                # Luigi stores lists as tuples, but json cannot load tuple
+                # so here, turning tuples back into lists.
+                # Also turn lists and dicts into json strings.
+                if isinstance(getattr(self, attr), tuple):
+                    setattr(self, attr, json.dumps(list(getattr(self, attr))))
+                # luigi stores dicts as luigi.freezing.FrozenOrderedDict
+                # that are not json serializable,
+                # so turn them into dict, and then into json strings
+                elif isinstance(getattr(self, attr), (dict, luigi.freezing.FrozenOrderedDict)):
+                    setattr(self, attr, json.dumps(dict(getattr(self, attr))))
+
+                if getattr(self, attr) is True:
+                    self.args = " ".join([self.args, "--" + attr])
+                elif getattr(self, attr) is not False and getattr(self, attr) is not None:
+                    # be sure that lists and dicts are inside ' '
+                    # so that argparse detect them as one argument
+                    self.args = " ".join(
+                        [self.args, "--" + attr, "'" + str(getattr(self, attr)) + "'"]
+                    )
+
+        # append API-related arguments
+        # api is str
+        self.args += " --api_from_config " + EmodelAPIConfig().api
+        # api_args is dict
+        self.args += (
+            " --api_args_from_config " + "'" + json.dumps(dict(EmodelAPIConfig().api_args)) + "'"
+        )
 
 
 class BoolParameterCustom(luigi.BoolParameter):
