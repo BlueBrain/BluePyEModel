@@ -1,11 +1,12 @@
 """Emodel api module"""
 
 
-def get_db(api, **kwargs):
+def get_db(api, emodel, **kwargs):
     """Returns a DatabaseAPI object.
 
     Args:
         api (str): name of the api to use, can be nexus' or 'singlecell'.
+        emodel (str): name of the emodel.
         kwargs (dict): extra arguments to pass to api constructors, see below.
 
     For singlecell:
@@ -15,27 +16,34 @@ def get_db(api, **kwargs):
         final_path (str, optional): path to the final.json, if different from the one in emodel_dir
         legacy_dir_structure (bool, optional): uses legacy folder structure
 
-    For sql:
-        project_name (str): name of the project. Used as prefix to create the tables
-            of the postgreSQL database.
-
     For nexus:
-        forge_path (str): path to nexus forge project
+        species (str): name of the species.
+        project (str): name of the Nexus project.
+        organisation (str): name of the Nexus organization to which the project belong.
+        endpoint (str): Nexus endpoint.
+        forge_path (str): path to a .yml used as configuration by nexus-forge.
 
     Returns:
         DatabaseAPI
-
     """
 
     if api == "nexus":
-        from bluepyemodel.api.nexus import Nexus_API
+        from bluepyemodel.api.nexus import NexusAPI
 
-        return Nexus_API(kwargs["forge_path"])
+        return NexusAPI(
+            emodel=emodel,
+            species=kwargs.get("species", "rat"),
+            project=kwargs.get("project", "emodel_pipeline"),
+            organisation=kwargs.get("organisation", "Cells"),
+            endpoint=kwargs.get("endpoint", None),
+            forge_path=kwargs.get("forge_path", None),
+        )
 
     if api == "singlecell":
-        from bluepyemodel.api.singlecell import Singlecell_API
+        from bluepyemodel.api.singlecell import SinglecellAPI
 
-        return Singlecell_API(
+        return SinglecellAPI(
+            emodel=emodel,
             emodel_dir=kwargs["emodel_dir"],
             recipes_path=kwargs.get("recipes_path", None),
             final_path=kwargs.get("final_path", None),

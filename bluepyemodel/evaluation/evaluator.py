@@ -8,7 +8,6 @@ from bluepyopt.ephys.locations import NrnSeclistCompLocation
 from bluepyopt.ephys.locations import NrnSecSomaDistanceCompLocation
 from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
 from bluepyopt.ephys.objectives import SingletonObjective
-from bluepyopt.ephys.objectives import SingletonRuleObjective
 from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.simulators import NrnSimulator
@@ -555,7 +554,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     return main_protocol, features
 
 
-def define_fitness_calculator(features, optimisation_rules):
+def define_fitness_calculator(features):
     """Creates the objectives calculator.
 
     Args:
@@ -566,10 +565,6 @@ def define_fitness_calculator(features, optimisation_rules):
     """
 
     objectives = [SingletonObjective(feat.name, feat) for feat in features]
-
-    if optimisation_rules:
-        for r in optimisation_rules:
-            objectives.append(SingletonRuleObjective(name=r.name, rule=r))
 
     return ObjectivesCalculator(objectives)
 
@@ -599,7 +594,6 @@ def create_evaluator(
     protocols_definition,
     features_definition,
     stochasticity=True,
-    optimisation_rules=None,
     timeout=None,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
@@ -622,7 +616,7 @@ def create_evaluator(
         stochasticity,
     )
 
-    fitness_calculator = define_fitness_calculator(features, optimisation_rules)
+    fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}
 
     param_names = [param.name for param in cell_model.params.values() if not param.frozen]

@@ -2,8 +2,8 @@
 
 import logging
 
-from bluepyemodel.emodel_pipeline.emodel_pipeline import compute_responses
-from bluepyemodel.optimisation import _get_evaluator_from_db
+from bluepyemodel.evaluation.evaluation import compute_responses
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 from bluepyemodel.validation import validation_functions
 
 logger = logging.getLogger(__name__)
@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 def validate(
     emodel_db,
     emodel,
-    species,
     mapper,
     validation_function=None,
     stochasticity=False,
@@ -28,7 +27,6 @@ def validate(
         emodel_db (DatabaseAPI): API used to access the database.
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
-        species (str): name of the species.
         mapper (map): used to parallelize the evaluation of the
             individual in the population.
         validation_function (str): function used to decide if a model
@@ -56,9 +54,8 @@ def validate(
     if additional_protocols is None:
         additional_protocols = {}
 
-    cell_evaluator = _get_evaluator_from_db(
+    cell_evaluator = get_evaluator_from_db(
         emodel,
-        species,
         emodel_db,
         stochasticity=stochasticity,
         morphology_modifiers=morphology_modifiers,
@@ -69,7 +66,6 @@ def validate(
     emodels = compute_responses(
         emodel_db,
         emodel,
-        species,
         cell_evaluator,
         mapper,
     )
@@ -82,7 +78,7 @@ def validate(
             logger.warning("Validation function not  specified, will use validate_max_score.")
             validation_function = validation_functions.validate_max_score
 
-        name_validation_protocols = emodel_db.get_name_validation_protocols(emodel, species)
+        name_validation_protocols = emodel_db.get_name_validation_protocols(emodel)
 
         logger.info("In validate, %s emodels found to validate.", len(emodels))
 
@@ -101,7 +97,6 @@ def validate(
 
             emodel_db.store_emodel(
                 emodel=emodel,
-                species=species,
                 scores=mo["scores"],
                 params=mo["parameters"],
                 optimizer_name=mo["optimizer"],
@@ -113,5 +108,5 @@ def validate(
 
         return emodels
 
-    logger.warning("In compute_scores, no emodel for %s %s", emodel, species)
+    logger.warning("In compute_scores, no emodel for %s", emodel)
     return []

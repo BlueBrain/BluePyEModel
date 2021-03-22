@@ -11,7 +11,6 @@ from bluepyemodel.api.databaseAPI import DatabaseAPI
 
 logger = logging.getLogger(__name__)
 
-# pylint: disable=W0231,W0613
 
 seclist_to_sec = {
     "somatic": "soma",
@@ -21,11 +20,12 @@ seclist_to_sec = {
 }
 
 
-class Singlecell_API(DatabaseAPI):
+class SinglecellAPI(DatabaseAPI):
     """Access point to configuration files organized as project 38."""
 
     def __init__(
         self,
+        emodel,
         emodel_dir,
         final_path=None,
         recipes_path=None,
@@ -35,6 +35,7 @@ class Singlecell_API(DatabaseAPI):
         """Init
 
         Args:
+            emodel (str): name of the emodel.
             emodel_dir (str): path to the working directory.
             final_path (str): path to final.json which will contain the optimized models.
             recipes_path (str): path to the json file which should contain the path to the
@@ -55,6 +56,8 @@ class Singlecell_API(DatabaseAPI):
                 It uses the old BluePyEfe 2 format. To be updated/deprecated.
         """
 
+        super().__init__(emodel)
+
         self.emodel_dir = Path(emodel_dir)
         self.recipes_path = recipes_path
         self.legacy_dir_structure = legacy_dir_structure
@@ -64,6 +67,14 @@ class Singlecell_API(DatabaseAPI):
             self.final_path = self.emodel_dir / "final.json"
         else:
             self.final_path = Path(final_path)
+
+    def set_emodel(self, emodel):
+        """ Setter for the name of the emodel. """
+
+        if emodel not in self.get_all_recipes():
+            raise Exception("Cannot set the emodel name to %s which does not exist in the recipes.")
+
+        self.emodel = emodel
 
     def get_final(self):
         """Get emodels from json"""
@@ -105,28 +116,36 @@ class Singlecell_API(DatabaseAPI):
         with open(p_tmp, "w+") as fp:
             json.dump(final, fp, indent=2)
 
-    def get_recipes(self, emodel):
-        """Load the recipes from a json file for an emodel.
+    def get_all_recipes(self):
+        """Load the recipes from a json file.
 
         See docstring of __init__ for the format of the file of recipes.
         """
 
         if self.legacy_dir_structure:
-            emodel = "_".join(emodel.split("_")[:2])
+            emodel = "_".join(self.emodel.split("_")[:2])
             recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
             recipes_path = self.recipes_path
 
         with open(recipes_path, "r") as f:
-            return json.load(f)[emodel]
+            return json.load(f)
 
-    def _get_json(self, emodel, recipe_entry):
+    def get_recipes(self):
+        """Load the recipes from a json file for an emodel.
+
+        See docstring of __init__ for the format of the file of recipes.
+        """
+
+        return self.get_all_recipes()[self.emodel]
+
+    def _get_json(self, recipe_entry):
         """Helper function to load a json using path in recipe."""
 
-        json_path = Path(self.get_recipes(emodel)[recipe_entry])
+        json_path = Path(self.get_recipes()[recipe_entry])
 
         if self.legacy_dir_structure:
-            emodel = "_".join(emodel.split("_")[:2])
+            emodel = "_".join(self.emodel.split("_")[:2])
             json_path = self.emodel_dir / emodel / json_path
 
         else:
@@ -138,14 +157,8 @@ class Singlecell_API(DatabaseAPI):
 
         return data
 
-    def get_extraction_metadata(self, emodel=None, species=None, threshold_nvalue_save=None):
+    def get_extraction_metadata(self):
         """Get the configuration parameters used for feature extraction.
-
-        Args:
-            emodel (str): name of the emodels
-            species (str): name of the species (rat, human, mouse)
-            threshold_nvalue_save (int): lower bounds of the number of values required to save an
-                efeature.
 
         Returns:
             files_metadata (dict)
@@ -175,8 +188,6 @@ class Singlecell_API(DatabaseAPI):
 
     def store_efeatures(
         self,
-        emodel,
-        species,
         efeatures,
         current,
         name_Rin_protocol,
@@ -186,8 +197,6 @@ class Singlecell_API(DatabaseAPI):
         """Save the efeatures and currents obtained from BluePyEfe.
 
         Args:
-            emodel (str): name of the emodels.
-            species (str): name of the species (rat, human, mouse).
             efeatures (dict): efeatures means and standard deviations. Format as returned by
                 BluePyEfe 2.
             current (dict): threshold and holding current as returned by BluePyEfe. Format as
@@ -290,19 +299,17 @@ class Singlecell_API(DatabaseAPI):
             if not (out_features[protocol]["soma.v"]):
                 out_features.pop(protocol)
 
-        features_path = self.get_recipes(emodel)["features"]
+        features_path = self.get_recipes()["features"]
         features_path.parent.mkdir(parents=True, exist_ok=True)
 
         s = json.dumps(out_features, indent=2, cls=NumpyEncoder)
         with open(features_path, "w") as f:
             f.write(s)
 
-    def store_protocols(self, emodel, species, stimuli, validation_protocols):
+    def store_protocols(self, stimuli, validation_protocols):
         """Save the protocols obtained from BluePyEfe.
 
         Args:
-            emodel (str): name of the emodel.
-            species (str): name of the species (rat, human, mouse).
             stimuli (dict): protocols definition in the format returned by BluePyEfe 2.
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only.
@@ -325,30 +332,28 @@ class Singlecell_API(DatabaseAPI):
             if "validation" not in stimulus:
                 stimulus["validation"] = False
 
-        protocols_path = self.get_recipes(emodel)["protocol"]
+        protocols_path = self.get_recipes()["protocol"]
         protocols_path.parent.mkdir(parents=True, exist_ok=True)
 
         s = json.dumps(stimuli, indent=2, cls=NumpyEncoder)
         with open(protocols_path, "w") as f:
             f.write(s)
 
-    @staticmethod
-    def get_model_name_for_final(emodel, githash, seed):
+    def get_model_name_for_final(self, githash, seed):
         """ Return model name used as key in final.json. """
 
         if githash:
-            return "{}__{}__{}".format(emodel, githash, seed)
+            return "{}__{}__{}".format(self.emodel, githash, seed)
 
         logger.warning(
             "Githash is %s. It is strongly advised to use githash in the future.",
             githash,
         )
 
-        return "{}__{}".format(emodel, seed)
+        return "{}__{}".format(self.emodel, seed)
 
     def store_emodel(
         self,
-        emodel,
         scores,
         params,
         optimizer_name,
@@ -356,21 +361,19 @@ class Singlecell_API(DatabaseAPI):
         githash="",
         validated=False,
         scores_validation=None,
-        species=None,
     ):
         """Store an emodel obtained from BluePyOpt in the final.json. Note that if a model in the
         final.json has the same key (emodel__githash__seed), it will be overwritten.
 
         Args:
-            emodel (str): name of the emodel.
-            scores (dict): of the format {"objective_name": score}.
-            params (dict): of the format {"param_name": param_value}.
+            scores (dict): scores of the efeatures. Of the format {"objective_name": score}.
+            params (dict): values of the parameters. Of the format {"param_name": param_value}.
             optimizer_name (str): name of the optimizer (IBEA, CMA, ...).
             seed (int): seed used by the optimizer.
             githash (str): githash associated with the configuration files.
             validated (bool): has the model been through validation.
-            scores_validation (dict): of the format {"objective_name": score}.
-            species (str): name of the species (rat, human, mouse).
+            scores_validation (dict): scores of the validation efeatures. Of the format
+                {"objective_name": score}.
         """
 
         if scores_validation is None:
@@ -379,8 +382,7 @@ class Singlecell_API(DatabaseAPI):
         final = self.get_final()
 
         entry = {
-            "emodel": emodel,
-            "species": species,
+            "emodel": self.emodel,
             "score": sum(list(scores.values())),
             "params": params,
             "fitness": scores,
@@ -391,7 +393,7 @@ class Singlecell_API(DatabaseAPI):
             "githash": str(githash),
         }
 
-        model_name = self.get_model_name_for_final(emodel, githash, seed)
+        model_name = self.get_model_name_for_final(githash, seed)
 
         if model_name in final:
             logger.warning(
@@ -402,13 +404,9 @@ class Singlecell_API(DatabaseAPI):
 
         self.save_final(final)
 
-    def get_parameters(self, emodel, species=None):
+    def get_parameters(self):
         """Get the definition of the parameters that have to be optimized as well as the
          locations of the mechanisms. Also returns the name of the mechanisms.
-
-        Args:
-            emodel (str): name of the emodel.
-            species (str): name of the species (rat, human, mouse).
 
         Returns:
             params_definition (dict)
@@ -416,7 +414,7 @@ class Singlecell_API(DatabaseAPI):
             mech_names (list)
         """
 
-        parameters = self._get_json(emodel, "params")
+        parameters = self._get_json("params")
 
         params_definition = {
             "distributions": parameters["distributions"],
@@ -446,7 +444,7 @@ class Singlecell_API(DatabaseAPI):
 
         return params_definition, mech_definition, list(set(mech_names))
 
-    def _handle_extra_recording(self, emodel, extra_recordings):
+    def _handle_extra_recording(self, extra_recordings):
         """ Fetch the information needed to be able to use the extra recordings. """
 
         extra_recordings_out = []
@@ -455,7 +453,7 @@ class Singlecell_API(DatabaseAPI):
 
             if extra["type"] == "somadistanceapic":
 
-                morphologies = self.get_morphologies(emodel)
+                morphologies = self.get_morphologies()
                 morph_name = morphologies[0]["name"]
                 p = self.emodel_dir / "apical_points_isec.json"
 
@@ -478,7 +476,7 @@ class Singlecell_API(DatabaseAPI):
 
         return extra_recordings_out
 
-    def _read_protocol(self, emodel, protocol):
+    def _read_protocol(self, protocol):
 
         stimulus_def = protocol["step"]
         stimulus_def["holding_current"] = protocol["holding"]["amp"]
@@ -487,12 +485,12 @@ class Singlecell_API(DatabaseAPI):
 
         if "extra_recordings" in protocol:
             protocol_definition["extra_recordings"] = self._handle_extra_recording(
-                emodel, protocol["extra_recordings"]
+                protocol["extra_recordings"]
             )
 
         return protocol_definition
 
-    def _read_legacy_protocol(self, emodel, protocol, protocol_name):
+    def _read_legacy_protocol(self, protocol, protocol_name):
 
         if protocol_name in ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]:
             return None
@@ -510,19 +508,16 @@ class Singlecell_API(DatabaseAPI):
 
         if "extra_recordings" in protocol:
             protocol_definition["extra_recordings"] = self._handle_extra_recording(
-                emodel, protocol["extra_recordings"]
+                protocol["extra_recordings"]
             )
 
         return protocol_definition
 
-    def get_protocols(self, emodel, species=None, delay=0.0, include_validation=False):
+    def get_protocols(self, include_validation=False):
         """Get the protocols from the configuration file and put them in the format required by
         MainProtocol.
 
         Args:
-            emodel (str): name of the emodel.
-            species (str): name of the species (rat, human, mouse).
-            delay (float): additional delay in ms to add at the start of the protocols.
             include_validation (bool): if True, returns the protocols for validation as well as
                 the ones for optimisation.
 
@@ -530,7 +525,7 @@ class Singlecell_API(DatabaseAPI):
             protocols_out (dict): protocols definitions
         """
 
-        protocols = self._get_json(emodel, "protocol")
+        protocols = self._get_json("protocol")
 
         protocols_out = {}
 
@@ -539,18 +534,19 @@ class Singlecell_API(DatabaseAPI):
             if "validation" in protocol:
                 if not include_validation and protocol["validation"]:
                     continue
-                protocol_definition = self._read_protocol(emodel, protocol)
+                protocol_definition = self._read_protocol(protocol)
             else:
-                protocol_definition = self._read_legacy_protocol(emodel, protocol, protocol_name)
+                protocol_definition = self._read_legacy_protocol(protocol, protocol_name)
 
             if protocol_definition:
                 protocols_out[protocol_name] = protocol_definition
 
         return protocols_out
 
-    def get_name_validation_protocols(self, emodel, species):
+    def get_name_validation_protocols(self):
         """Get the names of the protocols used for validation """
-        protocols = self._get_json(emodel, "protocol")
+
+        protocols = self._get_json("protocol")
 
         names = []
         for prot_name, prot in protocols.items():
@@ -560,18 +556,11 @@ class Singlecell_API(DatabaseAPI):
 
         return names
 
-    def get_features(
-        self,
-        emodel,
-        species=None,
-        include_validation=False,
-    ):
+    def get_features(self, include_validation=False):
         """Get the efeatures from the configuration files and put then in the format required by
         MainProtocol.
 
         Args:
-            emodel (str): name of the emodel.
-            species (str): name of the species (rat, human, mouse).
             include_validation (bool): should the features for validation be returned as well as
                 the ones for optimisation.
 
@@ -579,8 +568,8 @@ class Singlecell_API(DatabaseAPI):
             efeatures_out (dict): efeatures definitions
         """
 
-        efeatures = self._get_json(emodel, "features")
-        protocols = self._get_json(emodel, "protocol")
+        efeatures = self._get_json("features")
+        protocols = self._get_json("protocol")
 
         efeatures_out = {
             "RMPProtocol": {"soma.v": []},
@@ -637,12 +626,8 @@ class Singlecell_API(DatabaseAPI):
 
         return efeatures_out
 
-    def get_morphologies(self, emodel, species=None):
+    def get_morphologies(self):
         """Get the name and path to the morphologies from the recipes.
-
-        Args:
-            emodel (str): name of the emodel.
-            species (str): name of the species (rat, human, mouse).
 
         Returns:
             morphology_definition (list): [{'name': morph_name, 'path': 'morph_path'}]. Might
@@ -650,7 +635,7 @@ class Singlecell_API(DatabaseAPI):
             present in the recipes.
         """
 
-        recipes = self.get_recipes(emodel)
+        recipes = self.get_recipes()
 
         morphology_definition = []
 
@@ -671,7 +656,7 @@ class Singlecell_API(DatabaseAPI):
 
         return morphology_definition
 
-    def format_emodel_data(self, model_data, species=None):
+    def format_emodel_data(self, model_data):
 
         out_data = {
             "emodel": model_data["emodel"],
@@ -686,7 +671,6 @@ class Singlecell_API(DatabaseAPI):
             "branch",
             "rank",
             "optimizer",
-            "species",
         ]:
             if key in model_data:
                 out_data[key] = model_data[key]
@@ -700,16 +684,14 @@ class Singlecell_API(DatabaseAPI):
 
         return out_data
 
-    def get_emodel(self, emodel, species=None):
+    def get_emodel(self, emodel):
         """Get dict with parameter of single emodel (including seed if any)
 
-        WARNING: this search is based on the name of the model and not its
-        emodel despite the name of the variable. To search by emode name
-        use get_emodels.
+        WARNING: this search is based on the name of the model and not the name of the emodel
+        despite the name of the variable. To search by emodel name use get_emodels.
 
         Args:
             emodel (str): name of the emodels.
-            species (str): name of the species (rat, human, mouse).
         """
 
         final = self.get_final()
@@ -721,13 +703,16 @@ class Singlecell_API(DatabaseAPI):
 
         return None
 
-    def get_emodels(self, emodels, species):
+    def get_emodels(self, emodels=None):
         """Get the list of emodels dictionaries.
 
         Args:
             emodels (list): list of names of the emodels.
-            species (str): name of the species (rat, human, mouse).
         """
+
+        if emodels is None:
+            emodels = [self.emodel]
+
         models = []
         for mod_data in self.get_final().values():
             if mod_data["emodel"] in emodels:
@@ -750,48 +735,49 @@ class Singlecell_API(DatabaseAPI):
 
         return {mod_name: mod["emodel"] for mod_name, mod in final.items()}
 
-    def has_protocols_and_features(self, emodel, species=None):
+    def has_protocols_and_features(self):
         """Check if the efeatures and protocol exist."""
 
+        # TODO: Re-write this to use recipes instead of hardcoded path
         features_exists = (
-            Path(self.emodel_dir, "config", "features", emodel).with_suffix(".json").is_file()
+            Path(self.emodel_dir, "config", "features", self.emodel).with_suffix(".json").is_file()
         )
         protocols_exists = (
-            Path(self.emodel_dir, "config", "protocols", emodel).with_suffix(".json").is_file()
+            Path(self.emodel_dir, "config", "protocols", self.emodel).with_suffix(".json").is_file()
         )
 
         return features_exists and protocols_exists
 
-    def optimisation_state(self, emodel, checkpoint_dir, species=None, seed=1, githash=""):
+    def optimisation_state(self, checkpoint_dir, seed=1, githash=""):
         """Return the state of the optimisation.
 
         TODO: - should return three states: completed, in progress, empty
               - better management of checkpoints
         """
 
-        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{githash}_{seed}.pkl"
+        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{self.emodel}_{githash}_{seed}.pkl"
 
         return checkpoint_path.is_file()
 
-    def has_best_model(self, emodel, seed, githash):
+    def has_best_model(self, seed, githash):
         """ Check if the best model has been stored. """
 
         final = self.get_final()
 
-        model_name = self.get_model_name_for_final(emodel, githash, seed)
+        model_name = self.get_model_name_for_final(githash, seed)
 
         return model_name in final
 
-    def is_checked_by_validation(self, emodel, seed, githash):
+    def is_checked_by_validation(self, seed, githash):
         """ Check if the emodel with a given seed has been checked by Validation task. """
 
         final = self.get_final()
 
-        model_name = self.get_model_name_for_final(emodel, githash, seed)
+        model_name = self.get_model_name_for_final(githash, seed)
 
         return bool(final.get(model_name, {}).get("validation_fitness"))
 
-    def is_validated(self, emodel, githash, n_models_to_pass_validation):
+    def is_validated(self, githash, n_models_to_pass_validation):
         """ Check if enough models have been validated. """
 
         n_validated = 0
@@ -799,7 +785,11 @@ class Singlecell_API(DatabaseAPI):
 
         for _, entry in final.items():
 
-            if entry["githash"] == githash and entry["emodel"] == emodel and entry["validated"]:
+            if (
+                entry["githash"] == githash
+                and entry["emodel"] == self.emodel
+                and entry["validated"]
+            ):
                 n_validated += 1
 
         return n_validated >= n_models_to_pass_validation

@@ -7,7 +7,6 @@ from luigi_tools.task import ParamRef
 from luigi_tools.task import copy_params
 
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
-from bluepyemodel.optimisation import copy_and_compile_mechanisms
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tasks.emodel_creation.config import OptimizeConfig
 from bluepyemodel.tasks.luigi_tools import BoolParameterCustom
@@ -15,27 +14,21 @@ from bluepyemodel.tasks.luigi_tools import IPyParallelTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
+from bluepyemodel.tools.mechanisms import copy_and_compile_mechanisms
+
+# pylint: disable=W0235
 
 
 class EfeaturesProtocolsTarget(WorkflowTarget):
     """Target to check if efeatures and protocols are present in the database."""
 
-    def __init__(self, emodel, species=None):
-        """Constructor.
-
-        Args:
-            emodel (str): name of the emodel. Has to match the name of the emodel
-                under which the configuration data are stored.
-            species (str): name of the species.
-        """
+    def __init__(self):
+        """ Constructor. """
         super().__init__()
-
-        self.emodel = emodel
-        self.species = species
 
     def exists(self):
         """Check if the features and protocols have been created."""
-        return self.emodel_db.has_protocols_and_features(self.emodel, species=self.species)
+        return self.emodel_db.has_protocols_and_features()
 
 
 class ExtractEFeatures(WorkflowTask):
@@ -82,7 +75,7 @@ class ExtractEFeatures(WorkflowTask):
 
     def output(self):
         """"""
-        return EfeaturesProtocolsTarget(self.emodel, species=self.species)
+        return EfeaturesProtocolsTarget()
 
 
 class CompileMechanisms(WorkflowTask):
@@ -125,33 +118,24 @@ class OptimisationTarget(WorkflowTarget):
 
     def __init__(
         self,
-        emodel,
-        species=None,
         seed=1,
         checkpoint_dir=None,
     ):
         """Constructor.
 
         Args:
-           emodel (str): name of the emodel. Has to match the name of the emodel
-               under which the configuration data are stored.
-           species (str): name of the species.
            seed (int): seed used in the optimisation.
            checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
         """
         super().__init__()
 
-        self.emodel = emodel
-        self.species = species
         self.checkpoint_dir = checkpoint_dir
         self.seed = seed
 
     def exists(self):
         """Check if the model is completed."""
         return self.emodel_db.optimisation_state(
-            self.emodel,
             self.checkpoint_dir,
-            species=self.species,
             seed=self.seed,
             githash="",
         )
@@ -278,11 +262,9 @@ class Optimize(WorkflowTask, IPyParallelTask):
             emodel_db,
             args.emodel,
             args.seed,
-            species=args.species,
             morphology_modifiers=args.morphology_modifiers,
             stochasticity=args.stochasticity,
             include_validation_protocols=False,
-            optimisation_rules=None,
             timeout=args.timeout,
             mapper=mapper,
             opt_params=args.opt_params,  # these should be real parameters from luigi.cfg
@@ -295,12 +277,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
     def output(self):
         """"""
-        return OptimisationTarget(
-            emodel=self.emodel,
-            species=self.species,
-            checkpoint_dir=self.checkpoint_dir,
-            seed=self.seed,
-        )
+        return OptimisationTarget(checkpoint_dir=self.checkpoint_dir, seed=self.seed)
 
 
 class BestModelTarget(WorkflowTarget):
@@ -325,7 +302,7 @@ class BestModelTarget(WorkflowTarget):
 
     def exists(self):
         """Check if the best model is stored."""
-        return self.emodel_db.has_best_model(emodel=self.emodel, seed=self.seed, githash="")
+        return self.emodel_db.has_best_model(seed=self.seed, githash="")
 
 
 @copy_params(
@@ -362,19 +339,15 @@ class StoreBestModels(WorkflowTask):
         for seed in range(self.seed, self.seed + self.batch_size):
             # can have unfulfilled dependecies if slurm has send signal near time limit.
             if OptimisationTarget(
-                emodel=self.emodel,
-                species=self.species,
                 seed=seed,
                 checkpoint_dir=self.checkpoint_dir,
             ).exists():
                 store_best_model(
                     self.emodel_db,
                     self.emodel,
-                    self.species,
                     seed,
                     stochasticity=self.stochasticity,
                     include_validation_protocols=False,
-                    optimisation_rules=None,
                     optimizer=self.optimizer,
                     checkpoint_dir=self.checkpoint_dir,
                     githash="",
@@ -413,7 +386,7 @@ class ValidationTarget(WorkflowTarget):
     def exists(self):
         """Check if the model is completed for all given seeds."""
         checked_for_all_seeds = [
-            self.emodel_db.is_checked_by_validation(emodel=self.emodel, seed=seed, githash="")
+            self.emodel_db.is_checked_by_validation(seed=seed, githash="")
             for seed in range(self.seed, self.seed + self.batch_size)
         ]
         return all(checked_for_all_seeds)
@@ -542,7 +515,6 @@ class Validation(WorkflowTask, IPyParallelTask):
         validate(
             emodel_db,
             args.emodel,
-            args.species,
             mapper,
             validation_function=args.validation_function,
             stochasticity=args.stochasticity,
@@ -577,7 +549,6 @@ class EModelCreationTarget(WorkflowTarget):
     def exists(self):
         """Check if the model is completed."""
         return self.emodel_db.is_validated(
-            emodel=self.emodel,
             githash="",
             n_models_to_pass_validation=self.n_models_to_pass_validation,
         )

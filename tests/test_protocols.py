@@ -13,6 +13,11 @@ class PipelineSetUp(unittest.TestCase):
         species = "rat"
         recipes_path = "./config/recipes.json"
 
+        if pathlib.Path("x86_64").is_dir():
+            os.popen("rm -rf x86_64").read()
+
+        os.popen("nrnivmodl mechanisms").read()
+
         self.pipeline = EModel_pipeline(
             emodel=emodel,
             species=species,
@@ -22,8 +27,6 @@ class PipelineSetUp(unittest.TestCase):
 
         self.model_result = self.pipeline.compute_responses(
             stochasticity=False,
-            copy_mechanisms=False,
-            compile_mechanisms=True,
             additional_protocols=None,
         )[0]
 

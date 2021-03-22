@@ -17,7 +17,7 @@ from morphio.mut import Morphology
 from tqdm import tqdm
 from voxcell import CellCollection
 
-from bluepyemodel.api.singlecell import Singlecell_API
+from bluepyemodel.api.singlecell import SinglecellAPI
 
 L = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def cli(verbose):
 
 def _get_database(api, emodel_path, final_path=None, legacy_dir_structure=True):
     if api == "singlecell":
-        return Singlecell_API(emodel_path, final_path, legacy_dir_structure=legacy_dir_structure)
+        return SinglecellAPI(emodel_path, final_path, legacy_dir_structure=legacy_dir_structure)
     raise NotImplementedError(f"api {api} is not implemented")
 
 

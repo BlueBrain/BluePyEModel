@@ -1,232 +1,27 @@
 """Define a class for a pipeline allowing the creation of emodels."""
-import copy
 import datetime
 import logging
 import os
-import shutil
 import tarfile
 import time
 from pathlib import Path
 
-import bluepyefe.extract
 from git import Repo
 
 from bluepyemodel.api import get_db
+from bluepyemodel.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
-from bluepyemodel.emodel_pipeline.utils import read_checkpoint
-from bluepyemodel.evaluation import evaluator
-from bluepyemodel.evaluation import model
+from bluepyemodel.evaluation.evaluation import compute_responses
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 from bluepyemodel.optimisation import optimisation
-from bluepyemodel.validation import validation_functions as validation
+from bluepyemodel.optimisation import store_best_model
+from bluepyemodel.validation.validation import validate
 
 logger = logging.getLogger(__name__)
-
-# pylint: disable=W0612,W0613
 
 mechanisms_dir = "mechanisms"
 run_dir = "run"
 final_path = "final.json"
-
-
-def extract_save_features_protocols(
-    emodel_db,
-    emodel,
-    species=None,
-    files_metadata=None,
-    targets=None,
-    protocols_threshold=None,
-    threshold_nvalue_save=1,
-    mapper=map,
-    name_Rin_protocol=None,
-    name_rmp_protocol=None,
-    validation_protocols=None,
-    plot=False,
-):
-    """
-
-    Args:
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
-        emodel (str): name of the emodel.
-        species (str): name of the species.
-        files_metadata (dict): define for which cell and protocol each file
-            has to be used.
-        targets (dict): define the efeatures to extract for each protocols
-            and the amplitude around which these features should be
-            averaged.
-        protocols_threshold (list): names of the protocols that will be
-            used to compute the rheobase of the cells. E.g: ['IDthresh'].
-        threshold_nvalue_save (int): lower bounds of the number of values required
-            to save an efeature.
-        mapper (map): mapper for parallel computations.
-        name_Rin_protocol (str): name of the protocol that should be used to compute
-            the input resistance. Only used when db_api is 'singlecell'
-        name_rmp_protocol (str): name of the protocol that should be used to compute
-            the resting membrane potential. Only used when db_api is 'singlecell'.
-        validation_protocols (dict): Of the form {"ecodename": [targets]}. Only used
-            when db_api is 'singlecell'.
-        plot (bool): True to plot the efeatures and the traces.
-
-    """
-
-    if files_metadata is None or targets is None or protocols_threshold is None:
-
-        (
-            files_metadata,
-            targets,
-            protocols_threshold,
-        ) = emodel_db.get_extraction_metadata(emodel, species, threshold_nvalue_save)
-
-        if files_metadata is None or targets is None or protocols_threshold is None:
-            raise Exception("Could not get the extraction metadata from the api.")
-
-    # extract features
-    efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
-        output_directory=emodel,
-        files_metadata=files_metadata,
-        targets=targets,
-        threshold_nvalue_save=threshold_nvalue_save,
-        protocols_rheobase=protocols_threshold,
-        ap_threshold=-20.0,
-        recording_reader=None,
-        map_function=mapper,
-        write_files=False,
-        plot=plot,
-    )
-
-    # store features & protocols
-    emodel_db.store_efeatures(
-        emodel,
-        species,
-        efeatures,
-        current,
-        name_Rin_protocol,
-        name_rmp_protocol,
-        validation_protocols,
-    )
-    emodel_db.store_protocols(emodel, species, stimuli, validation_protocols)
-
-    return efeatures, stimuli, current
-
-
-def copy_mechs(mechanism_paths, out_dir):
-    """Copy mod files in the designated directory.
-
-    Args:
-        mechanism_paths (list): list of the paths to the mod files that
-            have to be copied.
-        out_dir (str): path to directory to which the mod files should
-            be copied.
-    """
-
-    if mechanism_paths:
-
-        out_dir = Path(out_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        for m in mechanism_paths:
-
-            p = Path(m["path"])
-
-            if p.is_file():
-                new_p = out_dir / p.name
-                shutil.copy(str(p), str(new_p))
-
-            else:
-                raise Exception(
-                    "Cannot copy the .mod files locally because the "
-                    "'mechanism_paths' {} does not exist.".format(p)
-                )
-
-
-def compile_mechs(working_dir, githash=None):
-    """Compile the mechanisms and copy them in the cwd.
-
-    Args:
-        working_dir (str): directory in which to compile and take the mechanisms.
-    """
-
-    path_mechanisms_dir = Path(working_dir) / mechanisms_dir
-
-    if path_mechanisms_dir.is_dir():
-
-        if Path("x86_64").is_dir():
-            os.popen("rm -rf x86_64").read()
-
-        if githash:
-            os.chdir(working_dir)
-            os.popen("nrnivmodl mechanisms").read()
-            os.chdir("../../")
-            os.popen("cp -r {} x86_64".format(str(Path(working_dir) / "x86_64"))).read()
-        else:
-            os.popen("nrnivmodl mechanisms").read()
-
-    else:
-        raise Exception(
-            "Cannot compile the mechanisms because 'mechanisms_dir':"
-            " {} does not exist.".format(str(path_mechanisms_dir))
-        )
-
-
-def get_responses(to_run):
-    """Compute the voltage responses of a set of parameters.
-
-    Args:
-        to_run (dict): of the form
-            to_run = {"evaluator": CellEvaluator, "parameters": Dict}
-    """
-
-    eva = to_run["evaluator"]
-    params = to_run["parameters"]
-
-    eva.cell_model.unfreeze(params)
-
-    return eva.run_protocols(protocols=eva.fitness_protocols.values(), param_values=params)
-
-
-def compute_responses(
-    emodel_db,
-    emodel,
-    species,
-    cell_evaluator,
-    map_function,
-):
-    """Compute the responses of the emodel to the optimisation and validation protocols.
-
-    Args:
-        emodel_db (DatabaseAPI): API used to access the database.
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
-        species (str): name of the species.
-        cell_evaluator (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
-        map_function (map): used to parallelize the evaluation of the
-            individual in the population.
-    Returns:
-        emodels (list): list of emodels.
-    """
-
-    emodels = emodel_db.get_emodels([emodel], species)
-    if emodels:
-
-        logger.info("In compute_responses, %s emodels found to evaluate.", len(emodels))
-
-        to_run = []
-        for mo in emodels:
-            to_run.append(
-                {
-                    "evaluator": copy.deepcopy(cell_evaluator),
-                    "parameters": mo["parameters"],
-                }
-            )
-
-        responses = list(map_function(get_responses, to_run))
-
-        for mo, r in zip(emodels, responses):
-            mo["responses"] = r
-
-    else:
-        logger.warning("In compute_responses, no emodel for %s %s", emodel, species)
-
-    return emodels
 
 
 def update_gitignore():
@@ -431,6 +226,7 @@ class EModel_pipeline:
         """
         return get_db(
             self.db_api,
+            emodel=self.emodel,
             emodel_dir=self.working_dir,
             recipes_path=self.recipes_path,
             final_path=final_path,
@@ -440,25 +236,18 @@ class EModel_pipeline:
     def get_evaluator(
         self,
         stochasticity=False,
-        copy_mechanisms=False,
-        compile_mechanisms=False,
         include_validation_protocols=False,
         additional_protocols=None,
-        optimisation_rules=None,
         timeout=600,
     ):
         """Create an evaluator for the emodel.
 
         Args:
             stochasticity (bool): should channels behave stochastically if they can.
-            copy_mechanisms (bool): should the mod files be copied in the local
-                mechanisms_dir directory.
-            compile_mechanisms (bool): should the mod files be compiled.
             include_validation_protocols (bool): should the validation protocols
                 and validation efeatures be added to the evaluator.
             additional_protocols (dict): definition of supplementary protocols. See
                 examples/optimisation for usage.
-            optimisation_rules (list): list of Rules. TO DEPRECATE: should be done in the api.
             timeout (float): duration (in second) after which the evaluation of a protocol will
                 be interrupted.
 
@@ -468,59 +257,13 @@ class EModel_pipeline:
 
         db = self.connect_db()
 
-        if compile_mechanisms and self.githash:
-            raise Exception(
-                "Compile mechanisms and the use of githash are not compatible "
-                "yet. Please pre-compile the mechanisms and re-run with "
-                "compile_mechanisms=False."
-            )
-
-        # Get the data
-        parameters, mechanisms, mechanism_names = db.get_parameters(self.emodel, self.species)
-        if not (parameters) or not (mechanisms):
-            raise Exception("No parameters for emodel %s" % self.emodel)
-
-        morphologies = db.get_morphologies(self.emodel, self.species)
-        if not (morphologies):
-            raise Exception("No morphologies for emodel %s" % self.emodel)
-
-        efeatures = db.get_features(
-            self.emodel, self.species, include_validation=include_validation_protocols
-        )
-        if not (efeatures):
-            raise Exception("No efeatures for emodel %s" % self.emodel)
-
-        protocols = db.get_protocols(
-            self.emodel, self.species, include_validation=include_validation_protocols
-        )
-        if not (protocols):
-            raise Exception("No protocols for emodel %s" % self.emodel)
-        if additional_protocols:
-            protocols.update(additional_protocols)
-
-        # if copy_mechanisms:
-        #    mechanism_paths = db.get_mechanism_paths(mechanism_names)
-        #    if not (mechanism_paths):
-        #        raise Exception("No mechanisms paths for emodel %s" % self.emodel)
-        #    copy_mechs(mechanism_paths, mechanisms_dir)
-
-        if compile_mechanisms:
-            compile_mechs(self.working_dir, self.githash)
-
-        cell_models = model.create_cell_models(
+        return get_evaluator_from_db(
             emodel=self.emodel,
-            morphologies=morphologies,
-            mechanisms=mechanisms,
-            parameters=parameters,
-            morph_modifiers=self.morphology_modifiers,
-        )
-
-        return evaluator.create_evaluator(
-            cell_model=cell_models[0],
-            protocols_definition=protocols,
-            features_definition=efeatures,
+            db=db,
+            morphology_modifiers=None,
             stochasticity=stochasticity,
-            optimisation_rules=optimisation_rules,
+            include_validation_protocols=include_validation_protocols,
+            additional_protocols=additional_protocols,
             timeout=timeout,
         )
 
@@ -616,13 +359,10 @@ class EModel_pipeline:
         self,
         max_ngen=1000,
         stochasticity=False,
-        copy_mechanisms=False,
-        compile_mechanisms=False,
         opt_params=None,
         optimizer="MO-CMA",
         checkpoint_path=None,
         continue_opt=False,
-        optimisation_rules=None,
         timeout=600,
     ):
         """Run optimisation.
@@ -630,9 +370,6 @@ class EModel_pipeline:
         Args:
             max_ngen (int): maximum number of generations of the evolutionary process.
             stochasticity (bool): should channels behave stochastically if they can.
-            copy_mechanisms (bool): should the mod files be copied in the local
-                mechanisms_dir directory.
-            compile_mechanisms (bool): should the mod files be compiled.
             opt_params (dict): optimisation parameters. Keys have to match the
                 optimizer's call.
             optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
@@ -665,10 +402,7 @@ class EModel_pipeline:
 
         _evaluator = self.get_evaluator(
             stochasticity=stochasticity,
-            copy_mechanisms=copy_mechanisms,
-            compile_mechanisms=compile_mechanisms,
             include_validation_protocols=False,
-            optimisation_rules=optimisation_rules,
             timeout=timeout,
         )
 
@@ -692,12 +426,10 @@ class EModel_pipeline:
 
     def store_best_model(
         self,
+        checkpoint_path,
         stochasticity=False,
-        copy_mechanisms=False,
-        compile_mechanisms=False,
         opt_params=None,
         optimizer="MO-CMA",
-        checkpoint_path="./checkpoint.pkl",
     ):
         """Store the best model from an optimization. Reads a checkpoint file generated
             by BluePyOpt and store the best individual of the hall of fame.
@@ -706,41 +438,20 @@ class EModel_pipeline:
             stochasticity (bool): should channels behave stochastically if they can.
             opt_params (dict): optimisation parameters. Keys have to match the optimizer's call.
             optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA", "MO-CMA".
-            checkpoint_path (str): path to the BluePyOpt checkpoint file from which the best model
-                will be read and stored.
         """
+
         if opt_params is None:
             opt_params = {}
 
-        _evaluator = self.get_evaluator(
+        store_best_model(
+            emodel_db=self.connect_db(),
+            emodel=self.emodel,
+            seed=opt_params.get("seed", ""),
             stochasticity=stochasticity,
-            copy_mechanisms=copy_mechanisms,
-            compile_mechanisms=compile_mechanisms,
             include_validation_protocols=False,
-        )
-
-        db = self.connect_db()
-
-        run = read_checkpoint(checkpoint_path)
-
-        best_model = run["halloffame"][0]
-        feature_names = [obj.name for obj in _evaluator.fitness_calculator.objectives]
-        param_names = list(_evaluator.param_names)
-
-        scores = dict(zip(feature_names, best_model.fitness.values))
-        params = dict(zip(param_names, best_model))
-
-        seed = opt_params.get("seed", "")
-
-        db.store_emodel(
-            self.emodel,
-            scores,
-            params,
-            optimizer_name=optimizer,
-            seed=seed,
+            optimizer=optimizer,
+            checkpoint_path=checkpoint_path,
             githash=self.githash,
-            validated=False,
-            species=self.species,
         )
 
     def compute_responses(
@@ -748,8 +459,6 @@ class EModel_pipeline:
         cell_evaluator=None,
         map_function=None,
         stochasticity=False,
-        copy_mechanisms=False,
-        compile_mechanisms=False,
         additional_protocols=None,
     ):
         """Wrapper around compute_responses.
@@ -761,23 +470,19 @@ class EModel_pipeline:
             map_function (map): used to parallelize the evaluation of the
                 individual in the population.
             stochasticity (bool): should channels behave stochastically if they can.
-            copy_mechanisms (bool): should the mod files be copied in the local
-                mechanisms_dir directory.
-            compile_mechanisms (bool): should the mod files be compiled.
             additional_protocols (dict): definition of supplementary protocols. See
                 examples/optimisation for usage.
         Returns:
             emodels (list): list of emodels.
         """
-        # create evaluator if not given
+
         if cell_evaluator is None:
+
             if additional_protocols is None:
                 additional_protocols = {}
 
             cell_evaluator = self.get_evaluator(
                 stochasticity=stochasticity,
-                copy_mechanisms=copy_mechanisms,
-                compile_mechanisms=compile_mechanisms,
                 include_validation_protocols=True,
                 additional_protocols=additional_protocols,
             )
@@ -790,7 +495,6 @@ class EModel_pipeline:
         return compute_responses(
             db,
             self.emodel,
-            self.species,
             cell_evaluator,
             map_function,
         )
@@ -799,8 +503,6 @@ class EModel_pipeline:
         self,
         validation_function=None,
         stochasticity=False,
-        copy_mechanisms=False,
-        compile_mechanisms=False,
     ):
         """Compute the scores and traces for the optimisation and validation
         protocols and perform validation.
@@ -810,69 +512,31 @@ class EModel_pipeline:
                 passes validation or not. Should rely on emodel['scores'] and
                 emodel['scores_validation']. See bluepyemodel/validation for examples.
             stochasticity (bool): should channels behave stochastically if they can.
-            copy_mechanisms (bool): should the mod files be copied in the local
-                mechanisms_dir directory.
-            compile_mechanisms (bool): should the mod files be compiled.
 
         Returns:
             emodels (list): list of emodels.
         """
-        _evaluator = self.get_evaluator(
-            stochasticity=stochasticity,
-            copy_mechanisms=copy_mechanisms,
-            compile_mechanisms=compile_mechanisms,
-            include_validation_protocols=True,
-        )
-
-        emodels = self.compute_responses(_evaluator)
 
         db = self.connect_db()
 
-        if emodels:
+        mapper = ipyparallel_map_function("USEIPYP")
 
-            if validation_function is None:
-                logger.warning("Validation function not  specified, will use validate_max_score.")
-                validation_function = validation.validate_max_score
-
-            name_validation_protocols = db.get_name_validation_protocols(self.emodel, self.species)
-
-            logger.info("In validate, %s emodels found to validate.", len(emodels))
-
-            for mo in emodels:
-
-                mo["scores"] = _evaluator.fitness_calculator.calculate_scores(mo["responses"])
-
-                mo["scores_validation"] = {}
-                for feature_names, score in mo["scores"].items():
-                    for p in name_validation_protocols:
-                        if p in feature_names:
-                            mo["scores_validation"][feature_names] = score
-
-                validated = validation_function(mo)
-
-                db.store_emodel(
-                    emodel=self.emodel,
-                    species=self.species,
-                    scores=mo["scores"],
-                    params=mo["parameters"],
-                    optimizer_name=mo["optimizer"],
-                    seed=mo["seed"],
-                    githash=mo["githash"],
-                    validated=validated,
-                    scores_validation=mo["scores_validation"],
-                )
-
-            return emodels
-
-        logger.warning("In compute_scores, no emodel for %s %s", self.emodel, self.species)
-        return []
+        return validate(
+            emodel_db=db,
+            emodel=self.emodel,
+            mapper=mapper,
+            validation_function=validation_function,
+            stochasticity=stochasticity,
+            morphology_modifiers=None,
+            additional_protocols=None,
+            threshold=5.0,
+            validation_protocols_only=False,
+        )
 
     def plot_models(
         self,
         figures_dir="./figures",
         stochasticity=False,
-        copy_mechanisms=False,
-        compile_mechanisms=False,
         additional_protocols=None,
     ):
         """Plot the traces, scores and parameter distributions for all the models
@@ -881,9 +545,6 @@ class EModel_pipeline:
         Args:
             figures_dir (str): path of the directory in which the figures should be saved.
             stochasticity (bool): should channels behave stochastically if they can.
-            copy_mechanisms (bool): should the mod files be copied in the local
-                mechanisms_dir directory.
-            compile_mechanisms (bool): should the mod files be compiled.
             additional_protocols (dict): definition of supplementary protocols. See
                 examples/optimisation for usage.
 
@@ -895,8 +556,6 @@ class EModel_pipeline:
 
         _evaluator = self.get_evaluator(
             stochasticity=stochasticity,
-            copy_mechanisms=copy_mechanisms,
-            compile_mechanisms=compile_mechanisms,
             include_validation_protocols=True,
             additional_protocols=additional_protocols,
         )
