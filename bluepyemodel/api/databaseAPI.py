@@ -1,4 +1,5 @@
 """Generic API class."""
+from pathlib import Path
 
 
 class DatabaseAPI:
@@ -120,3 +121,14 @@ class DatabaseAPI:
         Returns:
             dict: keys are emodel names with seed, values are names without seed.
         """
+
+    def optimisation_state(self, checkpoint_dir, seed=1, githash=""):
+        """Return the state of the optimisation.
+
+        TODO: - should return three states: completed, in progress, empty
+              - better management of checkpoints
+        """
+
+        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{self.emodel}_{githash}_{seed}.pkl"
+
+        return checkpoint_path.is_file()
