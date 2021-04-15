@@ -11,7 +11,6 @@ from bluepyemodel.api.databaseAPI import DatabaseAPI
 
 logger = logging.getLogger(__name__)
 
-
 seclist_to_sec = {
     "somatic": "soma",
     "apical": "apic",
@@ -358,7 +357,7 @@ class SinglecellAPI(DatabaseAPI):
         optimizer_name,
         seed,
         githash="",
-        validated=False,
+        validated=None,
         scores_validation=None,
     ):
         """Store an emodel obtained from BluePyOpt in the final.json. Note that if a model in the
@@ -370,7 +369,9 @@ class SinglecellAPI(DatabaseAPI):
             optimizer_name (str): name of the optimizer (IBEA, CMA, ...).
             seed (int): seed used by the optimizer.
             githash (str): githash associated with the configuration files.
-            validated (bool): has the model been through validation.
+            validated (bool): None indicate that the model did not go through validation.
+                False indicates that it failed validation. True indicates that it
+                passed validation.
             scores_validation (dict): scores of the validation efeatures. Of the format
                 {"objective_name": score}.
         """
@@ -678,7 +679,7 @@ class SinglecellAPI(DatabaseAPI):
             out_data["validated"] = True
         else:
             out_data["scores_validation"] = {}
-            out_data["validated"] = False
+            out_data["validated"] = None
 
         return out_data
 
@@ -745,17 +746,6 @@ class SinglecellAPI(DatabaseAPI):
 
         return features_exists and protocols_exists
 
-    def optimisation_state(self, checkpoint_dir, seed=1, githash=""):
-        """Return the state of the optimisation.
-
-        TODO: - should return three states: completed, in progress, empty
-              - better management of checkpoints
-        """
-
-        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{self.emodel}_{githash}_{seed}.pkl"
-
-        return checkpoint_path.is_file()
-
     def has_best_model(self, seed, githash):
         """ Check if the best model has been stored. """
 
@@ -772,7 +762,11 @@ class SinglecellAPI(DatabaseAPI):
 
         model_name = self.get_model_name_for_final(githash, seed)
 
-        return bool(final.get(model_name, {}).get("validation_fitness"))
+        model = final.get(model_name, {})
+        if "validated" in model and model["validated"] is not None:
+            return True
+
+        return False
 
     def is_validated(self, githash, n_models_to_pass_validation):
         """ Check if enough models have been validated. """

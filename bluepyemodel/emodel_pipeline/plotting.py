@@ -85,11 +85,15 @@ def scores(model, figures_dir="./figures"):
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
 
-    figure_name = "{}_{}_{}_scores.pdf".format(
-        model["emodel"],
-        model["githash"],
-        model["seed"],
-    )
+    if "githash" in model and model["githash"]:
+        figure_name = "{}_{}_{}_scores.pdf".format(
+            model["emodel"],
+            model["githash"],
+            model["seed"],
+        )
+    else:
+        figure_name = "{}_{}_scores.pdf".format(model["emodel"], model["seed"])
+
     plt.tight_layout()
     save_fig(figures_dir, figure_name)
 

@@ -156,6 +156,9 @@ class EModel_pipeline:
         use_git=False,
         githash=None,
         morphology_modifiers=None,
+        nexus_organisation="Cells",
+        nexus_projet="emodel_pipeline",
+        nexus_enpoint="https://staging.nexus.ocp.bbp.epfl.ch/v1",
     ):
         """Initialize the emodel_pipeline.
 
@@ -181,10 +184,8 @@ class EModel_pipeline:
 
         self.emodel = emodel
         self.species = species
-        self.db_api = db_api
 
         self.morphology_modifiers = morphology_modifiers
-        self.recipes_path = recipes_path
         self.forge_path = forge_path
 
         if use_git:
@@ -214,23 +215,30 @@ class EModel_pipeline:
         else:
             self.githash = None
 
+        self.db = self.connect_db(
+            db_api, recipes_path, nexus_organisation, nexus_projet, nexus_enpoint
+        )
+
     @property
     def working_dir(self):
         if self.githash:
             return str(Path("./") / run_dir / self.githash)
         return "./"
 
-    def connect_db(self):
+    def connect_db(self, db_api, recipes_path, nexus_organisation, nexus_projet, nexus_enpoint):
         """
         Instantiate the api from which the pipeline will get and store the data.
         """
         return get_db(
-            self.db_api,
+            db_api,
             emodel=self.emodel,
             emodel_dir=self.working_dir,
-            recipes_path=self.recipes_path,
+            recipes_path=recipes_path,
             final_path=final_path,
-            forge_path=self.forge_path,
+            species=self.species,
+            organisation=nexus_organisation,
+            project=nexus_projet,
+            endpoint=nexus_enpoint,
         )
 
     def get_evaluator(
@@ -255,11 +263,9 @@ class EModel_pipeline:
             Evaluator
         """
 
-        db = self.connect_db()
-
         return get_evaluator_from_db(
             emodel=self.emodel,
-            db=db,
+            db=self.db,
             morphology_modifiers=None,
             stochasticity=stochasticity,
             include_validation_protocols=include_validation_protocols,
@@ -276,6 +282,7 @@ class EModel_pipeline:
         name_Rin_protocol=None,
         name_rmp_protocol=None,
         validation_protocols=None,
+        plot=False,
     ):
         """Extract efeatures from traces using BluePyEfe 2. Extraction is performed
             as defined in the argument "config_dict". See example/efeatures_extraction
@@ -335,13 +342,11 @@ class EModel_pipeline:
         if protocols_threshold is None:
             protocols_threshold = []
 
-        db = self.connect_db()
-
         map_function = ipyparallel_map_function("USEIPYP")
 
         efeatures, stimuli, current = extract_save_features_protocols(
             emodel=self.emodel,
-            emodel_db=db,
+            emodel_db=self.db,
             species=self.species,
             files_metadata=files_metadata,
             targets=targets,
@@ -351,6 +356,7 @@ class EModel_pipeline:
             name_Rin_protocol=name_Rin_protocol,
             name_rmp_protocol=name_rmp_protocol,
             validation_protocols=validation_protocols,
+            plot=plot,
         )
 
         return efeatures, stimuli, current
@@ -444,7 +450,7 @@ class EModel_pipeline:
             opt_params = {}
 
         store_best_model(
-            emodel_db=self.connect_db(),
+            emodel_db=self.db,
             emodel=self.emodel,
             seed=opt_params.get("seed", ""),
             stochasticity=stochasticity,
@@ -490,10 +496,8 @@ class EModel_pipeline:
         if map_function is None:
             map_function = ipyparallel_map_function("USEIPYP")
 
-        db = self.connect_db()
-
         return compute_responses(
-            db,
+            self.db,
             self.emodel,
             cell_evaluator,
             map_function,
@@ -517,12 +521,10 @@ class EModel_pipeline:
             emodels (list): list of emodels.
         """
 
-        db = self.connect_db()
-
         mapper = ipyparallel_map_function("USEIPYP")
 
         return validate(
-            emodel_db=db,
+            emodel_db=self.db,
             emodel=self.emodel,
             mapper=mapper,
             validation_function=validation_function,
@@ -551,6 +553,7 @@ class EModel_pipeline:
         Returns:
             emodels (list): list of emodels.
         """
+
         if additional_protocols is None:
             additional_protocols = {}
 
