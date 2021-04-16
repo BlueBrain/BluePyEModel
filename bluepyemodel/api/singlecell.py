@@ -297,11 +297,11 @@ class SinglecellAPI(DatabaseAPI):
             if not (out_features[protocol]["soma.v"]):
                 out_features.pop(protocol)
 
-        features_path = self.get_recipes()["features"]
+        features_path = Path(self.get_recipes()["features"])
         features_path.parent.mkdir(parents=True, exist_ok=True)
 
         s = json.dumps(out_features, indent=2, cls=NumpyEncoder)
-        with open(features_path, "w") as f:
+        with open(str(features_path), "w") as f:
             f.write(s)
 
     def store_protocols(self, stimuli, validation_protocols):
@@ -330,11 +330,11 @@ class SinglecellAPI(DatabaseAPI):
             if "validation" not in stimulus:
                 stimulus["validation"] = False
 
-        protocols_path = self.get_recipes()["protocol"]
+        protocols_path = Path(self.get_recipes()["protocol"])
         protocols_path.parent.mkdir(parents=True, exist_ok=True)
 
         s = json.dumps(stimuli, indent=2, cls=NumpyEncoder)
-        with open(protocols_path, "w") as f:
+        with open(str(protocols_path), "w") as f:
             f.write(s)
 
     def get_model_name_for_final(self, githash, seed):
