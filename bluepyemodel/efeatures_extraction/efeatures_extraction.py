@@ -2,6 +2,8 @@
 
 import bluepyefe.extract
 
+# pylint: disable=unused-argument
+
 
 def extract_save_features_protocols(
     emodel_db,
@@ -69,14 +71,12 @@ def extract_save_features_protocols(
 
     # store features & protocols
     emodel_db.store_efeatures(
-        emodel,
-        species,
         efeatures,
         current,
         name_Rin_protocol,
         name_rmp_protocol,
         validation_protocols,
     )
-    emodel_db.store_protocols(emodel, species, stimuli, validation_protocols)
+    emodel_db.store_protocols(stimuli, validation_protocols)
 
     return efeatures, stimuli, current

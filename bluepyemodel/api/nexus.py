@@ -663,8 +663,6 @@ class NexusAPI(DatabaseAPI):
 
     def store_efeatures(
         self,
-        emodel,
-        species,
         efeatures,
         current,
         name_Rin_protocol,
@@ -675,8 +673,6 @@ class NexusAPI(DatabaseAPI):
         ElectrophysiologyFeature resources.
 
         Args:
-            emodel (str): not used.
-            species (str): not used.
             efeatures (dict): of the format:
                 {
                     'protocol_name':[
@@ -772,13 +768,11 @@ class NexusAPI(DatabaseAPI):
 
         self.register(resources)
 
-    def store_protocols(self, emodel, species, stimuli, validation_protocols):
+    def store_protocols(self, stimuli, validation_protocols):
         """Store the protocols obtained from BluePyEfe in
             ElectrophysiologyFeatureExtractionProtocol resources.
 
         Args:
-            emodel (str): not used.
-            species (str): not used.
             stimuli (dict): of the format:
                 {
                     'protocol_name':
