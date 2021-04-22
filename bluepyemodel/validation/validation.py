@@ -97,7 +97,6 @@ def validate(
             validated = bool(validation_function(mo, threshold, validation_protocols_only))
 
             emodel_db.store_emodel(
-                emodel=emodel,
                 scores=mo["scores"],
                 params=mo["parameters"],
                 optimizer_name=mo["optimizer"],

@@ -5,6 +5,7 @@ import json
 import logging
 from pathlib import Path
 
+import fasteners
 from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.api.databaseAPI import DatabaseAPI
@@ -67,6 +68,10 @@ class SinglecellAPI(DatabaseAPI):
         else:
             self.final_path = Path(final_path)
 
+        Path(".tmp/").mkdir(exist_ok=True)
+        self.rw_lock_final = fasteners.InterProcessReaderWriterLock(".tmp/final.lock")
+        self.rw_lock_final_tmp = fasteners.InterProcessReaderWriterLock(".tmp/final_tmp.lock")
+
     def set_emodel(self, emodel):
         """ Setter for the name of the emodel. """
         if emodel not in self.get_all_recipes():
@@ -74,8 +79,8 @@ class SinglecellAPI(DatabaseAPI):
 
         self.emodel = emodel
 
-    def get_final(self):
-        """Get emodels from json"""
+    def get_final(self, lock_file=True):
+        """ Get emodels from json """
 
         if self.final_path is None:
             raise Exception("Final_path is None")
@@ -88,19 +93,31 @@ class SinglecellAPI(DatabaseAPI):
             return {}
 
         try:
+            if lock_file:
+                self.rw_lock_final.acquire_read_lock()
+
             with open(self.final_path, "r") as f:
                 final = json.load(f)
+
+            if lock_file:
+                self.rw_lock_final.release_read_lock()
         except json.decoder.JSONDecodeError:
             try:
+                if lock_file:
+                    self.rw_lock_final_tmp.acquire_read_lock()
+
                 with open(p_tmp, "r") as f:
                     final = json.load(f)
+
+                if lock_file:
+                    self.rw_lock_final_tmp.release_read_lock()
             except (json.decoder.JSONDecodeError, FileNotFoundError):
                 logger.error("Cannot load final. final.json does not exist or is corrupted.")
 
         return final
 
-    def save_final(self, final):
-        """ Save final emodels in json"""
+    def save_final(self, final, lock_file=True):
+        """ Save final emodels in json """
 
         if self.final_path is None:
             raise Exception("Final_path is None")
@@ -108,11 +125,21 @@ class SinglecellAPI(DatabaseAPI):
         p = Path(self.final_path)
         p_tmp = p.with_name(p.stem + "_tmp" + p.suffix)
 
+        if lock_file:
+            self.rw_lock_final.acquire_write_lock()
+
         with open(self.final_path, "w+") as fp:
             json.dump(final, fp, indent=2)
 
+        if lock_file:
+            self.rw_lock_final.release_write_lock()
+            self.rw_lock_final_tmp.acquire_write_lock()
+
         with open(p_tmp, "w+") as fp:
             json.dump(final, fp, indent=2)
+
+        if lock_file:
+            self.rw_lock_final_tmp.release_write_lock()
 
     def get_all_recipes(self):
         """Load the recipes from a json file.
@@ -379,30 +406,32 @@ class SinglecellAPI(DatabaseAPI):
         if scores_validation is None:
             scores_validation = {}
 
-        final = self.get_final()
+        with self.rw_lock_final.write_lock():
+            with self.rw_lock_final_tmp.write_lock():
+                final = self.get_final(lock_file=False)
 
-        entry = {
-            "emodel": self.emodel,
-            "score": sum(list(scores.values())),
-            "params": params,
-            "fitness": scores,
-            "validation_fitness": scores_validation,
-            "validated": validated,
-            "optimizer": str(optimizer_name),
-            "seed": int(seed),
-            "githash": str(githash),
-        }
+                entry = {
+                    "emodel": self.emodel,
+                    "score": sum(list(scores.values())),
+                    "params": params,
+                    "fitness": scores,
+                    "validation_fitness": scores_validation,
+                    "validated": validated,
+                    "optimizer": str(optimizer_name),
+                    "seed": int(seed),
+                    "githash": str(githash),
+                }
 
-        model_name = self.get_model_name_for_final(githash, seed)
+                model_name = self.get_model_name_for_final(githash, seed)
 
-        if model_name in final:
-            logger.warning(
-                "Entry %s was already in the final.json and will be overwritten", model_name
-            )
+                if model_name in final:
+                    logger.warning(
+                        "Entry %s was already in the final.json and will be overwritten", model_name
+                    )
 
-        final[model_name] = entry
+                final[model_name] = entry
 
-        self.save_final(final)
+                self.save_final(final, lock_file=False)
 
     def get_parameters(self):
         """Get the definition of the parameters that have to be optimized as well as the

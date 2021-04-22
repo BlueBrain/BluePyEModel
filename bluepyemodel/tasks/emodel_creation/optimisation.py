@@ -22,9 +22,9 @@ from bluepyemodel.tools.mechanisms import copy_and_compile_mechanisms
 class EfeaturesProtocolsTarget(WorkflowTarget):
     """Target to check if efeatures and protocols are present in the database."""
 
-    def __init__(self):
+    def __init__(self, emodel):
         """ Constructor. """
-        super().__init__()
+        super().__init__(emodel=emodel)
 
     def exists(self):
         """Check if the features and protocols have been created."""
@@ -49,7 +49,6 @@ class ExtractEFeatures(WorkflowTask):
         plot (bool): True to plot the traces and the efeatures.
     """
 
-    emodel = luigi.Parameter()
     species = luigi.Parameter(default=None)
 
     threshold_nvalue_save = luigi.IntParameter(default=1)
@@ -75,7 +74,7 @@ class ExtractEFeatures(WorkflowTask):
 
     def output(self):
         """"""
-        return EfeaturesProtocolsTarget()
+        return EfeaturesProtocolsTarget(emodel=self.emodel)
 
 
 class CompileMechanisms(WorkflowTask):
@@ -92,7 +91,6 @@ class CompileMechanisms(WorkflowTask):
             mechanisms_dir directory.
     """
 
-    emodel = luigi.Parameter()
     species = luigi.Parameter(default=None)
     mechanisms_dir = luigi.Parameter(default="mechanisms")
     copy_mechanisms = BoolParameterCustom(default=False)
@@ -118,6 +116,7 @@ class OptimisationTarget(WorkflowTarget):
 
     def __init__(
         self,
+        emodel,
         seed=1,
         checkpoint_dir=None,
     ):
@@ -127,7 +126,7 @@ class OptimisationTarget(WorkflowTarget):
            seed (int): seed used in the optimisation.
            checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
         """
-        super().__init__()
+        super().__init__(emodel=emodel)
 
         self.checkpoint_dir = checkpoint_dir
         self.seed = seed
@@ -169,7 +168,6 @@ class Optimize(WorkflowTask, IPyParallelTask):
     """
 
     # if default not set, crashes when parameters are read by luigi_tools.copy_params
-    emodel = luigi.Parameter(default=None)
     species = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
     graceful_killer = multiprocessing.Event()
@@ -257,7 +255,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
         # -- run optimisation -- #
         mapper = get_mapper(args.backend)
-        emodel_db = api.get_db(args.api_from_config, **args.api_args_from_config)
+        emodel_db = api.get_db(args.api_from_config, args.emodel, **args.api_args_from_config)
         setup_and_run_optimisation(
             emodel_db,
             args.emodel,
@@ -277,7 +275,9 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
     def output(self):
         """"""
-        return OptimisationTarget(checkpoint_dir=self.checkpoint_dir, seed=self.seed)
+        return OptimisationTarget(
+            checkpoint_dir=self.checkpoint_dir, seed=self.seed, emodel=self.emodel
+        )
 
 
 class BestModelTarget(WorkflowTarget):
@@ -295,9 +295,9 @@ class BestModelTarget(WorkflowTarget):
                under which the configuration data are stored.
            seed (int): seed used in the optimisation.
         """
-        super().__init__()
+        super().__init__(emodel=emodel)
 
-        self.emodel = emodel
+        # self.emodel = emodel
         self.seed = seed
 
     def exists(self):
@@ -321,7 +321,6 @@ class StoreBestModels(WorkflowTask):
         batch_size (int): number of seeds to optimize at the same time before each validation.
     """
 
-    emodel = luigi.Parameter()
     species = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=42)
     batch_size = luigi.IntParameter(default=1)
@@ -339,6 +338,7 @@ class StoreBestModels(WorkflowTask):
         for seed in range(self.seed, self.seed + self.batch_size):
             # can have unfulfilled dependecies if slurm has send signal near time limit.
             if OptimisationTarget(
+                emodel=self.emodel,
                 seed=seed,
                 checkpoint_dir=self.checkpoint_dir,
             ).exists():
@@ -377,9 +377,8 @@ class ValidationTarget(WorkflowTarget):
             seed (int): seed used in the optimisation.
             batch_size (int): number of seeds to optimize at the same time before each validation.
         """
-        super().__init__()
+        super().__init__(emodel=emodel)
 
-        self.emodel = emodel
         self.seed = seed
         self.batch_size = batch_size
 
@@ -422,7 +421,6 @@ class Validation(WorkflowTask, IPyParallelTask):
             when there is more than 1 luigi worker. Skip task if set.
     """
 
-    emodel = luigi.Parameter()
     species = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=42)
     batch_size = luigi.IntParameter(default=1)
@@ -510,7 +508,7 @@ class Validation(WorkflowTask, IPyParallelTask):
 
         # -- run validation -- #
         mapper = get_mapper(args.backend)
-        emodel_db = api.get_db(args.api_from_config, **args.api_args_from_config)
+        emodel_db = api.get_db(args.api_from_config, args.emodel, **args.api_args_from_config)
 
         validate(
             emodel_db,
@@ -541,9 +539,8 @@ class EModelCreationTarget(WorkflowTarget):
             n_models_to_pass_validation (int): minimum number of models to pass validation
                 to consider the task as validated.
         """
-        super().__init__()
+        super().__init__(emodel=emodel)
 
-        self.emodel = emodel
         self.n_models_to_pass_validation = n_models_to_pass_validation
 
     def exists(self):
@@ -572,7 +569,6 @@ class EModelCreation(WorkflowTask):
             when there is more than 1 luigi worker. Exit loop if set.
     """
 
-    emodel = luigi.Parameter()
     species = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=1)
     batch_size = luigi.IntParameter(default=10)
@@ -621,7 +617,6 @@ class OptimizeWrapper(WorkflowWrapperTask):
         batch_size (int): number of seeds to optimize at the same time before each validation.
     """
 
-    emodel = luigi.Parameter()
     species = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
     batch_size = luigi.IntParameter(default=10)

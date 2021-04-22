@@ -51,6 +51,7 @@ setup(
         "bluepy",
         "neuron",
         "morph_tool",
+        "fasteners",
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,

@@ -30,12 +30,15 @@ class WorkflowTask(_WorkflowTask):
     """Workflow task with loaded emodel_db."""
 
     backend = luigi.Parameter(default=None, config_path=dict(section="parallel", name="backend"))
+    emodel = luigi.Parameter()
 
     def __init__(self, *args, **kwargs):
         """"""
         super().__init__(*args, **kwargs)
 
-        self.emodel_db = api.get_db(EmodelAPIConfig().api, **EmodelAPIConfig().api_args)
+        self.emodel_db = api.get_db(
+            EmodelAPIConfig().api, self.emodel, **EmodelAPIConfig().api_args
+        )
 
     def get_mapper(self):
         """Get a mapper for parallel computations."""
@@ -49,11 +52,15 @@ class WorkflowTask(_WorkflowTask):
 class WorkflowTarget(luigi.Target, ABC):
     """Workflow target with loaded emodel_db."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, emodel, *args, **kwargs):
         """"""
         super().__init__(*args, **kwargs)
 
-        self.emodel_db = api.get_db(EmodelAPIConfig().api, **EmodelAPIConfig().api_args)
+        self.emodel = emodel
+
+        self.emodel_db = api.get_db(
+            EmodelAPIConfig().api, self.emodel, **EmodelAPIConfig().api_args
+        )
 
 
 class WorkflowWrapperTask(WorkflowTask, luigi.WrapperTask):

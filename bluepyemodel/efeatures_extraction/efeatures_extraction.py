@@ -62,7 +62,6 @@ def extract_save_features_protocols(
         targets=targets,
         threshold_nvalue_save=threshold_nvalue_save,
         protocols_rheobase=protocols_threshold,
-        ap_threshold=-20.0,
         recording_reader=None,
         map_function=mapper,
         write_files=False,
