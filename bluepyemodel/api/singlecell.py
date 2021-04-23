@@ -484,10 +484,7 @@ class SinglecellAPI(DatabaseAPI):
                         morph_name = self.get_morphologies()[0]["name"]
                         sec_index = json.load(open(str(apical_point_isec)))[morph_name]
                     else:
-                        raise Exception(
-                            "No apical_points_isec.json found for extra_recordings of type "
-                            "somadistanceapic."
-                        )
+                        sec_index = self.get_apical_point()
 
                 extra["sec_index"] = sec_index
                 if extra["seclist_name"]:
