@@ -8,25 +8,24 @@ class EmodelAPIConfig(luigi.Config):
     api = luigi.Parameter(default="singlecell")
 
     # singlecell parameters
-    emodel_dir = luigi.Parameter(default=None)
+    emodel_dir = luigi.Parameter(default="./")
+    species = luigi.Parameter(default="rat")
     recipes_path = luigi.Parameter(default=None)
-    final_path = luigi.Parameter(default=None)
+    final_path = luigi.Parameter(default="./final.json")
     legacy_dir_structure = luigi.BoolParameter(default=False)
     extract_config = luigi.Parameter(default=None)
 
-    # sql parameters
-    project_name = luigi.Parameter(default=None)
-
     # nexus parameters
     forge_path = luigi.Parameter(default=None)
+    nexus_poject = luigi.Parameter(default="emodel_pipeline")
+    nexus_organisation = luigi.Parameter(default="Cells")
+    nexus_endpoint = luigi.Parameter(default="https://staging.nexus.ocp.bbp.epfl.ch/v1")
 
     def __init__(self, *args, **kwargs):
         """Init."""
         super().__init__(*args, **kwargs)
 
         if self.api == "singlecell":
-            if self.emodel_dir is None:
-                raise Exception("Please provide at least emodel_dir with singlcell api")
             self.api_args = {
                 "emodel_dir": self.emodel_dir,
                 "recipes_path": self.recipes_path,
@@ -35,12 +34,11 @@ class EmodelAPIConfig(luigi.Config):
                 "extract_config": self.extract_config,
             }
 
-        if self.api == "sql":
-            if self.project_name is None:
-                raise Exception("Please provide at least project_name with sql api")
-            self.api_args = {"project_name": self.project_name}
-
         if self.api == "nexus":
-            if self.forge_path is None:
-                raise Exception("Please provide at least forge_path with sql api")
-            self.api_args = {"forge_path": self.forge_path}
+            self.api_args = {
+                "forge_path": self.forge_path,
+                "species": self.species,
+                "project": self.nexus_poject,
+                "organisation": self.nexus_organisation,
+                "endpoint": self.nexus_endpoint,
+            }

@@ -540,6 +540,21 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
 
     features += thres_features + hold_features + rin_features + rmp_features
 
+    if threshold_protocols:
+
+        for pre_protocol in [
+            rmp_protocol,
+            rin_protocol,
+            search_holding_protocol,
+            search_threshold_protocol,
+        ]:
+            if not pre_protocol:
+                raise Exception(
+                    "MainProtocol creation failed as there are "
+                    "StepThresholdProtocols but a pre-protocol is"
+                    " {}".format(pre_protocol)
+                )
+
     main_protocol = MainProtocol(
         "Main",
         rmp_protocol,

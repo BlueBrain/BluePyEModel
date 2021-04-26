@@ -5,14 +5,16 @@ import logging
 import pathlib
 from collections import OrderedDict
 
+from entity_management.state import refresh_token
 from kgforge.core import KnowledgeGraphForge
 from kgforge.core import Resource
 
 from bluepyemodel.api.databaseAPI import DatabaseAPI
+from bluepyemodel.api.singlecell import seclist_to_sec
 
 logger = logging.getLogger("__main__")
 
-# pylint: disable=unused-argument,len-as-condition
+# pylint: disable=unused-argument,len-as-condition,bare-except
 
 
 class NexusAPIException(Exception):
@@ -54,9 +56,15 @@ class NexusAPI(DatabaseAPI):
                 + "master/examples/notebooks/use-cases/prod-forge-nexus.yml"
             )
 
-        token = getpass.getpass()
+        try:
+            access_token = refresh_token()
+        except:  # noqa
+            logger.info("Please get your Nexus access token from https://bbp.epfl.ch/nexus/web/.")
+            access_token = getpass.getpass()
 
-        self.forge = KnowledgeGraphForge(forge_path, bucket=bucket, endpoint=endpoint, token=token)
+        self.forge = KnowledgeGraphForge(
+            forge_path, bucket=bucket, endpoint=endpoint, token=access_token
+        )
 
     def get_subject(self, for_search=False):
         """Get the ontology of a species based no the species name. The id is not used
@@ -118,7 +126,7 @@ class NexusAPI(DatabaseAPI):
 
         self.forge.register(resources)
 
-    def fetch(self, filters, cross_bucket=True, limit=1000):
+    def fetch(self, filters, cross_bucket=True, limit=1000, debug=False):
         """
         Retrieve resources based on filters.
 
@@ -135,7 +143,7 @@ class NexusAPI(DatabaseAPI):
         if "type" not in filters and "id" not in filters:
             raise NexusAPIException("Search filters should contain either 'type' or 'id'.")
 
-        resources = self.forge.search(filters, cross_bucket=cross_bucket, limit=limit)
+        resources = self.forge.search(filters, cross_bucket=cross_bucket, limit=limit, debug=debug)
 
         if resources:
             return resources
@@ -1168,22 +1176,23 @@ class NexusAPI(DatabaseAPI):
 
         return params_definition, mech_definition, set(mechanisms_names)
 
-    @staticmethod
-    def _handle_extra_recordings(extra_recordings):
+    def _handle_extra_recordings(self, extra_recordings):
         """Fetch the information needed to be able to use the extra recordings."""
 
         extra_recordings_out = []
 
-        for extra_recording in extra_recordings:
+        for extra in extra_recordings:
 
-            # TODO:
-            if extra_recording["type"] == "somadistanceapic":
-                raise NexusAPIException(
-                    "extra_recording of type somadistanceapic not implemented yet for"
-                    " the NexusForge API."
-                )
+            if extra["type"] == "somadistanceapic":
 
-            extra_recordings_out.append(extra_recording)
+                extra["sec_index"] = self.get_apical_point()
+
+                if extra["seclist_name"]:
+                    extra["sec_name"] = seclist_to_sec[extra["seclist_name"]]
+                else:
+                    raise Exception("Cannot get section name from seclist_name.")
+
+            extra_recordings_out.append(extra)
 
         return extra_recordings_out
 
@@ -1258,26 +1267,31 @@ class NexusAPI(DatabaseAPI):
                 }
             )
 
-            resources_protocol = [
-                r
-                for r in resources_protocol
-                if r.stimulus.stimulusTarget[0] == resource_target.stimulus.target
-            ]
+            if resources_protocol:
+                resources_protocol = [
+                    r
+                    for r in resources_protocol
+                    if r.stimulus.stimulusTarget[0] == resource_target.stimulus.target
+                ]
 
             if resources_protocol is None:
                 raise NexusAPIException(
-                    "Could not get protocol %s %s% for emodel %s"
-                    % resource_target.stimulus.stimulusType.label,
-                    resource_target.stimulus.target,
-                    self.emodel,
+                    "Could not get protocol %s %s %% for emodel %s"
+                    % (
+                        resource_target.stimulus.stimulusType.label,
+                        resource_target.stimulus.target,
+                        self.emodel,
+                    )
                 )
 
             if len(resources_protocol) > 1:
                 raise NexusAPIException(
-                    "More than one protocol %s %s% for emodel %s"
-                    % resource_target.stimulus.stimulusType.label,
-                    resource_target.stimulus.target,
-                    self.emodel,
+                    "More than one protocol %s %s %% for emodel %s"
+                    % (
+                        resource_target.stimulus.stimulusType.label,
+                        resource_target.stimulus.target,
+                        self.emodel,
+                    )
                 )
 
             protocol_name = "{}_{}".format(
@@ -1326,6 +1340,7 @@ class NexusAPI(DatabaseAPI):
         for resource_target in self.get_opt_targets(include_validation):
 
             for feature in resource_target.feature:
+
                 resources_feature = self.fetch(
                     filters={
                         "type": "ElectrophysiologyFeature",
@@ -1338,26 +1353,33 @@ class NexusAPI(DatabaseAPI):
                     }
                 )
 
-                resources_feature = [
-                    r
-                    for r in resources_feature
-                    if r.stimulus.stimulusTarget[0] == resource_target.stimulus.target
-                ]
+                if resources_feature:
+                    resources_feature = [
+                        r
+                        for r in resources_feature
+                        if r.stimulus.stimulusTarget[0] == resource_target.stimulus.target
+                    ]
 
                 if resources_feature is None:
                     raise NexusAPIException(
-                        "Could not get feature %s {feature.name} for %s %% for emodel %s"
-                        % resource_target.stimulus.stimulusType.label,
-                        resource_target.stimulus.target,
-                        self.emodel,
+                        "Could not get feature %s for %s %s %% for emodel %s"
+                        % (
+                            feature.name,
+                            resource_target.stimulus.stimulusType.label,
+                            resource_target.stimulus.target,
+                            self.emodel,
+                        )
                     )
 
                 if len(resources_feature) > 1:
                     raise NexusAPIException(
-                        "More than one feature %s for %s %% for emodel %s" % feature.name,
-                        resource_target.stimulus.stimulusType.label,
-                        resource_target.stimulus.target,
-                        self.emodel,
+                        "More than one feature %s for %s %s %% for emodel %s"
+                        % (
+                            feature.name,
+                            resource_target.stimulus.stimulusType.label,
+                            resource_target.stimulus.target,
+                            self.emodel,
+                        )
                     )
 
                 feature_mean = next(
@@ -1525,29 +1547,96 @@ class NexusAPI(DatabaseAPI):
 
         return morphology_definition
 
+    def get_name_validation_protocols(self):
+        """Get the names of the protocols used for validation"""
+
+        names = []
+
+        resources_val_target = self.fetch(
+            filters={
+                "type": "ElectrophysiologyFeatureValidationTarget",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+            }
+        )
+
+        if resources_val_target is None:
+            logger.warning(
+                "NexusForge warning: could not get validation targets for emodel %s",
+                self.emodel,
+            )
+            return names
+
+        for resource_target in resources_val_target:
+
+            if resource_target.protocolType not in ["StepProtocol", "StepThresholdProtocol"]:
+                continue
+
+            resources_protocol = self.fetch(
+                filters={
+                    "type": "ElectrophysiologyFeatureExtractionProtocol",
+                    "eModel": self.emodel,
+                    "subject": self.get_subject(for_search=True),
+                    "stimulus": {
+                        "stimulusType": {"label": resource_target.stimulus.stimulusType.label},
+                    },
+                }
+            )
+
+            if resources_protocol:
+                resources_protocol = [
+                    r
+                    for r in resources_protocol
+                    if r.stimulus.stimulusTarget[0] == resource_target.stimulus.target
+                ]
+
+            if resources_protocol is None:
+                raise NexusAPIException(
+                    "Could not get protocol %s %s %% for emodel %s"
+                    % (
+                        resource_target.stimulus.stimulusType.label,
+                        resource_target.stimulus.target,
+                        self.emodel,
+                    )
+                )
+
+            if len(resources_protocol) > 1:
+                raise NexusAPIException(
+                    "More than one protocol %s %s %% for emodel %s"
+                    % (
+                        resource_target.stimulus.stimulusType.label,
+                        resource_target.stimulus.target,
+                        self.emodel,
+                    )
+                )
+
+            protocol_name = "{}_{}".format(
+                resources_protocol[0].stimulus.stimulusType.label,
+                resources_protocol[0].stimulus.stimulusTarget[0],
+            )
+
+            names.append(protocol_name)
+
+        return names
+
     def has_protocols_and_features(self):
         """Check if the efeatures and protocol exist."""
-
-        has_protocols = True
-        has_features = True
 
         try:
             self.get_features()
         except NexusAPIException as e:
             if "Could not get " in str(e):
-                has_features = False
-            else:
-                raise e
+                return False
+            raise e
 
         try:
             self.get_protocols()
         except NexusAPIException as e:
             if "Could not get protocol" in str(e):
-                has_protocols = False
-            else:
-                raise e
+                return False
+            raise e
 
-        return has_protocols and has_features
+        return True
 
     def has_best_model(self, seed, githash):
         """Check if the best model has been stored."""
@@ -1563,9 +1652,7 @@ class NexusAPI(DatabaseAPI):
         resources = self._get_emodel(seed=seed, githash=githash)
 
         if resources is None:
-            raise NexusAPIException(
-                "NexusForge warning: could not get emodel for emodel %s" % self.emodel
-            )
+            return False
 
         if len(resources) > 1:
             raise NexusAPIException(

@@ -28,7 +28,8 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
 
     def exists(self):
         """Check if the features and protocols have been created."""
-        return self.emodel_db.has_protocols_and_features()
+        _ = self.emodel_db.has_protocols_and_features()
+        return _
 
 
 class ExtractEFeatures(WorkflowTask):
@@ -175,6 +176,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
     def requires(self):
         """ """
         targets = [ExtractEFeatures(emodel=self.emodel, species=self.species)]
+
         if self.compile_mechanisms:
             targets.append(
                 CompileMechanisms(

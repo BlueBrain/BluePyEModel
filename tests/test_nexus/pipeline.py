@@ -11,7 +11,7 @@ def get_logger():
 
     logger = logging.getLogger()
 
-    logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
+    logging.basicConfig(level=logging.DEBUG, handlers=[logging.StreamHandler()])
 
     return logger
 
@@ -23,7 +23,10 @@ def get_parser():
     )
 
     parser.add_argument(
-        "--stage", type=str, choices=["optimize", "analyse", "extraction"], required=True
+        "--stage",
+        type=str,
+        choices=["optimize", "analyse", "extraction", "validation"],
+        required=True,
     )
     parser.add_argument("--seed", type=int, default=1)
 
@@ -32,7 +35,7 @@ def get_parser():
 
 def optimize(emodel, pipeline, optimizer, opt_params, max_ngen):
 
-    chkp_path = "./checkpoints/{}__{}.pkl".format(emodel, opt_params["seed"])
+    chkp_path = "./checkpoints/checkpoint__{}__{}.pkl".format(emodel, opt_params["seed"])
 
     pipeline.optimize(
         max_ngen=max_ngen,
@@ -48,7 +51,7 @@ def analyse(emodel, pipeline, optimizer, opt_params):
 
     figure_dir = "./figures/{}/".format(emodel)
 
-    for chkp_path in glob.glob("./checkpoints/{}*.pkl".format(emodel)):
+    for chkp_path in glob.glob("./checkpoints/checkpoint__{}*.pkl".format(emodel)):
 
         splitted_path = pathlib.Path(chkp_path).stem.split("__")
         opt_params["seed"] = int(splitted_path[-1])
@@ -76,8 +79,8 @@ def main():
     working_dir = pathlib.Path("./")
 
     optimizer = "MO-CMA"
-    max_ngen = 4
-    opt_params = {"offspring_size": 4, "weight_hv": 0.4, "seed": args.seed}
+    max_ngen = 5
+    opt_params = {"offspring_size": 5, "weight_hv": 0.4, "seed": args.seed}
 
     pipeline = EModel_pipeline(emodel=emodel, species=species, db_api=db_api)
 
@@ -89,6 +92,9 @@ def main():
 
     elif args.stage == "analyse":
         analyse(emodel, pipeline, optimizer, opt_params)
+
+    elif args.stage == "validation":
+        pipeline.validate()
 
 
 if __name__ == "__main__":

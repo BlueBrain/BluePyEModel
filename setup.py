@@ -17,7 +17,7 @@ with open("README.rst", encoding="utf-8") as f:
 
 EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow", "bbp-workflow-cli"]
 EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3"]
-EXTRA_NEXUS = ["nexusforge"]
+EXTRA_NEXUS = ["nexusforge", "entity_management"]
 
 doc_reqs = [
     "graphviz",
@@ -51,7 +51,7 @@ setup(
         "bluepy",
         "neuron",
         "morph_tool",
-        "fasteners",
+        "fasteners"
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,

@@ -10,6 +10,10 @@ class DatabaseAPI:
 
         self.emodel = emodel
 
+    def set_emodel(self, emodel):
+        """Setter for the name of the emodel."""
+        self.emodel = emodel
+
     def store_efeatures(
         self,
         efeatures,

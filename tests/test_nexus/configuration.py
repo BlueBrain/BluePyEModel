@@ -1,11 +1,16 @@
-import glob
-import numpy
 import json
 import pathlib
+import glob
+import sys
+import logging
+
 from bluepyemodel.api.nexus import NexusAPI
 
+logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-def download_test_ephys():
+
+def download_test_ephys(access_point):
 
     from kgforge.core import KnowledgeGraphForge
     import getpass
@@ -66,7 +71,24 @@ def download_test_ephys():
         )
 
 
-# download_test_ephys()
+def deprecate_all_resources(access_point):
+
+    for nexus_type in [
+        "ElectrophysiologyFeatureOptimisationNeuronMorphology",
+        "ElectrophysiologyFeatureExtractionTrace",
+        "ElectrophysiologyFeatureExtractionTarget",
+        "ElectrophysiologyFeatureOptimisationTarget",
+        "ElectrophysiologyFeatureValidationTarget",
+        "ElectrophysiologyFeatureOptimisationParameter",
+        "ElectrophysiologyFeatureOptimisationChannelDistribution",
+        "SubCellularModel",
+        "ElectrophysiologyFeature",
+        "ElectrophysiologyFeatureExtractionProtocol",
+        "EModel",
+    ]:
+
+        access_point.deprecate({"type": nexus_type})
+
 
 emodel = "L5PC"
 species = "mouse"
@@ -80,21 +102,9 @@ access_point = NexusAPI(
     forge_path=None,
 )
 
-# Deprecate all resources
-for nexus_type in [
-    "ElectrophysiologyFeatureOptimisationNeuronMorphology",
-    "ElectrophysiologyFeatureExtractionTrace",
-    "ElectrophysiologyFeatureExtractionTarget",
-    "ElectrophysiologyFeatureOptimisationTarget",
-    "ElectrophysiologyFeatureValidationTarget",
-    "ElectrophysiologyFeatureOptimisationParameter",
-    "ElectrophysiologyFeatureOptimisationChannelDistribution",
-    "SubCellularModel",
-    "ElectrophysiologyFeature",
-    "ElectrophysiologyFeatureExtractionProtocol",
-    "EModel",
-]:
-    access_point.deprecate({"type": nexus_type})
+deprecate_all_resources(access_point)
+
+download_test_ephys(access_point)
 
 extraction_targets = {
     "IDrest": {
