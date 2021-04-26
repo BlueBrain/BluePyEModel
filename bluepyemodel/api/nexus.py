@@ -16,7 +16,7 @@ logger = logging.getLogger("__main__")
 
 
 class NexusAPIException(Exception):
-    """ For Exceptions related to the NexusAPI access point"""
+    """For Exceptions related to the NexusAPI access point"""
 
 
 class NexusAPI(DatabaseAPI):
@@ -144,7 +144,7 @@ class NexusAPI(DatabaseAPI):
         return None
 
     def download(self, resource_id, download_directory):
-        """ Download data file from nexus if it doesn't already exist. """
+        """Download data file from nexus if it doesn't already exist."""
 
         resource = self.forge.retrieve(resource_id, cross_bucket=True)
 
@@ -160,7 +160,7 @@ class NexusAPI(DatabaseAPI):
         return str(file_path)
 
     def deprecate(self, filters):
-        """ Deprecate resources based on filters. """
+        """Deprecate resources based on filters."""
 
         resources = self.fetch(filters)
 
@@ -906,7 +906,7 @@ class NexusAPI(DatabaseAPI):
         self.register(resource)
 
     def _get_emodel(self, seed=None, githash=None):
-        """ Internal use only """
+        """Internal use only"""
 
         filters = {
             "type": "EModel",
@@ -989,7 +989,7 @@ class NexusAPI(DatabaseAPI):
         return models
 
     def _get_mechanism(self, mechanism_name):
-        """ Fetch mechanisms from Nexus by names. """
+        """Fetch mechanisms from Nexus by names."""
 
         resources = self.fetch(
             filters={
@@ -1011,7 +1011,7 @@ class NexusAPI(DatabaseAPI):
         return resources[0].stochastic, resources[0].modelScript.id
 
     def _get_distributions(self, distributions):
-        """ Fetch channel distribution from Nexus by names. """
+        """Fetch channel distribution from Nexus by names."""
 
         distributions_definitions = {}
 
@@ -1170,7 +1170,7 @@ class NexusAPI(DatabaseAPI):
 
     @staticmethod
     def _handle_extra_recordings(extra_recordings):
-        """ Fetch the information needed to be able to use the extra recordings. """
+        """Fetch the information needed to be able to use the extra recordings."""
 
         extra_recordings_out = []
 
@@ -1188,7 +1188,7 @@ class NexusAPI(DatabaseAPI):
         return extra_recordings_out
 
     def get_opt_targets(self, include_validation):
-        """ Get the optimisation and validation targets from Nexus. """
+        """Get the optimisation and validation targets from Nexus."""
 
         resources_opt_target = self.fetch(
             filters={
@@ -1550,7 +1550,7 @@ class NexusAPI(DatabaseAPI):
         return has_protocols and has_features
 
     def has_best_model(self, seed, githash):
-        """ Check if the best model has been stored. """
+        """Check if the best model has been stored."""
 
         if self._get_emodel(seed=seed, githash=githash):
             return True
@@ -1558,7 +1558,7 @@ class NexusAPI(DatabaseAPI):
         return False
 
     def is_checked_by_validation(self, seed, githash):
-        """ Check if the emodel with a given seed has been checked by Validation task. """
+        """Check if the emodel with a given seed has been checked by Validation task."""
 
         resources = self._get_emodel(seed=seed, githash=githash)
 
@@ -1579,7 +1579,7 @@ class NexusAPI(DatabaseAPI):
         return False
 
     def is_validated(self, githash, n_models_to_pass_validation):
-        """ Check if enough models have been validated. """
+        """Check if enough models have been validated."""
 
         resources = self._get_emodel(githash=githash)
 

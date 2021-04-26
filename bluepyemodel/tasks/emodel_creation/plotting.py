@@ -26,11 +26,11 @@ class PlotOptimisation(WorkflowTask):
     figures_dir = luigi.Parameter(default="./figures")
 
     def requires(self):
-        """"""
+        """ """
         return Optimize()
 
     def run(self):
-        """"""
+        """ """
         checkpoint_path = Path(self.checkpoint_dir) / f"checkpoint_{self.emodel}_{self.seed}.pkl"
         optimization(
             checkpoint_path=checkpoint_path,
@@ -39,6 +39,6 @@ class PlotOptimisation(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         figure_filename = f"checkpoint_{self.emodel}_{self.seed}.pdf"
         return luigi.LocalTarget(Path(self.figures_dir) / self.emodel / figure_filename)

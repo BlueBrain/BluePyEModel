@@ -6,7 +6,7 @@ class DatabaseAPI:
     """Database API"""
 
     def __init__(self, emodel):
-        """ Init """
+        """Init"""
 
         self.emodel = emodel
 
@@ -18,10 +18,10 @@ class DatabaseAPI:
         name_rmp_protocol,
         validation_protocols,
     ):
-        """ Save the efeatures and currents obtained from BluePyEfe"""
+        """Save the efeatures and currents obtained from BluePyEfe"""
 
     def store_protocols(self, emodel, species, stimuli, validation_protocols):
-        """ Save the protocols obtained from BluePyEfe"""
+        """Save the protocols obtained from BluePyEfe"""
 
     def store_emodel(
         self,
@@ -34,7 +34,7 @@ class DatabaseAPI:
         scores_validation=None,
         species=None,
     ):
-        """ Save a model obtained from BluePyOpt"""
+        """Save a model obtained from BluePyOpt"""
 
     def get_extraction_metadata(self):
         """Gather the metadata used to build the config dictionary used as an
@@ -58,10 +58,10 @@ class DatabaseAPI:
         """
 
     def get_emodel(self):
-        """ Get dict with parameter of single emodel (including seed if any) """
+        """Get dict with parameter of single emodel (including seed if any)"""
 
     def get_emodels(self, emodels):
-        """ Get the list of emodels dictionaries. """
+        """Get the list of emodels dictionaries."""
 
     def get_parameters(self):
         """Get the definition of the parameters to optimize as well as the

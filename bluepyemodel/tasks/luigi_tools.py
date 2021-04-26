@@ -33,7 +33,7 @@ class WorkflowTask(_WorkflowTask):
     emodel = luigi.Parameter()
 
     def __init__(self, *args, **kwargs):
-        """"""
+        """ """
         super().__init__(*args, **kwargs)
 
         self.emodel_db = api.get_db(
@@ -53,7 +53,7 @@ class WorkflowTarget(luigi.Target, ABC):
     """Workflow target with loaded emodel_db."""
 
     def __init__(self, emodel, *args, **kwargs):
-        """"""
+        """ """
         super().__init__(*args, **kwargs)
 
         self.emodel = emodel

@@ -23,7 +23,7 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
     """Target to check if efeatures and protocols are present in the database."""
 
     def __init__(self, emodel):
-        """ Constructor. """
+        """Constructor."""
         super().__init__(emodel=emodel)
 
     def exists(self):
@@ -58,7 +58,7 @@ class ExtractEFeatures(WorkflowTask):
     plot = BoolParameterCustom(default=False)
 
     def run(self):
-        """"""
+        """ """
         mapper = self.get_mapper()
         _ = extract_save_features_protocols(
             emodel_db=self.emodel_db,
@@ -73,7 +73,7 @@ class ExtractEFeatures(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return EfeaturesProtocolsTarget(emodel=self.emodel)
 
 
@@ -96,7 +96,7 @@ class CompileMechanisms(WorkflowTask):
     copy_mechanisms = BoolParameterCustom(default=False)
 
     def run(self):
-        """"""
+        """ """
         copy_and_compile_mechanisms(
             self.emodel_db,
             self.emodel,
@@ -107,7 +107,7 @@ class CompileMechanisms(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return luigi.LocalTarget(Path("x86_64") / "special")
 
 
@@ -173,7 +173,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
     graceful_killer = multiprocessing.Event()
 
     def requires(self):
-        """"""
+        """ """
         targets = [ExtractEFeatures(emodel=self.emodel, species=self.species)]
         if self.compile_mechanisms:
             targets.append(
@@ -274,7 +274,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return OptimisationTarget(
             checkpoint_dir=self.checkpoint_dir, seed=self.seed, emodel=self.emodel
         )
@@ -326,7 +326,7 @@ class StoreBestModels(WorkflowTask):
     batch_size = luigi.IntParameter(default=1)
 
     def requires(self):
-        """"""
+        """ """
         to_run = []
 
         for seed in range(self.seed, self.seed + self.batch_size):
@@ -334,7 +334,7 @@ class StoreBestModels(WorkflowTask):
         return to_run
 
     def run(self):
-        """"""
+        """ """
         for seed in range(self.seed, self.seed + self.batch_size):
             # can have unfulfilled dependecies if slurm has send signal near time limit.
             if OptimisationTarget(
@@ -354,7 +354,7 @@ class StoreBestModels(WorkflowTask):
                 )
 
     def output(self):
-        """"""
+        """ """
         targets = []
         for seed in range(self.seed, self.seed + self.batch_size):
             targets.append(BestModelTarget(emodel=self.emodel, seed=seed))
@@ -434,7 +434,7 @@ class Validation(WorkflowTask, IPyParallelTask):
     graceful_killer = multiprocessing.Event()
 
     def requires(self):
-        """"""
+        """ """
         to_run = [
             StoreBestModels(
                 emodel=self.emodel, species=self.species, seed=self.seed, batch_size=self.batch_size
@@ -523,7 +523,7 @@ class Validation(WorkflowTask, IPyParallelTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return ValidationTarget(emodel=self.emodel, seed=self.seed, batch_size=self.batch_size)
 
 
@@ -599,7 +599,7 @@ class EModelCreation(WorkflowTask):
         assert self.output().exists()
 
     def output(self):
-        """"""
+        """ """
         return EModelCreationTarget(
             emodel=self.emodel,
             n_models_to_pass_validation=self.n_models_to_pass_validation,
@@ -622,7 +622,7 @@ class OptimizeWrapper(WorkflowWrapperTask):
     batch_size = luigi.IntParameter(default=10)
 
     def requires(self):
-        """"""
+        """ """
         to_run = []
         for seed in range(self.seed, self.seed + self.batch_size):
             to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))

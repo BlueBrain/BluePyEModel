@@ -73,14 +73,14 @@ class SinglecellAPI(DatabaseAPI):
         self.rw_lock_final_tmp = fasteners.InterProcessReaderWriterLock(".tmp/final_tmp.lock")
 
     def set_emodel(self, emodel):
-        """ Setter for the name of the emodel. """
+        """Setter for the name of the emodel."""
         if emodel not in self.get_all_recipes():
             raise Exception("Cannot set the emodel name to %s which does not exist in the recipes.")
 
         self.emodel = emodel
 
     def get_final(self, lock_file=True):
-        """ Get emodels from json """
+        """Get emodels from json"""
 
         if self.final_path is None:
             raise Exception("Final_path is None")
@@ -117,7 +117,7 @@ class SinglecellAPI(DatabaseAPI):
         return final
 
     def save_final(self, final, lock_file=True):
-        """ Save final emodels in json """
+        """Save final emodels in json"""
 
         if self.final_path is None:
             raise Exception("Final_path is None")
@@ -255,8 +255,6 @@ class SinglecellAPI(DatabaseAPI):
             },
         }
 
-        to_remove = {}
-
         for protocol in efeatures:
 
             # Handle a legacy case
@@ -279,8 +277,7 @@ class SinglecellAPI(DatabaseAPI):
                 out_features[protocol]["validation"] = False
 
             # Handle the features related to RMP, Rin and threshold and holding current.
-            to_remove = {protocol: []}
-            for i, efeat in enumerate(out_features[protocol]["soma.v"]):
+            for efeat in out_features[protocol]["soma.v"]:
 
                 if protocol == name_rmp_protocol and efeat["feature"] == "voltage_base":
                     out_features["RMPProtocol"] = {
@@ -292,7 +289,6 @@ class SinglecellAPI(DatabaseAPI):
                             }
                         ]
                     }
-                    to_remove[protocol].append(i)
 
                 elif protocol == name_Rin_protocol and efeat["feature"] == "voltage_base":
                     out_features["SearchHoldingCurrent"]["soma.v"].append(
@@ -302,27 +298,19 @@ class SinglecellAPI(DatabaseAPI):
                             "strict_stim": True,
                         }
                     )
-                    to_remove[protocol].append(i)
 
                 elif (
                     protocol == name_Rin_protocol
                     and efeat["feature"] == "ohmic_input_resistance_vb_ssse"
                 ):
                     out_features["RinProtocol"] = {"soma.v": [copy.copy(efeat)]}
-                    to_remove[protocol].append(i)
 
         # If some features are part of the RMP, Rin and threshold and holding current protocols,
         # they should be removed from their original protocol.
-        for protocol in to_remove:
-            if to_remove[protocol]:
-                out_features[protocol]["soma.v"] = [
-                    f
-                    for i, f in enumerate(out_features[protocol]["soma.v"])
-                    if i not in to_remove[protocol]
-                ]
-
-            if not (out_features[protocol]["soma.v"]):
-                out_features.pop(protocol)
+        # TODO: to rework when we will have the possibility of extracting different efeatures for
+        # the different ampliudes of the same eCode.
+        out_features.pop(name_Rin_protocol)
+        out_features.pop(name_rmp_protocol)
 
         features_path = Path(self.get_recipes()["features"])
         features_path.parent.mkdir(parents=True, exist_ok=True)
@@ -365,7 +353,7 @@ class SinglecellAPI(DatabaseAPI):
             f.write(s)
 
     def get_model_name_for_final(self, githash, seed):
-        """ Return model name used as key in final.json. """
+        """Return model name used as key in final.json."""
 
         if githash:
             return "{}__{}__{}".format(self.emodel, githash, seed)
@@ -474,7 +462,7 @@ class SinglecellAPI(DatabaseAPI):
         return params_definition, mech_definition, list(set(mech_names))
 
     def _handle_extra_recording(self, extra_recordings, sec_index=None):
-        """ Fetch the information needed to be able to use the extra recordings. """
+        """Fetch the information needed to be able to use the extra recordings."""
         extra_recordings_out = []
         for extra in extra_recordings:
             if extra["type"] == "somadistanceapic":
@@ -572,7 +560,7 @@ class SinglecellAPI(DatabaseAPI):
         return protocols_out
 
     def get_name_validation_protocols(self):
-        """Get the names of the protocols used for validation """
+        """Get the names of the protocols used for validation"""
 
         protocols = self._get_json("protocol")
 
@@ -776,7 +764,7 @@ class SinglecellAPI(DatabaseAPI):
         return features_exists and protocols_exists
 
     def has_best_model(self, seed, githash):
-        """ Check if the best model has been stored. """
+        """Check if the best model has been stored."""
 
         final = self.get_final()
 
@@ -785,7 +773,7 @@ class SinglecellAPI(DatabaseAPI):
         return model_name in final
 
     def is_checked_by_validation(self, seed, githash):
-        """ Check if the emodel with a given seed has been checked by Validation task. """
+        """Check if the emodel with a given seed has been checked by Validation task."""
 
         final = self.get_final()
 
@@ -798,7 +786,7 @@ class SinglecellAPI(DatabaseAPI):
         return False
 
     def is_validated(self, githash, n_models_to_pass_validation):
-        """ Check if enough models have been validated. """
+        """Check if enough models have been validated."""
 
         n_validated = 0
         final = self.get_final()

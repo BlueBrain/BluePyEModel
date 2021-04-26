@@ -27,14 +27,14 @@ class ApplyGenericMegating(BaseTask):
     target_path = luigi.Parameter(default="megated_scores_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return {
             "exemplar": GatherExemplarEvaluations(emodels=self.emodels),
             "generic": GatherGenericEvaluations(emodels=self.emodels),
         }
 
     def run(self):
-        """"""
+        """ """
         selected_combos_df = pd.read_csv(self.input()["generic"].path)
         exemplar_combos_df = pd.read_csv(self.input()["exemplar"].path)
         megate_thresholds = yaml.full_load(open(SelectConfig().megate_thresholds_path, "r"))
@@ -49,7 +49,7 @@ class ApplyGenericMegating(BaseTask):
         megated_scores_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return SelectLocalTarget(self.target_path)
 
 
@@ -62,14 +62,14 @@ class ApplyMegating(BaseTask):
     target_path = luigi.Parameter(default="megated_scores_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return {
             "exemplar": GatherExemplarEvaluations(emodels=self.emodels),
             "synth": GatherSynthEvaluations(emodels=self.emodels),
         }
 
     def run(self):
-        """"""
+        """ """
         selected_combos_df = pd.read_csv(self.input()["synth"].path)
         exemplar_combos_df = pd.read_csv(self.input()["exemplar"].path)
         megate_thresholds = yaml.full_load(open(SelectConfig().megate_thresholds_path, "r"))
@@ -84,7 +84,7 @@ class ApplyMegating(BaseTask):
         megated_scores_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return SelectLocalTarget(self.target_path)
 
 
@@ -96,14 +96,14 @@ class SelectCombos(BaseTask):
     target_path = luigi.Parameter(default="selected_combos_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return {
             "megated": ApplyMegating(emodels=self.emodels),
             "synth": GatherSynthEvaluations(emodels=self.emodels),
         }
 
     def run(self):
-        """"""
+        """ """
         selected_combos_df = pd.read_csv(self.input()["synth"].path)
         megated_scores_df = pd.read_csv(self.input()["megated"].path)
 
@@ -114,7 +114,7 @@ class SelectCombos(BaseTask):
         selected_combos_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return SelectLocalTarget(self.target_path)
 
 
@@ -126,14 +126,14 @@ class SelectGenericCombos(BaseTask):
     target_path = luigi.Parameter(default="selected_combos_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return {
             "megated": ApplyGenericMegating(emodels=self.emodels),
             "generic": GatherGenericEvaluations(emodels=self.emodels),
         }
 
     def run(self):
-        """"""
+        """ """
         selected_combos_df = pd.read_csv(self.input()["generic"].path)
         megated_scores_df = pd.read_csv(self.input()["megated"].path)
         selected_combos_df["selected"] = megated_scores_df.all(axis=1)
@@ -143,5 +143,5 @@ class SelectGenericCombos(BaseTask):
         selected_combos_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return SelectLocalTarget(self.target_path)

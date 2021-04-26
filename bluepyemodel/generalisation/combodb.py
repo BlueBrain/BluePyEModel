@@ -41,7 +41,7 @@ class ComboDB(MorphDB):
     """Database for me-combos, from morphology release, cell composition and emoodel database"""
 
     def __init__(self, *args, **kwargs):
-        """"""
+        """ """
         super().__init__(*args, **kwargs)
         self.combo_df = None
 

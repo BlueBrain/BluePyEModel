@@ -46,7 +46,7 @@ class ApplySubstitutionRules(BaseTask):
     target_path = luigi.Parameter(default="substituted_morphs_df.csv")
 
     def run(self):
-        """"""
+        """ """
         with open(self.substitution_rules_path, "rb") as sub_file:
             substitution_rules = yaml.full_load(sub_file)
 
@@ -57,7 +57,7 @@ class ApplySubstitutionRules(BaseTask):
         substituted_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return MorphComboLocalTarget(self.target_path)
 
 
@@ -69,11 +69,11 @@ class CreateMorphCombosDF(BaseTask):
     target_path = luigi.Parameter(default="morphs_combos_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return ApplySubstitutionRules()
 
     def run(self):
-        """"""
+        """ """
         morphs_df = pd.read_csv(self.input().path)
 
         cell_composition = yaml.safe_load(open(self.cell_composition_path, "r"))
@@ -86,5 +86,5 @@ class CreateMorphCombosDF(BaseTask):
         morphs_combos_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return MorphComboLocalTarget(self.target_path)

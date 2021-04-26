@@ -64,5 +64,5 @@ class SynthesizeAis(BaseTask):
         parallel_factory.shutdown()
 
     def output(self):
-        """"""
+        """ """
         return SynthesisLocalTarget(self.add_emodel(self.target_path))

@@ -33,7 +33,7 @@ class RunAll(BaseWrapperTask):
     rerun_emodels = luigi.ListParameter(default=None)
 
     def requires(self):
-        """"""
+        """ """
         if not self.emodels:
             emodel_db = self.get_database()
             self.emodels = list(emodel_db.get_emodel_names().keys())
@@ -71,7 +71,7 @@ class RunGenericEvaluations(BaseWrapperTask):
     emodels = luigi.ListParameter(default=None)
 
     def requires(self):
-        """"""
+        """ """
         if not self.emodels:
             emodel_db = self.get_database()
             self.emodels = list(emodel_db.get_emodel_names().keys())
