@@ -55,7 +55,7 @@ class EvaluateSynthesis(BaseTask):
         parallel_factory.shutdown()
 
     def output(self):
-        """"""
+        """ """
         return EvaluationLocalTarget(self.add_emodel(self.target_path))
 
 
@@ -69,7 +69,7 @@ class EvaluateGeneric(BaseTask):
     target_path = luigi.Parameter(default="combos_with_scores_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return CreateMorphCombosDF()
 
     def run(self):
@@ -98,7 +98,7 @@ class EvaluateGeneric(BaseTask):
         parallel_factory.shutdown()
 
     def output(self):
-        """"""
+        """ """
         return EvaluationLocalTarget(self.add_emodel(self.target_path))
 
 
@@ -112,7 +112,7 @@ class EvaluateExemplars(BaseTask):
     target_path = luigi.Parameter(default="exemplar_evaluations.csv")
 
     def requires(self):
-        """"""
+        """ """
         return CreateMorphCombosDF()
 
     def run(self):
@@ -149,5 +149,5 @@ class EvaluateExemplars(BaseTask):
         parallel_factory.shutdown()
 
     def output(self):
-        """"""
+        """ """
         return EvaluationLocalTarget(self.add_emodel(self.target_path))

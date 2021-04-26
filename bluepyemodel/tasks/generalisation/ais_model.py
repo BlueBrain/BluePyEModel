@@ -48,7 +48,7 @@ class AisShapeModel(BaseTask):
             yaml.dump(models, f)
 
     def output(self):
-        """"""
+        """ """
         return ModelLocalTarget(self.target_path)
 
 
@@ -100,7 +100,7 @@ class AisResistanceModel(BaseTask):
         parallel_factory.shutdown()
 
     def output(self):
-        """"""
+        """ """
         return ModelLocalTarget(self.add_emodel(self.target_path))
 
 
@@ -161,5 +161,5 @@ class TargetRhoAxon(BaseTask):
         parallel_factory.shutdown()
 
     def output(self):
-        """"""
+        """ """
         return ModelLocalTarget(self.add_emodel(self.target_path))

@@ -38,17 +38,17 @@ class PlotAisShapeModel(BaseTask):
     target_path = luigi.Parameter(default="AIS_shape_models.pdf")
 
     def requires(self):
-        """"""
+        """ """
         return AisShapeModel()
 
     def run(self):
-        """"""
+        """ """
         ensure_dir(self.output().path)
         with self.input().open() as ais_model_file:
             plot_ais_taper_models(yaml.safe_load(ais_model_file), self.output().path)
 
     def output(self):
-        """"""
+        """ """
         return PlotLocalTarget(self.target_path)
 
 
@@ -59,11 +59,11 @@ class PlotAisResistanceModel(BaseTask):
     target_path = luigi.Parameter(default="resistance_models/AIS_resistance_model.pdf")
 
     def requires(self):
-        """"""
+        """ """
         return AisResistanceModel(emodel=self.emodel)
 
     def run(self):
-        """"""
+        """ """
         _task = AisResistanceModel(emodel=self.emodel)
         fit_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.fit_df_path)))
         ensure_dir(self.output().path)
@@ -75,7 +75,7 @@ class PlotAisResistanceModel(BaseTask):
             )
 
     def output(self):
-        """"""
+        """ """
         return PlotLocalTarget(self.add_emodel(self.target_path))
 
 
@@ -86,11 +86,11 @@ class PlotTargetRhoAxon(BaseTask):
     target_path = luigi.Parameter(default="target_rhos/target_rhos_axon.pdf")
 
     def requires(self):
-        """"""
+        """ """
         return TargetRhoAxon(emodel=self.emodel)
 
     def run(self):
-        """"""
+        """ """
         try:
             _task = TargetRhoAxon(emodel=self.emodel)
             rho_scan_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.rho_scan_df_path)))
@@ -105,11 +105,11 @@ class PlotTargetRhoAxon(BaseTask):
                 )
         except FileNotFoundError:
             ensure_dir(self.output().path)
-            f = open(self.output().path, "w")
-            f.write("no plot for linear_fit mode")
+            with open(self.output().path, "w") as f:
+                f.write("no plot for linear_fit mode")
 
     def output(self):
-        """"""
+        """ """
         return PlotLocalTarget(self.add_emodel(self.target_path))
 
 
@@ -121,11 +121,11 @@ class PlotSynthesisEvaluation(BaseTask):
     target_path = luigi.Parameter(default="evaluations/synthesis_evaluation.pdf")
 
     def requires(self):
-        """"""
+        """ """
         return EvaluateSynthesis(emodel=self.emodel)
 
     def run(self):
-        """"""
+        """ """
         ensure_dir(self.output().path)
         plot_synth_ais_evaluations(
             pd.read_csv(self.input().path),
@@ -135,7 +135,7 @@ class PlotSynthesisEvaluation(BaseTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return PlotLocalTarget(self.add_emodel(self.target_path))
 
 
@@ -147,11 +147,11 @@ class PlotGenericEvaluation(BaseTask):
     target_path = luigi.Parameter(default="evaluations/evaluation.pdf")
 
     def requires(self):
-        """"""
+        """ """
         return EvaluateGeneric(emodel=self.emodel)
 
     def run(self):
-        """"""
+        """ """
         ensure_dir(self.output().path)
         plot_synth_ais_evaluations(
             pd.read_csv(self.input().path),
@@ -161,7 +161,7 @@ class PlotGenericEvaluation(BaseTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return PlotLocalTarget(self.add_emodel(self.target_path))
 
 
@@ -172,14 +172,14 @@ class PlotSelected(BaseTask):
     target_path = luigi.Parameter(default="select_summary.pdf")
 
     def requires(self):
-        """"""
+        """ """
         return {
             "megated": ApplyMegating(emodels=self.emodels),
             "selected": SelectCombos(emodels=self.emodels),
         }
 
     def run(self):
-        """"""
+        """ """
 
         select_df = pd.read_csv(self.input()["selected"].path)
         megate_df = pd.read_csv(self.input()["megated"].path)
@@ -222,7 +222,7 @@ class PlotSelected(BaseTask):
                 logger.info("No failed evaluation with exceptions!")
 
     def output(self):
-        """"""
+        """ """
         return PlotLocalTarget(self.target_path)
 
 
@@ -233,14 +233,14 @@ class PlotGenericSelected(BaseTask):
     target_path = luigi.Parameter(default="select_summary.pdf")
 
     def requires(self):
-        """"""
+        """ """
         return {
             "megated": ApplyGenericMegating(emodels=self.emodels),
             "selected": SelectGenericCombos(emodels=self.emodels),
         }
 
     def run(self):
-        """"""
+        """ """
 
         select_df = pd.read_csv(self.input()["selected"].path)
         megate_df = pd.read_csv(self.input()["megated"].path)
@@ -283,5 +283,5 @@ class PlotGenericSelected(BaseTask):
                 logger.info("No failed evaluation with exceptions!")
 
     def output(self):
-        """"""
+        """ """
         return PlotLocalTarget(self.target_path)

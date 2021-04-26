@@ -59,7 +59,7 @@ class GatherAisModels(BaseTask):
             yaml.dump(ais_models_final, f)
 
     def output(self):
-        """"""
+        """ """
         return GatherLocalTarget(self.target_path)
 
 
@@ -88,7 +88,7 @@ class GatherTargetRhoAxon(BaseTask):
             yaml.dump(target_rhos, f)
 
     def output(self):
-        """"""
+        """ """
         return GatherLocalTarget(self.target_path)
 
 
@@ -99,11 +99,11 @@ class GatherSynthAis(BaseTask):
     target_path = luigi.Parameter(default="synth_combos_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return {emodel: SynthesizeAis(emodel=emodel) for emodel in self.emodels}
 
     def run(self):
-        """"""
+        """ """
         synth_combos_df = pd.concat(
             [pd.read_csv(self.input()[emodel].path) for emodel in self.emodels]
         )
@@ -112,7 +112,7 @@ class GatherSynthAis(BaseTask):
         synth_combos_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return GatherLocalTarget(self.target_path)
 
 
@@ -123,11 +123,11 @@ class GatherExemplarEvaluations(BaseTask):
     target_path = luigi.Parameter(default="exemplar_evaluations.csv")
 
     def requires(self):
-        """"""
+        """ """
         return {emodel: EvaluateExemplars(emodel=emodel) for emodel in self.emodels}
 
     def run(self):
-        """"""
+        """ """
         exemplar_combos_df = pd.concat(
             [pd.read_csv(self.input()[emodel].path) for emodel in self.emodels]
         )
@@ -136,7 +136,7 @@ class GatherExemplarEvaluations(BaseTask):
         exemplar_combos_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return GatherLocalTarget(self.target_path)
 
 
@@ -147,11 +147,11 @@ class GatherSynthEvaluations(BaseTask):
     target_path = luigi.Parameter(default="synth_evaluations_combos_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return {emodel: EvaluateSynthesis(emodel=emodel) for emodel in self.emodels}
 
     def run(self):
-        """"""
+        """ """
         synth_eval_combos_df = pd.concat(
             [pd.read_csv(self.input()[emodel].path) for emodel in self.emodels]
         )
@@ -160,7 +160,7 @@ class GatherSynthEvaluations(BaseTask):
         synth_eval_combos_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return GatherLocalTarget(self.target_path)
 
 
@@ -171,7 +171,7 @@ class GatherGenericEvaluations(BaseTask):
     target_path = luigi.Parameter(default="evaluations_combos_df.csv")
 
     def requires(self):
-        """"""
+        """ """
         return {emodel: EvaluateGeneric(emodel=emodel) for emodel in self.emodels}
 
     def run(self):
@@ -184,5 +184,5 @@ class GatherGenericEvaluations(BaseTask):
         morphs_combos_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return GatherLocalTarget(self.target_path)

@@ -24,7 +24,7 @@ class EmodelAwareTask:
         raise NotImplementedError(f"api {EmodelAPIConfig().api} is not implemented")
 
     def __init__(self, *args, **kwargs):
-        """"""
+        """ """
         super().__init__(*args, **kwargs)
 
         self.emodel_db = self.get_database()

@@ -260,7 +260,7 @@ class SearchHoldingCurrent:
     def get_voltage_base(
         self, holding_current, cell_model, param_values, sim, isolate, timeout=None
     ):
-        """ Calculate voltage base for a certain holding current """
+        """Calculate voltage base for a certain holding current"""
         protocol = self.create_protocol(holding_current=holding_current)
         response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
 
@@ -603,7 +603,7 @@ class MainProtocol(ephys.protocols.Protocol):
         self.search_threshold_protocol = search_threshold_protocol
 
     def subprotocols(self):
-        """ Return all the subprotocols contained in MainProtocol """
+        """Return all the subprotocols contained in MainProtocol"""
         subprotocols = {}
 
         if self.threshold_protocols is not None:
@@ -615,7 +615,7 @@ class MainProtocol(ephys.protocols.Protocol):
         return subprotocols
 
     def run_RMP(self, cell_model, responses, sim=None, isolate=None, timeout=None):
-        """Compute resting membrane potential """
+        """Compute resting membrane potential"""
         response = self.RMP_protocol.run(cell_model, {}, sim=sim, isolate=isolate, timeout=timeout)
         score = self.RMP_protocol.target_voltage.calculate_score(response)
 
