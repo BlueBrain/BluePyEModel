@@ -143,7 +143,6 @@ class OptimisationTarget(WorkflowTarget):
 
 @copy_params(
     mechanisms_dir=ParamRef(OptimizeConfig),
-    morphology_modifiers=ParamRef(OptimizeConfig),
     max_ngen=ParamRef(OptimizeConfig),
     stochasticity=ParamRef(OptimizeConfig),
     copy_mechanisms=ParamRef(OptimizeConfig),
@@ -195,7 +194,6 @@ class Optimize(WorkflowTask, IPyParallelTask):
             "emodel",
             "seed",
             "species",
-            "morphology_modifiers",
             "stochasticity",
             "timeout",
             "opt_params",
@@ -244,7 +242,6 @@ class Optimize(WorkflowTask, IPyParallelTask):
         parser.add_argument("--emodel", default=None, type=str)
         parser.add_argument("--seed", default=42, type=int)
         parser.add_argument("--species", default=None, type=str)
-        parser.add_argument("--morphology_modifiers", default=None, type=json.loads)
         parser.add_argument("--stochasticity", default=False, action="store_true")
         parser.add_argument("--timeout", default=600, type=int)
         parser.add_argument("--opt_params", default=None, type=json.loads)
@@ -262,7 +259,6 @@ class Optimize(WorkflowTask, IPyParallelTask):
             emodel_db,
             args.emodel,
             args.seed,
-            morphology_modifiers=args.morphology_modifiers,
             stochasticity=args.stochasticity,
             include_validation_protocols=False,
             timeout=args.timeout,
@@ -398,7 +394,6 @@ class ValidationTarget(WorkflowTarget):
     copy_mechanisms=ParamRef(OptimizeConfig),
     compile_mechanisms=ParamRef(OptimizeConfig),
     mechanisms_dir=ParamRef(OptimizeConfig),
-    morphology_modifiers=ParamRef(OptimizeConfig),
 )
 class Validation(WorkflowTask, IPyParallelTask):
     """Luigi wrapper for validation.
@@ -459,7 +454,6 @@ class Validation(WorkflowTask, IPyParallelTask):
             "backend",
             "emodel",
             "species",
-            "morphology_modifiers",
             "stochasticity",
             "validation_function",
             "additional_protocols",
@@ -499,7 +493,6 @@ class Validation(WorkflowTask, IPyParallelTask):
         )
         parser.add_argument("--emodel", default=None, type=str)
         parser.add_argument("--species", default=None, type=str)
-        parser.add_argument("--morphology_modifiers", default=None, type=json.loads)
         parser.add_argument("--stochasticity", default=False, action="store_true")
         parser.add_argument("--validation_function", default="", type=str)
         parser.add_argument("--additional_protocols", default=None, type=json.loads)
@@ -518,7 +511,6 @@ class Validation(WorkflowTask, IPyParallelTask):
             mapper,
             validation_function=args.validation_function,
             stochasticity=args.stochasticity,
-            morphology_modifiers=args.morphology_modifiers,
             additional_protocols=args.additional_protocols,
             threshold=args.threshold,
             validation_protocols_only=args.validation_protocols_only,

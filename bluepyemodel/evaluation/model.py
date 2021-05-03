@@ -211,7 +211,8 @@ def define_morphology(
                 with (sim, icell) as arguments,
                 if None, evaluation.modifiers.replace_axon_with_taper will be used
         morph_modifiers_hoc (list): list of hoc strings corresponding
-                to morph_modifiers
+                to morph_modifiers, each modifier can be a function, or a list of a path
+                to a .py and the name of the function to use in this file
 
     Returns:
         bluepyopt.ephys.morphologies.NrnFileMorphology: a morphology object
@@ -222,13 +223,13 @@ def define_morphology(
         logger.warning("No morphology modifiers provided, replace_axon_with_taper will be used.")
 
     for i, morph_modifier in enumerate(morph_modifiers):
-        if isinstance(morph_modifier, str):
+        if isinstance(morph_modifier, list):
             # pylint: disable=deprecated-method,no-value-for-parameter
-            modifier_module = SourceFileLoader("morph_modifier", morph_modifier).load_module()
-            morph_modifiers[i] = modifier_module.replace_axon
+            modifier_module = SourceFileLoader("morph_modifier", morph_modifier[0]).load_module()
+            morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
 
         elif not callable(morph_modifier):
-            raise Exception("A morph modifier is not collable nor a str")
+            raise Exception("A morph modifier is not callable nor a list of two str")
 
     return NrnFileMorphology(
         morphology_path,

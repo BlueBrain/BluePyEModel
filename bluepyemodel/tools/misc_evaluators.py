@@ -14,7 +14,6 @@ from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 def single_feature_evaluation(
     combo,
     emodel_db,
-    morph_modifiers=None,
     morphology_path="morphology_path",
     stochasticity=False,
     timeout=1000,
@@ -25,7 +24,7 @@ def single_feature_evaluation(
     emodel_db.morph_path = combo[morphology_path]
 
     evaluator = get_evaluator_from_db(
-        combo["emodel"], emodel_db, morph_modifiers, stochasticity=stochasticity, timeout=timeout
+        combo["emodel"], emodel_db, stochasticity=stochasticity, timeout=timeout
     )
     responses = evaluator.run_protocols(
         evaluator.fitness_protocols.values(), emodel_db.get_emodel()["parameters"]
@@ -60,7 +59,6 @@ def feature_evaluation(
     resume=False,
     db_url="scores_db.sql",
     parallel_factory=None,
-    morph_modifiers=None,
     trace_data_path=None,
     stochasticity=False,
 ):
@@ -82,7 +80,6 @@ def feature_evaluation(
         single_feature_evaluation,
         emodel_db=emodel_db,
         morphology_path=morphology_path,
-        morph_modifiers=morph_modifiers,
         trace_data_path=trace_data_path,
         stochasticity=stochasticity,
     )

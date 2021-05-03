@@ -1,8 +1,8 @@
 """API to get data from Singlecell-like repositories."""
-
 import copy
 import json
 import logging
+from collections import defaultdict
 from pathlib import Path
 
 import fasteners
@@ -160,6 +160,10 @@ class SinglecellAPI(DatabaseAPI):
         """
 
         return self.get_all_recipes()[self.emodel]
+
+    def get_morph_modifiers(self):
+        """Get the morph modifiers if any."""
+        return self.get_recipes().get("morph_modifiers", None)
 
     def _get_json(self, recipe_entry):
         """Helper function to load a json using path in recipe."""
@@ -440,45 +444,18 @@ class SinglecellAPI(DatabaseAPI):
         mech_definition["multiloc_map"] = self.get_recipes().get("multiloc_map", None)
         return params_definition, mech_definition, list(set(mech_names))
 
-    def _handle_extra_recording(self, extra_recordings, sec_index=None):
-        """Fetch the information needed to be able to use the extra recordings."""
-        extra_recordings_out = []
-        for extra in extra_recordings:
-            if extra["type"] == "somadistanceapic":
-                if sec_index is None:
-                    apical_point_isec = self.emodel_dir / "apical_points_isec.json"
-                    if apical_point_isec.exists():
-                        morph_name = self.get_morphologies()["name"]
-                        sec_index = json.load(open(str(apical_point_isec)))[morph_name]
-                    else:
-                        sec_index = self.get_apical_point()
-
-                extra["sec_index"] = sec_index
-                if extra["seclist_name"]:
-                    extra["sec_name"] = seclist_to_sec[extra["seclist_name"]]
-                else:
-                    raise Exception("Cannot get section name from seclist_name.")
-
-            extra_recordings_out.append(extra)
-
-        return extra_recordings_out
-
-    def _read_protocol(self, protocol, sec_index=None):
-
+    def _read_protocol(self, protocol):
         stimulus_def = protocol["step"]
         stimulus_def["holding_current"] = protocol["holding"]["amp"]
 
         protocol_definition = {"type": protocol["type"], "stimuli": stimulus_def}
 
         if "extra_recordings" in protocol:
-            protocol_definition["extra_recordings"] = self._handle_extra_recording(
-                protocol["extra_recordings"], sec_index=sec_index
-            )
+            protocol_definition["extra_recordings"] = protocol["extra_recordings"]
 
         return protocol_definition
 
-    def _read_legacy_protocol(self, protocol, protocol_name, sec_index=None):
-
+    def _read_legacy_protocol(self, protocol, protocol_name):
         if protocol_name in ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]:
             return None
 
@@ -492,23 +469,18 @@ class SinglecellAPI(DatabaseAPI):
             stimulus_def["holding_current"] = None
 
         protocol_definition = {"type": protocol["type"], "stimuli": stimulus_def}
-
         if "extra_recordings" in protocol:
-            protocol_definition["extra_recordings"] = self._handle_extra_recording(
-                protocol["extra_recordings"], sec_index=sec_index
-            )
+            protocol_definition["extra_recordings"] = protocol["extra_recordings"]
 
         return protocol_definition
 
-    def get_protocols(self, include_validation=False, sec_index=None, extra_recordings=True):
+    def get_protocols(self, include_validation=False):
         """Get the protocols from the configuration file and put them in the format required by
         MainProtocol.
 
         Args:
             include_validation (bool): if True, returns the protocols for validation as well as
                 the ones for optimisation.
-            sec_index (int): apical sec index for bap recordings
-            extra_recordings (bool): setup or not extra recordings (such as bAP)
 
         Returns:
             protocols_out (dict): protocols definitions
@@ -518,17 +490,12 @@ class SinglecellAPI(DatabaseAPI):
         protocols_out = {}
         for protocol_name, protocol in protocols.items():
 
-            if not extra_recordings and "extra_recordings" in protocol:
-                del protocol["extra_recordings"]
-
             if "validation" in protocol:
                 if not include_validation and protocol["validation"]:
                     continue
-                protocol_definition = self._read_protocol(protocol, sec_index=sec_index)
+                protocol_definition = self._read_protocol(protocol)
             else:
-                protocol_definition = self._read_legacy_protocol(
-                    protocol, protocol_name, sec_index=sec_index
-                )
+                protocol_definition = self._read_legacy_protocol(protocol, protocol_name)
 
             if protocol_definition:
                 protocols_out[protocol_name] = protocol_definition
@@ -549,7 +516,7 @@ class SinglecellAPI(DatabaseAPI):
         return names
 
     def get_features(self, include_validation=False):
-        """Get the efeatures from the configuration files and put then in the format required by
+        """Get the features from the configuration files and put then in the format required by
         MainProtocol.
 
         Args:
@@ -557,61 +524,57 @@ class SinglecellAPI(DatabaseAPI):
                 the ones for optimisation.
 
         Returns:
-            efeatures_out (dict): efeatures definitions
+            features_out (dict): features definitions
         """
 
-        efeatures = self._get_json("features")
+        features = self._get_json("features")
 
-        efeatures_out = {
+        features_out = {
             "RMPProtocol": {"soma.v": []},
             "RinProtocol": {"soma.v": []},
             "SearchHoldingCurrent": {"soma.v": []},
             "SearchThresholdCurrent": {"soma.v": []},
         }
-
-        for prot_name in efeatures:
+        # pylint: disable=too-many-nested-blocks
+        for prot_name in features:
 
             if (
-                "validation" in efeatures[prot_name]
+                "validation" in features[prot_name]
                 and not include_validation
-                and efeatures[prot_name]["validation"]
+                and features[prot_name]["validation"]
             ):
                 continue
 
-            for loc in efeatures[prot_name]:
+            for loc in features[prot_name]:
 
                 if loc == "validation":
                     continue
 
-                for efeat in efeatures[prot_name][loc]:
+                for feat in features[prot_name][loc]:
 
-                    if prot_name == "Rin" and efeat["feature"] == "ohmic_input_resistance_vb_ssse":
-                        efeatures_out["RinProtocol"]["soma.v"].append(efeat)
+                    if prot_name == "Rin" and feat["feature"] == "ohmic_input_resistance_vb_ssse":
+                        features_out["RinProtocol"]["soma.v"].append(feat)
 
-                    elif prot_name == "RMP" and efeat["feature"] == "voltage_base":
-                        efeat["feature"] = "steady_state_voltage_stimend"
-                        efeatures_out["RMPProtocol"]["soma.v"].append(efeat)
+                    elif prot_name == "RMP" and feat["feature"] == "voltage_base":
+                        feat["feature"] = "steady_state_voltage_stimend"
+                        features_out["RMPProtocol"]["soma.v"].append(feat)
 
-                    elif (
-                        prot_name == "RinHoldCurrent" and efeat["feature"] == "bpo_holding_current"
-                    ):
-                        efeatures_out["SearchHoldingCurrent"]["soma.v"].append(efeat)
+                    elif prot_name == "RinHoldCurrent" and feat["feature"] == "bpo_holding_current":
+                        features_out["SearchHoldingCurrent"]["soma.v"].append(feat)
 
-                    elif prot_name == "Rin" and efeat["feature"] == "voltage_base":
-                        efeat["feature"] = "steady_state_voltage_stimend"
-                        efeatures_out["SearchHoldingCurrent"]["soma.v"].append(efeat)
+                    elif prot_name == "Rin" and feat["feature"] == "voltage_base":
+                        feat["feature"] = "steady_state_voltage_stimend"
+                        features_out["SearchHoldingCurrent"]["soma.v"].append(feat)
 
-                    elif prot_name == "Threshold" and efeat["feature"] == "bpo_threshold_current":
-                        efeatures_out["SearchThresholdCurrent"]["soma.v"].append(efeat)
+                    elif prot_name == "Threshold" and feat["feature"] == "bpo_threshold_current":
+                        features_out["SearchThresholdCurrent"]["soma.v"].append(feat)
 
                     else:
-                        if prot_name not in efeatures_out:
-                            efeatures_out[prot_name] = {loc: []}
-                        if loc not in efeatures_out[prot_name]:
-                            efeatures_out[prot_name][loc] = []
-                        efeatures_out[prot_name][loc].append(efeat)
+                        if prot_name not in features_out:
+                            features_out[prot_name] = defaultdict(list)
+                        features_out[prot_name][loc].append(feat)
 
-        return efeatures_out
+        return features_out
 
     def get_morphologies(self):
         """Get the name and path to the morphologies from the recipes.

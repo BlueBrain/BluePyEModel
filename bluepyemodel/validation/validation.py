@@ -15,7 +15,6 @@ def validate(
     mapper,
     validation_function=None,
     stochasticity=False,
-    morphology_modifiers=None,
     additional_protocols=None,
     threshold=5.0,
     validation_protocols_only=False,
@@ -40,8 +39,6 @@ def validate(
         mechanisms_dir (str): path of the directory in which the mechanisms
             will be copied and/or compiled. It has to be a subdirectory of
             working_dir.
-        morphology_modifiers (list): list of python functions that will be
-            applied to all the morphologies.
         additional_protocols (dict): definition of supplementary protocols. See
             examples/optimisation for usage.
         threshold (float): threshold under which the validation function returns True.
@@ -58,7 +55,6 @@ def validate(
         emodel,
         emodel_db,
         stochasticity=stochasticity,
-        morphology_modifiers=morphology_modifiers,
         include_validation_protocols=True,
         additional_protocols=additional_protocols,
     )
