@@ -1,5 +1,6 @@
 """Evaluator module."""
 import logging
+from copy import deepcopy
 
 import numpy
 from bluepyefe.recording import _set_efel_settings
@@ -26,6 +27,12 @@ logger = logging.getLogger(__name__)
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 # this location can be used to record at ais, using the option ais_recording below
 ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
+seclist_to_sec = {
+    "somatic": "soma",
+    "apical": "apic",
+    "axonal": "axon",
+    "myelinated": "myelin",
+}
 
 
 class eFELFeatureBPEM(eFELFeature):
@@ -594,6 +601,76 @@ def get_simulator(stochasticity, cell_model):
     return NrnSimulator()
 
 
+def _get_apical_point(cell):
+    """Get the apical point isec usign automatic apical point detection."""
+    from morph_tool import apical_point
+    from morph_tool import nrnhines
+    from morphio import Morphology
+
+    point = apical_point.apical_point_position(Morphology(cell.morphology.morphology_path))
+    return nrnhines.point_to_section_end(cell.icell.apical, point)
+
+
+# pylint: disable=too-many-nested-blocks
+def _handle_extra_recordings(protocols, features, _cell):
+    """Here we deal with special types of recordings."""
+    cell = deepcopy(_cell)
+    cell.params = None
+    cell.mechanisms = None
+    cell.instantiate(sim=NrnSimulator())
+
+    for protocol_name, protocol in protocols.items():
+        if "extra_recordings" in protocol:
+            extra_recordings = []
+            for extra in protocol["extra_recordings"]:
+
+                if extra["type"] == "somadistanceapic":
+                    extra["sec_index"] = _get_apical_point(cell)
+                    extra["sec_name"] = seclist_to_sec.get(
+                        extra["seclist_name"], extra["seclist_name"]
+                    )
+                    extra_recordings.append(extra)
+
+                elif extra["type"] == "terminal_sections":
+                    # this recording is for highfreq protocol, to record on all terminal sections.
+                    for sec_id, section in enumerate(getattr(cell.icell, extra["seclist_name"])):
+                        if len(section.subtree()) == 1:
+                            _extra = deepcopy(extra)
+                            _extra["type"] = "nrnseclistcomp"
+                            _extra["name"] = f"{extra['seclist_name']}{sec_id}"
+                            _extra["sec_index"] = sec_id
+                            extra_recordings.append(_extra)
+
+                elif extra["type"] == "all_sections":
+                    # this recording type records from all section of given type
+                    for sec_id, section in enumerate(getattr(cell.icell, extra["seclist_name"])):
+                        _extra = deepcopy(extra)
+                        _extra["type"] = "nrnseclistcomp"
+                        _extra["name"] = f"{extra['seclist_name']}{sec_id}"
+                        _extra["sec_index"] = sec_id
+                        extra_recordings.append(_extra)
+                else:
+                    extra_recordings.append(extra)
+
+                protocols[protocol_name]["extra_recordings"] = extra_recordings
+
+    features_out = deepcopy(features)
+    for prot_name in features:
+        for loc in features[prot_name]:
+            for feat in features[prot_name][loc]:
+                # if the loc of the recording is of the form axon*.v, we replace * by
+                # all the corresponding int from the created protocols using their names
+                _loc_name, _rec_name = loc.split(".")
+                if _loc_name[-1] == "*":
+                    features_out[prot_name].pop(loc, None)
+                    for rec in protocols[prot_name].get("extra_recordings", []):
+                        if rec["seclist_name"].startswith(_loc_name[:-1]):
+                            _loc = rec["name"] + "." + _rec_name
+                            features_out[prot_name][_loc].append(deepcopy(feat))
+
+    return protocols, features_out
+
+
 def create_evaluator(
     cell_model,
     protocols_definition,
@@ -615,6 +692,10 @@ def create_evaluator(
     Returns:
         CellEvaluator
     """
+    protocols_definition, features_definition = _handle_extra_recordings(
+        protocols_definition, features_definition, cell_model
+    )
+
     main_protocol, features = define_main_protocol(
         protocols_definition,
         features_definition,

@@ -155,7 +155,6 @@ class EModel_pipeline:
         forge_path=None,
         use_git=False,
         githash=None,
-        morphology_modifiers=None,
         nexus_organisation="Cells",
         nexus_projet="emodel_pipeline",
         nexus_enpoint="https://staging.nexus.ocp.bbp.epfl.ch/v1",
@@ -178,14 +177,11 @@ class EModel_pipeline:
                 be generated. The pipeline will expect a git repository to exist in working_dir.
             githash (str): if provided, the pipeline will work in the directory
                 working_dir/run/githash. Needed when continuing work or resuming optimisations.
-            morphology_modifiers (list): list of python functions that will be  applied to all the
-                morphologies.
         """
 
         self.emodel = emodel
         self.species = species
 
-        self.morphology_modifiers = morphology_modifiers
         self.forge_path = forge_path
 
         if use_git:
@@ -266,7 +262,6 @@ class EModel_pipeline:
         return get_evaluator_from_db(
             emodel=self.emodel,
             db=self.db,
-            morphology_modifiers=None,
             stochasticity=stochasticity,
             include_validation_protocols=include_validation_protocols,
             additional_protocols=additional_protocols,
@@ -529,7 +524,6 @@ class EModel_pipeline:
             mapper=mapper,
             validation_function=validation_function,
             stochasticity=stochasticity,
-            morphology_modifiers=None,
             additional_protocols=None,
             threshold=5.0,
             validation_protocols_only=False,

@@ -136,14 +136,3 @@ class DatabaseAPI:
         checkpoint_path = Path(checkpoint_dir) / f"checkpoint__{self.emodel}__{githash}__{seed}.pkl"
 
         return checkpoint_path.is_file()
-
-    def get_apical_point(self):
-        """Get the apical point isec usign automatic apical point detection."""
-        from morph_tool import apical_point
-        from morph_tool import nrnhines
-        from morphio import Morphology
-
-        morph_path = self.get_morphologies()["path"]
-        cell = nrnhines.get_NRN_cell(morph_path)
-        point = apical_point.apical_point_position(Morphology(morph_path))
-        return nrnhines.point_to_section_end(cell.icell.apical, point)

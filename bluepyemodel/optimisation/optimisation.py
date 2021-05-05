@@ -77,7 +77,6 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     emodel_db,
     emodel,
     seed,
-    morphology_modifiers=None,
     stochasticity=False,
     include_validation_protocols=False,
     timeout=None,
@@ -95,7 +94,6 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     cell_evaluator = get_evaluator_from_db(
         emodel=emodel,
         db=emodel_db,
-        morphology_modifiers=morphology_modifiers,
         stochasticity=stochasticity,
         include_validation_protocols=include_validation_protocols,
         timeout=timeout,

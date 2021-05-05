@@ -10,7 +10,6 @@ from kgforge.core import KnowledgeGraphForge
 from kgforge.core import Resource
 
 from bluepyemodel.api.databaseAPI import DatabaseAPI
-from bluepyemodel.api.singlecell import seclist_to_sec
 
 logger = logging.getLogger("__main__")
 
@@ -1176,26 +1175,6 @@ class NexusAPI(DatabaseAPI):
 
         return params_definition, mech_definition, set(mechanisms_names)
 
-    def _handle_extra_recordings(self, extra_recordings):
-        """Fetch the information needed to be able to use the extra recordings."""
-
-        extra_recordings_out = []
-
-        for extra in extra_recordings:
-
-            if extra["type"] == "somadistanceapic":
-
-                extra["sec_index"] = self.get_apical_point()
-
-                if extra["seclist_name"]:
-                    extra["sec_name"] = seclist_to_sec[extra["seclist_name"]]
-                else:
-                    raise Exception("Cannot get section name from seclist_name.")
-
-            extra_recordings_out.append(extra)
-
-        return extra_recordings_out
-
     def get_opt_targets(self, include_validation):
         """Get the optimisation and validation targets from Nexus."""
 
@@ -1303,7 +1282,7 @@ class NexusAPI(DatabaseAPI):
             stimulus["holding_current"] = resources_protocol[0].definition.holding.amplitude
 
             if hasattr(resource_target, "extraRecordings"):
-                extra_recordings = self._handle_extra_recordings(resource_target.extraRecordings)
+                extra_recordings = resource_target.extraRecordings
             else:
                 extra_recordings = []
 

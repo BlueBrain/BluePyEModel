@@ -72,7 +72,6 @@ def compute_responses(
 def get_evaluator_from_db(
     emodel,
     db,
-    morphology_modifiers=None,
     stochasticity=False,
     include_validation_protocols=False,
     additional_protocols=None,
@@ -90,8 +89,6 @@ def get_evaluator_from_db(
         mechanisms_dir (str): path of the directory in which the mechanisms
             will be copied and/or compiled. It has to be a subdirectory of
             working_dir.
-        morphology_modifiers (list): list of python functions that will be
-            applied to all the morphologies.
         stochasticity (bool): should channels behave stochastically if they can.
         copy_mechanisms (bool): should the mod files be copied in the local
             mechanisms_dir directory.
@@ -108,19 +105,19 @@ def get_evaluator_from_db(
     """
     db.set_emodel(emodel)
     parameters, mechanisms, _ = db.get_parameters()
-    if not (parameters) or not (mechanisms):
+    if not parameters or not mechanisms:
         raise Exception("No parameters for emodel %s" % emodel)
 
     morphologies = db.get_morphologies()
-    if not (morphologies):
+    if not morphologies:
         raise Exception("No morphologies for emodel %s" % emodel)
 
-    efeatures = db.get_features(include_validation_protocols)
-    if not (efeatures):
+    features = db.get_features(include_validation_protocols)
+    if not features:
         raise Exception("No efeatures for emodel %s" % emodel)
 
     protocols = db.get_protocols(include_validation_protocols)
-    if not (protocols):
+    if not protocols:
         raise Exception("No protocols for emodel %s" % emodel)
     if additional_protocols:
         protocols.update(additional_protocols)
@@ -130,13 +127,13 @@ def get_evaluator_from_db(
         morphology=morphologies,
         mechanisms=mechanisms,
         parameters=parameters,
-        morph_modifiers=morphology_modifiers,
+        morph_modifiers=db.get_morph_modifiers(),
     )
 
     return create_evaluator(
         cell_model=cell_model,
         protocols_definition=protocols,
-        features_definition=efeatures,
+        features_definition=features,
         stochasticity=stochasticity,
         timeout=timeout,
     )

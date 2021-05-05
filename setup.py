@@ -18,8 +18,8 @@ with open("README.rst", encoding="utf-8") as f:
 EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow", "bbp-workflow-cli"]
 EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3"]
 EXTRA_NEXUS = ["nexusforge", "entity_management"]
-
-doc_reqs = [
+EXTRA_TEST = ["pytest", "dictdiffer"]
+EXTRA_DOC = [
     "graphviz",
     "sphinx",
     "sphinx-autoapi",
@@ -51,14 +51,15 @@ setup(
         "bluepy",
         "neuron",
         "morph_tool",
-        "fasteners"
+        "fasteners",
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,
         "generalisation": EXTRA_GENERALISATION,
         "nexus": EXTRA_NEXUS,
-        "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS,
-        "docs": doc_reqs,
+        "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS + EXTRA_TEST,
+        "docs": EXTRA_DOC,
+        "test": EXTRA_TEST,
     },
     packages=find_packages(),
     entry_points={"console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"]},
