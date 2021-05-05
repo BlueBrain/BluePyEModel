@@ -5,6 +5,7 @@ from pathlib import Path
 
 import bglibpy
 from bluepyparallel.evaluator import evaluate
+from morph_tool.nrnhines import isolate
 
 logger = logging.getLogger(__name__)
 AXON_LOC = "self.axonal[1](0.5)._ref_v"
@@ -235,7 +236,7 @@ def evaluate_currents_bglibpy(
     """Compute the threshold and holding currents using bglibpy."""
     return evaluate(
         morphs_combos_df,
-        _current_bglibpy_evaluation,
+        isolate(_current_bglibpy_evaluation),
         new_columns=[["holding_current", 0.0], ["threshold_current", 0.0]],
         resume=resume,
         parallel_factory=parallel_factory,

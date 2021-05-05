@@ -134,29 +134,22 @@ def evaluate_scores(
     )
 
 
-def get_emodel_data(
-    emodel_db,
-    combo,
-    morphology_path,
-    morph_modifiers,
-    extra_recordings=True,
-):
+def get_emodel_data(emodel_db, combo, morphology_path, morph_modifiers):
     """Gather needed emodel data and build cell model for evaluation."""
     emodel_db.emodel = "_".join(combo["emodel"].split("_")[:2])
+    emodel_db.morph_path = combo[morphology_path]
     parameters, mechanisms, _ = emodel_db.get_parameters()
 
-    protocols = emodel_db.get_protocols(
-        sec_index=combo.get("apical_point_isec"),
-        extra_recordings=extra_recordings,
-    )
+    protocols = emodel_db.get_protocols()
     features = emodel_db.get_features()
+    morphologies = emodel_db.get_morphologies()
 
     emodel_db.emodel = combo["emodel"]  # to get the hash from the final
     emodel_params = emodel_db.get_emodel()["parameters"]
 
     cell = create_cell_model(
         "cell",
-        combo[morphology_path],
+        morphologies,
         mechanisms,
         parameters,
         morph_modifiers=_get_synth_modifiers(combo, morph_modifiers=morph_modifiers),
@@ -178,13 +171,13 @@ def _rin_evaluation(
     """Evaluating rin protocol."""
 
     cell_model, _, features, emodel_params = get_emodel_data(
-        emodel_db, combo, morphology_path, copy(morph_modifiers), extra_recordings=False
+        emodel_db, combo, morphology_path, copy(morph_modifiers)
     )
     main_protocol, features = define_main_protocol(
         {}, features, stochasticity, ais_recording=ais_recording
     )
     cell_model.freeze(emodel_params)
-    sim = get_simulator(stochasticity, [cell_model])
+    sim = get_simulator(stochasticity, cell_model)
 
     if with_currents:
         responses = {}
