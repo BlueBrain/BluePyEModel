@@ -40,7 +40,7 @@ class sAHP(BPEM_stimulus):
         self.delay = kwargs.get("delay", 250.0)
         self.tmid = kwargs.get("tmid", 500.0)
         self.tmid2 = kwargs.get("tmid2", 725.0)
-        self.toff = kwargs.get("toff", 1175)
+        self.toff = kwargs.get("toff", 1175.0)
         self.total_duration = kwargs.get("totduration", 1425.0)
 
         super().__init__(

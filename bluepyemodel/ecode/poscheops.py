@@ -130,26 +130,26 @@ class PosCheops(BPEM_stimulus):
         idx_ramp3_duration = int(self.ramp3_duration / dt)
 
         current[idx_ton : idx_ton + idx_ramp1_duration] += numpy.linspace(
-            0.0, self.amplitude, idx_ramp1_duration
-        )
+            0.0, self.amplitude, idx_ramp1_duration + 1
+        )[:-1]
         current[
             idx_ton + idx_ramp1_duration : idx_ton + (2 * idx_ramp1_duration)
-        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp1_duration)
+        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp1_duration + 1)[:-1]
 
         idx_ton2 = idx_ton + (2 * idx_ramp1_duration) + idx_inter_delay
         current[idx_ton2 : idx_ton2 + idx_ramp2_duration] += numpy.linspace(
-            0.0, self.amplitude, idx_ramp2_duration
-        )
+            0.0, self.amplitude, idx_ramp2_duration + 1
+        )[:-1]
         current[
             idx_ton2 + idx_ramp2_duration : idx_ton2 + (2 * idx_ramp2_duration)
-        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp2_duration)
+        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp2_duration + 1)[:-1]
 
         idx_ton3 = idx_ton2 + (2 * idx_ramp2_duration) + idx_inter_delay
         current[idx_ton3 : idx_ton3 + idx_ramp3_duration] += numpy.linspace(
-            0.0, self.amplitude, idx_ramp3_duration
-        )
+            0.0, self.amplitude, idx_ramp3_duration + 1
+        )[:-1]
         current[
             idx_ton3 + idx_ramp3_duration : idx_ton3 + (2 * idx_ramp3_duration)
-        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp3_duration)
+        ] += numpy.linspace(self.amplitude, 0.0, idx_ramp3_duration + 1)[:-1]
 
         return t, current

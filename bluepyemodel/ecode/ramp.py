@@ -94,6 +94,8 @@ class Ramp(BPEM_stimulus):
         ton_idx = int(self.stim_start / dt)
         toff_idx = int((self.stim_end) / dt)
 
-        current[ton_idx:toff_idx] += numpy.linspace(0.0, self.amplitude, toff_idx - ton_idx)
+        current[ton_idx:toff_idx] += numpy.linspace(0.0, self.amplitude, toff_idx - ton_idx + 1)[
+            :-1
+        ]
 
         return t, current

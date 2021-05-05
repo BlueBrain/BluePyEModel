@@ -22,6 +22,6 @@ class FirePattern(IDrest):
 
         kwargs["delay"] = kwargs.get("delay", 250.0)
         kwargs["duration"] = kwargs.get("duration", 3600.0)
-        kwargs["totduration"] = kwargs.get("totduration", 3600.0)
+        kwargs["totduration"] = kwargs.get("totduration", 4100.0)
 
         super().__init__(location=location, **kwargs)
