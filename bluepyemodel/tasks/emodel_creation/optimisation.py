@@ -151,7 +151,6 @@ class OptimisationTarget(WorkflowTarget):
     opt_params=ParamRef(OptimizeConfig),
     optimizer=ParamRef(OptimizeConfig),
     checkpoint_dir=ParamRef(OptimizeConfig),
-    continue_opt=ParamRef(OptimizeConfig),
     timeout=ParamRef(OptimizeConfig),
 )
 class Optimize(WorkflowTask, IPyParallelTask):
@@ -202,7 +201,6 @@ class Optimize(WorkflowTask, IPyParallelTask):
             "optimizer",
             "max_ngen",
             "checkpoint_dir",
-            "continue_opt",
         ]
         self.prepare_args_for_remote_script(attrs)
 
@@ -251,7 +249,6 @@ class Optimize(WorkflowTask, IPyParallelTask):
         parser.add_argument("--optimizer", default="MO-CMA", type=str)
         parser.add_argument("--max_ngen", default=1000, type=int)
         parser.add_argument("--checkpoint_dir", default="./checkpoints/", type=str)
-        parser.add_argument("--continue_opt", default=False, action="store_true")
 
         args = parser.parse_args()
 
@@ -271,7 +268,6 @@ class Optimize(WorkflowTask, IPyParallelTask):
             optimizer=args.optimizer,
             max_ngen=args.max_ngen,
             checkpoint_dir=args.checkpoint_dir,
-            continue_opt=args.continue_opt,
             githash="",
         )
 

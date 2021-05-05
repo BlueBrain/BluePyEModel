@@ -108,7 +108,7 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     opt = setup_optimizer(cell_evaluator, mapper, opt_params, optimizer=optimizer)
 
     if checkpoint_path is None:
-        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{githash}_{seed}.pkl"
+        checkpoint_path = Path(checkpoint_dir) / f"checkpoint__{emodel}__{githash}__{seed}.pkl"
 
     run_optimization(
         optimizer=opt,
@@ -158,7 +158,7 @@ def store_best_model(
     )
 
     if checkpoint_path is None:
-        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{emodel}_{githash}_{seed}.pkl"
+        checkpoint_path = Path(checkpoint_dir) / f"checkpoint__{emodel}__{githash}__{seed}.pkl"
 
     run = read_checkpoint(checkpoint_path)
 

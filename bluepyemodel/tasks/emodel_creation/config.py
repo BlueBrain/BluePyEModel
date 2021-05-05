@@ -25,8 +25,6 @@ class OptimizeConfig(luigi.Config):
         optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
             "MO-CMA".
         checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
-        continue_opt (bool): should the optimization restart from a previously
-            created checkpoint file.
         timeout (float): duration (in second) after which the evaluation of a
             protocol will be interrupted.
     """
@@ -40,5 +38,4 @@ class OptimizeConfig(luigi.Config):
     opt_params = luigi.DictParameter(default=None)
     optimizer = luigi.Parameter(default="MO-CMA")
     checkpoint_dir = luigi.Parameter("./checkpoints/")
-    continue_opt = BoolParameterCustom(default=False)
     timeout = luigi.IntParameter(default=600)

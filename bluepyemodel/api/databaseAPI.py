@@ -133,7 +133,7 @@ class DatabaseAPI:
               - better management of checkpoints
         """
 
-        checkpoint_path = Path(checkpoint_dir) / f"checkpoint_{self.emodel}_{githash}_{seed}.pkl"
+        checkpoint_path = Path(checkpoint_dir) / f"checkpoint__{self.emodel}__{githash}__{seed}.pkl"
 
         return checkpoint_path.is_file()
 

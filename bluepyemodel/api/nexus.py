@@ -1660,7 +1660,7 @@ class NexusAPI(DatabaseAPI):
                 "%s, seed %s, githash %s" % (self.emodel, seed, githash)
             )
 
-        if hasattr(resources, "passedValidation") and resources.passedValidation is not None:
+        if hasattr(resources[0], "passedValidation") and resources[0].passedValidation is not None:
             return True
 
         return False
