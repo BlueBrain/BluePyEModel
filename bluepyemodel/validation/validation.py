@@ -64,6 +64,7 @@ def validate(
         emodel,
         cell_evaluator,
         mapper,
+        preselect_for_validation=True,
     )
 
     if emodels:

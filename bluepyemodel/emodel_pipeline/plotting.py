@@ -10,6 +10,8 @@ import numpy
 
 from bluepyemodel.emodel_pipeline.utils import make_dir
 from bluepyemodel.emodel_pipeline.utils import read_checkpoint
+from bluepyemodel.evaluation.evaluation import compute_responses
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 
 # pylint: disable=W0612,W0102
 
@@ -27,9 +29,7 @@ def save_fig(figures_dir, figure_name):
     plt.clf()
 
 
-def optimization(
-    checkpoint_path="./checkpoint.pkl", figures_dir="./figures", emodel=None, githash=None
-):
+def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures"):
     """Create plots related to a BluePyOpt optimization"""
 
     make_dir(figures_dir)
@@ -51,10 +51,6 @@ def optimization(
     p = Path(checkpoint_path)
 
     figure_name = p.stem
-    if githash:
-        figure_name += f"_{emodel}"
-    else:
-        figure_name += f"_{githash}"
     figure_name += ".pdf"
 
     plt.tight_layout()
@@ -231,3 +227,109 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
     figure_name = "{}_parameters_distribution.pdf".format(models[0]["emodel"])
     plt.tight_layout()
     save_fig(figures_dir, figure_name)
+
+
+def plot_models(
+    emodel_db,
+    emodel,
+    mapper,
+    seeds=None,
+    figures_dir="./figures",
+    stochasticity=False,
+    additional_protocols=None,
+    plot_distributions=True,
+    plot_scores=True,
+    plot_traces=True,
+    only_validated=False,
+):
+    """Plot the traces, scores and parameter distributions for all the models
+        matching the emodels name.
+
+    Args:
+        emodel_db (DatabaseAPI): API used to access the database.
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        mapper (map): used to parallelize the evaluation of the
+            individual in the population.
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        figures_dir (str): path of the directory in which the figures should be saved.
+        stochasticity (bool): should channels behave stochastically if they can.
+        additional_protocols (dict): definition of supplementary protocols. See
+            examples/optimisation for usage.
+        plot_distributions (bool): True to plot the parameters distributions
+        plot_scores (bool): True to plot the scores
+        plot_traces (bool): True to plot the traces
+        only_validated (bool): True to only plot validated models
+
+    Returns:
+        emodels (list): list of emodels.
+    """
+
+    figures_dir = Path(figures_dir)
+    if additional_protocols is None:
+        additional_protocols = {}
+
+    cell_evaluator = get_evaluator_from_db(
+        emodel,
+        emodel_db,
+        stochasticity=stochasticity,
+        include_validation_protocols=True,
+        additional_protocols=additional_protocols,
+    )
+
+    if plot_traces:
+        emodels = compute_responses(
+            emodel_db,
+            emodel,
+            cell_evaluator,
+            mapper,
+            seeds,
+        )
+    else:
+        emodels = emodel_db.get_emodels([emodel])
+        if seeds:
+            emodels = [model for model in emodels if model["seed"] in seeds]
+
+    stimuli = cell_evaluator.fitness_protocols["main_protocol"].subprotocols()
+
+    if only_validated:
+        emodels = [model for model in emodels if "validated" in model and model["validated"]]
+        dest_leaf = "validated"
+    else:
+        dest_leaf = "all"
+
+    if not emodels:
+        logger.warning("In plot_models, no emodel for %s", emodel)
+        return []
+
+    if plot_distributions:
+        lbounds = {
+            p.name: p.bounds[0]
+            for p in cell_evaluator.cell_model.params.values()
+            if p.bounds is not None
+        }
+        ubounds = {
+            p.name: p.bounds[1]
+            for p in cell_evaluator.cell_model.params.values()
+            if p.bounds is not None
+        }
+
+        figures_dir_dist = figures_dir / "distributions" / dest_leaf
+
+        parameters_distribution(
+            models=emodels,
+            lbounds=lbounds,
+            ubounds=ubounds,
+            figures_dir=figures_dir_dist,
+        )
+
+    for mo in emodels:
+        if plot_scores:
+            figures_dir_scores = figures_dir / "scores" / dest_leaf
+            scores(mo, figures_dir_scores)
+
+        if plot_traces:
+            figures_dir_traces = figures_dir / "traces" / dest_leaf
+            traces(mo, mo["responses"], stimuli, figures_dir_traces)
+
+    return emodels

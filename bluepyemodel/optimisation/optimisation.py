@@ -173,5 +173,4 @@ def store_best_model(
         optimizer_name=optimizer,
         seed=seed,
         githash=githash,
-        validated=False,
     )

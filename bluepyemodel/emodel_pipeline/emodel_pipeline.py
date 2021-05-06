@@ -534,6 +534,12 @@ class EModel_pipeline:
         figures_dir="./figures",
         stochasticity=False,
         additional_protocols=None,
+        map_function=None,
+        seeds=None,
+        plot_distributions=True,
+        plot_scores=True,
+        plot_traces=True,
+        only_validated=False,
     ):
         """Plot the traces, scores and parameter distributions for all the models
             matching the emodels name.
@@ -543,49 +549,31 @@ class EModel_pipeline:
             stochasticity (bool): should channels behave stochastically if they can.
             additional_protocols (dict): definition of supplementary protocols. See
                 examples/optimisation for usage.
+            map_function (map): used to parallelize the evaluation of the
+                individual in the population.
+            seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+            plot_distributions (bool): True to plot the parameters distributions
+            plot_scores (bool): True to plot the scores
+            plot_traces (bool): True to plot the traces
+            only_validated (bool): True to only plot validated models
 
         Returns:
             emodels (list): list of emodels.
         """
 
-        if additional_protocols is None:
-            additional_protocols = {}
+        if map_function is None:
+            map_function = ipyparallel_map_function("USEIPYP")
 
-        _evaluator = self.get_evaluator(
+        return plotting.plot_models(
+            self.db,
+            self.emodel,
+            mapper=map_function,
+            seeds=seeds,
+            figures_dir=figures_dir,
             stochasticity=stochasticity,
-            include_validation_protocols=True,
             additional_protocols=additional_protocols,
+            plot_distributions=plot_distributions,
+            plot_scores=plot_scores,
+            plot_traces=plot_traces,
+            only_validated=only_validated,
         )
-
-        emodels = self.compute_responses(_evaluator)
-
-        stimuli = _evaluator.fitness_protocols["main_protocol"].subprotocols()
-
-        if emodels:
-
-            lbounds = {
-                p.name: p.bounds[0]
-                for p in _evaluator.cell_model.params.values()
-                if p.bounds is not None
-            }
-            ubounds = {
-                p.name: p.bounds[1]
-                for p in _evaluator.cell_model.params.values()
-                if p.bounds is not None
-            }
-
-            plotting.parameters_distribution(
-                models=emodels,
-                lbounds=lbounds,
-                ubounds=ubounds,
-                figures_dir=figures_dir,
-            )
-
-            for mo in emodels:
-                plotting.scores(mo, figures_dir)
-                plotting.traces(mo, mo["responses"], stimuli, figures_dir)
-
-            return emodels
-
-        logger.warning("In plot_models, no emodel for %s %s", self.emodel, self.species)
-        return []

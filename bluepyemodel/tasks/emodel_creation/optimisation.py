@@ -7,6 +7,8 @@ from luigi_tools.task import ParamRef
 from luigi_tools.task import copy_params
 
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
+from bluepyemodel.emodel_pipeline.plotting import optimization
+from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tasks.emodel_creation.config import OptimizeConfig
 from bluepyemodel.tasks.luigi_tools import BoolParameterCustom
@@ -313,11 +315,13 @@ class StoreBestModels(WorkflowTask):
         species (str): name of the species.
         seed (int): seed used in the optimisation.
         batch_size (int): number of seeds to optimize at the same time before each validation.
+        plot_optimisation (bool): True to launch task plotting required optimisations.
     """
 
     species = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=42)
     batch_size = luigi.IntParameter(default=1)
+    plot_optimisation = BoolParameterCustom(default=False)
 
     def requires(self):
         """ """
@@ -325,6 +329,8 @@ class StoreBestModels(WorkflowTask):
 
         for seed in range(self.seed, self.seed + self.batch_size):
             to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
+            if self.plot_optimisation:
+                to_run.append(PlotOptimisation(emodel=self.emodel, species=self.species, seed=seed))
         return to_run
 
     def run(self):
@@ -409,6 +415,9 @@ class Validation(WorkflowTask, IPyParallelTask):
             passes validation or not. Should rely on emodel['scores'] and
             emodel['scores_validation']. See bluepyemodel/validation for examples.
             Should be a function name in bluepyemodel.validation.validation_functions
+        plot_distributions (bool): True to plot parameters distributions of required models.
+        plot_traces (bool): True to plot traces of required models.
+        plot_scores (bool): True to plot scores of required models.
         graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
             Has to use multiprocessing event for communicating between processes
             when there is more than 1 luigi worker. Skip task if set.
@@ -424,6 +433,9 @@ class Validation(WorkflowTask, IPyParallelTask):
     # when this task is yielded, the default is serialized
     # and None becomes 'None'
     validation_function = luigi.Parameter(default="")
+    plot_distributions = BoolParameterCustom(default=False)
+    plot_traces = BoolParameterCustom(default=False)
+    plot_scores = BoolParameterCustom(default=False)
     graceful_killer = multiprocessing.Event()
 
     def requires(self):
@@ -440,6 +452,19 @@ class Validation(WorkflowTask, IPyParallelTask):
                     species=self.species,
                     mechanisms_dir=self.mechanisms_dir,
                     copy_mechanisms=self.copy_mechanisms,
+                )
+            )
+        if self.plot_distributions or self.plot_traces or self.plot_scores:
+            to_run.append(
+                PlotModels(
+                    emodel=self.emodel,
+                    species=self.species,
+                    seed=self.seed,
+                    batch_size=self.batch_size,
+                    plot_distributions=self.plot_distributions,
+                    plot_traces=self.plot_traces,
+                    plot_scores=self.plot_scores,
+                    additional_protocols=self.additional_protocols,
                 )
             )
         return to_run
@@ -596,6 +621,30 @@ class EModelCreation(WorkflowTask):
         )
 
 
+class EModelCreationWrapper(WorkflowWrapperTask):
+    """Luigi wrapper for launching EModel Creation pipeline.
+
+    For now, launches only one EModel Creation pipleine. Could be changed later.
+
+    Parameters:
+        emodel (str): name of the emodel. Has to match the name of the emodel
+            under which the configuration data are stored.
+        species (str): name of the species.
+        plot_validated_distributions (bool): True to plot the parameters distributions
+            of all the validated models (of type self.emodel, self.species).
+    """
+
+    species = luigi.Parameter(default=None)
+    plot_validated_distributions = BoolParameterCustom(default=False)
+
+    def requires(self):
+        """ """
+        to_run = [EModelCreation(emodel=self.emodel, species=self.species)]
+        if self.plot_validated_distributions:
+            to_run.append(PlotValidatedDistributions(emodel=self.emodel, species=self.species))
+        return to_run
+
+
 class OptimizeWrapper(WorkflowWrapperTask):
     """Luigi wrapper for launching multiple seeds to optimize.
 
@@ -617,3 +666,151 @@ class OptimizeWrapper(WorkflowWrapperTask):
         for seed in range(self.seed, self.seed + self.batch_size):
             to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
         return to_run
+
+
+class PlotOptimisation(WorkflowTask):
+    """Luigi wrapper for plotting the optimisation outputs.
+
+    Parameters:
+        species (str): name of the species.
+        seed (int): seed used in the optimisation.
+        checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
+        figures_dir (str): path to figures repo.
+    """
+
+    species = luigi.Parameter(default="")
+    seed = luigi.IntParameter(default=42)
+    checkpoint_dir = luigi.Parameter("./checkpoints/")
+    figures_dir = luigi.Parameter(default="./figures")
+
+    def requires(self):
+        """ """
+        return Optimize(emodel=self.emodel, species=self.species, seed=self.seed)
+
+    def run(self):
+        """ """
+        githash = ""
+        checkpoint_path = (
+            Path(self.checkpoint_dir) / f"checkpoint__{self.emodel}__{githash}__{self.seed}.pkl"
+        )
+        optimization(
+            checkpoint_path=checkpoint_path,
+            figures_dir=Path(self.figures_dir) / self.emodel / "optimisation",
+        )
+
+    def output(self):
+        """ """
+        githash = ""
+        fname = f"checkpoint__{self.emodel}__{githash}__{self.seed}.pdf"
+        return luigi.LocalTarget(Path(self.figures_dir) / self.emodel / "optimisation" / fname)
+
+
+class PlotModels(WorkflowTask):
+    """Luigi wrapper for plotting the optimisation outputs.
+
+    Parameters:
+        species (str): name of the species.
+        seed (int): seed used in the optimisation.
+        batch_size (int): number of seeds to optimize at the same time before each validation.
+        additional_protocols (dict): definition of supplementary protocols. See
+            examples/optimisation for usage.
+        plot_distributions (bool): True to plot parameters distributions of required models.
+        plot_traces (bool): True to plot traces of required models.
+        plot_scores (bool): True to plot scores of required models.
+        figures_dir (str): path to figures repo.
+    """
+
+    species = luigi.Parameter(default="")
+    seed = luigi.IntParameter(default=42)
+    batch_size = luigi.IntParameter(default=1)
+    additional_protocols = luigi.DictParameter(default=None)
+    plot_distributions = BoolParameterCustom(default=False)
+    plot_traces = BoolParameterCustom(default=False)
+    plot_scores = BoolParameterCustom(default=False)
+    figures_dir = luigi.Parameter(default="./figures")
+
+    def requires(self):
+        """ """
+        return StoreBestModels(
+            emodel=self.emodel, species=self.species, seed=self.seed, batch_size=self.batch_size
+        )
+
+    def run(self):
+        """ """
+        mapper = self.get_mapper()
+        plot_models(
+            emodel_db=self.emodel_db,
+            emodel=self.emodel,
+            mapper=mapper,
+            seeds=range(self.seed, self.seed + self.batch_size),
+            figures_dir=Path(self.figures_dir) / self.emodel,
+            additional_protocols=self.additional_protocols,
+            plot_distributions=self.plot_distributions,
+            plot_traces=self.plot_traces,
+            plot_scores=self.plot_scores,
+            only_validated=False,
+        )
+
+    def output(self):
+        """ """
+        outputs = []
+        if self.plot_distributions:
+            fname = f"{self.emodel}_parameters_distribution.pdf"
+            fpath = Path(self.figures_dir) / self.emodel / "distributions" / "all" / fname
+            outputs.append(luigi.LocalTarget(fpath))
+
+        if self.plot_scores:
+            for seed in range(self.seed, self.seed + self.batch_size):
+                # change fname if githash is implemented
+                fname = "{}_{}_scores.pdf".format(self.emodel, seed)
+                fpath = Path(self.figures_dir) / self.emodel / "scores" / "all" / fname
+                outputs.append(luigi.LocalTarget(fpath))
+
+        if self.plot_traces:
+            for seed in range(self.seed, self.seed + self.batch_size):
+                fname = "{}_{}_{}_traces.pdf".format(
+                    self.emodel,
+                    "",  # githash
+                    seed,
+                )
+                fpath = Path(self.figures_dir) / self.emodel / "traces" / "all" / fname
+                outputs.append(luigi.LocalTarget(fpath))
+
+        return outputs
+
+
+class PlotValidatedDistributions(WorkflowTask):
+    """Luigi wrapper for plotting the optimisation outputs.
+
+    Parameters:
+        species (str): name of the species.
+        figures_dir (str): path to figures repo.
+    """
+
+    species = luigi.Parameter(default="")
+    figures_dir = luigi.Parameter(default="./figures")
+
+    def requires(self):
+        """ """
+        return EModelCreation(emodel=self.emodel, species=self.species)
+
+    def run(self):
+        """ """
+        mapper = self.get_mapper()
+        plot_models(
+            emodel_db=self.emodel_db,
+            emodel=self.emodel,
+            mapper=mapper,
+            figures_dir=Path(self.figures_dir) / self.emodel,
+            plot_distributions=True,
+            plot_traces=False,
+            plot_scores=False,
+            only_validated=True,
+        )
+
+    def output(self):
+        """ """
+        fname = f"{self.emodel}_parameters_distribution.pdf"
+        fpath = Path(self.figures_dir) / self.emodel / "distributions" / "validated" / fname
+
+        return luigi.LocalTarget(fpath)

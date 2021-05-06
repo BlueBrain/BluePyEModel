@@ -621,16 +621,10 @@ class SinglecellAPI(DatabaseAPI):
             "branch",
             "rank",
             "optimizer",
+            "validated",
         ]:
             if key in model_data:
                 out_data[key] = model_data[key]
-
-        if "validation_fitness" in model_data:
-            out_data["scores_validation"] = model_data["validation_fitness"]
-            out_data["validated"] = True
-        else:
-            out_data["scores_validation"] = {}
-            out_data["validated"] = None
 
         return out_data
 

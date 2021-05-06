@@ -29,6 +29,8 @@ def compute_responses(
     emodel,
     cell_evaluator,
     map_function,
+    seeds=None,
+    preselect_for_validation=False,
 ):
     """Compute the responses of the emodel to the optimisation and validation protocols.
 
@@ -39,11 +41,18 @@ def compute_responses(
         cell_evaluator (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
         map_function (map): used to parallelize the evaluation of the
             individual in the population.
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        preselect_for_validation (bool): if True,
+            only select models that have not been through validation yet.
     Returns:
         emodels (list): list of emodels.
     """
 
     emodels = emodel_db.get_emodels([emodel])
+    if seeds:
+        emodels = [model for model in emodels if model["seed"] in seeds]
+    if preselect_for_validation:
+        emodels = [model for model in emodels if model["validated"] is None]
 
     if emodels:
 
