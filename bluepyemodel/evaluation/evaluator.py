@@ -336,7 +336,7 @@ def define_protocol(
 
 
 def get_features_by_name(list_features, name):
-    """Get a feature from its name/"""
+    """Get a feature from its name"""
 
     for feature in list_features:
         if feature["feature"] == name:
@@ -364,7 +364,7 @@ def define_RMP_protocol(features_definition):
 
         return protocol, [target_voltage]
 
-    logger.debug(
+    logger.warning(
         "steady_state_voltage_stimend not present in the feature_definition"
         " dictionnary for RMPProtocol"
     )
@@ -395,7 +395,7 @@ def define_Rin_protocol(features_definition, ais_recording=False):
 
         return protocol, [target_rin]
 
-    logger.debug(
+    logger.warning(
         "ohmic_input_resistance_vb_ssse not present in the feature_definition"
         " dictionnary for RinProtocol"
     )
@@ -433,7 +433,7 @@ def define_holding_protocol(features_definition):
 
         return protocol, [target_holding_current]
 
-    logger.debug(
+    logger.warning(
         "steady_state_voltage_stimend or bpo_holding_current not present"
         " in the feature_definition dictionnary for SearchHoldingCurrent"
     )
@@ -461,7 +461,7 @@ def define_threshold_protocol(features_definition):
 
         return protocol, [target_threshold]
 
-    logger.debug(
+    logger.warning(
         "bpo_threshold_current not present in the feature_definition dictionnary"
         " for SearchThresholdCurrent"
     )

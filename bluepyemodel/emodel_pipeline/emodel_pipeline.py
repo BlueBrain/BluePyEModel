@@ -150,14 +150,15 @@ class EModel_pipeline:
         self,
         emodel,
         species,
+        brain_region,
         db_api,
         recipes_path=None,
         forge_path=None,
         use_git=False,
         githash=None,
-        nexus_organisation="Cells",
+        nexus_organisation="demo",
         nexus_projet="emodel_pipeline",
-        nexus_enpoint="https://staging.nexus.ocp.bbp.epfl.ch/v1",
+        nexus_enpoint="https://bbp.epfl.ch/nexus/v1",
     ):
         """Initialize the emodel_pipeline.
 
@@ -165,6 +166,7 @@ class EModel_pipeline:
             emodel (str): name of the emodel. Has to match the name of the emodel under which the
                 configuration data are stored.
             species (str): name of the species.
+            brain_region (str): name of the brain region.
             db_api (str): name of the API used to access the data, can be "nexus" or "singlecell".
                 "singlecell" expect the configuration to be  defined in a "config" directory
                 containing recipes as in proj38. "nexus" expect the configuration to be defined
@@ -181,8 +183,7 @@ class EModel_pipeline:
 
         self.emodel = emodel
         self.species = species
-
-        self.forge_path = forge_path
+        self.brain_region = brain_region
 
         if use_git:
 
@@ -212,7 +213,7 @@ class EModel_pipeline:
             self.githash = None
 
         self.db = self.connect_db(
-            db_api, recipes_path, nexus_organisation, nexus_projet, nexus_enpoint
+            db_api, recipes_path, nexus_organisation, nexus_projet, nexus_enpoint, forge_path
         )
 
     @property
@@ -221,7 +222,9 @@ class EModel_pipeline:
             return str(Path("./") / run_dir / self.githash)
         return "./"
 
-    def connect_db(self, db_api, recipes_path, nexus_organisation, nexus_projet, nexus_enpoint):
+    def connect_db(
+        self, db_api, recipes_path, nexus_organisation, nexus_projet, nexus_enpoint, forge_path
+    ):
         """
         Instantiate the api from which the pipeline will get and store the data.
         """
@@ -232,9 +235,11 @@ class EModel_pipeline:
             recipes_path=recipes_path,
             final_path=final_path,
             species=self.species,
+            brain_region=self.brain_region,
             organisation=nexus_organisation,
             project=nexus_projet,
             endpoint=nexus_enpoint,
+            forge_path=forge_path,
         )
 
     def get_evaluator(
@@ -342,7 +347,6 @@ class EModel_pipeline:
         efeatures, stimuli, current = extract_save_features_protocols(
             emodel=self.emodel,
             emodel_db=self.db,
-            species=self.species,
             files_metadata=files_metadata,
             targets=targets,
             protocols_threshold=protocols_threshold,

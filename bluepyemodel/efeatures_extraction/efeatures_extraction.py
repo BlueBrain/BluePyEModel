@@ -8,7 +8,6 @@ import bluepyefe.extract
 def extract_save_features_protocols(
     emodel_db,
     emodel,
-    species=None,
     files_metadata=None,
     targets=None,
     protocols_threshold=None,
@@ -24,7 +23,6 @@ def extract_save_features_protocols(
     Args:
         emodel_db (DatabaseAPI): object which contains API to access emodel data
         emodel (str): name of the emodel.
-        species (str): name of the species.
         files_metadata (dict): define for which cell and protocol each file
             has to be used.
         targets (dict): define the efeatures to extract for each protocols

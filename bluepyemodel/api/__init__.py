@@ -18,6 +18,7 @@ def get_db(api, emodel, **kwargs):
 
     For nexus:
         species (str): name of the species.
+        brain_region (str): name of the brain region.
         project (str): name of the Nexus project.
         organisation (str): name of the Nexus organization to which the project belong.
         endpoint (str): Nexus endpoint.
@@ -33,9 +34,10 @@ def get_db(api, emodel, **kwargs):
         return NexusAPI(
             emodel=emodel,
             species=kwargs.get("species", "rat"),
+            brain_region=kwargs.get("brain_region", None),
             project=kwargs.get("project", "emodel_pipeline"),
-            organisation=kwargs.get("organisation", "Cells"),
-            endpoint=kwargs.get("endpoint", None),
+            organisation=kwargs.get("organisation", "demo"),
+            endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
             forge_path=kwargs.get("forge_path", None),
         )
 

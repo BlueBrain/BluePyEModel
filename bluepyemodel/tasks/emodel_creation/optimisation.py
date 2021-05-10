@@ -40,7 +40,6 @@ class ExtractEFeatures(WorkflowTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
-        species (str): name of the species.
         threshold_nvalue_save (int): lower bounds of the number of values required
             to save an efeature.
         name_Rin_protocol (str): name of the protocol that should be used to compute
@@ -51,8 +50,6 @@ class ExtractEFeatures(WorkflowTask):
             when db_api is 'singlecell'.
         plot (bool): True to plot the traces and the efeatures.
     """
-
-    species = luigi.Parameter(default=None)
 
     threshold_nvalue_save = luigi.IntParameter(default=1)
     name_Rin_protocol = luigi.Parameter(default=None)
@@ -66,7 +63,6 @@ class ExtractEFeatures(WorkflowTask):
         _ = extract_save_features_protocols(
             emodel_db=self.emodel_db,
             emodel=self.emodel,
-            species=self.species,
             threshold_nvalue_save=self.threshold_nvalue_save,
             mapper=mapper,
             name_Rin_protocol=self.name_Rin_protocol,
@@ -161,6 +157,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         species (str): name of the species.
+        brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
         graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
             Has to use multiprocessing event for communicating between processes
@@ -170,12 +167,13 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
     # if default not set, crashes when parameters are read by luigi_tools.copy_params
     species = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
     graceful_killer = multiprocessing.Event()
 
     def requires(self):
         """ """
-        targets = [ExtractEFeatures(emodel=self.emodel, species=self.species)]
+        targets = [ExtractEFeatures(emodel=self.emodel)]
 
         if self.compile_mechanisms:
             targets.append(
@@ -195,6 +193,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
             "emodel",
             "seed",
             "species",
+            "brain_region",
             "stochasticity",
             "timeout",
             "opt_params",
@@ -313,12 +312,14 @@ class StoreBestModels(WorkflowTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         species (str): name of the species.
+        brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
         batch_size (int): number of seeds to optimize at the same time before each validation.
         plot_optimisation (bool): True to launch task plotting required optimisations.
     """
 
     species = luigi.Parameter(default="")
+    brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=42)
     batch_size = luigi.IntParameter(default=1)
     plot_optimisation = BoolParameterCustom(default=False)
@@ -328,11 +329,25 @@ class StoreBestModels(WorkflowTask):
         to_run = []
 
         for seed in range(self.seed, self.seed + self.batch_size):
-            to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
+            to_run.append(
+                Optimize(
+                    emodel=self.emodel,
+                    species=self.species,
+                    brain_region=self.brain_region,
+                    seed=seed,
+                )
+            )
             if self.plot_optimisation:
-                to_run.append(PlotOptimisation(emodel=self.emodel, species=self.species, seed=seed))
+                to_run.append(
+                    PlotOptimisation(
+                        emodel=self.emodel,
+                        species=self.species,
+                        brain_region=self.brain_region,
+                        seed=seed,
+                    )
+                )
 
-        to_run.append(ExtractEFeatures(emodel=self.emodel, species=self.species))
+        to_run.append(ExtractEFeatures(emodel=self.emodel))
 
         return to_run
 
@@ -407,6 +422,7 @@ class Validation(WorkflowTask, IPyParallelTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         species (str): name of the species.
+        brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
         batch_size (int): number of seeds to optimize at the same time before each validation.
         additional_protocols (dict): definition of supplementary protocols. See
@@ -427,6 +443,7 @@ class Validation(WorkflowTask, IPyParallelTask):
     """
 
     species = luigi.Parameter(default="")
+    brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=42)
     batch_size = luigi.IntParameter(default=1)
     additional_protocols = luigi.DictParameter(default=None)
@@ -471,7 +488,7 @@ class Validation(WorkflowTask, IPyParallelTask):
                 )
             )
 
-        to_run.append(ExtractEFeatures(emodel=self.emodel, species=self.species))
+        to_run.append(ExtractEFeatures(emodel=self.emodel))
 
         return to_run
 
@@ -481,6 +498,7 @@ class Validation(WorkflowTask, IPyParallelTask):
             "backend",
             "emodel",
             "species",
+            "brain_region",
             "stochasticity",
             "validation_function",
             "additional_protocols",
@@ -579,6 +597,7 @@ class EModelCreation(WorkflowTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         species (str): name of the species.
+        brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
         batch_size (int): number of seeds to optimize at the same time before each validation.
         max_n_batch (int): maximum number of batches. Used only if limit_batches is True.
@@ -591,6 +610,7 @@ class EModelCreation(WorkflowTask):
     """
 
     species = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=1)
     batch_size = luigi.IntParameter(default=10)
     max_n_batch = luigi.IntParameter(default=10)
@@ -599,7 +619,7 @@ class EModelCreation(WorkflowTask):
     graceful_killer = multiprocessing.Event()
 
     def run(self):
-        """Optimize e-models by batches of 10 until one is validated."""
+        """Optimize e-models by batches of batch_size until one is validated."""
         seed = self.seed
 
         while not self.output().exists() and not self.graceful_killer.is_set():
@@ -611,6 +631,7 @@ class EModelCreation(WorkflowTask):
                 Validation(
                     emodel=self.emodel,
                     species=self.species,
+                    brain_region=self.brain_region,
                     seed=seed,
                     batch_size=self.batch_size,
                 )
@@ -658,11 +679,13 @@ class OptimizeWrapper(WorkflowWrapperTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         species (str): name of the species.
+        brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
         batch_size (int): number of seeds to optimize at the same time before each validation.
     """
 
     species = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
     batch_size = luigi.IntParameter(default=10)
 
@@ -670,7 +693,14 @@ class OptimizeWrapper(WorkflowWrapperTask):
         """ """
         to_run = []
         for seed in range(self.seed, self.seed + self.batch_size):
-            to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
+            to_run.append(
+                Optimize(
+                    emodel=self.emodel,
+                    species=self.species,
+                    brain_region=self.brain_region,
+                    seed=seed,
+                )
+            )
         return to_run
 
 
@@ -679,19 +709,23 @@ class PlotOptimisation(WorkflowTask):
 
     Parameters:
         species (str): name of the species.
+        brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
         checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
         figures_dir (str): path to figures repo.
     """
 
     species = luigi.Parameter(default="")
+    brain_region = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
     checkpoint_dir = luigi.Parameter("./checkpoints/")
     figures_dir = luigi.Parameter(default="./figures")
 
     def requires(self):
         """ """
-        return Optimize(emodel=self.emodel, species=self.species, seed=self.seed)
+        return Optimize(
+            emodel=self.emodel, species=self.species, brain_region=self.brain_region, seed=self.seed
+        )
 
     def run(self):
         """ """
@@ -739,7 +773,7 @@ class PlotModels(WorkflowTask):
         """ """
 
         requires = [
-            ExtractEFeatures(emodel=self.emodel, species=self.species),
+            ExtractEFeatures(emodel=self.emodel),
             StoreBestModels(
                 emodel=self.emodel, species=self.species, seed=self.seed, batch_size=self.batch_size
             ),

@@ -1,4 +1,5 @@
-"""Generic API class."""
+"""Abstract API class."""
+
 from pathlib import Path
 
 
@@ -24,7 +25,7 @@ class DatabaseAPI:
     ):
         """Save the efeatures and currents obtained from BluePyEfe"""
 
-    def store_protocols(self, emodel, species, stimuli, validation_protocols):
+    def store_protocols(self, stimuli, validation_protocols):
         """Save the protocols obtained from BluePyEfe"""
 
     def store_emodel(
@@ -33,10 +34,9 @@ class DatabaseAPI:
         params,
         optimizer_name,
         seed,
-        githash,
-        validated=False,
+        githash="",
+        validated=None,
         scores_validation=None,
-        species=None,
     ):
         """Save a model obtained from BluePyOpt"""
 
@@ -108,6 +108,9 @@ class DatabaseAPI:
                                             'path': 'morph_path'}
 
         """
+
+    def get_morph_modifiers(self):
+        """Get the morph modifiers if any."""
 
     def get_mechanism_paths(self, mechanism_names):
         """Get the path of the mod files
