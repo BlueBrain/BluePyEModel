@@ -58,7 +58,7 @@ setup(
         "generalisation": EXTRA_GENERALISATION,
         "nexus": EXTRA_NEXUS,
         "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS + EXTRA_TEST,
-        "docs": EXTRA_DOC,
+        "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
     },
     packages=find_packages(),
