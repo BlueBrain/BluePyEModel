@@ -331,6 +331,9 @@ class StoreBestModels(WorkflowTask):
             to_run.append(Optimize(emodel=self.emodel, species=self.species, seed=seed))
             if self.plot_optimisation:
                 to_run.append(PlotOptimisation(emodel=self.emodel, species=self.species, seed=seed))
+
+        to_run.append(ExtractEFeatures(emodel=self.emodel, species=self.species))
+
         return to_run
 
     def run(self):
@@ -467,6 +470,9 @@ class Validation(WorkflowTask, IPyParallelTask):
                     additional_protocols=self.additional_protocols,
                 )
             )
+
+        to_run.append(ExtractEFeatures(emodel=self.emodel, species=self.species))
+
         return to_run
 
     def run(self):
@@ -731,9 +737,15 @@ class PlotModels(WorkflowTask):
 
     def requires(self):
         """ """
-        return StoreBestModels(
-            emodel=self.emodel, species=self.species, seed=self.seed, batch_size=self.batch_size
-        )
+
+        requires = [
+            ExtractEFeatures(emodel=self.emodel, species=self.species),
+            StoreBestModels(
+                emodel=self.emodel, species=self.species, seed=self.seed, batch_size=self.batch_size
+            ),
+        ]
+
+        return requires
 
     def run(self):
         """ """
