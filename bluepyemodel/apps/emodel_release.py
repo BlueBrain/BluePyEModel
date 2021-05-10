@@ -74,7 +74,7 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
 
     emodel_db.emodel = "_".join(emodel.split("_")[:2])
     parameters, mechanisms, _ = emodel_db.get_parameters()
-    morph = emodel_db.get_morphologies()[0]
+    morph = emodel_db.get_morphologies()
     cell_model = create_cell_model(
         emodel,
         morph["path"],
@@ -676,7 +676,8 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
 @click.option("--input-sonata-path", type=click.Path(exists=True), required=True)
 @click.option("--output-sonata-path", type=click.Path(exists=False), required=True)
 @click.option("--mecombo-emodel-path", type=click.Path(exists=True), required=True)
-def update_sonata(input_sonata_path, output_sonata_path, mecombo_emodel_path):
+@click.option("--remove-failed/--no-remove-failed", default=False)
+def update_sonata(input_sonata_path, output_sonata_path, mecombo_emodel_path, remove_failed):
     """Update sonata file add threshols current, holding current and AIS_scaler.
 
     Args:
@@ -689,14 +690,29 @@ def update_sonata(input_sonata_path, output_sonata_path, mecombo_emodel_path):
     L.info("Failed cells:")
     L.info(mecombo_emodel.loc[bad_cells])
 
-    # we remove combo_name here, so the remove_unassigned_cells() later will remove these cells
-    mecombo_emodel.loc[bad_cells, "combo_name"] = None
+    if remove_failed:
+        L.info("We remove failed cells")
+        # we remove combo_name here, so the remove_unassigned_cells() later will remove these cells
+        mecombo_emodel.loc[bad_cells, "combo_name"] = None
+    else:
+        L.info("We do not remove failed cells")
+        mecombo_emodel.loc[bad_cells, "AIS_scaler"] = 1
+        mecombo_emodel.loc[bad_cells, "threshold_current"] = 0
+        mecombo_emodel.loc[bad_cells, "holding_current"] = 0
 
     cells = CellCollection.load(input_sonata_path)
-    cells.properties["me_combo"] = (
-        mecombo_emodel.set_index("morph_name")
-        .loc[cells.properties["morphology"], "combo_name"]
-        .to_list()
-    )
+    mecombo_emodel = mecombo_emodel.set_index("morph_name")
+    cells.properties["me_combo"] = mecombo_emodel.loc[
+        cells.properties["morphology"], "combo_name"
+    ].to_list()
+    cells.properties["@dynamics:AIS_scaler"] = mecombo_emodel.loc[
+        cells.properties["morphology"], "AIS_scaler"
+    ].to_list()
+    cells.properties["@dynamics:threshold_current"] = mecombo_emodel.loc[
+        cells.properties["morphology"], "threshold_current"
+    ].to_list()
+    cells.properties["@dynamics:holding_current"] = mecombo_emodel.loc[
+        cells.properties["morphology"], "holding_current"
+    ].to_list()
     cells.remove_unassigned_cells()
     cells.save(output_sonata_path)
