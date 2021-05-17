@@ -365,7 +365,7 @@ class EModel_pipeline:
         max_ngen=1000,
         stochasticity=False,
         opt_params=None,
-        optimizer="MO-CMA",
+        optimizer="IBEA",
         checkpoint_path=None,
         continue_opt=False,
         timeout=600,
@@ -378,7 +378,7 @@ class EModel_pipeline:
             opt_params (dict): optimisation parameters. Keys have to match the
                 optimizer's call.
             optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
-                "MO-CMA".
+                "MO-CMA" (use cma option in pip install for CMA optimizers).
             checkpoint_path (str): path to the file used as a checkpoint by BluePyOpt.
             continue_opt (bool): should the optimization restart from a previously
                 created checkpoint file.
@@ -434,7 +434,7 @@ class EModel_pipeline:
         checkpoint_path,
         stochasticity=False,
         opt_params=None,
-        optimizer="MO-CMA",
+        optimizer="IBEA",
     ):
         """Store the best model from an optimization. Reads a checkpoint file generated
             by BluePyOpt and store the best individual of the hall of fame.

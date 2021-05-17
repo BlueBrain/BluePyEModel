@@ -34,7 +34,10 @@ def single_feature_evaluation(
 
     for f, val in features.items():
         if isinstance(val, np.ndarray):
-            features[f] = np.mean(val)
+            try:
+                features[f] = np.nanmean(val)
+            except AttributeError:
+                features[f] = None
         else:
             features[f] = None
 

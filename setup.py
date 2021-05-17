@@ -25,6 +25,7 @@ EXTRA_DOC = [
     "sphinx-autoapi",
     "sphinx-bluebrain-theme",
 ]
+EXTRA_CMA = ["bluepyopt @ git+http://github.com/BlueBrain/BluePyOpt@CMA_clean#egg=bluepyopt"]
 
 
 setup(
@@ -44,7 +45,7 @@ setup(
         "tqdm",
         "pyyaml",
         "gitpython",
-        "bluepyopt @ git+http://github.com/BlueBrain/BluePyOpt@CMA_clean#egg=bluepyopt",
+        "bluepyopt",
         "bluepyefe @ git+http://github.com/BlueBrain/BluePyEfe@BPE2#egg=bluepyefe",
         "efel",
         "psycopg2",
@@ -57,9 +58,10 @@ setup(
         "luigi": EXTRA_LUIGI,
         "generalisation": EXTRA_GENERALISATION,
         "nexus": EXTRA_NEXUS,
-        "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS + EXTRA_TEST,
+        "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS + EXTRA_TEST + EXTRA_CMA,
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
+        "cma": EXTRA_CMA,
     },
     packages=find_packages(),
     entry_points={"console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"]},

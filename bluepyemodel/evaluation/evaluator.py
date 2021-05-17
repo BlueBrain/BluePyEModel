@@ -637,7 +637,7 @@ def _handle_extra_recordings(protocols, features, _cell):
                         if len(section.subtree()) == 1:
                             _extra = deepcopy(extra)
                             _extra["type"] = "nrnseclistcomp"
-                            _extra["name"] = f"{extra['seclist_name']}{sec_id}"
+                            _extra["name"] = f"{extra['name']}{sec_id}"
                             _extra["sec_index"] = sec_id
                             extra_recordings.append(_extra)
 
@@ -646,7 +646,7 @@ def _handle_extra_recordings(protocols, features, _cell):
                     for sec_id, section in enumerate(getattr(cell.icell, extra["seclist_name"])):
                         _extra = deepcopy(extra)
                         _extra["type"] = "nrnseclistcomp"
-                        _extra["name"] = f"{extra['seclist_name']}{sec_id}"
+                        _extra["name"] = f"{extra['name']}{sec_id}"
                         _extra["sec_index"] = sec_id
                         extra_recordings.append(_extra)
                 else:
@@ -664,10 +664,9 @@ def _handle_extra_recordings(protocols, features, _cell):
                 if _loc_name[-1] == "*":
                     features_out[prot_name].pop(loc, None)
                     for rec in protocols[prot_name].get("extra_recordings", []):
-                        if rec["seclist_name"].startswith(_loc_name[:-1]):
+                        if rec["name"].startswith(_loc_name[:-1]):
                             _loc = rec["name"] + "." + _rec_name
                             features_out[prot_name][_loc].append(deepcopy(feat))
-
     return protocols, features_out
 
 

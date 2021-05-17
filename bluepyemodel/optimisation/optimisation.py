@@ -82,7 +82,7 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
     timeout=None,
     mapper=None,
     opt_params=None,
-    optimizer="MO-CMA",
+    optimizer="IBEA",
     max_ngen=1000,
     checkpoint_dir=".",
     checkpoint_path=None,
@@ -99,7 +99,7 @@ def setup_and_run_optimisation(  # pylint: disable=too-many-arguments
         timeout=timeout,
     )
 
-    if opt_params is None:
+    if opt_params is None and optimizer.endswith("CMA"):
         opt_params = {"offspring_size": 10, "weight_hv": 0.4}
 
     opt_params["seed"] = seed
@@ -123,7 +123,7 @@ def store_best_model(
     seed,
     stochasticity=False,
     include_validation_protocols=False,
-    optimizer="MO-CMA",
+    optimizer="IBEA",
     checkpoint_dir="./checkpoints",
     checkpoint_path=None,
     githash="",
