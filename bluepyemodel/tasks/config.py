@@ -17,9 +17,10 @@ class EmodelAPIConfig(luigi.Config):
 
     # nexus parameters
     forge_path = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default="")
     nexus_poject = luigi.Parameter(default="emodel_pipeline")
-    nexus_organisation = luigi.Parameter(default="Cells")
-    nexus_endpoint = luigi.Parameter(default="https://staging.nexus.ocp.bbp.epfl.ch/v1")
+    nexus_organisation = luigi.Parameter(default="demo")
+    nexus_endpoint = luigi.Parameter(default="https://bbp.epfl.ch/nexus/v1")
 
     def __init__(self, *args, **kwargs):
         """Init."""
@@ -36,6 +37,7 @@ class EmodelAPIConfig(luigi.Config):
 
         if self.api == "nexus":
             self.api_args = {
+                "brain_region": self.brain_region,
                 "forge_path": self.forge_path,
                 "species": self.species,
                 "project": self.nexus_poject,
