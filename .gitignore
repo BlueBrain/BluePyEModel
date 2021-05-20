@@ -4,6 +4,7 @@ checkpoints/
 ExampleCell/
 examples/optimisation/mechanisms/
 examples/optimisation/config/
+.tmp/
 
 SOURCES.txt
 *.svg

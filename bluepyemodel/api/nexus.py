@@ -1,16 +1,15 @@
 """API using Nexus Forge"""
 
-import getpass
 import logging
 import os
 import pathlib
 from collections import OrderedDict
 
-from entity_management.state import refresh_token
-from kgforge.core import KnowledgeGraphForge
-from kgforge.core import Resource
+import pandas
+from kgforge.specializations.resources import Dataset
 
 from bluepyemodel.api.databaseAPI import DatabaseAPI
+from bluepyemodel.api.forge_access_point import NexusForgeAccessPoint
 
 logger = logging.getLogger("__main__")
 
@@ -33,10 +32,6 @@ BPEM_NEXUS_SCHEMA = [
 ]
 
 
-class AccessPointException(Exception):
-    """For Exceptions related to the NexusForgeAccessPoint"""
-
-
 class NexusAPIException(Exception):
     """For Exceptions related to the NexusAPI"""
 
@@ -55,145 +50,6 @@ def yesno(question):
         return True
 
     return False
-
-
-class NexusForgeAccessPoint:
-    """Access point to Nexus Knowledge Graph using Nexus Forge"""
-
-    def __init__(
-        self,
-        project="emodel_pipeline",
-        organisation="demo",
-        endpoint="https://bbp.epfl.ch/nexus/v1",
-        forge_path=None,
-        limit=1000,
-        debug=False,
-        cross_bucket=True,
-        access_token=None,
-    ):
-
-        self.limit = limit
-        self.debug = debug
-        self.cross_bucket = cross_bucket
-
-        self.access_token = access_token
-        if not self.access_token:
-            self.access_token = self.get_access_token()
-
-        bucket = organisation + "/" + project
-        self.forge = self.connect_forge(bucket, endpoint, self.access_token, forge_path)
-
-    @staticmethod
-    def get_access_token():
-        """Define access token either from bbp-workflow or provided by the user"""
-
-        try:
-            access_token = refresh_token()
-        except:  # noqa
-            logger.info("Please get your Nexus access token from https://bbp.epfl.ch/nexus/web/.")
-            access_token = getpass.getpass()
-
-        return access_token
-
-    @staticmethod
-    def connect_forge(bucket, endpoint, access_token, forge_path=None):
-        """Creation of a forge session"""
-
-        if not forge_path:
-            forge_path = (
-                "https://raw.githubusercontent.com/BlueBrain/nexus-forge/"
-                + "master/examples/notebooks/use-cases/prod-forge-nexus.yml"
-            )
-
-        forge = KnowledgeGraphForge(
-            forge_path, bucket=bucket, endpoint=endpoint, token=access_token
-        )
-
-        return forge
-
-    def register(self, resource_description, force_replace=False):
-        """Register a resource from its dictionary description."""
-
-        if "type" not in resource_description:
-            raise AccessPointException("The resource description should contain 'type'.")
-
-        # TODO: ask François to make it so search supports lists for this to work
-        # previous_resources = self.fetch(resource_description)
-        previous_resources = None
-
-        if previous_resources and not force_replace:
-            logger.warning(
-                "The resource you are trying to register already exist and will be ignored."
-            )
-            return
-
-        if previous_resources:
-            for resource in previous_resources:
-                self.forge.deprecate(resource)
-
-        self.forge.register(self.forge.from_json(resource_description))
-
-    def fetch(self, filters):
-        """Retrieve resources based on filters.
-
-        Args:
-            filters (dict): keys and values used for the "WHERE". Should include "type" or "id".
-
-        Returns:
-            resources (list): list of resources
-        """
-
-        if "type" not in filters and "id" not in filters:
-            raise AccessPointException("Search filters should contain either 'type' or 'id'.")
-
-        resources = self.forge.search(
-            filters, cross_bucket=self.cross_bucket, limit=self.limit, debug=self.debug
-        )
-
-        if resources:
-            return resources
-
-        logger.debug("No resources for filters: %s", filters)
-
-        return None
-
-    def fetch_one(self, filters):
-        """Fetch one and only one resource based on filters."""
-
-        resources = self.fetch(filters)
-
-        if resources is None:
-            raise AccessPointException("Could not get resource for filters %s" % filters)
-
-        if len(resources) > 1:
-            raise AccessPointException("More than one resource for filters %s" % filters)
-
-        return resources[0]
-
-    def download(self, resource_id, download_directory):
-        """Download datafile from nexus if it doesn't already exist."""
-
-        resource = self.forge.retrieve(resource_id, cross_bucket=True)
-
-        if resource is None:
-            raise AccessPointException("Could not find resource for id: %s" % resource_id)
-
-        filename = resource.distribution.name
-        file_path = pathlib.Path(download_directory) / filename
-
-        if not file_path.is_file():
-            self.forge.download(resource, "distribution.contentUrl", download_directory)
-
-        return str(file_path)
-
-    def deprecate(self, filters):
-        """Deprecate resources based on filters."""
-
-        resources = self.fetch(filters)
-
-        if resources:
-            for resource in resources:
-                self.forge.deprecate(resource)
 
 
 class NexusAPI(DatabaseAPI):
@@ -308,11 +164,65 @@ class NexusAPI(DatabaseAPI):
         for type_ in BPEM_NEXUS_SCHEMA:
             self.access_point.deprecate({"type": type_})
 
+    def store_channel_gene_expression(self, table_path):
+        """Create a channel gene expression resource containing the gene expression table.
+
+        Args:
+            table_path (str): path to the gene expression table
+        """
+
+        # TODO: rewrite once the schema is defined
+        # The creation of a Dataset should be done in the access point
+
+        if pathlib.Path(table_path).suffix != ".csv":
+            raise NexusAPIException("Was expecting a .csv file")
+
+        distribution = self.access_point.forge.attach(table_path)
+
+        dataset = Dataset(
+            self.access_point.forge,
+            type=["Entity", "Dataset", "ChannelGeneExpressionTable"],
+            distribution=distribution,
+        )
+
+        self.access_point.forge.register(dataset)
+
+    def load_channel_gene_expression(self):
+        """Retrieve a channel gene expression resource and read its content"""
+
+        # TODO: rewrite once the schema is defined
+        dataset = self.access_point.fetch_one(
+            filters={
+                "type": "ChannelGeneExpressionTable",
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+            }
+        )
+
+        filepath = self.access_point.resource_location(dataset)[0]
+
+        df = pandas.read_csv(filepath, index_col=["me-type", "t-type", "modality"])
+
+        return df, filepath
+
+    def get_t_types(self):
+        """Get the list of t-types available for the present emodel"""
+
+        df, _ = self.load_channel_gene_expression()
+
+        return df.loc[self.emodel].index.get_level_values("t-type").unique().tolist()
+
+    def get_channel_gene_expression(self, name, t_type=None):
+        """Get the channel gene expression for a given emodel and t-type"""
+
+        df, _ = self.load_channel_gene_expression()
+
+        return df.loc[self.emodel, t_type].to_dict(orient="records")
+
     def store_morphology(
         self,
         name=None,
-        morphology_id=None,
-        morphology_path=None,
+        id_=None,
         seclist_names=None,
         secarray_names=None,
         section_index=None,
@@ -322,42 +232,24 @@ class NexusAPI(DatabaseAPI):
 
         Args:
             name (str): name of the morphology.
-            morphology_id (str): nexus id of the NeuronMorphology.
-            morphology_path (str): path to the file containing the morphology.
+            id_ (str): nexus id of the NeuronMorphology.
             seclist_names (list): Names of the lists of sections (ex: 'somatic')
             secarray_names (list): names of the sections (ex: 'soma')
             section_index (int): index to a specific section, used for non-somatic recordings.
         """
 
-        if not morphology_id and not morphology_path:
-            raise NexusAPIException("At least morphology_id or morphology_path should be informed.")
-
-        if not morphology_id:
-
-            if not name:
-                name = pathlib.Path(morphology_path).stem
-
-            resources = self.access_point.fetch({"type": "NeuronMorphology", "name": name})
-
-            if resources:
-                morphology_id = resources[0].id
-
-            else:
-                # TODO: pass file attachement logic to AccessPoint class
-                distribution = self.access_point.forge.attach(morphology_path)
-                resource = Resource(type="NeuronMorphology", name=name, distribution=distribution)
-                self.access_point.forge.register(resource)
-                morphology_id = resource.id
-
+        if id_:
+            resource = self.access_point.retrieve(id_)
+        elif name:
+            resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
         else:
+            raise NexusAPIException("At least id_ or name should be informed.")
 
-            resources = self.access_point.fetch({"id": morphology_id})
+        if not resource:
+            raise NexusAPIException("No matching resource for morphology %s %s" % id_, name)
 
-            if not resources:
-                raise NexusAPIException("No matching resource for ephys_file_id %s" % morphology_id)
-
-            if not name:
-                name = resources[0].name
+        if not name:
+            name = resource.name
 
         self.access_point.register(
             {
@@ -369,28 +261,33 @@ class NexusAPI(DatabaseAPI):
                 "subject": self.get_subject(for_search=False),
                 "brainLocation": self.brain_region,
                 "name": name,
-                "morphology": {"id": morphology_id},
+                "morphology": {"id": resource.id},
                 "sectionListNames": seclist_names,
                 "sectionArrayNames": secarray_names,
                 "sectionIndex": section_index,
             },
+            {
+                "type": "ElectrophysiologyFeatureOptimisationNeuronMorphology",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+                "name": name,
+            },
         )
 
-    def store_recordings_metadata(
+    def store_trace_metadata(
         self,
-        cell_id=None,
+        name=None,
+        id_=None,
         ecode=None,
-        ephys_file_id=None,
-        ephys_file_path=None,
         recording_metadata=None,
     ):
         """Creates an ElectrophysiologyFeatureExtractionTrace resource based on an ephys file.
 
         Args:
-            cell_id (str): Nexus id of the cell on which the recording was performed.
+            id_ (str): Nexus id of the trace file.
+            name (str): name of the trace file.
             ecode (str): name of the eCode of interest.
-            ephys_file_id (str): Nexus id of the file.
-            ephys_file_path (str): path to the file.
             recording_metadata (dict): metadata such as ton, toff, v_unit associated to the traces
                 of ecode in this file.
         """
@@ -401,46 +298,31 @@ class NexusAPI(DatabaseAPI):
         if "protocol_name" not in recording_metadata and ecode:
             recording_metadata["protocol_name"] = ecode
 
-        if not ephys_file_id and not ephys_file_path:
-            raise NexusAPIException("At least ephys_file_id or ephys_file_path should be informed.")
-
-        if not ephys_file_id:
-
-            name = pathlib.Path(ephys_file_path).stem
-
-            if not cell_id:
-                cell_id = name
-
-            resources = self.access_point.fetch({"type": "Trace", "name": name})
-
-            if resources:
-                ephys_file_id = resources[0].id
-
-            else:
-                # TODO: pass file attachement logic to AccessPoint class
-                distribution = self.access_point.forge.attach(ephys_file_path)
-                resource = Resource(type="Trace", name=name, distribution=distribution)
-                self.access_point.forge.register(resource)
-                ephys_file_id = resource.id
-
+        if id_:
+            resource = self.access_point.retrieve(id_)
+        elif name:
+            resource = self.access_point.fetch_one(
+                {
+                    "type": "Trace",
+                    "name": name,
+                    "distribution": {"encodingFormat": "application/nwb"},
+                }
+            )
         else:
+            raise NexusAPIException("At least id_ or name should be informed.")
 
-            resources = self.access_point.fetch({"id": ephys_file_id})
-
-            if not resources:
-                raise NexusAPIException("No matching resource for ephys_file_id %s" % ephys_file_id)
-
-            if not cell_id:
-                cell_id = resources[0].name
+        if not resource:
+            raise NexusAPIException("No matching resource for %s %s" % id_, name)
 
         self.access_point.register(
             {
                 "type": ["Entity", "ElectrophysiologyFeatureExtractionTrace"],
                 "eModel": self.emodel,
+                "name": f"{resource.name}_{ecode}",
                 "subject": self.get_subject(for_search=False),
                 "brainLocation": self.brain_region,
-                "trace": {"id": ephys_file_id},
-                "cell": {"id": cell_id, "name": cell_id},
+                "trace": {"id": resource.id},
+                "cell": {"name": resource.name},
                 "ecode": ecode,
                 "recording_metadata": recording_metadata,
             },
@@ -479,6 +361,16 @@ class NexusAPI(DatabaseAPI):
                     "recordingLocation": "soma",
                 },
                 "feature": features,
+            },
+            {
+                "type": "ElectrophysiologyFeatureExtractionTarget",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+                "stimulus": {
+                    "stimulusType": {"label": ecode},
+                    "stimulusTarget": target_amplitudes[0],
+                },
             },
         )
 
@@ -530,6 +422,18 @@ class NexusAPI(DatabaseAPI):
                 "feature": features,
                 "extraRecordings": extra_recordings,
             },
+            {
+                "type": type_,
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+                "protocolType": protocol_type,
+                "stimulus": {
+                    "stimulusType": {"label": ecode},
+                    "target": target_amplitude,
+                    "recordingLocation": "soma",
+                },
+            },
         )
 
     def store_emodel_targets(
@@ -538,7 +442,7 @@ class NexusAPI(DatabaseAPI):
         efeatures,
         amplitude,
         extraction_tolerance,
-        protocol_type="",
+        protocol_type,
         used_for_extraction_rheobase=False,
         used_for_optimization=False,
         used_for_validation=False,
@@ -603,26 +507,37 @@ class NexusAPI(DatabaseAPI):
             )
 
     def store_optimisation_parameter(
-        self, parameter_name, value, mechanism_name, location, distribution="constant"
+        self,
+        name,
+        value,
+        location,
+        mechanism_name=None,
+        distribution="constant",
+        auto_handle_mechanism=False,
     ):
         """Creates an ElectrophysiologyFeatureOptimisationParameter resource specifying a
         parameter of the model.
 
         Args:
-            parameter_name (str): name of the parameter.
+            name (str): name of the parameter.
             value (list or float): value of the parameter. If value is a float, the parameter will
                 be fixed. If value is a list of two elements, the first will be used as a lower
                 bound and the second as an upper bound during the optimization.
-            mechanism_name (str): name of the mechanism associated to the parameter.
             location (list): locations at which the parameter is present. The element of location
                 have to be section list names.
+            mechanism_name (str): name of the mechanism associated to the parameter.
             distribution (str): distribution of the parameters along the sections.
+            auto_handle_mechanism (bool): if True, looks for the matching SubCellularModel or create
+                it if it does not exist.
         """
 
         if isinstance(value, (list, tuple)):
             min_value, max_value = value
         else:
             min_value, max_value = value, value
+
+        if auto_handle_mechanism and mechanism_name and mechanism_name != "pas":
+            self.store_mechanism(name=mechanism_name)
 
         self.access_point.register(
             {
@@ -631,13 +546,21 @@ class NexusAPI(DatabaseAPI):
                 "subject": self.get_subject(for_search=False),
                 "brainLocation": self.brain_region,
                 "parameter": {
-                    "name": parameter_name,
+                    "name": name,
                     "minValue": min_value,
                     "maxValue": max_value,
                     "unitCode": "",
                 },
-                "subCellularMechanism": mechanism_name,
                 "location": [location],
+                "channelDistribution": distribution,
+            },
+            {
+                "type": "ElectrophysiologyFeatureOptimisationParameter",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+                "parameter": {"name": name},
+                "location": location[0],  # TODO: Not sure that that works
                 "channelDistribution": distribution,
             },
         )
@@ -670,53 +593,34 @@ class NexusAPI(DatabaseAPI):
                 "function": function,
                 "parameter": parameters,
                 "somaReferenceLocation": soma_reference_location,
-            }
+            },
+            {
+                "type": "ElectrophysiologyFeatureOptimisationChannelDistribution",
+                "channelDistribution": name,
+            },
         )
 
-    def store_mechanism(
-        self, name=None, mechanism_script_id=None, mechanism_script_path=None, stochastic=None
-    ):
-
+    def store_mechanism(self, name=None, id_=None, stochastic=None):
         """Creates an SubCellularModel based on a SubCellularModelScript.
 
         Args:
             name (str): name of the mechanism.
-            mechanism_script_id (str): Nexus id of the mechanism.
-            mechanism_script_path (path): path to the mechanism file.
+            id_ (str): Nexus id of the mechanism.
             stochastic (bool): is the mechanism stochastic.
         """
 
-        if mechanism_script_id:
-
-            resource = self.access_point.fetch_one({"id": mechanism_script_id})
-
-            if not name:
-                name = resource.name
-
-        elif mechanism_script_path:
-
-            distribution = self.access_point.forge.attach(mechanism_script_path)
-
-            if not name:
-                name = pathlib.Path(mechanism_script_path).stem
-
-            # TODO: pass file attachement logic to AccessPoint class
-            resource = Resource(type="SubCellularModelScript", name=name, distribution=distribution)
-            self.access_point.forge.register(resource)
-
-            mechanism_script_id = resource.id
-
+        if id_:
+            resource = self.access_point.retrieve(id_)
         elif name:
-
-            resources = self.access_point.fetch_one(
-                {"type": "SubCellularModelScript", "name": name}
-            )
-            mechanism_script_id = resources.id
-
+            resource = self.access_point.fetch_one({"type": "SubCellularModelScript", "name": name})
         else:
-            raise NexusAPIException(
-                "At least name, mechanism_script_id or mechanism_script_path should be informed."
-            )
+            raise NexusAPIException("At least name or id_ should be informed.")
+
+        if not resource:
+            raise NexusAPIException("No matching resource for mechanism %s %s" % id_, name)
+
+        if not name:
+            name = resource.name
 
         if stochastic is None:
             stochastic = True if "Stoch" in name else False
@@ -726,9 +630,14 @@ class NexusAPI(DatabaseAPI):
                 "type": ["Entity", "SubCellularModel"],
                 "name": name,
                 "subCellularMechanism": name,
-                "modelScript": {"id": mechanism_script_id, "type": "SubCellularModelScript"},
+                "modelScript": {"id": resource.id, "type": "SubCellularModelScript"},
                 "stochastic": stochastic,
-            }
+            },
+            {
+                "type": "SubCellularModel",
+                "name": name,
+                "subCellularMechanism": name,
+            },
         )
 
     def _build_extraction_targets(self, resources_target):
@@ -781,8 +690,8 @@ class NexusAPI(DatabaseAPI):
         target. It also specifies the metadata (such as units or ljp) associated
         to the files.
 
-        This function also download the files in ./ephys_data, if they are not already
-        present.
+        This function also download the files in ./nexus_tmp, if they are not
+        already present.
         """
 
         traces_metadata = {}
@@ -807,6 +716,13 @@ class NexusAPI(DatabaseAPI):
 
             for resource in resources_ephys:
 
+                recording_metadata = self.access_point.forge.as_json(resource.recording_metadata)
+
+                resource_trace = self.access_point.retrieve(resource.trace.id)
+                recording_metadata["filepath"] = self.access_point.resource_location(
+                    resource_trace
+                )[0]
+
                 cell_name = resource.cell.name
                 ecode = resource.ecode
 
@@ -815,12 +731,6 @@ class NexusAPI(DatabaseAPI):
 
                 if ecode not in traces_metadata[cell_name]:
                     traces_metadata[cell_name][ecode] = []
-
-                download_directory = "./ephys_data/{}/{}/".format(self.emodel, cell_name)
-                filepath = self.access_point.download(resource.trace.id, download_directory)
-
-                recording_metadata = self.access_point.forge.as_json(resource.recording_metadata)
-                recording_metadata["filepath"] = str(filepath)
 
                 traces_metadata[cell_name][ecode].append(recording_metadata)
 
@@ -1700,8 +1610,7 @@ class NexusAPI(DatabaseAPI):
             }
         )
 
-        download_directory = "./morphology/{}/".format(self.emodel)
-        filepath = self.access_point.download(resource_morphology.morphology.id, download_directory)
+        filepath = self.access_point.resource_location(resource_morphology)[0]
 
         return {
             "name": resource_morphology.name,
