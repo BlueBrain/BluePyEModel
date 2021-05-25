@@ -83,6 +83,7 @@ def validate(
         for mo in emodels:
 
             mo["scores"] = cell_evaluator.fitness_calculator.calculate_scores(mo["responses"])
+            mo["features"] = cell_evaluator.fitness_calculator.calculate_values(mo["responses"])
 
             mo["scores_validation"] = {}
             for feature_names, score in mo["scores"].items():
@@ -101,6 +102,7 @@ def validate(
                 githash=mo["githash"],
                 validated=validated,
                 scores_validation=mo["scores_validation"],
+                features=mo["features"],
             )
 
         return emodels

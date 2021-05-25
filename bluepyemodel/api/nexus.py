@@ -329,7 +329,7 @@ class NexusAPI(DatabaseAPI):
         )
 
     def store_extraction_target(
-        self, ecode, target_amplitudes, tolerances, use_for_rheobase, efeatures
+        self, ecode, target_amplitudes, tolerances, use_for_rheobase, efeatures, efel_settings
     ):
         """Creates an ElectrophysiologyFeatureExtractionTarget resource used as target for the
         e-features extraction process.
@@ -343,6 +343,7 @@ class NexusAPI(DatabaseAPI):
             use_for_rheobase (bool): should the ecode be used to compute the rheobase
                 of the cells during extraction.
             efeatures (list): list of efeature names to extract for this ecode.
+            efel_settings (dict): eFEL settings.
         """
 
         features = [{"name": f} for f in efeatures]
@@ -361,6 +362,7 @@ class NexusAPI(DatabaseAPI):
                     "recordingLocation": "soma",
                 },
                 "feature": features,
+                "efel_settings": efel_settings,
             },
             {
                 "type": "ElectrophysiologyFeatureExtractionTarget",
@@ -375,7 +377,14 @@ class NexusAPI(DatabaseAPI):
         )
 
     def store_opt_validation_target(
-        self, type_, ecode, protocol_type, target_amplitude, efeatures, extra_recordings
+        self,
+        type_,
+        ecode,
+        protocol_type,
+        target_amplitude,
+        efeatures,
+        extra_recordings,
+        efel_settings,
     ):
         """Creates resources used as target optimisation and validation.
 
@@ -387,6 +396,7 @@ class NexusAPI(DatabaseAPI):
                 percentage of the threshold amplitude (rheobase).
             efeatures (list): list of efeatures name used as targets for this protocol.
             extra_recordings (list): definition of additional recordings used for this protocol.
+            efel_settings (dict): eFEL settings.
         """
 
         if protocol_type not in [
@@ -406,6 +416,11 @@ class NexusAPI(DatabaseAPI):
                     "offsetTime": {"unitCode": "ms", "value": None},
                 }
             )
+
+            if efel_settings and "stim_start" in efel_settings:
+                features[-1]["onsetTime"]["value"] = efel_settings["stim_start"]
+            if efel_settings and "stim_end" in efel_settings:
+                features[-1]["offsetTime"]["value"] = efel_settings["stim_end"]
 
         self.access_point.register(
             {
@@ -447,6 +462,7 @@ class NexusAPI(DatabaseAPI):
         used_for_optimization=False,
         used_for_validation=False,
         extra_recordings=None,
+        efel_settings=None,
     ):
         """Register the efeatures and their associated protocols that will be used as target during
         efeatures extraction, optimisation and validation.
@@ -467,7 +483,11 @@ class NexusAPI(DatabaseAPI):
         used_for_validation (bool): should the ecode be used as a target during validation.
             Both used_for_optimization and used_for_validation cannot be True.
         extra_recordings (list): definitions of additional recordings to use for this protocol.
+        efel_settings (dict): eFEL settings.
         """
+
+        if efel_settings is None:
+            efel_settings = {}
 
         if extra_recordings is None:
             extra_recordings = []
@@ -484,6 +504,7 @@ class NexusAPI(DatabaseAPI):
             tolerances=[extraction_tolerance],
             use_for_rheobase=used_for_extraction_rheobase,
             efeatures=efeatures,
+            efel_settings=efel_settings,
         )
 
         if used_for_optimization:
@@ -494,6 +515,7 @@ class NexusAPI(DatabaseAPI):
                 target_amplitude=amplitude,
                 efeatures=efeatures,
                 extra_recordings=extra_recordings,
+                efel_settings=efel_settings,
             )
 
         elif used_for_validation:
@@ -504,6 +526,7 @@ class NexusAPI(DatabaseAPI):
                 target_amplitude=amplitude,
                 efeatures=efeatures,
                 extra_recordings=extra_recordings,
+                efel_settings=efel_settings,
             )
 
     def store_optimisation_parameter(
@@ -643,18 +666,12 @@ class NexusAPI(DatabaseAPI):
     def _build_extraction_targets(self, resources_target):
         """Create a dictionary definning the target of the feature extraction process"""
 
-        targets = {}
+        targets = []
         protocols_threshold = []
 
         for resource in resources_target:
 
             ecode = resource.stimulus.stimulusType.label
-
-            # TODO: MAKE THIS WORK WITH TON AND TOFF
-            efeatures = self.access_point.forge.as_json(resource.feature)
-            if not isinstance(efeatures, list):
-                efeatures = [efeatures]
-            efeatures = [f["name"] for f in efeatures]
 
             if isinstance(resource.stimulus.tolerance, (int, float)):
                 tolerances = [resource.stimulus.tolerance]
@@ -666,18 +683,26 @@ class NexusAPI(DatabaseAPI):
             else:
                 amplitudes = resource.stimulus.stimulusTarget
 
-            if ecode in targets:
-                targets[ecode]["tolerances"] += tolerances
-                targets[ecode]["amplitudes"] += amplitudes
-                targets[ecode]["efeatures"] += efeatures
-
+            if hasattr(resource, "efel_settings"):
+                efel_settings = self.access_point.forge.as_json(resource.efel_settings)
             else:
-                targets[ecode] = {
-                    "tolerances": tolerances,
-                    "amplitudes": amplitudes,
-                    "efeatures": efeatures,
-                    "location": resource.stimulus.recordingLocation,
-                }
+                efel_settings = {}
+
+            efeatures = self.access_point.forge.as_json(resource.feature)
+            if not isinstance(efeatures, list):
+                efeatures = [efeatures]
+
+            for amp, tol in zip(amplitudes, tolerances):
+                for f in efeatures:
+                    targets.append(
+                        {
+                            "efeature": f,
+                            "protocol": ecode,
+                            "amplitude": amp,
+                            "tolerance": tol,
+                            "efel_settings": efel_settings,
+                        }
+                    )
 
             if hasattr(resource.stimulus, "threshold") and resource.stimulus.threshold:
                 protocols_threshold.append(ecode)
@@ -780,6 +805,7 @@ class NexusAPI(DatabaseAPI):
         resource_description = {
             "type": ["Entity", "ElectrophysiologyFeature"],
             "eModel": self.emodel,
+            "name": name,
             "subject": self.get_subject(for_search=False),
             "brainLocation": self.brain_region,
             "feature": {
@@ -814,6 +840,8 @@ class NexusAPI(DatabaseAPI):
                 "stimulusTarget": float(protocol_amplitude),
                 "recordingLocation": "soma",
             }
+
+            resource_description["name"] = f"{name}_{protocol_name}_{protocol_amplitude}"
 
         else:
             resource_description["stimulus"] = {
@@ -936,6 +964,7 @@ class NexusAPI(DatabaseAPI):
         githash="",
         validated=None,
         scores_validation=None,
+        features=None,
     ):
         """Store an emodel obtained from BluePyOpt in an EModel resource.
 
@@ -950,10 +979,12 @@ class NexusAPI(DatabaseAPI):
                 passed validation.
             scores_validation (dict): scores of the validation efeatures. Of the format
                 {"objective_name": score}.
+            features (dict): values of the efeatures. Of the format {"objective_name": value}.
         """
 
         parameters_resource = []
         scores_resource = []
+        features_resource = []
         scores_validation_resource = []
 
         if scores_validation:
@@ -963,6 +994,10 @@ class NexusAPI(DatabaseAPI):
         if scores is not None:
             for k, v in scores.items():
                 scores_resource.append({"name": k, "value": v, "unitCode": ""})
+
+        if features is not None:
+            for k, v in features.items():
+                features_resource.append({"name": k, "value": v, "unitCode": ""})
 
         if params is not None:
             for k, v in params.items():
@@ -993,6 +1028,7 @@ class NexusAPI(DatabaseAPI):
                 "fitness": sum(list(scores.values())),
                 "parameter": parameters_resource,
                 "score": scores_resource,
+                "features": features_resource,
                 "scoreValidation": scores_validation_resource,
                 "passedValidation": validated,
                 "optimizer": str(optimizer_name),

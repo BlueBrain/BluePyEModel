@@ -1,32 +1,15 @@
 {
-    "options": {
-        "strict_stiminterval": true,
-        "logging": true,
-        "threshold_nvalue_save": 1,
-        "protocols_threshold": [
-            "IDRest"
-        ]
-    },
-    "protocols": {
+    "protocols_threshold": ["IDRest"],
+    "targets": {
         "IDthresh": {
-            "tolerances": [
-                10.0
-            ],
-            "targets": [
-                0
-            ],
-            "efeatures": [
-                "Spikecount"
-            ],
+            "tolerances": [10.0],
+            "amplitudes": [0],
+            "efeatures": ["Spikecount"],
             "location": "soma"
         },
         "IDRest": {
-            "tolerances": [
-                10.0
-            ],
-            "targets": [
-                150
-            ],
+            "tolerances": [10.0],
+            "amplitudes": [150],
             "efeatures": [
                 "mean_frequency",
                 "ISI_CV",
@@ -36,12 +19,8 @@
             "location": "soma"
         },
         "APWaveform": {
-            "tolerances": [
-                10.0
-            ],
-            "targets": [
-                300
-            ],
+            "tolerances": [10.0],
+            "amplitudes": [300],
             "efeatures": [
                 "AP_amplitude",
                 "AP_begin_width"
@@ -49,13 +28,8 @@
             "location": "soma"
         },
         "IV": {
-            "tolerances": [
-                10.0
-            ],
-            "targets": [
-                0,
-                -40
-            ],
+            "tolerances": [10.0],
+            "amplitudes": [0, -40],
             "efeatures": [
                 "voltage_base",
                 "ohmic_input_resistance_vb_ssse"
@@ -63,7 +37,7 @@
             "location": "soma"
         }
     },
-    "cells": {
+    "files_metadata": {
         "C060110A3-SR": {
             "IDRest": [
                 {

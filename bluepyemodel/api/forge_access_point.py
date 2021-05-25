@@ -186,7 +186,7 @@ class NexusForgeAccessPoint:
 
             if hasattr(distrib, "atLocation"):
                 loc = self.forge.as_json(distrib.atLocation)
-                paths.append(loc.location.replace("file:/", ""))
+                paths.append(loc["location"].replace("file:/", ""))
             else:
                 filepath = self.download(resource.id)
                 paths.append(filepath)

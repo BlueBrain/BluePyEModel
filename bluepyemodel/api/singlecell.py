@@ -194,17 +194,9 @@ class SinglecellAPI(DatabaseAPI):
         with open(self.extract_config, "r") as f:
             config_dict = json.load(f)
 
-        for prot in config_dict["protocols"]:
-
-            if "targets" in config_dict["protocols"][prot]:
-                config_dict["protocols"][prot]["amplitudes"] = config_dict["protocols"][prot][
-                    "targets"
-                ]
-                config_dict["protocols"][prot].pop("targets")
-
-        files_metadata = config_dict["cells"]
-        targets = config_dict["protocols"]
-        protocols_threshold = config_dict["options"].get("protocols_threshold", [])
+        files_metadata = config_dict["files_metadata"]
+        targets = config_dict["targets"]
+        protocols_threshold = config_dict["protocols_threshold"]
 
         return files_metadata, targets, protocols_threshold
 
@@ -368,6 +360,7 @@ class SinglecellAPI(DatabaseAPI):
         githash="",
         validated=None,
         scores_validation=None,
+        features=None,
     ):
         """Store an emodel obtained from BluePyOpt in the final.json. Note that if a model in the
         final.json has the same key (emodel__githash__seed), it will be overwritten.
@@ -383,10 +376,14 @@ class SinglecellAPI(DatabaseAPI):
                 passed validation.
             scores_validation (dict): scores of the validation efeatures. Of the format
                 {"objective_name": score}.
+            features (dict): value of the efeatures. Of the format {"objective_name": value}.
         """
 
         if scores_validation is None:
             scores_validation = {}
+
+        if features is None:
+            features = {}
 
         with self.rw_lock_final.write_lock():
             with self.rw_lock_final_tmp.write_lock():
@@ -404,6 +401,7 @@ class SinglecellAPI(DatabaseAPI):
                     "score": sum(list(scores.values())),
                     "params": params,
                     "fitness": scores,
+                    "features": features,
                     "validation_fitness": scores_validation,
                     "validated": validated,
                     "optimizer": str(optimizer_name),
