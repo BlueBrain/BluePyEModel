@@ -14,7 +14,7 @@ class EmodelAwareTask:
 
     def get_database(self):
         """Fetch emodel AP."""
-        if EmodelAPIConfig().api == "singlecell":
+        if EmodelAPIConfig().api == "local":
             return LocalAccessPoint(
                 emodel=None,
                 emodel_dir=EmodelAPIConfig().emodel_dir,

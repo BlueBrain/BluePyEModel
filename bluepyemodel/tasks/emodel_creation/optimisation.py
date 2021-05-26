@@ -38,11 +38,11 @@ class ExtractEFeatures(WorkflowTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         name_Rin_protocol (str): name of the protocol that should be used to compute
-            the input resistance. Only used when db_api is 'singlecell'
+            the input resistance. Only used when db_api is 'local'
         name_rmp_protocol (str): name of the protocol that should be used to compute
-            the resting membrane potential. Only used when db_api is 'singlecell'.
+            the resting membrane potential. Only used when db_api is 'local'.
         validation_protocols (dict): Of the form {"ecodename": [targets]}. Only used
-            when db_api is 'singlecell'.
+            when db_api is 'local'.
     """
 
     name_Rin_protocol = luigi.Parameter(default=None)
@@ -184,7 +184,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
         # -- parsing -- #
         parser = argparse.ArgumentParser()
         parser.add_argument("--backend", default=None, type=str)
-        parser.add_argument("--api_from_config", default="singlecell", type=str)
+        parser.add_argument("--api_from_config", default="local", type=str)
         parser.add_argument(
             "--api_args_from_config",
             default=", ".join(
@@ -451,7 +451,7 @@ class Validation(WorkflowTask, IPyParallelTask):
         # -- parsing -- #
         parser = argparse.ArgumentParser()
         parser.add_argument("--backend", default=None, type=str)
-        parser.add_argument("--api_from_config", default="singlecell", type=str)
+        parser.add_argument("--api_from_config", default="local", type=str)
         parser.add_argument(
             "--api_args_from_config",
             default=", ".join(

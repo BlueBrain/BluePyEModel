@@ -223,6 +223,11 @@ def _current_bglibpy_evaluation(
     return {"holding_current": holding_current, "threshold_current": threshold_current}
 
 
+def _isolated_current_bglibpy_evaluation(*args, **kwargs):
+    """Isolate current evaluation with bglibpy for full safety."""
+    return isolate(_current_bglibpy_evaluation)(*args, **kwargs)
+
+
 def evaluate_currents_bglibpy(
     morphs_combos_df,
     protocol_config,
@@ -236,7 +241,7 @@ def evaluate_currents_bglibpy(
     """Compute the threshold and holding currents using bglibpy."""
     return evaluate(
         morphs_combos_df,
-        isolate(_current_bglibpy_evaluation),
+        _isolated_current_bglibpy_evaluation,
         new_columns=[["holding_current", 0.0], ["threshold_current", 0.0]],
         resume=resume,
         parallel_factory=parallel_factory,

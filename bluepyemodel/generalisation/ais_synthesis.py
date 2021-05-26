@@ -136,7 +136,7 @@ def synthesize_ais(
         _synth_combo,
         new_columns=[["ais_failed", 1], ["AIS_scaler", 1.0], ["AIS_model", ""]],
         resume=resume,
-        parallel_factory=parallel_factory,
+        parallel_factory="multiprocessing",
         func_kwargs=dict(
             ais_models=_clean_ais_model(ais_models),
             target_rhos=target_rhos,

@@ -9,6 +9,7 @@ import numpy as np
 from bluepyparallel import evaluate
 
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
+from bluepyemodel.evaluation.modifiers import synth_axon
 
 
 def single_feature_evaluation(
@@ -22,6 +23,10 @@ def single_feature_evaluation(
     """Evaluating single protocol and save traces."""
     emodel_db.emodel = combo["emodel"]
     emodel_db.morph_path = combo[morphology_path]
+    if "AIS_scaler" in combo and "AIS_params" in combo:
+        emodel_db.pipeline_settings.morph_modifiers = [
+            partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
+        ]
 
     evaluator = get_evaluator_from_db(
         combo["emodel"], emodel_db, stochasticity=stochasticity, timeout=timeout
@@ -33,7 +38,7 @@ def single_feature_evaluation(
     scores = evaluator.fitness_calculator.calculate_scores(responses)
 
     for f, val in features.items():
-        if isinstance(val, np.ndarray):
+        if isinstance(val, np.ndarray) and len(val) > 0:
             try:
                 features[f] = np.nanmean(val)
             except AttributeError:
@@ -60,7 +65,7 @@ def feature_evaluation(
     emodel_db,
     morphology_path="morphology_path",
     resume=False,
-    db_url="scores_db.sql",
+    db_url=None,
     parallel_factory=None,
     trace_data_path=None,
     stochasticity=False,

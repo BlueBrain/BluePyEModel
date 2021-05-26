@@ -5,9 +5,9 @@ import luigi
 class EmodelAPIConfig(luigi.Config):
     """Configuration of emodel api database."""
 
-    api = luigi.Parameter(default="singlecell")
+    api = luigi.Parameter(default="local")
 
-    # singlecell parameters
+    # local parameters
     emodel_dir = luigi.Parameter(default="./")
     species = luigi.Parameter(default="rat")
     recipes_path = luigi.Parameter(default=None)
@@ -28,7 +28,7 @@ class EmodelAPIConfig(luigi.Config):
         """Init."""
         super().__init__(*args, **kwargs)
 
-        if self.api == "singlecell":
+        if self.api == "local":
             self.api_args = {
                 "emodel_dir": self.emodel_dir,
                 "recipes_path": self.recipes_path,

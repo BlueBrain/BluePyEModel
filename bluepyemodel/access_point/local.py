@@ -32,6 +32,7 @@ class LocalAccessPoint(DataAccessPoint):
         final_path=None,
         recipes_path=None,
         legacy_dir_structure=False,
+        with_seeds=False,
     ):
         """Init
 
@@ -53,12 +54,14 @@ class LocalAccessPoint(DataAccessPoint):
                 }
             legacy_dir_structure (bool): if true, the path coming from the recipes will be replaced
                 by "self.emodel_dir / emodel / json_path_from_recipes". To be deprecated.
+            with_seed (bool): allows for emodel_seed type of emodel names in final.json
         """
 
         self.emodel_dir = Path(emodel_dir)
         self.recipes_path = recipes_path
         self.legacy_dir_structure = legacy_dir_structure
         self.emodel = emodel
+        self.with_seeds = with_seeds
 
         super().__init__(emodel)
 
@@ -75,8 +78,15 @@ class LocalAccessPoint(DataAccessPoint):
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel."""
-        if emodel not in self.get_all_recipes():
-            raise Exception("Cannot set the emodel name to %s which does not exist in the recipes.")
+        if self.with_seeds:
+            _emodel = "_".join(emodel.split("_")[:2])
+        else:
+            _emodel = emodel
+
+        if _emodel not in self.get_all_recipes():
+            raise Exception(
+                f"Cannot set the emodel name to {_emodel} which does not exist in the recipes."
+            )
 
         self.emodel = emodel
 
@@ -166,7 +176,11 @@ class LocalAccessPoint(DataAccessPoint):
 
         See docstring of __init__ for the format of the file of recipes.
         """
-        return self.get_all_recipes()[self.emodel]
+        if self.with_seeds:
+            emodel = "_".join(self.emodel.split("_")[:2])
+        else:
+            emodel = self.emodel
+        return self.get_all_recipes()[emodel]
 
     def _get_json(self, recipe_entry):
         """Helper function to load a json using path in recipe."""

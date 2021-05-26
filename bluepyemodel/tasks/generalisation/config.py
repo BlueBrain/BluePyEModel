@@ -6,7 +6,7 @@ from luigi_tools.target import OutputLocalTarget
 class EmodelAPIConfig(luigi.Config):
     """Configuration of emodel api database."""
 
-    api = luigi.Parameter(default="singlecell")
+    api = luigi.Parameter(default="local")
     emodel_dir = luigi.Parameter(default="config")
     final_path = luigi.Parameter(default=None)
 

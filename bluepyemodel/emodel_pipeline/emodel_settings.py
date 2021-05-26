@@ -87,8 +87,6 @@ class EModelPipelineSettings:
         # Settings related to the optimisation
         self.stochasticity = stochasticity
         self.morph_modifiers = morph_modifiers
-        if self.morph_modifiers is None:
-            self.morph_modifiers = []
         self.optimizer = optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:

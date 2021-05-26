@@ -18,7 +18,14 @@ from bluepyemodel.generalisation.utils import get_scores
 
 logger = logging.getLogger(__name__)
 POLYFIT_DEGREE = 10
-RHO_FACTOR_FEATURES = ["voltage_base", "Spikecount", "mean_frequency", "AHP_depth", "ISI_CV"]
+RHO_FACTOR_FEATURES = [
+    "ohmic_input_resistance_vb_ssse",
+    "bpo_holding_current",
+    "bpo_threshold_current",
+    "mean_frequency",
+    "inv_time_to_first_spike",
+    "AHP_depth",
+]
 
 
 def get_ais(neuron):

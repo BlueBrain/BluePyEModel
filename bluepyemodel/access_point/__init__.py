@@ -9,12 +9,13 @@ def get_db(access_point, emodel, **kwargs):
         emodel (str): name of the emodel.
         kwargs (dict): extra arguments to pass to access_point constructors, see below.
 
-    For singlecell:
+    For local:
         emodel_dir (str): path of the directory containing the parameters,
             features and parameters config files.
         recipe_path (str, optional): path to the file containing the recipes.
         final_path (str, optional): path to the final.json, if different from the one in emodel_dir
         legacy_dir_structure (bool, optional): uses legacy folder structure
+        with_seed (bool): allows for emodel_seed type of emodel names in final.json (not in recipes)
 
     For nexus:
         species (str): name of the species.
@@ -55,6 +56,7 @@ def get_db(access_point, emodel, **kwargs):
             recipes_path=kwargs.get("recipes_path", None),
             final_path=kwargs.get("final_path", None),
             legacy_dir_structure=kwargs.get("legacy_dir_structure", False),
+            with_seeds=kwargs.get("with_seeds", False),
         )
 
     raise Exception(f"Unknown access point: {access_point}")

@@ -1,9 +1,11 @@
 """Cli for emodel release with generalisation module."""
 import json
 import logging
+import pickle
 import shutil
 from copy import copy
 from functools import partial
+from hashlib import sha256
 from pathlib import Path
 
 import click
@@ -12,12 +14,15 @@ import numpy as np
 import pandas as pd
 import sh
 import yaml
+from bluepyparallel import evaluate
 from bluepyparallel import init_parallel_factory
 from morphio.mut import Morphology
 from tqdm import tqdm
 from voxcell import CellCollection
 
-from bluepyemodel.access_point.singlecell import SinglecellAPI
+from bluepyemodel.access_point import get_db
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
+from bluepyemodel.evaluation.modifiers import synth_axon
 from bluepyemodel.generalisation.ais_model import taper_function
 
 L = logging.getLogger(__name__)
@@ -33,9 +38,13 @@ def cli(verbose):
 
 
 def _get_database(api, emodel_path, final_path=None, legacy_dir_structure=True):
-    if api == "singlecell":
-        return SinglecellAPI(
-            None, emodel_path, final_path, legacy_dir_structure=legacy_dir_structure
+    if api == "local":
+        return get_db(
+            api,
+            "cADpyr_L5TPC",  # assumes it exists to be able to load recipe
+            emodel_dir=emodel_path,
+            final_path=final_path,
+            legacy_dir_structure=legacy_dir_structure,
         )
     raise NotImplementedError(f"api {api} is not implemented")
 
@@ -74,10 +83,9 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
 
     emodel_db.emodel = "_".join(emodel.split("_")[:2])
     parameters, mechanisms, _ = emodel_db.get_parameters()
-    morph = emodel_db.get_morphologies()
     cell_model = create_cell_model(
         emodel,
-        morph["path"],
+        emodel_db.get_morphologies(),
         mechanisms,
         parameters,
         morph_modifiers=[lambda: None],
@@ -94,7 +102,7 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
 @cli.command("create_emodel_release")
 @click.option("--ais-models", type=click.Path(exists=True), required=False)
 @click.option("--target-rho-factors", type=click.Path(exists=True), required=False)
-@click.option("--emodel-api", type=str, default="singlecell")
+@click.option("--emodel-api", type=str, default="local")
 @click.option("--emodel-path", type=click.Path(exists=True), required=True)
 @click.option("--final-path", type=click.Path(exists=True), required=True)
 @click.option("--template", type=click.Path(exists=True), required=True)
@@ -117,7 +125,7 @@ def create_emodel_release(
     Args:
         ais_models (yaml file): contains information about the AIS shape and eletrical properties
         target_rho_factors (yaml file): contains traget rhow factor for each emodel
-        emodel_api (str): name of emodel api (only singlecell for now)
+        emodel_api (str): name of emodel api (only local for now)
         emodel_path (str): paths to the emodel config folders
         final_path (str): paths to the final.json file
         template_path (str): path to jinja2 template file
@@ -174,18 +182,16 @@ def create_emodel_release(
         shutil.copytree(mechanisms, release_paths["mechanisms"])
 
 
-def _load_cells(circuit_morphologies, mtype=None, n_cells=None):
+def _load_cells(cells_path, mtype=None, n_cells=None):
     """Load cells from a circuit into a dataframe."""
-    if Path(circuit_morphologies).suffix == ".mvd3":
-        cells = CellCollection.load_mvd3(circuit_morphologies).as_dataframe()
-    if Path(circuit_morphologies).suffix == ".h5":
-        cells = CellCollection.load_sonata(circuit_morphologies).as_dataframe()
+    cells = CellCollection.load(cells_path).as_dataframe()
 
     if mtype is not None:
         cells = cells[cells.mtype == mtype]
     if n_cells is not None:
-        cells = cells.sample(min(len(cells.index), n_cells))
+        cells = cells.sample(min(len(cells.index), n_cells), random_state=42)
     assert len(cells.index) > 0, "no cells selected!"
+
     return cells
 
 
@@ -198,7 +204,13 @@ def _create_emodel_column(cells, etype_emodel_map):
     assert set(cells.etype.unique()).issubset(
         set(etype_emodel_map.etype.unique())
     ), "There are missing etypes in etype_emodel_map"
-    return pd.merge(cells, etype_emodel_map, on=["mtype", "etype"])
+    cells = pd.merge(cells, etype_emodel_map, on=["mtype", "etype"], how="left")
+
+    unassigned_cells = cells[cells.emodel.isnull()]
+    if len(unassigned_cells) > 0:
+        raise Exception(f"{len(unassigned_cells)} have unassigned emodels!")
+
+    return cells
 
 
 def _add_combo_name(combos_df):
@@ -248,27 +260,24 @@ def save_mecombos(combos_df, output, with_scaler=True):
 
 
 @cli.command("get_me_combos_scales")
-@click.option("--circuit-morphologies", type=click.Path(exists=True), required=True)
-@click.option(
-    "--release-path",
-    type=click.Path(exists=True),
-    default="emodel_release",
-    required=True,
-)
+@click.option("--cells-path", type=click.Path(exists=True), required=True)
+@click.option("--release-path", type=click.Path(exists=True), required=True)
 @click.option("--morphology-path", type=click.Path(exists=True), required=False)
-@click.option("--mecombo-emodel-tsv-path", default="mecombo_emodel.tsv", type=str)
-@click.option("--combos-df-path", default="combos_df.csv", type=str)
-@click.option("--emodel-api", default="singlecell", type=str)
+@click.option("--output-sonata-path", default="circuit.AIS_scaler.h5", type=str)
+@click.option("--combos-df-path", default=None, type=str)
+@click.option("--emodel-api", default="local", type=str)
 @click.option("--sql-tmp-path", default="tmp", type=str)
 @click.option("--n-cells", default=None, type=int)
 @click.option("--mtype", default=None, type=str)
 @click.option("--parallel-lib", default="multiprocessing")
 @click.option("--resume", is_flag=True)
+@click.option("--with-db", is_flag=True)
+@click.option("--drop_failed", is_flag=True)
 def get_me_combos_scales(
-    circuit_morphologies,
+    cells_path,
     release_path,
     morphology_path,
-    mecombo_emodel_tsv_path,
+    output_sonata_path,
     combos_df_path,
     emodel_api,
     sql_tmp_path,
@@ -276,30 +285,37 @@ def get_me_combos_scales(
     mtype,
     parallel_lib,
     resume,
+    with_db,
+    drop_failed,
 ):
     """For each me-combos, compute the AIS scale and thresholds currents.
 
     Args:
-        circuit_morphologies (str): path to mvd3/sonata file with synthesized morphologies
+        cells_path (str): path to mvd3/sonata file with synthesized morphologies
         release_path (str): path to emodel release folder
         morphology_path (str): base path to morphologies, if none, same dir as mvd3 will be used
-        mecombo_emodel_tsv_path (str): path to .tsv file to save output data for each me-combos
+        output_sonata_path (str): path to output sonata file
         combos_df_path (str): path to .csv file to save all result dataframe
-        emodel_api (str): name of emodel api, so far only 'singlecell' is available
-        protocol_config_path (str): path to yaml file with protocol config for bglibpy
+        emodel_api (str): name of emodel api, so far only 'local' is available
         sql_tmp_path (str): path to a folder to save sql files used during computations
         parallel_lib (str): parallel library
         n_cells (int): for testing, only use first n_cells in cells dataframe
         mtype (str): name of mtype to use (for testing only)
+        resume (bool): resume computation is with_db
+        with_db (bool): use sql backend for resume option
+        drop_failed (bool): drop cells with failed computations
     """
     from bluepyemodel.generalisation.ais_synthesis import synthesize_ais
+
+    if resume and not with_db:
+        raise Exception("If --with-db is not used, --resume cannot work")
 
     # Initialize the parallel library. If using dask, it must be called at the beginning.
     parallel_factory = init_parallel_factory(parallel_lib)
 
     # 1) load release data, cells and compile mechanisms
     L.info("Load release data, cells and compile mechanisms.")
-    cells = _load_cells(circuit_morphologies, mtype, n_cells)
+    cells = _load_cells(cells_path, mtype, n_cells)
 
     release_paths = get_release_paths(release_path)
     with open(release_paths["ais_model_path"], "r") as ais_file:
@@ -316,8 +332,9 @@ def get_me_combos_scales(
     # 2) assign emodels to each row and only keep relevant columns
     L.info("Assign emodels to each rows and restructure dataframe.")
     cells = _create_emodel_column(cells, etype_emodel_map)
+
     if morphology_path is None:
-        morphology_path = Path(circuit_morphologies).parent
+        morphology_path = Path(cells_path).parent
     cells["morphology_path"] = str(morphology_path) + "/" + cells["morphology"] + ".asc"
     cells["gid"] = cells.index
     morphs_combos_df = cells[
@@ -334,61 +351,101 @@ def get_me_combos_scales(
         target_rhos,
         parallel_factory=parallel_factory,
         scales_params=ais_models["scales_params"],
-        db_url=Path(sql_tmp_path) / "synth_db.sql",
+        db_url=Path(sql_tmp_path) / "synth_db.sql" if with_db else None,
         resume=resume,
     )
 
-    # 4) save all values in .tsv
-    L.info("Save results in .tsv")
-    Path(mecombo_emodel_tsv_path).parent.mkdir(parents=True, exist_ok=True)
-    combos_df.to_csv(combos_df_path, index=False)
-    save_mecombos(combos_df, mecombo_emodel_tsv_path)
+    # 4) save all values in .csv
+    if combos_df_path is not None:
+        L.info("Save results in .csv")
+        Path(combos_df_path).parent.mkdir(parents=True, exist_ok=True)
+        combos_df.to_csv(combos_df_path, index=False)
+
+    Path(output_sonata_path).parent.mkdir(parents=True, exist_ok=True)
+    combos_df = combos_df[["morphology", "emodel", "AIS_scaler"]]
+    failed_cells = combos_df[combos_df.isnull().any(axis=1)].index
+    if len(failed_cells) > 0:
+        L.info("%s failed cells:", len(failed_cells))
+        L.info(combos_df.loc[failed_cells])
+    else:
+        L.info("No failed cells, hurray!")
+    if drop_failed:
+        # we remove combo_name here, so the remove_unassigned_cells() later will remove these cells
+        combos_df.loc[failed_cells, "mtype"] = None
+    else:
+        combos_df.loc[failed_cells, "AIS_scaler"] = 1.0
+
+    L.info("Save results in sonata")
+    _cells = CellCollection.load(cells_path)
+    combos_df = combos_df.set_index("morphology")
+    valid_morphs = [morph for morph in _cells.properties["morphology"] if morph in combos_df.index]
+
+    _cells.properties.loc[_cells.properties["morphology"].isin(valid_morphs), "model_template"] = (
+        "hoc:" + combos_df.loc[valid_morphs, "emodel"]
+    ).to_list()
+    _cells.properties.loc[
+        _cells.properties["morphology"].isin(valid_morphs), "@dynamics:AIS_scaler"
+    ] = combos_df.loc[valid_morphs, "AIS_scaler"].to_list()
+
+    _cells.remove_unassigned_cells()
+    _cells.save(output_sonata_path)
 
     # clean up the parallel library, if needed
     parallel_factory.shutdown()
 
 
 @cli.command("get_me_combos_currents")
-@click.option("--mecombos-path", type=click.Path(exists=True), required=True)
-@click.option("--combos-df-path", default="combos_df.csv", type=str)
+@click.option("--input-sonata-path", type=click.Path(exists=True), required=True)
+@click.option("--output-sonata-path", default="circuit.currents.h5", type=str)
 @click.option("--release-path", type=click.Path(exists=True))
-@click.option("--mecombo-emodel-tsv-path", default="mecombo_emodel.tsv", type=str)
-@click.option("--emodel-api", default="singlecell", type=str)
+@click.option("--morphology-path", type=click.Path(exists=True), required=False)
 @click.option("--protocol-config-path", default=None, type=str)
+@click.option("--combos-df-path", default=None, type=str)
+@click.option("--emodel-api", default="local", type=str)
 @click.option("--sql-tmp-path", default="tmp", type=str)
 @click.option("--parallel-lib", default="multiprocessing", type=str)
 @click.option("--bglibpy-template-format", default="v6_ais_scaler", type=str)
 @click.option("--emodels-hoc-dir", type=str)
 @click.option("--resume", is_flag=True)
+@click.option("--with-db", is_flag=True)
+@click.option("--drop_failed", is_flag=True)
 def get_me_combos_currents(
-    mecombos_path,
-    combos_df_path,
+    input_sonata_path,
+    output_sonata_path,
     release_path,
-    mecombo_emodel_tsv_path,
-    emodel_api,
+    morphology_path,
     protocol_config_path,
+    combos_df_path,
+    emodel_api,
     sql_tmp_path,
     parallel_lib,
     bglibpy_template_format,
     emodels_hoc_dir,
     resume,
+    with_db,
+    drop_failed,
 ):
     """For each me-combos, compute the thresholds currents.
 
     Args:
-        mecombo_emodel_tsv_path (str): path to .tsv file to save output data for all me-combos
+        output_sonata_path (str): path to sonata file to save output data for all me-combos
         combos_df_path (str): path to dataframe with cells informations to run
         release_path (str): path to emodel release folder
         morphology_path (str): base path to morphologies, if none, same dir as mvd3 will be used
         output (str): .csv file to save output data for each me-combos
-        emodel_api (str): name of emodel api, so far only 'singlecell' is available
+        emodel_api (str): name of emodel api, so far only 'local' is available
         protocol_config_path (str): path to yaml file with protocol config for bglibpy
         sql_tmp_path (str): path to a folder to save sql files used during computations
         parallel_lib (str): parallel library
         bglibpy_template_format (str): v6 for standar use v6_ais_scaler for custom hoc
         emodels_hoc_dir (str): paths to hoc files, if None hoc from release path will be used
-
+        resume (bool): resume computation is with_db
+        with_db (bool): use sql backend for resume option
+        drop_failed (bool): drop cells with failed computations
     """
+    if resume and not with_db:
+        raise Exception("If --with-db is not used, --resume cannot work")
+
     if protocol_config_path is None:
         from bluepyemodel.generalisation.evaluators import evaluate_currents
     else:
@@ -398,13 +455,19 @@ def get_me_combos_currents(
     # but after nueuron imports.
     parallel_factory = init_parallel_factory(parallel_lib)
 
-    # 1) load release data, cells and compile mechanisms
-    combos_df = pd.read_csv(combos_df_path)
+    # 1) load sonata file
+    L.info("Load sonata file")
+    cells = CellCollection.load(input_sonata_path)
+    combos_df = cells.as_dataframe()
+    combos_df["emodel"] = combos_df["model_template"].apply(lambda temp: temp[4:])
+    if morphology_path is None:
+        morphology_path = Path(input_sonata_path).parent
+    combos_df["morphology_path"] = str(morphology_path) + "/" + combos_df["morphology"] + ".asc"
+    combos_df["AIS_scaler"] = combos_df["@dynamics:AIS_scaler"]
 
     # 2) compute holding and threshold currents
-    L.info("Compute holding and threshold currents.")
     if protocol_config_path is None:
-
+        L.info("Compute holding and threshold currents with opt protocols.")
         release_paths = get_release_paths(release_path)
         emodel_db = _get_database(emodel_api, release_paths["emodel_path"])
 
@@ -413,9 +476,10 @@ def get_me_combos_currents(
             combos_df,
             emodel_db,
             parallel_factory=parallel_factory,
-            db_url=Path(sql_tmp_path) / "current_db.sql",
+            db_url=Path(sql_tmp_path) / "current_db.sql" if with_db else None,
         )
     else:
+        L.info("Compute holding and threshold currents with bglibpy")
         with open(protocol_config_path, "r") as prot_file:
             protocol_config = yaml.safe_load(prot_file)
 
@@ -429,39 +493,46 @@ def get_me_combos_currents(
             protocol_config,
             emodels_hoc_dir,
             parallel_factory=parallel_factory,
-            db_url=Path(sql_tmp_path) / "current_db.sql",
+            db_url=Path(sql_tmp_path) / "current_db.sql" if with_db else None,
             template_format=bglibpy_template_format,
             resume=resume,
         )
 
-    # 3) save all values in .tsv
-    L.info("Save results in .tsv")
-    all_morphs_combos_df = pd.read_csv(mecombos_path, sep="\t")
-    all_morphs_combos_df = _add_combo_name(all_morphs_combos_df)
-    if "fullmtype" not in combos_df.columns:
-        combos_df["fullmtype"] = combos_df["mtype"]
-    if "morph_name" not in combos_df.columns:
-        combos_df["fullmtype"] = combos_df["mtype"]
-        combos_df["morph_name"] = combos_df["morphology"]
-    combos_df = _add_combo_name(combos_df)
+    # 3) save in sonata and .csv
+    if combos_df_path is not None:
+        L.info("Save results in .csv")
+        combos_df.to_csv(combos_df_path, index=False)
 
-    if "threshold_current" not in all_morphs_combos_df.columns:
-        all_morphs_combos_df["threshold_current"] = 0
-        all_morphs_combos_df["holding_current"] = 0
+    Path(output_sonata_path).parent.mkdir(parents=True, exist_ok=True)
+    combos_df = combos_df[["morphology", "emodel", "holding_current", "threshold_current"]]
+    failed_cells = combos_df[combos_df.isnull().any(axis=1)].index
+    if len(failed_cells) > 0:
+        L.info("%s failed cells:", len(failed_cells))
+        L.info(combos_df.loc[failed_cells])
+    else:
+        L.info("No failed cells, hurray!")
 
-    all_morphs_combos_df.loc[
-        all_morphs_combos_df.combo_name.isin(combos_df.combo_name), "threshold_current"
-    ] = combos_df["threshold_current"].to_list()
-    all_morphs_combos_df.loc[
-        all_morphs_combos_df.combo_name.isin(combos_df.combo_name), "holding_current"
-    ] = combos_df["holding_current"].to_list()
+    if drop_failed:
+        # we remove combo_name here, so the remove_unassigned_cells() later will remove these cells
+        combos_df.loc[failed_cells, "mtype"] = None
+    else:
+        combos_df.loc[failed_cells, "holding_current"] = 0
+        combos_df.loc[failed_cells, "threshold_current"] = 0
 
-    with_scaler = False
-    if "AIS_scaler" in all_morphs_combos_df:
-        with_scaler = True
+    L.info("Save results in sonata")
+    combos_df = combos_df.set_index("morphology")
+    valid_morphs = [morph for morph in cells.properties["morphology"] if morph in combos_df.index]
 
-    Path(mecombo_emodel_tsv_path).parent.mkdir(parents=True, exist_ok=True)
-    save_mecombos(all_morphs_combos_df, mecombo_emodel_tsv_path, with_scaler=with_scaler)
+    cells.properties.loc[
+        cells.properties["morphology"].isin(valid_morphs), "@dynamics:holding_current"
+    ] = combos_df.loc[valid_morphs, "holding_current"].to_list()
+
+    cells.properties.loc[
+        cells.properties["morphology"].isin(valid_morphs), "@dynamics:threshold_current"
+    ] = combos_df.loc[valid_morphs, "threshold_current"].to_list()
+
+    cells.remove_unassigned_cells()
+    cells.save(output_sonata_path)
 
     # clean up the parallel library, if needed
     parallel_factory.shutdown()
@@ -517,6 +588,336 @@ def _create_etype_column(cells, cell_composition):
     return pd.concat(dfs).reset_index(drop=True)
 
 
+def _single_evaluation(
+    combo,
+    emodel_api,
+    final_path,
+    emodel_path,
+    morphology_path="morphology_path",
+    stochasticity=False,
+    timeout=1000,
+    trace_data_path=None,
+):
+    """Evaluating single protocol and save traces."""
+    emodel_db = get_db(
+        emodel_api,
+        combo["emodel"],
+        emodel_dir=emodel_path,
+        final_path=final_path,
+        with_seeds=True,
+        legacy_dir_structure=True,
+    )
+    if "path" in combo:
+        emodel_db.morph_path = combo["path"]
+
+    if "AIS_scaler" in combo and "AIS_params" in combo:
+        emodel_db.pipeline_settings.morph_modifiers = [
+            partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
+        ]
+    evaluator = get_evaluator_from_db(
+        combo["emodel"], emodel_db, stochasticity=stochasticity, timeout=timeout
+    )
+    responses = evaluator.run_protocols(
+        evaluator.fitness_protocols.values(), emodel_db.get_emodel()["parameters"]
+    )
+    features = evaluator.fitness_calculator.calculate_values(responses)
+    scores = evaluator.fitness_calculator.calculate_scores(responses)
+
+    for f, val in features.items():
+        if isinstance(val, np.ndarray) and len(val) > 0:
+            try:
+                features[f] = np.nanmean(val)
+            except AttributeError:
+                features[f] = None
+        else:
+            features[f] = None
+
+    if trace_data_path is not None:
+        Path(trace_data_path).mkdir(exist_ok=True, parents=True)
+        stimuli = evaluator.fitness_protocols["main_protocol"].subprotocols()
+        hash_id = sha256(json.dumps(combo).encode()).hexdigest()
+        trace_data_path = f"{trace_data_path}/trace_data_{hash_id}.pkl"
+        pickle.dump([stimuli, responses], open(trace_data_path, "wb"))
+
+    return {
+        "features": json.dumps(features),
+        "scores": json.dumps(scores),
+        "trace_data": trace_data_path,
+    }
+
+
+def _evaluate_exemplars(
+    emodel_path, final_path, emodel_api, parallel_factory, emodel, trace_data_path
+):
+    """Evaluate exemplars."""
+    emodel_path = Path(emodel_path)
+    emodel_db = get_db(
+        emodel_api,
+        "cADpyr_L5TPC",  # assumes it exists to be able to load recipe
+        emodel_dir=emodel_path,
+        final_path=final_path,
+        with_seeds=True,
+        legacy_dir_structure=True,
+    )
+    exemplar_df = pd.DataFrame()
+    for i, _emodel in enumerate(emodel_db.get_final()):
+        exemplar_df.loc[i, "emodel"] = _emodel
+
+    if emodel is not None:
+        exemplar_df = exemplar_df[exemplar_df.emodel == emodel]
+
+    evaluation_function = partial(
+        _single_evaluation,
+        emodel_api=emodel_api,
+        emodel_path=emodel_path,
+        final_path=final_path,
+        trace_data_path=trace_data_path,
+        stochasticity=False,
+    )
+
+    return evaluate(
+        exemplar_df,
+        evaluation_function,
+        new_columns=[["features", ""], ["scores", ""], ["trace_data", ""]],
+        parallel_factory=parallel_factory,
+    )
+
+
+def _evaluate_emodels(
+    sonata_path,
+    morphology_path,
+    emodel_path,
+    final_path,
+    emodel_api,
+    ais_emodels_path,
+    region,
+    emodel,
+    n_cells,
+    seed,
+    parallel_factory,
+    trace_data_path,
+):
+    """Evaluate emodels."""
+
+    combos_df = CellCollection.load_sonata(sonata_path).as_dataframe()
+    combos_df["path"] = morphology_path + combos_df["morphology"] + ".asc"
+    combos_df["emodel"] = combos_df["model_template"].apply(lambda m: m.split(":")[-1])
+    if region is not None:
+        combos_df = combos_df[combos_df.region == region]
+
+    if emodel is not None:
+        combos_df = combos_df[combos_df.emodel == emodel]
+
+    combos_df = pd.concat(
+        [
+            combos_df[combos_df.model_template == model_template].sample(
+                min(n_cells, len(combos_df[combos_df.model_template == model_template].index)),
+                random_state=seed,
+            )
+            for model_template in combos_df.model_template.unique()
+        ]
+    )
+    ais_models = yaml.safe_load(open(ais_emodels_path, "r"))
+    combos_df["AIS_params"] = len(combos_df) * [ais_models["mtype"]["all"]["AIS"]["popt"]]
+    combos_df["AIS_scaler"] = combos_df["@dynamics:AIS_scaler"]
+    combos_df = combos_df[["AIS_params", "AIS_scaler", "path", "mtype", "morphology", "emodel"]]
+    combos_df["gid"] = combos_df.index
+    combos_df = combos_df.reset_index(drop=True)
+
+    evaluation_function = partial(
+        _single_evaluation,
+        emodel_api=emodel_api,
+        emodel_path=Path(emodel_path),
+        final_path=final_path,
+        trace_data_path=trace_data_path,
+        stochasticity=False,
+    )
+
+    return evaluate(
+        combos_df,
+        evaluation_function,
+        new_columns=[["features", ""], ["scores", ""], ["trace_data", ""]],
+        parallel_factory=parallel_factory,
+    )
+
+
+def _plot_reports(exemplar_df, result_df, folder, clip, feature_threshold, megate_thresholds_path):
+    """Internal function to plot generalisation reports."""
+
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from matplotlib.backends.backend_pdf import PdfPages
+
+    from bluepyemodel.generalisation.select import apply_megating
+    from bluepyemodel.generalisation.utils import get_scores
+
+    matplotlib.use("Agg")
+
+    Path(folder).mkdir(exist_ok=True, parents=True)
+    result_df = result_df[["emodel", "mtype", "morphology", "scores"]]
+    result_df["scores_raw"] = result_df["scores"]
+    exemplar_df["scores_raw"] = exemplar_df["scores"]
+    exemplar_df["for_optimisation"] = 1.0
+
+    megate_thresholds = yaml.safe_load(open(megate_thresholds_path, "r"))
+    megated_df = apply_megating(result_df, exemplar_df, megate_thresholds=megate_thresholds)
+    result_df["pass"] = megated_df.all(axis=1).astype(int)
+
+    pass_df = result_df.groupby("emodel").mean().sort_values(by="pass", ascending=False)
+
+    plt.figure(figsize=(5, 10))
+    pass_df["pass"].plot.barh(ax=plt.gca())
+    plt.xlabel("fraction of pass combos")
+    plt.savefig(f"{folder}/pass_fraction.pdf", bbox_inches="tight")
+
+    scores = get_scores(result_df, clip=clip)
+
+    _scores = scores[["emodel", "median_score", "max_score"]]
+    plt.figure(figsize=(5, 10))
+    ax = plt.gca()
+    sns.violinplot(
+        data=_scores,
+        x="median_score",
+        y="emodel",
+        orient="h",
+        linewidth=0.1,
+        bw=0.1,
+        scale="count",
+        order=sorted(scores.emodel.unique()),
+    )
+    plt.savefig(f"{folder}/median_scores.pdf", bbox_inches="tight")
+
+    plt.figure(figsize=(5, 10))
+    ax = plt.gca()
+    sns.violinplot(
+        data=_scores,
+        x="max_score",
+        y="emodel",
+        orient="h",
+        linewidth=0.1,
+        bw=0.1,
+        scale="count",
+        order=sorted(scores.emodel.unique()),
+    )
+    plt.savefig(f"{folder}/max_scores.pdf", bbox_inches="tight")
+
+    megated_df.index = result_df["emodel"]
+    with PdfPages(f"{folder}/failed_features.pdf") as pdf:
+        for emodel, scores in megated_df.groupby("emodel"):
+            df = (scores).astype(int).mean(axis=0)
+            df = df[df < feature_threshold].sort_values(ascending=False)
+
+            if len(df) > 0:
+                plt.figure(figsize=(5, 2 + len(df.index)))
+                ax = plt.gca()
+                df.plot.barh(ax=ax)
+                plt.gca().set_xlim(0, 1)
+                plt.suptitle(emodel)
+                pdf.savefig(bbox_inches="tight")
+                plt.close()
+
+
+@cli.command("evaluate_emodels")
+@click.option("--emodel-api", type=str, default="local")
+@click.option("--emodel-path", type=click.Path(exists=True), required=True)
+@click.option("--final-path", type=click.Path(exists=True), required=True)
+@click.option("--exemplar-path", type=str, default="exemplar_evaluations.csv")
+@click.option("--sonata-path", type=click.Path(exists=True), required=True)
+@click.option("--morphology-path", type=click.Path(exists=True), required=True)
+@click.option("--ais-emodels-path", type=click.Path(exists=True), required=True)
+@click.option("--regions", type=str, default=None)
+@click.option("--emodel", type=str, default=None)
+@click.option("--n-cells", type=int, default=10)
+@click.option("--seed", type=int, default=42)
+@click.option("--result-path", type=str, default="results")
+@click.option("--parallel-factory", type=str, default="multiprocessing")
+@click.option("--clip", type=float, default=5.0)
+@click.option("--feature-threshold", type=float, default=0.99)
+@click.option(
+    "--megate-thresholds-path", type=click.Path(exists=True), default="megate_thresholds.yaml"
+)
+@click.option("--report-folder", type=str, default="figures")
+@click.option("--plot-only", is_flag=True)
+@click.option("--trace-data-path", type=str, default=None)
+def evaluate_emodels(
+    emodel_api,
+    emodel_path,
+    final_path,
+    exemplar_path,
+    sonata_path,
+    morphology_path,
+    ais_emodels_path,
+    regions,
+    emodel,
+    n_cells,
+    seed,
+    result_path,
+    parallel_factory,
+    clip,
+    feature_threshold,
+    megate_thresholds_path,
+    report_folder,
+    plot_only,
+    trace_data_path,
+):
+    """Evaluate exemplars and emodels."""
+    parallel_factory = init_parallel_factory(parallel_factory)
+    if regions[0] == "[":
+        regions = json.loads(regions)
+    else:
+        regions = [regions]
+
+    if not plot_only:
+        L.info("Evaluating exemplars")
+        exemplar_df = _evaluate_exemplars(
+            emodel_path,
+            final_path,
+            emodel_api,
+            parallel_factory,
+            emodel,
+            trace_data_path,
+        )
+        exemplar_df.to_csv(exemplar_path, index=False)
+    else:
+        exemplar_df = pd.read_csv(exemplar_path)
+
+    for region in regions:
+        L.info("Evaluating region %s", region)
+
+        region_folder = Path(f"region_{region}")
+        _result_path = Path(result_path) / region_folder
+        _result_path.mkdir(exist_ok=True, parents=True)
+        _report_folder = Path(report_folder) / region_folder
+        _report_folder.mkdir(exist_ok=True, parents=True)
+
+        if not plot_only:
+            result_df = _evaluate_emodels(
+                sonata_path,
+                morphology_path,
+                emodel_path,
+                final_path,
+                emodel_api,
+                ais_emodels_path,
+                region,
+                emodel,
+                n_cells,
+                seed,
+                parallel_factory,
+                trace_data_path,
+            )
+            result_df.to_csv(_result_path / "results.csv", index=False)
+        else:
+            result_df = pd.read_csv(_result_path / "results.csv")
+
+        _plot_reports(
+            exemplar_df, result_df, _report_folder, clip, feature_threshold, megate_thresholds_path
+        )
+
+
+# below not maintained, was used in sscx to fix some morphologies
+
+
 @cli.command("set_me_combos_scales_inplace")
 @click.option("--mecombos-path", type=click.Path(exists=True), required=False)
 @click.option("--to-fix-combos-path", type=click.Path(exists=True), required=False)
@@ -528,9 +929,9 @@ def _create_etype_column(cells, cell_composition):
 )
 @click.option("--morphology-path", type=click.Path(exists=True), required=False)
 @click.option("--fixed-morphology-path", default="fixed_morphologies", type=str)
-@click.option("--mecombo-emodel-tsv-path", default="mecombo_emodel.tsv", type=str)
+@click.option("--output-sonata-path", default="mecombo_emodel.tsv", type=str)
 @click.option("--combos-df-path", default="mecombo_emodel.tsv", type=str)
-@click.option("--emodel-api", default="singlecell", type=str)
+@click.option("--emodel-api", default="local", type=str)
 @click.option("--cell-composition-path", type=click.Path(exists=True), required=False)
 @click.option("--sql-tmp-path", default="tmp", type=str)
 @click.option("--parallel-lib", default="multiprocessing")
@@ -559,7 +960,7 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
         mecombo_emodel_tsv_path (str): path to .tsv file to save output data for each me-combos
         fixed_morphology_path (str): path to folder to save modified morphologies
         combos_df_path (str): path to .csv file to save all result dataframe
-        emodel_api (str): name of emodel api, so far only 'singlecell' is available
+        emodel_api (str): name of emodel api, so far only 'local' is available
         cell_composition_path (str): path to cell_composition.yaml
         protocol_config_path (str): path to yaml file with protocol config for bglibpy
         sql_tmp_path (str): path to a folder to save sql files used during computations
@@ -670,49 +1071,3 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
 
     # clean up the parallel library, if needed
     parallel_factory.shutdown()
-
-
-@cli.command("update_sonata")
-@click.option("--input-sonata-path", type=click.Path(exists=True), required=True)
-@click.option("--output-sonata-path", type=click.Path(exists=False), required=True)
-@click.option("--mecombo-emodel-path", type=click.Path(exists=True), required=True)
-@click.option("--remove-failed/--no-remove-failed", default=False)
-def update_sonata(input_sonata_path, output_sonata_path, mecombo_emodel_path, remove_failed):
-    """Update sonata file add threshols current, holding current and AIS_scaler.
-
-    Args:
-        input_sonata_path (str): path to sonata file to update
-        output_sonata_path (str): path to new sonata file
-        mecombo-emodel-path (str): path to mecombo_emodel.tsv file
-    """
-    mecombo_emodel = pd.read_csv(mecombo_emodel_path, sep=r"\s+")
-    bad_cells = mecombo_emodel[mecombo_emodel.isnull().any(axis=1)].index
-    L.info("Failed cells:")
-    L.info(mecombo_emodel.loc[bad_cells])
-
-    if remove_failed:
-        L.info("We remove failed cells")
-        # we remove combo_name here, so the remove_unassigned_cells() later will remove these cells
-        mecombo_emodel.loc[bad_cells, "combo_name"] = None
-    else:
-        L.info("We do not remove failed cells")
-        mecombo_emodel.loc[bad_cells, "AIS_scaler"] = 1
-        mecombo_emodel.loc[bad_cells, "threshold_current"] = 0
-        mecombo_emodel.loc[bad_cells, "holding_current"] = 0
-
-    cells = CellCollection.load(input_sonata_path)
-    mecombo_emodel = mecombo_emodel.set_index("morph_name")
-    cells.properties["me_combo"] = mecombo_emodel.loc[
-        cells.properties["morphology"], "combo_name"
-    ].to_list()
-    cells.properties["@dynamics:AIS_scaler"] = mecombo_emodel.loc[
-        cells.properties["morphology"], "AIS_scaler"
-    ].to_list()
-    cells.properties["@dynamics:threshold_current"] = mecombo_emodel.loc[
-        cells.properties["morphology"], "threshold_current"
-    ].to_list()
-    cells.properties["@dynamics:holding_current"] = mecombo_emodel.loc[
-        cells.properties["morphology"], "holding_current"
-    ].to_list()
-    cells.remove_unassigned_cells()
-    cells.save(output_sonata_path)
