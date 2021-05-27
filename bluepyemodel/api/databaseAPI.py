@@ -1,6 +1,10 @@
 """Abstract API class."""
 
+import glob
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseAPI:
@@ -139,3 +143,68 @@ class DatabaseAPI:
         checkpoint_path = Path(checkpoint_dir) / f"checkpoint__{self.emodel}__{githash}__{seed}.pkl"
 
         return checkpoint_path.is_file()
+
+    def _build_pdf_dependencies(self, seed, githash):
+        """Find all the pdfs associated to an emodel"""
+
+    def search_figure_path(self, pathname):
+        """Search for a single pdf based on an expression"""
+
+        matches = glob.glob(pathname)
+
+        if not matches:
+            logger.debug("No pdf for pathname %s", pathname)
+            return None
+
+        if len(matches) > 1:
+            raise Exception("More than one pdf for pathname %s" % pathname)
+
+        return matches[0]
+
+    def search_figure_efeatures(self, protocol_name, efeature):
+        """Search for the pdf representing the efeature extracted from ephys recordings"""
+
+        pdf_amp = self.search_figure_path(f"./{self.emodel}/*{protocol_name}_{efeature}_amp.pdf")
+
+        pdf_amp_rel = self.search_figure_path(
+            f"./{self.emodel}/*{protocol_name}_{efeature}_amp_rel.pdf"
+        )
+
+        return pdf_amp, pdf_amp_rel
+
+    def search_figure_emodel_optimisation(self, seed, githash=""):
+        """Search for the pdf representing the convergence of the optimisation"""
+
+        fname = f"checkpoint__{self.emodel}__{githash}__{seed}.pdf"
+        pathname = Path("./figures") / self.emodel / "optimisation" / fname
+
+        return self.search_figure_path(str(pathname))
+
+    def search_figure_emodel_traces(self, seed, githash=""):
+        """Search for the pdf representing the traces of an emodel"""
+
+        fname = f"{self.emodel}__{githash}__{seed}_traces.pdf"
+        pathname = Path("./figures") / self.emodel / "traces" / "all" / fname
+
+        return self.search_figure_path(str(pathname))
+
+    def search_figure_emodel_score(self, seed, githash=None):
+        """Search for the pdf representing the scores of an emodel"""
+
+        if githash:
+            fname = f"{self.emodel}_{githash}_{seed}_scores.pdf"
+        else:
+            fname = f"{self.emodel}_{seed}_scores.pdf"
+
+        pathname = Path("./figures") / self.emodel / "scores" / "all" / fname
+
+        return self.search_figure_path(str(pathname))
+
+    def search_figure_emodel_parameters(self):
+        """Search for the pdf representing the distribution of the parameters
+        of an emodel"""
+
+        fname = f"{self.emodel}_parameters_distribution.pdf"
+        pathname = Path("./figures") / self.emodel / "distributions" / "all" / fname
+
+        return self.search_figure_path(str(pathname))

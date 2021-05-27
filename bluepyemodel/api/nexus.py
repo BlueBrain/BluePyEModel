@@ -164,40 +164,33 @@ class NexusAPI(DatabaseAPI):
         for type_ in BPEM_NEXUS_SCHEMA:
             self.access_point.deprecate({"type": type_})
 
-    def store_channel_gene_expression(self, table_path):
+    def store_channel_gene_expression(
+        self, table_path, name="Mouse_met_types_ion_channel_expression"
+    ):
         """Create a channel gene expression resource containing the gene expression table.
 
         Args:
             table_path (str): path to the gene expression table
         """
 
-        # TODO: rewrite once the schema is defined
-        # The creation of a Dataset should be done in the access point
-
         if pathlib.Path(table_path).suffix != ".csv":
             raise NexusAPIException("Was expecting a .csv file")
 
-        distribution = self.access_point.forge.attach(table_path)
-
         dataset = Dataset(
             self.access_point.forge,
-            type=["Entity", "Dataset", "ChannelGeneExpressionTable"],
-            distribution=distribution,
+            type=["Entity", "Dataset", "RNASequencing"],
+            name=name,
+            brainLocation=self.brain_region,
+            description="Output from IC_selector module",
         )
+        dataset.add_distribution(table_path)
 
         self.access_point.forge.register(dataset)
 
-    def load_channel_gene_expression(self):
+    def load_channel_gene_expression(self, name):
         """Retrieve a channel gene expression resource and read its content"""
 
-        # TODO: rewrite once the schema is defined
-        dataset = self.access_point.fetch_one(
-            filters={
-                "type": "ChannelGeneExpressionTable",
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
-        )
+        dataset = self.access_point.fetch_one(filters={"type": "RNASequencing", "name": name})
 
         filepath = self.access_point.resource_location(dataset)[0]
 
@@ -205,18 +198,16 @@ class NexusAPI(DatabaseAPI):
 
         return df, filepath
 
-    def get_t_types(self):
+    def get_t_types(self, table_name):
         """Get the list of t-types available for the present emodel"""
 
-        df, _ = self.load_channel_gene_expression()
-
+        df, _ = self.load_channel_gene_expression(table_name)
         return df.loc[self.emodel].index.get_level_values("t-type").unique().tolist()
 
-    def get_channel_gene_expression(self, name, t_type=None):
+    def get_channel_gene_expression(self, t_type, table_name):
         """Get the channel gene expression for a given emodel and t-type"""
 
-        df, _ = self.load_channel_gene_expression()
-
+        df, _ = self.load_channel_gene_expression(table_name)
         return df.loc[self.emodel, t_type].to_dict(orient="records")
 
     def store_morphology(
@@ -826,6 +817,15 @@ class NexusAPI(DatabaseAPI):
             },
         }
 
+        pdf_amp, pdf_amp_rel = self.search_figure_efeatures(protocol_name, name)
+        pdfs = {}
+        if pdf_amp:
+            pdfs["amp"] = self.access_point.forge.attach(pdf_amp)
+        if pdf_amp_rel:
+            pdfs["amp_rel"] = self.access_point.forge.attach(pdf_amp_rel)
+        if pdfs:
+            resource_description["pdfs"] = pdfs
+
         if protocol_name and protocol_amplitude:
 
             # TODO: How to get the ontology for the stimulus ?
@@ -1015,6 +1015,7 @@ class NexusAPI(DatabaseAPI):
             )
 
         resource_dependencies = self._build_model_dependencies()
+        pdf_dependencies = self._build_pdf_dependencies(seed, githash)
 
         pip_freeze = os.popen("pip freeze").read()
 
@@ -1036,8 +1037,32 @@ class NexusAPI(DatabaseAPI):
                 "githash": githash,
                 "pip_freeze": pip_freeze,
                 "resource_dependencies": resource_dependencies,
+                "pdfs": pdf_dependencies,
             },
         )
+
+    def _build_pdf_dependencies(self, seed, githash):
+        """Find all the pdfs associated to an emodel"""
+
+        pdfs = {}
+
+        opt_pdf = self.search_figure_emodel_optimisation(seed, githash)
+        if opt_pdf:
+            pdfs["optimisation"] = self.access_point.forge.attach(opt_pdf)
+
+        traces_pdf = self.search_figure_emodel_traces(seed, githash)
+        if traces_pdf:
+            pdfs["traces"] = self.access_point.forge.attach(traces_pdf)
+
+        scores_pdf = self.search_figure_emodel_score(seed, githash)
+        if scores_pdf:
+            pdfs["scores"] = self.access_point.forge.attach(scores_pdf)
+
+        parameters_pdf = self.search_figure_emodel_parameters()
+        if parameters_pdf:
+            pdfs["parameters"] = self.access_point.forge.attach(parameters_pdf)
+
+        return pdfs
 
     def _build_model_dependencies(self):
         """Find all resources used during the building of the emodel"""

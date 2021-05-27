@@ -396,6 +396,8 @@ class SinglecellAPI(DatabaseAPI):
                         "Entry %s was already in the final.json and will be overwritten", model_name
                     )
 
+                pdf_dependencies = self._build_pdf_dependencies(int(seed), str(githash))
+
                 final[model_name] = {
                     "emodel": self.emodel,
                     "score": sum(list(scores.values())),
@@ -407,9 +409,33 @@ class SinglecellAPI(DatabaseAPI):
                     "optimizer": str(optimizer_name),
                     "seed": int(seed),
                     "githash": str(githash),
+                    "pdfs": pdf_dependencies,
                 }
 
                 self.save_final(final, lock_file=False)
+
+    def _build_pdf_dependencies(self, seed, githash):
+        """Find all the pdfs associated to an emodel"""
+
+        pdfs = {}
+
+        opt_pdf = self.search_figure_emodel_optimisation(seed, githash)
+        if opt_pdf:
+            pdfs["optimisation"] = opt_pdf
+
+        traces_pdf = self.search_figure_emodel_traces(seed, githash)
+        if traces_pdf:
+            pdfs["traces"] = traces_pdf
+
+        scores_pdf = self.search_figure_emodel_score(seed, githash)
+        if scores_pdf:
+            pdfs["scores"] = scores_pdf
+
+        parameters_pdf = self.search_figure_emodel_parameters()
+        if parameters_pdf:
+            pdfs["parameters"] = parameters_pdf
+
+        return pdfs
 
     def get_parameters(self):
         """Get the definition of the parameters that have to be optimized as well as the
