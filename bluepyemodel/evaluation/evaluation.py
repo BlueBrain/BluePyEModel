@@ -30,6 +30,7 @@ def compute_responses(
     cell_evaluator,
     map_function,
     seeds=None,
+    githashs=None,
     preselect_for_validation=False,
 ):
     """Compute the responses of the emodel to the optimisation and validation protocols.
@@ -42,6 +43,7 @@ def compute_responses(
         map_function (map): used to parallelize the evaluation of the
             individual in the population.
         seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        githashs (list): if not None, filter emodels to keep only the ones with these githashs.
         preselect_for_validation (bool): if True,
             only select models that have not been through validation yet.
     Returns:
@@ -51,6 +53,8 @@ def compute_responses(
     emodels = emodel_db.get_emodels([emodel])
     if seeds:
         emodels = [model for model in emodels if model["seed"] in seeds]
+    if githashs:
+        emodels = [model for model in emodels if model["githash"] in githashs]
     if preselect_for_validation:
         emodels = [model for model in emodels if model["validated"] is None]
 

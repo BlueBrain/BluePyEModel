@@ -568,11 +568,17 @@ class EModel_pipeline:
         if map_function is None:
             map_function = ipyparallel_map_function("USEIPYP")
 
+        if self.githash:
+            githashs = [self.githash]
+        else:
+            githashs = None
+
         return plotting.plot_models(
             self.db,
             self.emodel,
             mapper=map_function,
             seeds=seeds,
+            githashs=githashs,
             figures_dir=figures_dir,
             stochasticity=stochasticity,
             additional_protocols=additional_protocols,

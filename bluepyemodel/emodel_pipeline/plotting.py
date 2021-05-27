@@ -234,6 +234,7 @@ def plot_models(
     emodel,
     mapper,
     seeds=None,
+    githashs=None,
     figures_dir="./figures",
     stochasticity=False,
     additional_protocols=None,
@@ -252,6 +253,7 @@ def plot_models(
         mapper (map): used to parallelize the evaluation of the
             individual in the population.
         seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        githashs (list): if not None, filter emodels to keep only the ones with these githashs.
         figures_dir (str): path of the directory in which the figures should be saved.
         stochasticity (bool): should channels behave stochastically if they can.
         additional_protocols (dict): definition of supplementary protocols. See
@@ -278,17 +280,13 @@ def plot_models(
     )
 
     if plot_traces:
-        emodels = compute_responses(
-            emodel_db,
-            emodel,
-            cell_evaluator,
-            mapper,
-            seeds,
-        )
+        emodels = compute_responses(emodel_db, emodel, cell_evaluator, mapper, seeds, githashs)
     else:
         emodels = emodel_db.get_emodels([emodel])
         if seeds:
             emodels = [model for model in emodels if model["seed"] in seeds]
+        if githashs:
+            emodels = [model for model in emodels if model["githash"] in githashs]
 
     stimuli = cell_evaluator.fitness_protocols["main_protocol"].subprotocols()
 
