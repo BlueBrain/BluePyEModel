@@ -30,6 +30,7 @@ class NexusForgeAccessPoint:
         debug=False,
         cross_bucket=True,
         access_token=None,
+        version_tag=None,
     ):
 
         self.limit = limit
@@ -42,6 +43,8 @@ class NexusForgeAccessPoint:
 
         bucket = organisation + "/" + project
         self.forge = self.connect_forge(bucket, endpoint, self.access_token, forge_path)
+
+        self.version_tag = version_tag
 
     @staticmethod
     def get_access_token():
@@ -71,26 +74,28 @@ class NexusForgeAccessPoint:
 
         return forge
 
-    def register(self, resource_description, filters_existance=None, force_replace=False):
+    def register(self, resource_description, filters_existance=None, replace=False):
         """Register a resource from its dictionary description."""
 
         if "type" not in resource_description:
             raise AccessPointException("The resource description should contain 'type'.")
 
-        if filters_existance:
+        if filters_existance and self.version_tag:
+            filters_existance["version"] = self.version_tag
 
-            previous_resources = self.fetch(filters_existance)
+        previous_resources = self.fetch(filters_existance)
 
-            if previous_resources:
+        if filters_existance and previous_resources:
 
-                if not force_replace:
-                    logger.warning(
-                        "The resource you are trying to register already exist and will be ignored."
-                    )
-                    return
-
+            if replace:
                 for resource in previous_resources:
                     self.forge.deprecate(resource)
+
+            else:
+                logger.warning(
+                    "The resource you are trying to register already exist and will be ignored."
+                )
+                return
 
         self.forge.register(self.forge.from_json(resource_description))
 
@@ -106,11 +111,13 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch(self, filters):
+    def fetch(self, filters, use_version=True):
         """Fetch resources based on filters.
 
         Args:
             filters (dict): keys and values used for the "WHERE". Should include "type" or "id".
+            use_version (bool): if True, the search is restricted to the Resources that include
+                the current version tag.
 
         Returns:
             resources (list): list of resources
@@ -118,6 +125,9 @@ class NexusForgeAccessPoint:
 
         if "type" not in filters and "id" not in filters:
             raise AccessPointException("Search filters should contain either 'type' or 'id'.")
+
+        if use_version and self.version_tag:
+            filters["version"] = self.version_tag
 
         resources = self.forge.search(
             filters, cross_bucket=self.cross_bucket, limit=self.limit, debug=self.debug
@@ -130,10 +140,10 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch_one(self, filters):
+    def fetch_one(self, filters, use_version=True):
         """Fetch one and only one resource based on filters."""
 
-        resources = self.fetch(filters)
+        resources = self.fetch(filters, use_version=use_version)
 
         if resources is None:
             raise AccessPointException("Could not get resource for filters %s" % filters)
@@ -184,11 +194,16 @@ class NexusForgeAccessPoint:
 
         for distrib in distribution_iter:
 
+            filepath = None
+
             if hasattr(distrib, "atLocation"):
                 loc = self.forge.as_json(distrib.atLocation)
-                paths.append(loc["location"].replace("file:/", ""))
-            else:
+                if "location" in loc:
+                    filepath = loc["location"].replace("file:/", "")
+
+            if filepath is None:
                 filepath = self.download(resource.id)
-                paths.append(filepath)
+
+            paths.append(filepath)
 
         return paths

@@ -1,5 +1,6 @@
 """API using Nexus Forge"""
 
+import json
 import logging
 import os
 import pathlib
@@ -64,6 +65,8 @@ class NexusAPI(DatabaseAPI):
         organisation="demo",
         endpoint="https://bbp.epfl.ch/nexus/v1",
         forge_path=None,
+        ttype=None,
+        version_tag="0",
     ):
         """Init
 
@@ -75,18 +78,23 @@ class NexusAPI(DatabaseAPI):
             organisation (str): name of the Nexus organization to which the project belong.
             endpoint (str): Nexus endpoint.
             forge_path (str): path to a .yml used as configuration by nexus-forge.
+            ttype (str): name of the t-type. Required if using the gene expression or IC selector.
+            version_tag (str): tag associated to the current run. Used to tag the
+                Resources generated during the different run.
         """
 
         super().__init__(emodel)
 
         self.species = species
         self.brain_region = self.get_brain_region(brain_region)
+        self.ttype = ttype
 
         self.access_point = NexusForgeAccessPoint(
             project=project,
             organisation=organisation,
             endpoint=endpoint,
             forge_path=forge_path,
+            version_tag=version_tag,
         )
 
     def get_subject(self, for_search=False):
@@ -135,7 +143,7 @@ class NexusAPI(DatabaseAPI):
             },
         }
 
-    def fetch_emodel(self, seed=None, githash=None):
+    def fetch_emodel(self, seed=None, githash=None, use_version=True):
         """Fetch an emodel"""
 
         filters = {
@@ -151,7 +159,7 @@ class NexusAPI(DatabaseAPI):
         if githash:
             filters["githash"] = githash
 
-        resources = self.access_point.fetch(filters)
+        resources = self.access_point.fetch(filters, use_version=use_version)
 
         return resources
 
@@ -162,7 +170,8 @@ class NexusAPI(DatabaseAPI):
             return
 
         for type_ in BPEM_NEXUS_SCHEMA:
-            self.access_point.deprecate({"type": type_})
+            filters = {"type": type_}
+            self.access_point.deprecate(filters)
 
     def store_channel_gene_expression(
         self, table_path, name="Mouse_met_types_ion_channel_expression"
@@ -190,7 +199,9 @@ class NexusAPI(DatabaseAPI):
     def load_channel_gene_expression(self, name):
         """Retrieve a channel gene expression resource and read its content"""
 
-        dataset = self.access_point.fetch_one(filters={"type": "RNASequencing", "name": name})
+        dataset = self.access_point.fetch_one(
+            filters={"type": "RNASequencing", "name": name}, use_version=False
+        )
 
         filepath = self.access_point.resource_location(dataset)[0]
 
@@ -204,11 +215,57 @@ class NexusAPI(DatabaseAPI):
         df, _ = self.load_channel_gene_expression(table_name)
         return df.loc[self.emodel].index.get_level_values("t-type").unique().tolist()
 
-    def get_channel_gene_expression(self, t_type, table_name):
-        """Get the channel gene expression for a given emodel and t-type"""
+    def get_channel_gene_expression(self, table_name):
+        """Get the channel gene expression and gene distribution for a given emodel and t-type"""
 
         df, _ = self.load_channel_gene_expression(table_name)
-        return df.loc[self.emodel, t_type].to_dict(orient="records")
+
+        # TODO: improve for soma, axon, dendrites (data[1], data[2], data[3]),
+        # right now it uses only the somatic distribution
+        data = df.loc[self.emodel, self.ttype].to_dict(orient="records")
+        presence = data[0]
+        distrib = data[1]
+
+        gene_expression = {}
+        for gene in presence:
+            if int(presence[gene]):
+                gene_expression[gene] = distrib[gene]
+
+        return gene_expression
+
+    def get_mechanism_from_gene(self, path_mapping, gene, channel_version=None):
+        """Returns Nexus resource for a SubCellularModel file corresponding to a given
+        gene name.
+
+        Args:
+            path_mapping (str): path to the gene expression table
+            gene (str): name of the gene or protein for which to retrieve the channel name
+            version (str): version number of the mod files, if None, returns the
+                highest version number
+        """
+
+        mapping = json.load(open(path_mapping, "r"))
+
+        lower_gene = gene.lower()
+
+        if lower_gene in mapping["genes"]:
+            mechanism_name = mapping["genes"][lower_gene]["protein"]
+
+            filters = {"type": "SubCellularModel", "name": mechanism_name}
+
+            search_version = channel_version
+            if search_version is None:
+                if "versions" in mapping["genes"][lower_gene] and len(
+                    mapping["genes"][lower_gene]["versions"]
+                ):
+                    search_version = sorted(mapping["genes"][lower_gene]["versions"])[-1]
+
+            if search_version:
+                filters["version"] = search_version
+
+            return self.access_point.fetch_one(filters, use_version=False)
+
+        return None
 
     def store_morphology(
         self,
@@ -232,7 +289,9 @@ class NexusAPI(DatabaseAPI):
         if id_:
             resource = self.access_point.retrieve(id_)
         elif name:
-            resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
+            resource = self.access_point.fetch_one(
+                {"type": "NeuronMorphology", "name": name}, use_version=False
+            )
         else:
             raise NexusAPIException("At least id_ or name should be informed.")
 
@@ -296,8 +355,9 @@ class NexusAPI(DatabaseAPI):
                 {
                     "type": "Trace",
                     "name": name,
-                    "distribution": {"encodingFormat": "application/nwb"},
-                }
+                    # "distribution": {"encodingFormat": "application/nwb"},
+                },
+                use_version=False,
             )
         else:
             raise NexusAPIException("At least id_ or name should be informed.")
@@ -316,6 +376,16 @@ class NexusAPI(DatabaseAPI):
                 "cell": {"name": resource.name},
                 "ecode": ecode,
                 "recording_metadata": recording_metadata,
+            },
+            {
+                "type": "ElectrophysiologyFeatureExtractionTrace",
+                "eModel": self.emodel,
+                "name": f"{resource.name}_{ecode}",
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+                "trace": {"id": resource.id},
+                "cell": {"name": resource.name},
+                "ecode": ecode,
             },
         )
 
@@ -537,7 +607,7 @@ class NexusAPI(DatabaseAPI):
             value (list or float): value of the parameter. If value is a float, the parameter will
                 be fixed. If value is a list of two elements, the first will be used as a lower
                 bound and the second as an upper bound during the optimization.
-            location (list): locations at which the parameter is present. The element of location
+            location (str): locations at which the parameter is present. The element of location
                 have to be section list names.
             mechanism_name (str): name of the mechanism associated to the parameter.
             distribution (str): distribution of the parameters along the sections.
@@ -553,31 +623,30 @@ class NexusAPI(DatabaseAPI):
         if auto_handle_mechanism and mechanism_name and mechanism_name != "pas":
             self.store_mechanism(name=mechanism_name)
 
-        self.access_point.register(
-            {
-                "type": ["Entity", "Parameter", "ElectrophysiologyFeatureOptimisationParameter"],
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=False),
-                "brainLocation": self.brain_region,
-                "parameter": {
-                    "name": name,
-                    "minValue": min_value,
-                    "maxValue": max_value,
-                    "unitCode": "",
-                },
-                "location": [location],
-                "channelDistribution": distribution,
+        resource_description = {
+            "name": name,
+            "type": ["Entity", "Parameter", "ElectrophysiologyFeatureOptimisationParameter"],
+            "eModel": self.emodel,
+            "subject": self.get_subject(for_search=False),
+            "brainLocation": self.brain_region,
+            "parameter": {
+                "name": name,
+                "minValue": min_value,
+                "maxValue": max_value,
+                "unitCode": "",
             },
-            {
-                "type": "ElectrophysiologyFeatureOptimisationParameter",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-                "parameter": {"name": name},
-                "location": location[0],  # TODO: Not sure that that works
-                "channelDistribution": distribution,
-            },
-        )
+            "location": location,
+            "channelDistribution": distribution,
+        }
+
+        if mechanism_name:
+            resource_description["subCellularMechanism"] = mechanism_name
+
+        search_filters = resource_description.copy()
+        search_filters["subject"] = self.get_subject(for_search=True)
+        search_filters["type"] = "ElectrophysiologyFeatureOptimisationParameter"
+
+        self.access_point.register(resource_description, search_filters)
 
     def store_channel_distribution(
         self,
@@ -626,7 +695,9 @@ class NexusAPI(DatabaseAPI):
         if id_:
             resource = self.access_point.retrieve(id_)
         elif name:
-            resource = self.access_point.fetch_one({"type": "SubCellularModelScript", "name": name})
+            resource = self.access_point.fetch_one(
+                {"type": "SubCellularModelScript", "name": name}, use_version=False
+            )
         else:
             raise NexusAPIException("At least name or id_ should be informed.")
 
@@ -674,10 +745,9 @@ class NexusAPI(DatabaseAPI):
             else:
                 amplitudes = resource.stimulus.stimulusTarget
 
+            efel_settings = {}
             if hasattr(resource, "efel_settings"):
                 efel_settings = self.access_point.forge.as_json(resource.efel_settings)
-            else:
-                efel_settings = {}
 
             efeatures = self.access_point.forge.as_json(resource.feature)
             if not isinstance(efeatures, list):
@@ -687,7 +757,7 @@ class NexusAPI(DatabaseAPI):
                 for f in efeatures:
                     targets.append(
                         {
-                            "efeature": f,
+                            "efeature": f["name"],
                             "protocol": ecode,
                             "amplitude": amp,
                             "tolerance": tol,
@@ -712,7 +782,7 @@ class NexusAPI(DatabaseAPI):
 
         traces_metadata = {}
 
-        for ecode in targets:
+        for protocol in list(set(t["protocol"] for t in targets)):
 
             resources_ephys = self.access_point.fetch(
                 filters={
@@ -720,14 +790,13 @@ class NexusAPI(DatabaseAPI):
                     "eModel": self.emodel,
                     "subject": self.get_subject(for_search=True),
                     "brainLocation": self.brain_region,
-                    "ecode": ecode,
-                }
+                    "ecode": protocol,
+                },
             )
 
             if resources_ephys is None:
                 raise NexusAPIException(
-                    "Could not get ephys files for ecode %s,  emodel %s" % ecode,
-                    self.emodel,
+                    "Could not get ephys files for ecode %s, emodel %s" % (protocol, self.emodel)
                 )
 
             for resource in resources_ephys:
@@ -772,8 +841,9 @@ class NexusAPI(DatabaseAPI):
                 "eModel": self.emodel,
                 "subject": self.get_subject(for_search=True),
                 "brainLocation": self.brain_region,
-            }
+            },
         )
+
         if resources_extraction_target is None:
             logger.warning(
                 "NexusForge warning: could not get extraction metadata for emodel %s", self.emodel
@@ -937,7 +1007,7 @@ class NexusAPI(DatabaseAPI):
                         "stimulusTarget": float(prot_amplitude),
                     },
                     "path": "",
-                    "definition": {
+                    "protocolDefinition": {
                         "step": {
                             "delay": protocol["step"]["delay"],
                             "amplitude": protocol["step"]["amp"],
@@ -1003,43 +1073,42 @@ class NexusAPI(DatabaseAPI):
             for k, v in params.items():
                 parameters_resource.append({"name": k, "value": v, "unitCode": ""})
 
-        resources = self.fetch_emodel(seed=seed, githash=githash)
-
-        if resources:
-            logger.warning(
-                "The resource Emodel %s, seed %s, githash %s already exist. "
-                "Deprecate it if you wish to replace it.",
-                self.emodel,
-                seed,
-                githash,
-            )
-
-        resource_dependencies = self._build_model_dependencies()
         pdf_dependencies = self._build_pdf_dependencies(seed, githash)
 
         pip_freeze = os.popen("pip freeze").read()
 
-        self.access_point.register(
-            {
-                "type": ["Entity", "EModel"],
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=False),
-                "brainLocation": self.brain_region,
-                "name": "{}_{}_{}".format(self.emodel, githash, seed),
-                "fitness": sum(list(scores.values())),
-                "parameter": parameters_resource,
-                "score": scores_resource,
-                "features": features_resource,
-                "scoreValidation": scores_validation_resource,
-                "passedValidation": validated,
-                "optimizer": str(optimizer_name),
-                "seed": seed,
-                "githash": githash,
-                "pip_freeze": pip_freeze,
-                "resource_dependencies": resource_dependencies,
-                "pdfs": pdf_dependencies,
-            },
-        )
+        resource_description = {
+            "type": ["Entity", "EModel"],
+            "eModel": self.emodel,
+            "subject": self.get_subject(for_search=False),
+            "brainLocation": self.brain_region,
+            "name": "{} {}".format(self.emodel, seed),
+            "fitness": sum(list(scores.values())),
+            "parameter": parameters_resource,
+            "score": scores_resource,
+            "features": features_resource,
+            "scoreValidation": scores_validation_resource,
+            "passedValidation": validated,
+            "optimizer": str(optimizer_name),
+            "seed": seed,
+            "githash": githash,
+            "pip_freeze": pip_freeze,
+            "pdfs": pdf_dependencies,
+        }
+
+        search = {
+            "type": "EModel",
+            "subject": self.get_subject(for_search=True),
+            "brainLocation": self.brain_region,
+            "seed": seed,
+            "name": "{} {}".format(self.emodel, seed),
+            "githash": githash,
+        }
+
+        if self.ttype:
+            resource_description["ttype"] = self.ttype
+
+        self.access_point.register(resource_description, search, replace=True)
 
     def _build_pdf_dependencies(self, seed, githash):
         """Find all the pdfs associated to an emodel"""
@@ -1063,79 +1132,6 @@ class NexusAPI(DatabaseAPI):
             pdfs["parameters"] = self.access_point.forge.attach(parameters_pdf)
 
         return pdfs
-
-    def _build_model_dependencies(self):
-        """Find all resources used during the building of the emodel"""
-
-        parameters = self.access_point.fetch(
-            filters={
-                "type": "ElectrophysiologyFeatureOptimisationParameter",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
-        )
-
-        distributions = []
-        for resource in parameters:
-            if resource.channelDistribution != "constant":
-                distributions.append(resource.channelDistribution)
-        distributions = self.get_distributions(set(distributions))
-
-        mechanisms = []
-        for resource in parameters:
-            if (
-                hasattr(resource, "subCellularMechanism")
-                and resource.subCellularMechanism is not None
-                and resource.subCellularMechanism != "pas"
-            ):
-                mechanisms.append(
-                    self.access_point.fetch_one(
-                        filters={
-                            "type": "SubCellularModel",
-                            "subCellularMechanism": resource.subCellularMechanism,
-                        }
-                    )
-                )
-
-        opt_targets = self.get_opt_targets(include_validation=True)
-
-        target_protocols = []
-        for resource_target in opt_targets:
-            if resource_target.protocolType not in ["StepProtocol", "StepThresholdProtocol"]:
-                continue
-            resource_protocol, _ = self.fetch_extraction_protocol(resource_target)
-            target_protocols.append(resource_protocol)
-
-        target_efeatures = []
-        for resource_target in opt_targets:
-            for feature in resource_target.feature:
-                target_efeatures.append(
-                    self.fetch_extraction_efeature(
-                        feature.name,
-                        resource_target.stimulus.stimulusType.label,
-                        resource_target.stimulus.target,
-                    )
-                )
-
-        morphology = self.access_point.fetch_one(
-            filters={
-                "type": "ElectrophysiologyFeatureOptimisationNeuronMorphology",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
-        )
-
-        return {
-            "opt_targets": opt_targets,
-            "target_protocols": target_protocols,
-            "target_efeatures": target_efeatures,
-            "parameters": parameters,
-            "distributions": distributions,
-            "mechanisms": mechanisms,
-            "morphology": morphology,
-        }
 
     def get_emodels(self, emodels):
         """Get the list of emodels.
@@ -1324,7 +1320,16 @@ class NexusAPI(DatabaseAPI):
                         }
                     )
                     is_stochastic = resource_mech.stochastic
-                    _ = self.access_point.download(resource_mech.modelScript.id, "./mechanisms/")
+                    filepath = self.access_point.download(
+                        resource_mech.modelScript.id, "./mechanisms/"
+                    )
+                    # Rename the file in case its different from the name of the resource
+                    filename = pathlib.Path(filepath).stem
+                    if filename != resource_mech.name:
+                        filename.rename(
+                            pathlib.Path(filename.parent / f"{resource_mech.name}{filename.suffix}")
+                        )
+
                 else:
                     is_stochastic = False
 
@@ -1417,13 +1422,17 @@ class NexusAPI(DatabaseAPI):
         # be used directly for the fetch as filters does not alllow to check
         # equality of lists.
         if resources_protocol:
-            resources_protocol = [
-                r
-                for r in resources_protocol
-                if int(r.stimulus.stimulusTarget) == int(resource_target.stimulus.target)
-            ]
+            resources = []
+            for r in resources_protocol:
+                tmp_amp = None
+                if isinstance(r.stimulus.stimulusTarget, list):
+                    tmp_amp = int(r.stimulus.stimulusTarget[0])
+                else:
+                    tmp_amp = int(r.stimulus.stimulusTarget)
+                if tmp_amp == int(resource_target.stimulus.target):
+                    resources.append(r)
 
-        if resources_protocol is None:
+        if resources is None:
             raise NexusAPIException(
                 "Could not get protocol %s %s %% for emodel %s"
                 % (
@@ -1433,7 +1442,7 @@ class NexusAPI(DatabaseAPI):
                 )
             )
 
-        if len(resources_protocol) > 1:
+        if len(resources) > 1:
             raise NexusAPIException(
                 "More than one protocol %s %s %% for emodel %s"
                 % (
@@ -1444,11 +1453,11 @@ class NexusAPI(DatabaseAPI):
             )
 
         protocol_name = "{}_{}".format(
-            resources_protocol[0].stimulus.stimulusType.label,
-            resources_protocol[0].stimulus.stimulusTarget,
+            resources[0].stimulus.stimulusType.label,
+            resources[0].stimulus.stimulusTarget,
         )
 
-        return resources_protocol[0], protocol_name
+        return resources[0], protocol_name
 
     def get_protocols(self, include_validation=False):
         """Get the protocol definitions used to instantiate the CellEvaluator.
@@ -1476,8 +1485,8 @@ class NexusAPI(DatabaseAPI):
 
             resource_protocol, protocol_name = self.fetch_extraction_protocol(resource_target)
 
-            stimulus = self.access_point.forge.as_json(resource_protocol.definition.step)
-            stimulus["holding_current"] = resource_protocol.definition.holding.amplitude
+            stimulus = self.access_point.forge.as_json(resource_protocol.protocolDefinition.step)
+            stimulus["holding_current"] = resource_protocol.protocolDefinition.holding.amplitude
 
             if hasattr(resource_target, "extraRecordings"):
                 extra_recordings = resource_target.extraRecordings
@@ -1510,23 +1519,32 @@ class NexusAPI(DatabaseAPI):
         # be used directly for the fetch as filters does not alllow to check
         # equality of lists.
         if resources_feature:
-            resources_feature = [
-                r for r in resources_feature if int(r.stimulus.stimulusTarget) == int(amplitude)
-            ]
+            resources = []
+            for r in resources_feature:
 
-        if resources_feature is None:
+                tmp_amp = None
+
+                if isinstance(r.stimulus.stimulusTarget, list):
+                    tmp_amp = int(r.stimulus.stimulusTarget[0])
+                else:
+                    tmp_amp = int(r.stimulus.stimulusTarget)
+
+                if tmp_amp == int(amplitude):
+                    resources.append(r)
+
+        if resources is None:
             raise NexusAPIException(
                 "Could not get feature %s for %s %s %% for emodel %s"
                 % (name, stimulus, amplitude, self.emodel)
             )
 
-        if len(resources_feature) > 1:
+        if len(resources) > 1:
             raise NexusAPIException(
                 "More than one feature %s for %s %s %% for emodel %s"
                 % (name, stimulus, amplitude, self.emodel)
             )
 
-        return resources_feature[0]
+        return resources[0]
 
     def get_features(self, include_validation=False):
         """Get the e-features used as targets in the CellEvaluator.
@@ -1671,7 +1689,7 @@ class NexusAPI(DatabaseAPI):
             }
         )
 
-        filepath = self.access_point.resource_location(resource_morphology)[0]
+        filepath = self.access_point.download(resource_morphology.morphology.id)
 
         return {
             "name": resource_morphology.name,

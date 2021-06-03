@@ -175,15 +175,19 @@ class DatabaseAPI:
     def search_figure_emodel_optimisation(self, seed, githash=""):
         """Search for the pdf representing the convergence of the optimisation"""
 
-        fname = f"checkpoint__{self.emodel}__{githash}__{seed}.pdf"
-        pathname = Path("./figures") / self.emodel / "optimisation" / fname
+        if githash:
+            fname = f"checkpoint__{self.emodel}__{githash}__{seed}.pdf"
+        else:
+            fname = f"checkpoint__{self.emodel}__{seed}.pdf"
+
+        pathname = Path("./figures") / self.emodel / fname
 
         return self.search_figure_path(str(pathname))
 
     def search_figure_emodel_traces(self, seed, githash=""):
         """Search for the pdf representing the traces of an emodel"""
 
-        fname = f"{self.emodel}__{githash}__{seed}_traces.pdf"
+        fname = f"{self.emodel}_{githash}_{seed}_traces.pdf"
         pathname = Path("./figures") / self.emodel / "traces" / "all" / fname
 
         return self.search_figure_path(str(pathname))

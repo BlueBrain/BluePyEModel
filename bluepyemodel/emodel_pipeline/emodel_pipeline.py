@@ -159,6 +159,8 @@ class EModel_pipeline:
         nexus_organisation="demo",
         nexus_projet="emodel_pipeline",
         nexus_enpoint="https://bbp.epfl.ch/nexus/v1",
+        ttype=None,
+        nexus_version_tag=None,
     ):
         """Initialize the emodel_pipeline.
 
@@ -179,6 +181,14 @@ class EModel_pipeline:
                 be generated. The pipeline will expect a git repository to exist in working_dir.
             githash (str): if provided, the pipeline will work in the directory
                 working_dir/run/githash. Needed when continuing work or resuming optimisations.
+            nexus_organisation (str): name of the Nexus organisation in which the project is
+                located.
+            nexus_projet (str): name of the Nexus project to which the forge will connect to
+                retrieve the data
+            nexus_enpoint (str): url of the Nexus endpoint (prod or staging)
+            ttype (str): name of the t-type. Required if using the gene expression or IC selector.
+            nexus_version_tag (str): tag associated to the current run. Used to tag the
+                Resources generated during the different run
         """
 
         self.emodel = emodel
@@ -213,7 +223,14 @@ class EModel_pipeline:
             self.githash = None
 
         self.db = self.connect_db(
-            db_api, recipes_path, nexus_organisation, nexus_projet, nexus_enpoint, forge_path
+            db_api,
+            recipes_path,
+            nexus_organisation,
+            nexus_projet,
+            nexus_enpoint,
+            forge_path,
+            ttype,
+            nexus_version_tag,
         )
 
     @property
@@ -223,7 +240,15 @@ class EModel_pipeline:
         return "./"
 
     def connect_db(
-        self, db_api, recipes_path, nexus_organisation, nexus_projet, nexus_enpoint, forge_path
+        self,
+        db_api,
+        recipes_path,
+        nexus_organisation,
+        nexus_projet,
+        nexus_enpoint,
+        forge_path,
+        ttype,
+        nexus_version_tag,
     ):
         """
         Instantiate the api from which the pipeline will get and store the data.
@@ -240,6 +265,8 @@ class EModel_pipeline:
             project=nexus_projet,
             endpoint=nexus_enpoint,
             forge_path=forge_path,
+            ttype=ttype,
+            version_tag=nexus_version_tag,
         )
 
     def get_evaluator(

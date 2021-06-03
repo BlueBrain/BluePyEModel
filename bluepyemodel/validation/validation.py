@@ -2,6 +2,8 @@
 
 import logging
 
+import numpy
+
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 from bluepyemodel.validation import validation_functions
@@ -83,7 +85,10 @@ def validate(
         for mo in emodels:
 
             mo["scores"] = cell_evaluator.fitness_calculator.calculate_scores(mo["responses"])
-            mo["features"] = cell_evaluator.fitness_calculator.calculate_values(mo["responses"])
+
+            values = cell_evaluator.fitness_calculator.calculate_values(mo["responses"])
+            # turn features from arrays to float to be json serializable
+            mo["features"] = {k: float(numpy.mean(v)) for k, v in values.items()}
 
             mo["scores_validation"] = {}
             for feature_names, score in mo["scores"].items():

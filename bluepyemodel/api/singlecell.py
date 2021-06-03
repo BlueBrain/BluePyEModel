@@ -650,6 +650,9 @@ class SinglecellAPI(DatabaseAPI):
             if key in model_data:
                 out_data[key] = model_data[key]
 
+        if "validated" not in out_data:
+            out_data["validated"] = None
+
         return out_data
 
     def get_emodel(self):
