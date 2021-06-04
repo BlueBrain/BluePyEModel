@@ -93,6 +93,13 @@ def setup_and_run_optimisation(
     )
 
     opt_params = access_point.pipeline_settings.optimisation_params
+    if "centroids" in opt_params and isinstance(opt_params["centroids"][0], dict):
+        opt_params["centroids"][0] = [
+            opt_params["centroids"][0][name] for name in list(cell_evaluator.param_names)
+        ]
+    if opt_params is None and access_point.pipeline_settings.optimizer.endswith("CMA"):
+        opt_params = {"offspring_size": 10, "weight_hv": 0.4}
+
     opt_params["seed"] = seed
 
     opt = setup_optimizer(

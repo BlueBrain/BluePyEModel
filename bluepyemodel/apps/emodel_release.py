@@ -682,7 +682,7 @@ def _evaluate_emodels(
 
     combos_df = CellCollection.load_sonata(sonata_path).as_dataframe()
     combos_df["path"] = morphology_path + "/" + combos_df["morphology"] + ".asc"
-    combos_df["emodel"] = combos_df["model_template"].apply(lambda m: m.split(":")[-1])
+    combos_df["emodel"] = combos_df["model_template"].str.rsplit(":", 1, expand=True)[1]
     if region is not None:
         combos_df = combos_df[combos_df.region == region]
 

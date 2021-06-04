@@ -72,24 +72,25 @@ class LocalAccessPoint(DataAccessPoint):
         else:
             self.final_path = Path(final_path)
 
+        # variable to set if one wants to save a new final path after optimisation
+        self.new_final_path = None
+
         Path(".tmp/").mkdir(exist_ok=True)
         self.rw_lock_final = fasteners.InterProcessReaderWriterLock(".tmp/final.lock")
         self.rw_lock_final_tmp = fasteners.InterProcessReaderWriterLock(".tmp/final_tmp.lock")
 
         self.pipeline_settings = self.load_pipeline_settings()
+        self.unfrozen_params = None
 
     def set_emodel(self, emodel):
-        """Setter for the name of the emodel."""
-        if self.with_seeds:
-            _emodel = "_".join(emodel.split("_")[:2])
-        else:
-            _emodel = emodel
-
+        """Setter for the name of the emodel, check it exists (with or without seed) in recipe."""
+        _emodel = "_".join(emodel.split("_")[:2]) if self.with_seeds else emodel
         if _emodel not in self.get_all_recipes():
             raise Exception(
                 f"Cannot set the emodel name to {_emodel} which does not exist in the recipes."
             )
 
+        self.unfrozen_params = None
         self.emodel = emodel
 
     def load_pipeline_settings(self):
@@ -136,23 +137,23 @@ class LocalAccessPoint(DataAccessPoint):
 
         return final
 
-    def save_final(self, final, lock_file=True):
+    def save_final(self, final, final_path, lock_file=True):
         """Save final emodels in json"""
 
-        if self.final_path is None:
+        if final_path is None:
             raise Exception("Final_path is None")
 
         if lock_file:
             self.rw_lock_final.acquire_write_lock()
 
-        with open(self.final_path, "w+") as fp:
+        with open(final_path, "w+") as fp:
             json.dump(final, fp, indent=2)
 
         if lock_file:
             self.rw_lock_final.release_write_lock()
             self.rw_lock_final_tmp.acquire_write_lock()
 
-        with open(self.final_path.with_name(self.final_path.stem + "_tmp.json"), "w+") as fp:
+        with open(final_path.with_name(final_path.stem + "_tmp.json"), "w+") as fp:
             json.dump(final, fp, indent=2)
 
         if lock_file:
@@ -416,10 +417,18 @@ class LocalAccessPoint(DataAccessPoint):
 
                 pdf_dependencies = self._build_pdf_dependencies(int(seed), str(githash))
 
+                if self.new_final_path is None:
+                    final_path = self.final_path
+                    _params = params
+                else:
+                    _params = final[self.emodel]["params"]
+                    _params.update(params)
+                    final_path = self.new_final_path
+
                 final[model_name] = {
                     "emodel": self.emodel,
                     "score": sum(list(scores.values())),
-                    "params": params,
+                    "params": _params,
                     "fitness": scores,
                     "features": features,
                     "validation_fitness": scores_validation,
@@ -429,8 +438,7 @@ class LocalAccessPoint(DataAccessPoint):
                     "githash": str(githash),
                     "pdfs": pdf_dependencies,
                 }
-
-                self.save_final(final, lock_file=False)
+                self.save_final(final, Path(final_path), lock_file=False)
 
     def _build_pdf_dependencies(self, seed, githash):
         """Find all the pdfs associated to an emodel"""
@@ -455,6 +463,20 @@ class LocalAccessPoint(DataAccessPoint):
 
         return pdfs
 
+    def set_unfrozen_params(self, params):
+        """Freeze parameters for partial optimisation."""
+        # todo: check if params exists in final.json
+        self.unfrozen_params = params
+
+    def _freeze_params(self, params):
+        """Freeze parameters to final except these in self.unfrozen_params."""
+        emodel_params = self.get_emodel()["parameters"]
+        for loc in params:
+            for param in params[loc]:
+                name = ".".join([param["name"], loc])
+                if name not in self.unfrozen_params and isinstance(param["val"], list):
+                    param["val"] = emodel_params[name]
+
     def get_parameters(self):
         """Get the definition of the parameters that have to be optimized as well as the
          locations of the mechanisms. Also returns the name of the mechanisms.
@@ -473,6 +495,8 @@ class LocalAccessPoint(DataAccessPoint):
         }
 
         params_definition["parameters"].pop("__comment", None)
+        if self.unfrozen_params is not None:
+            self._freeze_params(params_definition["parameters"])
 
         mech_definition = parameters["mechanisms"]
         mech_names = []
