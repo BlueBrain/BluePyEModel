@@ -80,10 +80,11 @@ class NexusForgeAccessPoint:
         if "type" not in resource_description:
             raise AccessPointException("The resource description should contain 'type'.")
 
-        if filters_existance and self.version_tag:
-            filters_existance["version"] = self.version_tag
-
-        previous_resources = self.fetch(filters_existance)
+        previous_resources = None
+        if filters_existance:
+            if self.version_tag:
+                filters_existance["version"] = self.version_tag
+            previous_resources = self.fetch(filters_existance)
 
         if filters_existance and previous_resources:
 

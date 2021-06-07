@@ -86,9 +86,14 @@ def validate(
 
             mo["scores"] = cell_evaluator.fitness_calculator.calculate_scores(mo["responses"])
 
-            values = cell_evaluator.fitness_calculator.calculate_values(mo["responses"])
             # turn features from arrays to float to be json serializable
-            mo["features"] = {k: float(numpy.mean(v)) for k, v in values.items()}
+            mo["features"] = {}
+            values = cell_evaluator.fitness_calculator.calculate_values(mo["responses"])
+            for key, value in values.items():
+                if value:
+                    mo["features"][key] = float(numpy.mean([v for v in value if v]))
+                else:
+                    mo["features"][key] = None
 
             mo["scores_validation"] = {}
             for feature_names, score in mo["scores"].items():

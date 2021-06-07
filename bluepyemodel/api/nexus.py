@@ -1101,7 +1101,6 @@ class NexusAPI(DatabaseAPI):
             "subject": self.get_subject(for_search=True),
             "brainLocation": self.brain_region,
             "seed": seed,
-            "name": "{} {}".format(self.emodel, seed),
             "githash": githash,
         }
 
