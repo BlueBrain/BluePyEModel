@@ -123,7 +123,7 @@ class eFELFeatureBPEM(eFELFeature):
     def calculate_feature(self, responses, raise_warnings=False):
         """Calculate feature value"""
         if self.efel_feature_name.startswith("bpo_"):
-            feature_values = numpy.array(self.calculate_bpo_feature(responses))
+            feature_values = numpy.array([self.calculate_bpo_feature(responses)])
 
         else:
             efel_trace = self._construct_efel_trace(responses)
@@ -173,6 +173,7 @@ class eFELFeatureBPEM(eFELFeature):
                 logger.debug("Calculated score for %s: %f", self.name, score)
 
             score = numpy.min([score, self.max_score])
+
         return score
 
 
@@ -700,6 +701,7 @@ def create_evaluator(
         features_definition,
         stochasticity,
     )
+
     fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}
 

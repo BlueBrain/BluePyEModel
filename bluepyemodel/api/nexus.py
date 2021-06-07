@@ -66,7 +66,7 @@ class NexusAPI(DatabaseAPI):
         endpoint="https://bbp.epfl.ch/nexus/v1",
         forge_path=None,
         ttype=None,
-        version_tag="0",
+        iteration_tag=None,
     ):
         """Init
 
@@ -79,7 +79,7 @@ class NexusAPI(DatabaseAPI):
             endpoint (str): Nexus endpoint.
             forge_path (str): path to a .yml used as configuration by nexus-forge.
             ttype (str): name of the t-type. Required if using the gene expression or IC selector.
-            version_tag (str): tag associated to the current run. Used to tag the
+            iteration_tag (str): tag associated to the current run. Used to tag the
                 Resources generated during the different run.
         """
 
@@ -94,7 +94,7 @@ class NexusAPI(DatabaseAPI):
             organisation=organisation,
             endpoint=endpoint,
             forge_path=forge_path,
-            version_tag=version_tag,
+            iteration_tag=iteration_tag,
         )
 
     def get_subject(self, for_search=False):
@@ -1091,7 +1091,6 @@ class NexusAPI(DatabaseAPI):
             "passedValidation": validated,
             "optimizer": str(optimizer_name),
             "seed": seed,
-            "githash": githash,
             "pip_freeze": pip_freeze,
             "pdfs": pdf_dependencies,
         }
@@ -1101,8 +1100,11 @@ class NexusAPI(DatabaseAPI):
             "subject": self.get_subject(for_search=True),
             "brainLocation": self.brain_region,
             "seed": seed,
-            "githash": githash,
         }
+
+        if githash:
+            resource_description["githash"] = githash
+            search["githash"] = githash
 
         if self.ttype:
             resource_description["ttype"] = self.ttype
@@ -1453,7 +1455,7 @@ class NexusAPI(DatabaseAPI):
 
         protocol_name = "{}_{}".format(
             resources[0].stimulus.stimulusType.label,
-            resources[0].stimulus.stimulusTarget,
+            resources[0].stimulus.stimulusTarget[0],
         )
 
         return resources[0], protocol_name

@@ -160,7 +160,7 @@ class EModel_pipeline:
         nexus_projet="emodel_pipeline",
         nexus_enpoint="https://bbp.epfl.ch/nexus/v1",
         ttype=None,
-        nexus_version_tag=None,
+        nexus_iteration_tag=None,
     ):
         """Initialize the emodel_pipeline.
 
@@ -187,7 +187,7 @@ class EModel_pipeline:
                 retrieve the data
             nexus_enpoint (str): url of the Nexus endpoint (prod or staging)
             ttype (str): name of the t-type. Required if using the gene expression or IC selector.
-            nexus_version_tag (str): tag associated to the current run. Used to tag the
+            nexus_iteration_tag (str): tag associated to the current run. Used to tag the
                 Resources generated during the different run
         """
 
@@ -230,7 +230,7 @@ class EModel_pipeline:
             nexus_enpoint,
             forge_path,
             ttype,
-            nexus_version_tag,
+            nexus_iteration_tag,
         )
 
     @property
@@ -248,7 +248,7 @@ class EModel_pipeline:
         nexus_enpoint,
         forge_path,
         ttype,
-        nexus_version_tag,
+        nexus_iteration_tag,
     ):
         """
         Instantiate the api from which the pipeline will get and store the data.
@@ -266,7 +266,7 @@ class EModel_pipeline:
             endpoint=nexus_enpoint,
             forge_path=forge_path,
             ttype=ttype,
-            version_tag=nexus_version_tag,
+            iteration_tag=nexus_iteration_tag,
         )
 
     def get_evaluator(

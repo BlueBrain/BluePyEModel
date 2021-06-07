@@ -24,7 +24,7 @@ def get_db(api, emodel, **kwargs):
         endpoint (str): Nexus endpoint.
         forge_path (str): path to a .yml used as configuration by nexus-forge.
         ttype (str): name of the t-type.
-        version_tag (str): tag associated to the current run. Used to tag the
+        iteration_tag (str): tag associated to the current run. Used to tag the
             Resources generated during the different run.
 
     Returns:
@@ -43,7 +43,7 @@ def get_db(api, emodel, **kwargs):
             endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
             forge_path=kwargs.get("forge_path", None),
             ttype=kwargs.get("ttype", None),
-            version_tag=kwargs.get("version_tag", None),
+            iteration_tag=kwargs.get("iteration_tag", None),
         )
 
     if api == "singlecell":

@@ -30,7 +30,7 @@ class NexusForgeAccessPoint:
         debug=False,
         cross_bucket=True,
         access_token=None,
-        version_tag=None,
+        iteration_tag=None,
     ):
 
         self.limit = limit
@@ -44,7 +44,7 @@ class NexusForgeAccessPoint:
         bucket = organisation + "/" + project
         self.forge = self.connect_forge(bucket, endpoint, self.access_token, forge_path)
 
-        self.version_tag = version_tag
+        self.iteration_tag = iteration_tag
 
     @staticmethod
     def get_access_token():
@@ -74,7 +74,7 @@ class NexusForgeAccessPoint:
 
         return forge
 
-    def register(self, resource_description, filters_existance=None, replace=False):
+    def register(self, resource_description, filters_existance=None, replace=False, tag=True):
         """Register a resource from its dictionary description."""
 
         if "type" not in resource_description:
@@ -82,8 +82,6 @@ class NexusForgeAccessPoint:
 
         previous_resources = None
         if filters_existance:
-            if self.version_tag:
-                filters_existance["version"] = self.version_tag
             previous_resources = self.fetch(filters_existance)
 
         if filters_existance and previous_resources:
@@ -97,6 +95,9 @@ class NexusForgeAccessPoint:
                     "The resource you are trying to register already exist and will be ignored."
                 )
                 return
+
+        if tag and self.iteration_tag:
+            resource_description["iteration"] = self.iteration_tag
 
         self.forge.register(self.forge.from_json(resource_description))
 
@@ -127,8 +128,8 @@ class NexusForgeAccessPoint:
         if "type" not in filters and "id" not in filters:
             raise AccessPointException("Search filters should contain either 'type' or 'id'.")
 
-        if use_version and self.version_tag:
-            filters["version"] = self.version_tag
+        if use_version and self.iteration_tag:
+            filters["iteration"] = self.iteration_tag
 
         resources = self.forge.search(
             filters, cross_bucket=self.cross_bucket, limit=self.limit, debug=self.debug
@@ -170,10 +171,10 @@ class NexusForgeAccessPoint:
 
         return str(file_path)
 
-    def deprecate(self, filters):
+    def deprecate(self, filters, use_version=True):
         """Deprecate resources based on filters."""
 
-        resources = self.fetch(filters)
+        resources = self.fetch(filters, use_version=use_version)
 
         if resources:
             for resource in resources:
