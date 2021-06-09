@@ -82,6 +82,10 @@ class NexusForgeAccessPoint:
 
         previous_resources = None
         if filters_existance:
+
+            if tag and self.iteration_tag:
+                filters_existance["iteration"] = self.iteration_tag
+
             previous_resources = self.fetch(filters_existance)
 
         if filters_existance and previous_resources:
@@ -99,7 +103,26 @@ class NexusForgeAccessPoint:
         if tag and self.iteration_tag:
             resource_description["iteration"] = self.iteration_tag
 
-        self.forge.register(self.forge.from_json(resource_description))
+        logger.debug("Registering resources: %s", resource_description)
+
+        resource = self.forge.from_json(resource_description)
+        self.forge.register(resource)
+
+        # TODO
+        # synchronized = False
+        # searchable = False
+        # while(not synchronized or not searchable):
+        #    time.sleep(0.1)
+        #    logger.debug(
+        #        "Waiting for synchronization: synchronized %s, "
+        #        "searchable %s", (synchronized, searchable)
+        #     )
+        #    synchronized = resource._synchronized
+        #    searchable = bool(
+        #        self.forge.search(
+        #            {"nxv:self": {"id": resource._store_metadata._self}}
+        #        )
+        #    )
 
     def retrieve(self, id_):
         """Retrieve a resource based on its id"""
@@ -131,6 +154,7 @@ class NexusForgeAccessPoint:
         if use_version and self.iteration_tag:
             filters["iteration"] = self.iteration_tag
 
+        logger.debug("Searching: %s", filters)
         resources = self.forge.search(
             filters, cross_bucket=self.cross_bucket, limit=self.limit, debug=self.debug
         )

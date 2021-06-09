@@ -17,11 +17,29 @@ from bluepyemodel.optimisation import optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.validation.validation import validate
 
+# pylint: disable=W0621
+
 logger = logging.getLogger(__name__)
 
 mechanisms_dir = "mechanisms"
 run_dir = "run"
 final_path = "final.json"
+
+
+def get_logger(level="INFO"):
+    """Instantiate a logger"""
+
+    if level == "WARNING":
+        log_level = logging.WARNING
+    elif level == "INFO":
+        log_level = logging.INFO
+    elif level == "DEBUG":
+        log_level = logging.DEBUG
+
+    logger = logging.getLogger()
+    logging.basicConfig(level=log_level, handlers=[logging.StreamHandler()])
+
+    return logger
 
 
 def update_gitignore():

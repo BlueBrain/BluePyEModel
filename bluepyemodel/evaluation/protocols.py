@@ -44,16 +44,13 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
 
         self.features = []
 
-    @property
     def stim_start(self):
         """Time stimulus starts"""
         return self.stimulus.stim_start
 
-    @property
     def stim_end(self):
         return self.stimulus.stim_end
 
-    @property
     def amplitude(self):
         return self.stimulus.amplitude
 

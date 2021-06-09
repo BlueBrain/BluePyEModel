@@ -83,6 +83,7 @@ class CompileMechanisms(WorkflowTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         species (str): name of the species.
+        brain_region (str): name of the brain_region.
         mechanisms_dir (str): path of the directory in which the mechanisms
             will be copied and/or compiled. It has to be a subdirectory of
             working_dir.
@@ -91,6 +92,7 @@ class CompileMechanisms(WorkflowTask):
     """
 
     species = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default=None)
     mechanisms_dir = luigi.Parameter(default="mechanisms")
     copy_mechanisms = BoolParameterCustom(default=False)
 
@@ -180,6 +182,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
                 CompileMechanisms(
                     emodel=self.emodel,
                     species=self.species,
+                    brain_region=self.brain_region,
                     mechanisms_dir=self.mechanisms_dir,
                     copy_mechanisms=self.copy_mechanisms,
                 )
@@ -241,6 +244,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
         parser.add_argument("--emodel", default=None, type=str)
         parser.add_argument("--seed", default=42, type=int)
         parser.add_argument("--species", default=None, type=str)
+        parser.add_argument("--brain_region", default="", type=str)
         parser.add_argument("--stochasticity", default=False, action="store_true")
         parser.add_argument("--timeout", default=600, type=int)
         parser.add_argument("--opt_params", default=None, type=json.loads)
@@ -462,7 +466,11 @@ class Validation(WorkflowTask, IPyParallelTask):
         """ """
         to_run = [
             StoreBestModels(
-                emodel=self.emodel, species=self.species, seed=self.seed, batch_size=self.batch_size
+                emodel=self.emodel,
+                species=self.species,
+                brain_region=self.brain_region,
+                seed=self.seed,
+                batch_size=self.batch_size,
             )
         ]
         if self.compile_mechanisms:
@@ -470,6 +478,7 @@ class Validation(WorkflowTask, IPyParallelTask):
                 CompileMechanisms(
                     emodel=self.emodel,
                     species=self.species,
+                    brain_region=self.brain_region,
                     mechanisms_dir=self.mechanisms_dir,
                     copy_mechanisms=self.copy_mechanisms,
                 )
@@ -479,6 +488,7 @@ class Validation(WorkflowTask, IPyParallelTask):
                 PlotModels(
                     emodel=self.emodel,
                     species=self.species,
+                    brain_region=self.brain_region,
                     seed=self.seed,
                     batch_size=self.batch_size,
                     plot_distributions=self.plot_distributions,
@@ -538,6 +548,7 @@ class Validation(WorkflowTask, IPyParallelTask):
         )
         parser.add_argument("--emodel", default=None, type=str)
         parser.add_argument("--species", default=None, type=str)
+        parser.add_argument("--brain_region", default="", type=str)
         parser.add_argument("--stochasticity", default=False, action="store_true")
         parser.add_argument("--validation_function", default="", type=str)
         parser.add_argument("--additional_protocols", default=None, type=json.loads)
@@ -610,7 +621,7 @@ class EModelCreation(WorkflowTask):
     """
 
     species = luigi.Parameter(default=None)
-    brain_region = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=1)
     batch_size = luigi.IntParameter(default=10)
     max_n_batch = luigi.IntParameter(default=10)
@@ -657,18 +668,26 @@ class EModelCreationWrapper(WorkflowWrapperTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         species (str): name of the species.
+        brain_region (str): name of the brain region.
         plot_validated_distributions (bool): True to plot the parameters distributions
             of all the validated models (of type self.emodel, self.species).
     """
 
     species = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default=None)
     plot_validated_distributions = BoolParameterCustom(default=False)
 
     def requires(self):
         """ """
-        to_run = [EModelCreation(emodel=self.emodel, species=self.species)]
+        to_run = [
+            EModelCreation(emodel=self.emodel, species=self.species, brain_region=self.brain_region)
+        ]
         if self.plot_validated_distributions:
-            to_run.append(PlotValidatedDistributions(emodel=self.emodel, species=self.species))
+            to_run.append(
+                PlotValidatedDistributions(
+                    emodel=self.emodel, species=self.species, brain_region=self.brain_region
+                )
+            )
         return to_run
 
 
@@ -750,6 +769,7 @@ class PlotModels(WorkflowTask):
 
     Parameters:
         species (str): name of the species.
+        brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
         batch_size (int): number of seeds to optimize at the same time before each validation.
         additional_protocols (dict): definition of supplementary protocols. See
@@ -761,6 +781,7 @@ class PlotModels(WorkflowTask):
     """
 
     species = luigi.Parameter(default="")
+    brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=42)
     batch_size = luigi.IntParameter(default=1)
     additional_protocols = luigi.DictParameter(default=None)
@@ -775,7 +796,11 @@ class PlotModels(WorkflowTask):
         requires = [
             ExtractEFeatures(emodel=self.emodel),
             StoreBestModels(
-                emodel=self.emodel, species=self.species, seed=self.seed, batch_size=self.batch_size
+                emodel=self.emodel,
+                species=self.species,
+                brain_region=self.brain_region,
+                seed=self.seed,
+                batch_size=self.batch_size,
             ),
         ]
 
@@ -830,15 +855,19 @@ class PlotValidatedDistributions(WorkflowTask):
 
     Parameters:
         species (str): name of the species.
+        brain_region (str): name of the brain region.
         figures_dir (str): path to figures repo.
     """
 
     species = luigi.Parameter(default="")
+    brain_region = luigi.Parameter(default="")
     figures_dir = luigi.Parameter(default="./figures")
 
     def requires(self):
         """ """
-        return EModelCreation(emodel=self.emodel, species=self.species)
+        return EModelCreation(
+            emodel=self.emodel, species=self.species, brain_region=self.brain_region
+        )
 
     def run(self):
         """ """

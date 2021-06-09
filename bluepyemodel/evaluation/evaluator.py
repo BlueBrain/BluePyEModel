@@ -3,7 +3,6 @@ import logging
 from copy import deepcopy
 
 import numpy
-from bluepyefe.recording import _set_efel_settings
 from bluepyopt.ephys.efeatures import eFELFeature
 from bluepyopt.ephys.evaluators import CellEvaluator
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
@@ -120,6 +119,72 @@ class eFELFeatureBPEM(eFELFeature):
 
         return abs(feature_value - self.exp_mean) / self.exp_std
 
+    def _construct_efel_trace(self, responses):
+        """Construct trace that can be passed to eFEL"""
+
+        trace = {}
+        if "" not in self.recording_names:
+            raise Exception("eFELFeature: '' needs to be in recording_names")
+        for location_name, recording_name in self.recording_names.items():
+            if location_name == "":
+                postfix = ""
+            else:
+                postfix = ";%s" % location_name
+
+            if recording_name not in responses:
+                logger.debug(
+                    "Recording named %s not found in responses %s", recording_name, str(responses)
+                )
+                return None
+
+            if responses[self.recording_names[""]] is None or responses[recording_name] is None:
+                return None
+            trace["T%s" % postfix] = responses[self.recording_names[""]]["time"]
+            trace["V%s" % postfix] = responses[recording_name]["voltage"]
+
+            if callable(self.stim_start):
+                trace["stim_start%s" % postfix] = [self.stim_start()]
+            else:
+                trace["stim_start%s" % postfix] = [self.stim_start]
+
+            if callable(self.stim_end):
+                trace["stim_end%s" % postfix] = [self.stim_end()]
+            else:
+                trace["stim_end%s" % postfix] = [self.stim_end]
+
+        return trace
+
+    def _setup_efel(self):
+        """Set up efel before extracting the feature"""
+
+        import efel
+
+        efel.reset()
+
+        if self.threshold is not None:
+            efel.setThreshold(self.threshold)
+
+        if self.stimulus_current is not None:
+            if callable(self.stimulus_current):
+                efel.setDoubleSetting("stimulus_current", self.stimulus_current())
+            else:
+                efel.setDoubleSetting("stimulus_current", self.stimulus_current)
+
+        if self.interp_step is not None:
+            efel.setDoubleSetting("interp_step", self.interp_step)
+
+        if self.double_settings is not None:
+            for setting_name, setting_value in self.double_settings.items():
+                efel.setDoubleSetting(setting_name, setting_value)
+
+        if self.int_settings is not None:
+            for setting_name, setting_value in self.int_settings.items():
+                efel.setIntSetting(setting_name, setting_value)
+
+        if self.string_settings is not None:
+            for setting_name, setting_value in self.string_settings.items():
+                efel.setStrSetting(setting_name, setting_value)
+
     def calculate_feature(self, responses, raise_warnings=False):
         """Calculate feature value"""
         if self.efel_feature_name.startswith("bpo_"):
@@ -131,16 +196,13 @@ class eFELFeatureBPEM(eFELFeature):
             if efel_trace is None:
                 feature_values = None
             else:
-                # we have to update it here, as this is changed on the fly
-                self.efel_settings["stimulus_current"] = self.stimulus_current
-                _set_efel_settings(self.efel_settings)
 
+                self._setup_efel()
+                logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
                 import efel
 
                 values = efel.getFeatureValues(
-                    [efel_trace],
-                    [self.efel_feature_name],
-                    raise_warnings=raise_warnings,
+                    [efel_trace], [self.efel_feature_name], raise_warnings=raise_warnings
                 )
 
                 feature_values = values[0][self.efel_feature_name]
@@ -232,6 +294,7 @@ def define_feature(
         stim_end=stim_end,
         exp_mean=meanstd[0],
         exp_std=meanstd[1],
+        stimulus_current=stim_amp,
         efel_settings=efel_settings,
     )
 
@@ -512,6 +575,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
                 for feature_config in feature_configs:
 
                     stim_amp = protocol.amplitude
+
                     stim_start = feature_config.get("stim_start", protocol.stim_start)
                     stim_end = feature_config.get("stim_end", protocol.stim_end)
 

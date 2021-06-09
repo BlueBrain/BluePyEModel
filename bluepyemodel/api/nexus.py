@@ -6,6 +6,7 @@ import os
 import pathlib
 from collections import OrderedDict
 
+import numpy
 import pandas
 from kgforge.specializations.resources import Dataset
 
@@ -51,6 +52,24 @@ def yesno(question):
         return True
 
     return False
+
+
+def format_dict_for_resource(d):
+    """Translates a dictionary to a list of the format used by resources"""
+
+    out = []
+
+    if d is None:
+        return out
+
+    for k, v in d.items():
+
+        if numpy.isnan(v):
+            v = None
+
+        out.append({"name": k, "value": v, "unitCode": ""})
+
+    return out
 
 
 class NexusAPI(DatabaseAPI):
@@ -163,7 +182,7 @@ class NexusAPI(DatabaseAPI):
 
         return resources
 
-    def deprecate_project(self):
+    def deprecate_project(self, use_version=True):
         """Deprecate all resources used or produced by BluePyModel. Use with extreme caution."""
 
         if not yesno("Confirm deprecation of all BluePyEmodel resources in Nexus project"):
@@ -171,7 +190,7 @@ class NexusAPI(DatabaseAPI):
 
         for type_ in BPEM_NEXUS_SCHEMA:
             filters = {"type": type_}
-            self.access_point.deprecate(filters)
+            self.access_point.deprecate(filters, use_version=use_version)
 
     def store_channel_gene_expression(
         self, table_path, name="Mouse_met_types_ion_channel_expression"
@@ -1052,26 +1071,10 @@ class NexusAPI(DatabaseAPI):
             features (dict): values of the efeatures. Of the format {"objective_name": value}.
         """
 
-        parameters_resource = []
-        scores_resource = []
-        features_resource = []
-        scores_validation_resource = []
-
-        if scores_validation:
-            for k, v in scores_validation.items():
-                scores_validation_resource.append({"name": k, "value": v, "unitCode": ""})
-
-        if scores is not None:
-            for k, v in scores.items():
-                scores_resource.append({"name": k, "value": v, "unitCode": ""})
-
-        if features is not None:
-            for k, v in features.items():
-                features_resource.append({"name": k, "value": v, "unitCode": ""})
-
-        if params is not None:
-            for k, v in params.items():
-                parameters_resource.append({"name": k, "value": v, "unitCode": ""})
+        scores_validation_resource = format_dict_for_resource(scores_validation)
+        scores_resource = format_dict_for_resource(scores)
+        features_resource = format_dict_for_resource(features)
+        parameters_resource = format_dict_for_resource(params)
 
         pdf_dependencies = self._build_pdf_dependencies(seed, githash)
 
@@ -1314,12 +1317,22 @@ class NexusAPI(DatabaseAPI):
                 mechanisms_names.append(resource.subCellularMechanism)
 
                 if resource.subCellularMechanism != "pas":
-                    resource_mech = self.access_point.fetch_one(
+                    # TODO when instantaneous registering:
+                    # resource_mech = self.access_point.fetch_one(
+                    #    filters={
+                    #        "type": "SubCellularModel",
+                    #        "subCellularMechanism": resource.subCellularMechanism,
+                    #    }
+                    # )
+
+                    resource_mech = self.access_point.fetch(
                         filters={
                             "type": "SubCellularModel",
                             "subCellularMechanism": resource.subCellularMechanism,
                         }
                     )
+                    resource_mech = resource_mech[0]
+
                     is_stochastic = resource_mech.stochastic
                     filepath = self.access_point.download(
                         resource_mech.modelScript.id, "./mechanisms/"
@@ -1519,6 +1532,7 @@ class NexusAPI(DatabaseAPI):
         # This makes up for the fact that the sitmulus target (amplitude) cannot
         # be used directly for the fetch as filters does not alllow to check
         # equality of lists.
+        resources = None
         if resources_feature:
             resources = []
             for r in resources_feature:

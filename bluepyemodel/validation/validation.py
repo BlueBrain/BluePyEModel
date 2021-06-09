@@ -62,11 +62,7 @@ def validate(
     )
 
     emodels = compute_responses(
-        emodel_db,
-        emodel,
-        cell_evaluator,
-        mapper,
-        preselect_for_validation=True,
+        emodel_db, emodel, cell_evaluator, mapper, preselect_for_validation=True
     )
 
     if emodels:
@@ -84,10 +80,10 @@ def validate(
 
         for mo in emodels:
 
-            mo["scores"] = cell_evaluator.fitness_calculator.calculate_scores(mo["responses"])
+            mo["scores"] = mo["evaluator"].fitness_calculator.calculate_scores(mo["responses"])
             # turn features from arrays to float to be json serializable
             mo["features"] = {}
-            values = cell_evaluator.fitness_calculator.calculate_values(mo["responses"])
+            values = mo["evaluator"].fitness_calculator.calculate_values(mo["responses"])
             for key, value in values.items():
                 if value is not None:
                     mo["features"][key] = float(numpy.mean([v for v in value if v]))

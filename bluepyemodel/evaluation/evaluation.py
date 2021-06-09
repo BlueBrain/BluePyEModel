@@ -21,7 +21,10 @@ def get_responses(to_run):
 
     eva.cell_model.unfreeze(params)
 
-    return eva.run_protocols(protocols=eva.fitness_protocols.values(), param_values=params)
+    responses = eva.run_protocols(protocols=eva.fitness_protocols.values(), param_values=params)
+    responses["evaluator"] = eva
+
+    return responses
 
 
 def compute_responses(
@@ -51,6 +54,7 @@ def compute_responses(
     """
 
     emodels = emodel_db.get_emodels([emodel])
+
     if seeds:
         emodels = [model for model in emodels if model["seed"] in seeds]
     if githashs:
@@ -75,6 +79,7 @@ def compute_responses(
 
         for mo, r in zip(emodels, responses):
             mo["responses"] = r
+            mo["evaluator"] = r.pop("evaluator")
 
     else:
         logger.warning("In compute_responses, no emodel for %s", emodel)
