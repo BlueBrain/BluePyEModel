@@ -53,6 +53,7 @@ setup(
         "neuron",
         "morph_tool",
         "fasteners",
+        "pyJWT==1.7.1"
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,

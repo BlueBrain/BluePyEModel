@@ -4,8 +4,11 @@ import getpass
 import logging
 import pathlib
 
+import jwt
 from entity_management.state import refresh_token
 from kgforge.core import KnowledgeGraphForge
+from kgforge.core import Resource
+from kgforge.specializations.resources import Dataset
 
 logger = logging.getLogger("__main__")
 
@@ -46,6 +49,13 @@ class NexusForgeAccessPoint:
 
         self.iteration_tag = iteration_tag
 
+        decoded_token = jwt.decode(self.access_token, algorithms=["ES256"], verify=False)
+        self.agent = self.forge.reshape(
+            self.forge.from_json(decoded_token), keep=["name", "email", "sub", "preferred_username"]
+        )
+        self.agent.id = decoded_token["sub"]
+        self.agent.type = ["Person", "Agent"]
+
     @staticmethod
     def get_access_token():
         """Define access token either from bbp-workflow or provided by the user"""
@@ -73,6 +83,18 @@ class NexusForgeAccessPoint:
         )
 
         return forge
+
+    def add_contribution(self, resource):
+        """Add the contributing agent to the resource"""
+
+        if self.agent:
+
+            if isinstance(resource, Dataset):
+                resource.add_contribution(self.agent, versioned=False)
+            elif isinstance(resource, Resource):
+                resource.contribution = Resource(type="Contribution", agent=self.agent)
+
+        return resource
 
     def register(self, resource_description, filters_existance=None, replace=False, tag=True):
         """Register a resource from its dictionary description."""
@@ -103,9 +125,17 @@ class NexusForgeAccessPoint:
         if tag and self.iteration_tag:
             resource_description["iteration"] = self.iteration_tag
 
+        resource_description["objectOfStudy"] = {
+            "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
+            "@type": "nsg:ObjectOfStudy",
+            "label": "Single Cell",
+        }
+
         logger.debug("Registering resources: %s", resource_description)
 
         resource = self.forge.from_json(resource_description)
+        resource = self.add_contribution(resource)
+
         self.forge.register(resource)
 
         # TODO
