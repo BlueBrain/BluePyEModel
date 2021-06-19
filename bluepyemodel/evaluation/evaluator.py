@@ -1,5 +1,6 @@
 """Evaluator module."""
 import logging
+import math
 from copy import deepcopy
 
 import numpy
@@ -236,6 +237,9 @@ class eFELFeatureBPEM(eFELFeature):
 
             score = numpy.min([score, self.max_score])
 
+        if score is None or math.isnan(score):
+            return self.max_score
+
         return score
 
 
@@ -246,6 +250,7 @@ def define_feature(
     stim_amp=None,
     protocol_name=None,
     recording_name=None,
+    global_efel_settings=None,
     threshold_efeature_std=None,
 ):
     """Create a feature.
@@ -260,12 +265,18 @@ def define_feature(
         stim_amp (float or None): current amplitude of the step.
         protocol_name (str): name of the protocol associated to this efeature.
         recording_name (str): name of the voltage recording (e.g.: "soma.v")
+        global_efel_settings (dict): efel settings in the form
+            {setting_name: setting_value}. If settings are also informed
+            in the targets per efeature, the latter will have priority.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
 
     Returns:
         eFELFeatureExtra
     """
+
+    if global_efel_settings is None:
+        global_efel_settings = {}
 
     efel_feature_name = feature_definition["feature"]
     meanstd = feature_definition["val"]
@@ -277,15 +288,15 @@ def define_feature(
     )
 
     std = meanstd[1]
-    if threshold_efeature_std:
-        std = min(std, threshold_efeature_std * meanstd[0])
+    if threshold_efeature_std and std < threshold_efeature_std * meanstd[0]:
+        std = threshold_efeature_std * meanstd[0]
 
     if protocol_name:
         recording_names = {"": "%s.%s" % (protocol_name, recording_name)}
     else:
         recording_names = {"": recording_name}
 
-    efel_settings = feature_definition.get("efel_settings", {})
+    efel_settings = {**global_efel_settings, **feature_definition.get("efel_settings", {})}
     efel_settings["stimulus_current"] = stim_amp
 
     if "strict_stim" in feature_definition:
@@ -414,7 +425,7 @@ def get_features_by_name(list_features, name):
     return None
 
 
-def define_RMP_protocol(features_definition, threshold_efeature_std=None):
+def define_RMP_protocol(features_definition, efel_settings, threshold_efeature_std):
     """Define the resting membrane potential protocol"""
 
     feature_def = get_features_by_name(
@@ -427,6 +438,7 @@ def define_RMP_protocol(features_definition, threshold_efeature_std=None):
             feature_def,
             protocol_name="RMPProtocol",
             recording_name="soma.v",
+            global_efel_settings=efel_settings,
             threshold_efeature_std=threshold_efeature_std,
         )
 
@@ -442,7 +454,9 @@ def define_RMP_protocol(features_definition, threshold_efeature_std=None):
     return None, []
 
 
-def define_Rin_protocol(features_definition, ais_recording=False, threshold_efeature_std=None):
+def define_Rin_protocol(
+    features_definition, ais_recording=False, efel_settings=None, threshold_efeature_std=None
+):
     """Define the Rin protocol.
 
     With ais_rcording=True, the recording will be at the first axonal section.
@@ -458,6 +472,7 @@ def define_Rin_protocol(features_definition, ais_recording=False, threshold_efea
             feature_def,
             protocol_name="RinProtocol",
             recording_name="soma.v",
+            global_efel_settings=efel_settings,
             threshold_efeature_std=threshold_efeature_std,
         )
 
@@ -473,7 +488,7 @@ def define_Rin_protocol(features_definition, ais_recording=False, threshold_efea
     return None, []
 
 
-def define_holding_protocol(features_definition, threshold_efeature_std=None):
+def define_holding_protocol(features_definition, efel_settings=None, threshold_efeature_std=None):
     """Define the search holdinf current protocol"""
     def_holding_voltage = get_features_by_name(
         features_definition["SearchHoldingCurrent"]["soma.v"], "steady_state_voltage_stimend"
@@ -488,12 +503,14 @@ def define_holding_protocol(features_definition, threshold_efeature_std=None):
             def_holding_voltage,
             protocol_name="SearchHoldingCurrent",
             recording_name="soma.v",
+            global_efel_settings=efel_settings,
             threshold_efeature_std=threshold_efeature_std,
         )
         target_holding_current = define_feature(
             def_holding_current,
             protocol_name="",
             recording_name="bpo_holding_current",
+            global_efel_settings=efel_settings,
             threshold_efeature_std=threshold_efeature_std,
         )
 
@@ -513,7 +530,7 @@ def define_holding_protocol(features_definition, threshold_efeature_std=None):
     return None, []
 
 
-def define_threshold_protocol(features_definition, threshold_efeature_std=None):
+def define_threshold_protocol(features_definition, efel_settings=None, threshold_efeature_std=None):
     """Define the search threshold current protocol"""
 
     feature_def = get_features_by_name(
@@ -526,6 +543,7 @@ def define_threshold_protocol(features_definition, threshold_efeature_std=None):
             feature_def,
             protocol_name="",
             recording_name="bpo_threshold_current",
+            global_efel_settings=efel_settings,
             threshold_efeature_std=threshold_efeature_std,
         )
 
@@ -547,6 +565,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     features_definition,
     stochasticity=True,
     ais_recording=False,
+    efel_settings=None,
     threshold_efeature_std=None,
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
@@ -562,6 +581,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
         ais_rcording (bool): if True all the soma recording will be at the first axonal section.
+        efel_settings (dict): eFEl settings.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
 
@@ -602,22 +622,26 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
                         stim_amp,
                         protocol.name,
                         recording_name,
+                        global_efel_settings=efel_settings,
                         threshold_efeature_std=threshold_efeature_std,
                     )
                     features.append(feature)
 
-    rmp_protocol, rmp_features = define_RMP_protocol(features_definition, threshold_efeature_std)
+    rmp_protocol, rmp_features = define_RMP_protocol(
+        features_definition, efel_settings, threshold_efeature_std
+    )
     rin_protocol, rin_features = define_Rin_protocol(
         features_definition,
         ais_recording=ais_recording,
+        efel_settings=efel_settings,
         threshold_efeature_std=threshold_efeature_std,
     )
 
     search_holding_protocol, hold_features = define_holding_protocol(
-        features_definition, threshold_efeature_std
+        features_definition, efel_settings, threshold_efeature_std
     )
     search_threshold_protocol, thres_features = define_threshold_protocol(
-        features_definition, threshold_efeature_std
+        features_definition, efel_settings, threshold_efeature_std
     )
 
     features += thres_features + hold_features + rin_features + rmp_features
@@ -645,7 +669,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
         search_threshold_protocol,
         threshold_protocols=threshold_protocols,
         other_protocols=other_protocols,
-        score_threshold=10.0,
+        score_threshold=12.0,
     )
 
     return main_protocol, features
@@ -761,6 +785,7 @@ def create_evaluator(
     features_definition,
     stochasticity=True,
     timeout=None,
+    efel_settings=None,
     threshold_efeature_std=None,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
@@ -773,6 +798,9 @@ def create_evaluator(
             deterministic
         timeout (float): maximum time in second during which a protocol is
             allowed to run
+        efel_settings (dict): efel settings in the form
+            {setting_name: setting_value}. If settings are also informed
+            in the targets per efeature, the latter will have priority.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
 
@@ -788,6 +816,7 @@ def create_evaluator(
         protocols_definition,
         features_definition,
         stochasticity,
+        efel_settings=efel_settings,
         threshold_efeature_std=threshold_efeature_std,
     )
 

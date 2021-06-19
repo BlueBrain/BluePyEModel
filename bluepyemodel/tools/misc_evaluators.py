@@ -69,7 +69,7 @@ def feature_evaluation(
 
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         continu (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database

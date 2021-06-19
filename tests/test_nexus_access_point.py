@@ -1,12 +1,12 @@
 import unittest
 
-from bluepyemodel.api.nexus import NexusAPI
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 
 
 class TestNexusAPI(unittest.TestCase):
     def test_morphology(self):
         pass
-        # access_point = NexusAPI()
+        # access_point = NexusAccessPoint()
         #
         # emodel = "test_emodel"
         # name = "test_name"

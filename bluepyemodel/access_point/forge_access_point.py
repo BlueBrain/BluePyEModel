@@ -1,4 +1,4 @@
-"""Neus Forge access point used by the Nexus API"""
+"""Nexus Forge access point used by the Nexus access point"""
 
 import getpass
 import logging
@@ -137,22 +137,6 @@ class NexusForgeAccessPoint:
         resource = self.add_contribution(resource)
 
         self.forge.register(resource)
-
-        # TODO
-        # synchronized = False
-        # searchable = False
-        # while(not synchronized or not searchable):
-        #    time.sleep(0.1)
-        #    logger.debug(
-        #        "Waiting for synchronization: synchronized %s, "
-        #        "searchable %s", (synchronized, searchable)
-        #     )
-        #    synchronized = resource._synchronized
-        #    searchable = bool(
-        #        self.forge.search(
-        #            {"nxv:self": {"id": resource._store_metadata._self}}
-        #        )
-        #    )
 
     def retrieve(self, id_):
         """Retrieve a resource based on its id"""

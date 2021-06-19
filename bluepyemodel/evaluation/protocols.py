@@ -528,7 +528,7 @@ class MainProtocol(ephys.protocols.Protocol):
         search_threshold_protocol,
         threshold_protocols=None,
         other_protocols=None,
-        score_threshold=10.0,
+        score_threshold=12.0,
     ):
         """Constructor
 

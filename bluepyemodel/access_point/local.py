@@ -1,4 +1,5 @@
-"""API to get data from Singlecell-like repositories."""
+"""Access point to get data from Singlecell-like repositories"""
+
 import copy
 import json
 import logging
@@ -8,7 +9,8 @@ from pathlib import Path
 import fasteners
 from bluepyefe.tools import NumpyEncoder
 
-from bluepyemodel.api.databaseAPI import DatabaseAPI
+from bluepyemodel.access_point.access_point import DataAccessPoint
+from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ seclist_to_sec = {
 }
 
 
-class SinglecellAPI(DatabaseAPI):
+class LocalAccessPoint(DataAccessPoint):
     """Access point to configuration files organized as project 38."""
 
     def __init__(
@@ -30,7 +32,6 @@ class SinglecellAPI(DatabaseAPI):
         final_path=None,
         recipes_path=None,
         legacy_dir_structure=False,
-        extract_config=None,
     ):
         """Init
 
@@ -52,16 +53,14 @@ class SinglecellAPI(DatabaseAPI):
                 }
             legacy_dir_structure (bool): if true, the path coming from the recipes will be replaced
                 by "self.emodel_dir / emodel / json_path_from_recipes". To be deprecated.
-            extract_config (str): path to a configuration json file used for feature extraction.
-                It uses the old BluePyEfe 2 format. To be updated/deprecated.
         """
-
-        super().__init__(emodel)
 
         self.emodel_dir = Path(emodel_dir)
         self.recipes_path = recipes_path
         self.legacy_dir_structure = legacy_dir_structure
-        self.extract_config = extract_config
+        self.emodel = emodel
+
+        super().__init__(emodel)
 
         self.morph_path = None
 
@@ -80,6 +79,15 @@ class SinglecellAPI(DatabaseAPI):
             raise Exception("Cannot set the emodel name to %s which does not exist in the recipes.")
 
         self.emodel = emodel
+
+    def load_pipeline_settings(self):
+        """ """
+
+        settings = self.get_recipes().get("pipeline_settings", {})
+
+        return EModelPipelineSettings(
+            morph_modifiers=self.get_recipes().get("morph_modifiers", None), **settings
+        )
 
     def get_final(self, lock_file=True):
         """Get emodel dictionary from final.json."""
@@ -158,12 +166,7 @@ class SinglecellAPI(DatabaseAPI):
 
         See docstring of __init__ for the format of the file of recipes.
         """
-
         return self.get_all_recipes()[self.emodel]
-
-    def get_morph_modifiers(self):
-        """Get the morph modifiers if any."""
-        return self.get_recipes().get("morph_modifiers", None)
 
     def _get_json(self, recipe_entry):
         """Helper function to load a json using path in recipe."""
@@ -188,10 +191,12 @@ class SinglecellAPI(DatabaseAPI):
             protocols_threshold (list)
         """
 
-        if self.extract_config is None or not Path(self.extract_config).is_file():
+        settings = self.pipeline_settings.path_extract_config
+
+        if not settings.get("path_extract_config", None):
             return None, None, None
 
-        with open(self.extract_config, "r") as f:
+        with open(settings["path_extract_config"], "r") as f:
             config_dict = json.load(f)
 
         files_metadata = config_dict["files_metadata"]
@@ -204,9 +209,6 @@ class SinglecellAPI(DatabaseAPI):
         self,
         efeatures,
         current,
-        name_Rin_protocol,
-        name_rmp_protocol,
-        validation_protocols,
     ):
         """Save the efeatures and currents obtained from BluePyEfe.
 
@@ -215,13 +217,11 @@ class SinglecellAPI(DatabaseAPI):
                 BluePyEfe 2.
             current (dict): threshold and holding current as returned by BluePyEfe. Format as
                 returned by BluePyEfe 2.
-            name_Rin_protocol (str): name of the protocol associated with the efeatures used for
-                the computation of the input resistance scores during optimisation.
-            name_rmp_protocol (str): name of the protocol associated with the efeatures used for
-                the computation of the resting membrane potential scores during optimisation.
-            validation_protocols (dict): names and targets of the protocol that will be used for
-                validation only.
         """
+
+        name_Rin_protocol = self.pipeline_settings.name_Rin_protocol
+        name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
+        validation_protocols = self.pipeline_settings.validation_protocols
 
         out_features = {
             "SearchHoldingCurrent": {
@@ -297,8 +297,10 @@ class SinglecellAPI(DatabaseAPI):
         # they should be removed from their original protocol.
         # TODO: to rework when we will have the possibility of extracting different efeatures for
         # the different ampliudes of the same eCode.
-        out_features.pop(name_Rin_protocol)
-        out_features.pop(name_rmp_protocol)
+        if name_Rin_protocol:
+            out_features.pop(name_Rin_protocol)
+        if name_rmp_protocol:
+            out_features.pop(name_rmp_protocol)
 
         features_path = Path(self.get_recipes()["features"])
         features_path.parent.mkdir(parents=True, exist_ok=True)
@@ -306,14 +308,14 @@ class SinglecellAPI(DatabaseAPI):
         with open(str(features_path), "w") as f:
             f.write(json.dumps(out_features, indent=2, cls=NumpyEncoder))
 
-    def store_protocols(self, stimuli, validation_protocols):
+    def store_protocols(self, stimuli):
         """Save the protocols obtained from BluePyEfe.
 
         Args:
             stimuli (dict): protocols definition in the format returned by BluePyEfe 2.
-            validation_protocols (dict): names and targets of the protocol that will be used for
-                validation only.
         """
+
+        validation_protocols = self.pipeline_settings.validation_protocols
 
         for stimulus_name, stimulus in stimuli.items():
 

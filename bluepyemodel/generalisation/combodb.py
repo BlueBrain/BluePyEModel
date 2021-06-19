@@ -62,7 +62,7 @@ class ComboDB(MorphDB):
             label (str): label of dataset
             morphology_folder (str): path to morphologies
             cell_composition (str|dict): path or dict with cell_composition.yaml
-            emodel_db (BluePyEmodel.api.DatabaseAPI): emodel database
+            emodel_db (BluePyEmodel.api.DataAccessPoint): emodel database
             filter_pc (bool): only assing emodels with corresponding layers for cADpyr
         """
         obj = MorphDB.from_neurondb(neurondb, label=label, morphology_folder=morphology_folder)
@@ -80,7 +80,7 @@ class ComboDB(MorphDB):
             neurondb (str): path to neurondb
             morphology_folder (str): path to morphologies
             cell_composition (str|dict): path or dict with cell_composition.yaml
-            emodel_db (BluePyEmodel.api.DatabaseAPI): emodel database
+            emodel_db (BluePyEmodel.api.DataAccessPoint): emodel database
             filter_pc (bool): only assing emodels with corresponding layers for cADpyr
         """
         obj = MorphDB()
@@ -96,7 +96,7 @@ class ComboDB(MorphDB):
 
         Args:
             cell_composition (str|dict): path or dict with cell_composition.yaml
-            emodel_db (BluePyEmodel.api.DatabaseAPI): emodel database
+            emodel_db (BluePyEmodel.api.DataAccessPoint): emodel database
             filter_pc (bool): only assing emodels with corresponding layers for cADpyr
         """
         if isinstance(cell_composition, str):

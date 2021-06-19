@@ -39,7 +39,7 @@ def compute_responses(
     """Compute the responses of the emodel to the optimisation and validation protocols.
 
     Args:
-        emodel_db (DatabaseAPI): API used to access the database.
+        emodel_db (DataAccessPoint): API used to access the database.
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         cell_evaluator (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
@@ -89,52 +89,45 @@ def compute_responses(
 
 def get_evaluator_from_db(
     emodel,
-    db,
+    access_point,
     stochasticity=False,
     include_validation_protocols=False,
     additional_protocols=None,
-    timeout=600,
+    timeout=600.0,
 ):
     """Create an evaluator for the emodel.
 
     Args:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
-        db (DatabaseAPI): API used to access the database
-        githash (str): if provided, the pipeline will work in the directory
-            working_dir/run/githash. Needed when continuing work or resuming
-            optimisations.
-        mechanisms_dir (str): path of the directory in which the mechanisms
-            will be copied and/or compiled. It has to be a subdirectory of
-            working_dir.
+        access_point (DataAccessPoint): API used to access the database
         stochasticity (bool): should channels behave stochastically if they can.
-        copy_mechanisms (bool): should the mod files be copied in the local
-            mechanisms_dir directory.
-        compile_mechanisms (bool): should the mod files be compiled.
-        timeout (float): duration (in second) after which the evaluation of a
-            protocol will be interrupted.
         include_validation_protocols (bool): should the validation protocols
             and validation efeatures be added to the evaluator.
         additional_protocols (dict): definition of supplementary protocols. See
             examples/optimisation for usage.
+        timeout (float): duration (in second) after which the evaluation of a
+            protocol will be interrupted.
 
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
     """
-    db.set_emodel(emodel)
-    parameters, mechanisms, _ = db.get_parameters()
+
+    access_point.set_emodel(emodel)
+
+    parameters, mechanisms, _ = access_point.get_parameters()
     if not parameters or not mechanisms:
         raise Exception("No parameters for emodel %s" % emodel)
 
-    morphologies = db.get_morphologies()
+    morphologies = access_point.get_morphologies()
     if not morphologies:
         raise Exception("No morphologies for emodel %s" % emodel)
 
-    features = db.get_features(include_validation_protocols)
+    features = access_point.get_features(include_validation_protocols)
     if not features:
         raise Exception("No efeatures for emodel %s" % emodel)
 
-    protocols = db.get_protocols(include_validation_protocols)
+    protocols = access_point.get_protocols(include_validation_protocols)
     if not protocols:
         raise Exception("No protocols for emodel %s" % emodel)
     if additional_protocols:
@@ -145,8 +138,11 @@ def get_evaluator_from_db(
         morphology=morphologies,
         mechanisms=mechanisms,
         parameters=parameters,
-        morph_modifiers=db.get_morph_modifiers(),
+        morph_modifiers=access_point.get_morph_modifiers(),
     )
+
+    timeout = timeout or access_point.pipeline_settings.timeout
+    stochasticity = stochasticity or access_point.pipeline_settings.stochasticity
 
     return create_evaluator(
         cell_model=cell_model,
@@ -154,4 +150,6 @@ def get_evaluator_from_db(
         features_definition=features,
         stochasticity=stochasticity,
         timeout=timeout,
+        efel_settings=access_point.pipeline_settings.efel_settings,
+        threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std,
     )

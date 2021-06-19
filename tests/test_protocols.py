@@ -2,13 +2,14 @@ import pathlib
 import os
 from pathlib import Path
 import pytest
+import logging
 
 import pandas as pd
 from numpy.testing import assert_allclose
 from pandas.util.testing import assert_frame_equal
 
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
-from bluepyemodel.api import get_db
+from bluepyemodel.access_point import get_db
 
 TEST_ROOT = Path(__file__).parent
 DATA = TEST_ROOT / "test_data"
@@ -25,7 +26,7 @@ def api_config():
 
 @pytest.fixture
 def db(api_config):
-    return get_db("singlecell", **api_config)
+    return get_db("local", **api_config)
 
 
 @pytest.fixture
@@ -33,19 +34,26 @@ def evaluator(db):
     if pathlib.Path("x86_64").is_dir():
         os.popen("rm -rf x86_64").read()
     os.popen(f"nrnivmodl {DATA}/mechanisms").read()
-    return get_evaluator_from_db(emodel=db.emodel, db=db)
+
+    eva = get_evaluator_from_db(emodel=db.emodel, access_point=db)
+
+    return eva
 
 
 def test_protocols(db, evaluator):
+
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
+
     params = db.get_emodel()["parameters"]
     responses = evaluator.run_protocols(
         protocols=evaluator.fitness_protocols.values(), param_values=params
     )
 
-    assert_allclose(responses["bpo_rin"], 37.372735)
-    assert_allclose(responses["bpo_rmp"], -77.23215465876982)
+    assert_allclose(responses["bpo_rin"], 34.10789221007704)
+    assert_allclose(responses["bpo_rmp"], -77.89621750409091)
     assert_allclose(responses["bpo_holding_current"], -0.14453125)
-    assert_allclose(responses["bpo_threshold_current"], 0.482622125935)
+    assert_allclose(responses["bpo_threshold_current"], 0.484663633)
 
     for prot_name in [
         "RMPProtocol.soma.v",

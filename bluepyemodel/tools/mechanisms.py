@@ -57,28 +57,11 @@ def compile_mechs(mechanisms_dir):
         )
 
 
-def copy_and_compile_mechanisms(db, emodel, species, copy_mechanisms, mechanisms_dir, githash=""):
+def copy_and_compile_mechanisms(access_point):
     """Copy mechs if asked, and compile them."""
 
-    if githash:
-        raise Exception(
-            "Compile mechanisms and the use of githash are not compatible "
-            "yet. Please pre-compile the mechanisms and re-run with "
-            "compile_mechanisms=False."
-        )
-
-    if copy_mechanisms:
-
-        if db.__class__.__name__ == "SinglecellAPI":
-            _, _, mechanism_names = db.get_parameters(emodel, species)
-            mechanism_paths = db.get_mechanism_paths(mechanism_names)
-            if not (mechanism_paths):
-                raise Exception("No mechanisms paths for emodel %s" % emodel)
-            copy_mechs(mechanism_paths, mechanisms_dir)
-
-        elif db.__class__.__name__ == "NexusAPI":
-            # Mechanisms are automatically download by the Nexus API
-            # when calling this function
-            _ = db.get_parameters()
-
-    compile_mechs(mechanisms_dir)
+    if access_point.__class__.__name__ == "NexusAccessPoint":
+        # Mechanisms are automatically download by the Nexus API
+        # when calling this function
+        _ = access_point.get_parameters()
+        compile_mechs("./mechanisms")

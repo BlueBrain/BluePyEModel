@@ -1,13 +1,13 @@
-"""Emodel api module"""
+"""E-model access_point module"""
 
 
-def get_db(api, emodel, **kwargs):
-    """Returns a DatabaseAPI object.
+def get_db(access_point, emodel, **kwargs):
+    """Returns a DataAccessPoint object.
 
     Args:
-        api (str): name of the api to use, can be nexus' or 'singlecell'.
+        access_point (str): name of the access_point to use, can be 'nexus' or 'gpfs'.
         emodel (str): name of the emodel.
-        kwargs (dict): extra arguments to pass to api constructors, see below.
+        kwargs (dict): extra arguments to pass to access_point constructors, see below.
 
     For singlecell:
         emodel_dir (str): path of the directory containing the parameters,
@@ -28,13 +28,13 @@ def get_db(api, emodel, **kwargs):
             Resources generated during the different run.
 
     Returns:
-        DatabaseAPI
+        DataAccessPoint
     """
 
-    if api == "nexus":
-        from bluepyemodel.api.nexus import NexusAPI
+    if access_point == "nexus":
+        from bluepyemodel.access_point.nexus import NexusAccessPoint
 
-        return NexusAPI(
+        return NexusAccessPoint(
             emodel=emodel,
             species=kwargs.get("species", "rat"),
             brain_region=kwargs.get("brain_region", None),
@@ -46,16 +46,15 @@ def get_db(api, emodel, **kwargs):
             iteration_tag=kwargs.get("iteration_tag", None),
         )
 
-    if api == "singlecell":
-        from bluepyemodel.api.singlecell import SinglecellAPI
+    if access_point == "local":
+        from bluepyemodel.access_point.local import LocalAccessPoint
 
-        return SinglecellAPI(
+        return LocalAccessPoint(
             emodel=emodel,
             emodel_dir=kwargs["emodel_dir"],
             recipes_path=kwargs.get("recipes_path", None),
             final_path=kwargs.get("final_path", None),
             legacy_dir_structure=kwargs.get("legacy_dir_structure", False),
-            extract_config=kwargs.get("extract_config", None),
         )
 
-    raise Exception(f"Unknown api: {api}")
+    raise Exception(f"Unknown access point: {access_point}")

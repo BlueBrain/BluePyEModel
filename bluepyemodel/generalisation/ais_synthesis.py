@@ -106,7 +106,7 @@ def synthesize_ais(
 
     Args:
         morphs_combos_df (dataframe): data for me combos
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         ais_models (dict): dict with ais models
         target_rhos (dict): dict with target rhos
         emodels (list/str): list of emodels to consider, or 'all'

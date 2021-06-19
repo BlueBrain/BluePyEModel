@@ -1,4 +1,4 @@
-"""API using Nexus Forge"""
+"""Access point using Nexus Forge"""
 
 import json
 import logging
@@ -10,13 +10,13 @@ import numpy
 import pandas
 from kgforge.specializations.resources import Dataset
 
-from bluepyemodel.api.databaseAPI import DatabaseAPI
-from bluepyemodel.api.forge_access_point import NexusForgeAccessPoint
+from bluepyemodel.access_point.access_point import DataAccessPoint
+from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
+from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+
+# pylint: disable=simplifiable-if-expression,too-many-arguments
 
 logger = logging.getLogger("__main__")
-
-
-# pylint: disable=unused-argument,len-as-condition,bare-except,simplifiable-if-expression
 
 
 BPEM_NEXUS_SCHEMA = [
@@ -34,8 +34,8 @@ BPEM_NEXUS_SCHEMA = [
 ]
 
 
-class NexusAPIException(Exception):
-    """For Exceptions related to the NexusAPI"""
+class NexusAccessPointException(Exception):
+    """For Exceptions related to the NexusAccessPoint"""
 
 
 def yesno(question):
@@ -72,7 +72,7 @@ def format_dict_for_resource(d):
     return out
 
 
-class NexusAPI(DatabaseAPI):
+class NexusAccessPoint(DataAccessPoint):
     """API to retrieve, push and format data from and to the Knowledge Graph"""
 
     def __init__(
@@ -136,7 +136,7 @@ class NexusAPI(DatabaseAPI):
                 subject["species"]["id"] = "http://purl.obolibrary.org/obo/NCBITaxon_10090"
 
         else:
-            raise NexusAPIException("Unknown species %s." % self.species)
+            raise NexusAccessPointException("Unknown species %s." % self.species)
 
         return subject
 
@@ -192,6 +192,20 @@ class NexusAPI(DatabaseAPI):
             filters = {"type": type_}
             self.access_point.deprecate(filters, use_version=use_version)
 
+    def load_pipeline_settings(self):
+        """ """
+
+        resource = self.access_point.fetch_one(
+            filters={
+                "type": "PipelineSettings",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+            },
+        )
+
+        return EModelPipelineSettings(**self.access_point.forge.as_json(resource))
+
     def store_channel_gene_expression(
         self, table_path, name="Mouse_met_types_ion_channel_expression"
     ):
@@ -202,7 +216,7 @@ class NexusAPI(DatabaseAPI):
         """
 
         if pathlib.Path(table_path).suffix != ".csv":
-            raise NexusAPIException("Was expecting a .csv file")
+            raise NexusAccessPointException("Was expecting a .csv file")
 
         dataset = Dataset(
             self.access_point.forge,
@@ -312,10 +326,10 @@ class NexusAPI(DatabaseAPI):
                 {"type": "NeuronMorphology", "name": name}, use_version=False
             )
         else:
-            raise NexusAPIException("At least id_ or name should be informed.")
+            raise NexusAccessPointException("At least id_ or name should be informed.")
 
         if not resource:
-            raise NexusAPIException("No matching resource for morphology %s %s" % id_, name)
+            raise NexusAccessPointException("No matching resource for morphology %s %s" % id_, name)
 
         if not name:
             name = resource.name
@@ -379,10 +393,10 @@ class NexusAPI(DatabaseAPI):
                 use_version=False,
             )
         else:
-            raise NexusAPIException("At least id_ or name should be informed.")
+            raise NexusAccessPointException("At least id_ or name should be informed.")
 
         if not resource:
-            raise NexusAPIException("No matching resource for %s %s" % id_, name)
+            raise NexusAccessPointException("No matching resource for %s %s" % id_, name)
 
         self.access_point.register(
             {
@@ -485,7 +499,7 @@ class NexusAPI(DatabaseAPI):
             "RinProtocol",
             "RMPProtocol",
         ]:
-            raise NexusAPIException("protocol_type %s unknown." % protocol_type)
+            raise NexusAccessPointException("protocol_type %s unknown." % protocol_type)
 
         features = []
         for f in efeatures:
@@ -573,7 +587,7 @@ class NexusAPI(DatabaseAPI):
             extra_recordings = []
 
         if used_for_optimization and used_for_validation:
-            raise NexusAPIException(
+            raise NexusAccessPointException(
                 "Both used_for_optimization and used_for_validation cannot be True for the"
                 " same Ecode."
             )
@@ -686,7 +700,7 @@ class NexusAPI(DatabaseAPI):
         """
 
         if soma_reference_location < 0.0 or soma_reference_location > 1.0:
-            raise NexusAPIException("soma_reference_location should be between 0. and 1.")
+            raise NexusAccessPointException("soma_reference_location should be between 0. and 1.")
 
         self.access_point.register(
             {
@@ -718,10 +732,10 @@ class NexusAPI(DatabaseAPI):
                 {"type": "SubCellularModelScript", "name": name}, use_version=False
             )
         else:
-            raise NexusAPIException("At least name or id_ should be informed.")
+            raise NexusAccessPointException("At least name or id_ should be informed.")
 
         if not resource:
-            raise NexusAPIException("No matching resource for mechanism %s %s" % id_, name)
+            raise NexusAccessPointException("No matching resource for mechanism %s %s" % id_, name)
 
         if not name:
             name = resource.name
@@ -744,8 +758,95 @@ class NexusAPI(DatabaseAPI):
             },
         )
 
+    def store_pipeline_settings(
+        self,
+        extraction_threshold_value_save=1,
+        efel_settings=None,
+        stochasticity=False,
+        morph_modifiers=None,
+        optimizer="IBEA",
+        optimisation_params=None,
+        optimisation_timeout=600.0,
+        threshold_efeature_std=0.05,
+        max_ngen=100,
+        validation_threshold=5.0,
+        optimization_batch_size=5,
+        max_n_batch=3,
+        n_model=3,
+        plot_extraction=True,
+        plot_optimisation=True,
+    ):
+        """Creates a PipelineSettings resource.
+
+        Args:
+            extraction_threshold_value_save (int): name of the mechanism.
+            efel_settings (dict): efel settings in the form {setting_name: setting_value}.
+                If settings are also informed in the targets per efeature, the latter
+                will have priority.
+            stochasticity (bool): should channels behave stochastically if they can.
+            morph_modifiers (list): List of morphology modifiers. Each modifier has to be
+                informed by the path the file containing the modifier and the name of the
+                function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
+            optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
+                "MO-CMA" (use cma option in pip install for CMA optimizers).
+            optimisation_params (dict): optimisation parameters. Keys have to match the
+                optimizer's call. E.g., for optimizer MO-CMA:
+                {"offspring_size": 10, "weight_hv": 0.4}
+            optimisation_timeout (float): duration (in second) after which the evaluation
+                of a protocol will be interrupted.
+            max_ngen (int): maximum number of generations of the evolutionary process of the
+                optimization.
+            validation_threshold (float): score threshold under which the emodel passes
+                validation.
+            optimization_batch_size (int): number of optimisation seeds to run in parallel.
+            max_n_batch (int): maximum number of optimisation batches.
+            n_model (int): minimum number of models to pass validation
+                to consider the EModel building task done.
+            plot_extraction (bool): should the efeatures and experimental traces be plotted.
+            plot_optimisation (bool): should the EModel scores and traces be plotted.
+        """
+
+        if efel_settings is None:
+            efel_settings = {"interp_step": 0.025, "strict_stiminterval": True}
+
+        if optimisation_params is None:
+            optimisation_params = {"offspring_size": 100}
+
+        resource_description = {
+            "name": f"Pipeline settings {self.emodel}",
+            "type": ["Entity", "Parameter", "PipelineSettings"],
+            "eModel": self.emodel,
+            "subject": self.get_subject(for_search=False),
+            "brainLocation": self.brain_region,
+            "extraction_threshold_value_save": extraction_threshold_value_save,
+            "efel_settings": efel_settings,
+            "stochasticity": stochasticity,
+            "optimizer": optimizer,
+            "optimisation_params": optimisation_params,
+            "optimisation_timeout": optimisation_timeout,
+            "max_ngen": max_ngen,
+            "validation_threshold": validation_threshold,
+            "optimisation_batch_size": optimization_batch_size,
+            "max_n_batch": max_n_batch,
+            "n_model": n_model,
+            "plot_extraction": plot_extraction,
+            "plot_optimisation": plot_optimisation,
+            "threshold_efeature_std": threshold_efeature_std,
+            "morph_modifiers": morph_modifiers,
+        }
+
+        resource_search = {
+            "name": f"Pipeline parameters {self.emodel}",
+            "type": ["Entity", "Parameter", "PipelineSettings"],
+            "eModel": self.emodel,
+            "subject": self.get_subject(for_search=False),
+            "brainLocation": self.brain_region,
+        }
+
+        self.access_point.register(resource_description, resource_search)
+
     def _build_extraction_targets(self, resources_target):
-        """Create a dictionary definning the target of the feature extraction process"""
+        """Create a dictionary defining the target of the feature extraction process"""
 
         targets = []
         protocols_threshold = []
@@ -814,7 +915,7 @@ class NexusAPI(DatabaseAPI):
             )
 
             if resources_ephys is None:
-                raise NexusAPIException(
+                raise NexusAccessPointException(
                     "Could not get ephys files for ecode %s, emodel %s" % (protocol, self.emodel)
                 )
 
@@ -871,7 +972,7 @@ class NexusAPI(DatabaseAPI):
 
         targets, protocols_threshold = self._build_extraction_targets(resources_extraction_target)
         if not protocols_threshold:
-            raise NexusAPIException(
+            raise NexusAccessPointException(
                 "No eCode have been informed to compute the rheobase during extraction."
             )
 
@@ -1284,7 +1385,9 @@ class NexusAPI(DatabaseAPI):
         )
 
         if resources_params is None:
-            raise NexusAPIException("Could not get model parameters for emodel %s" % self.emodel)
+            raise NexusAccessPointException(
+                "Could not get model parameters for emodel %s" % self.emodel
+            )
 
         params_definition = {"parameters": {}}
         mech_definition = {}
@@ -1447,7 +1550,7 @@ class NexusAPI(DatabaseAPI):
                     resources.append(r)
 
         if resources is None:
-            raise NexusAPIException(
+            raise NexusAccessPointException(
                 "Could not get protocol %s %s %% for emodel %s"
                 % (
                     resource_target.stimulus.stimulusType.label,
@@ -1457,7 +1560,7 @@ class NexusAPI(DatabaseAPI):
             )
 
         if len(resources) > 1:
-            raise NexusAPIException(
+            raise NexusAccessPointException(
                 "More than one protocol %s %s %% for emodel %s"
                 % (
                     resource_target.stimulus.stimulusType.label,
@@ -1548,13 +1651,13 @@ class NexusAPI(DatabaseAPI):
                     resources.append(r)
 
         if resources is None:
-            raise NexusAPIException(
+            raise NexusAccessPointException(
                 "Could not get feature %s for %s %s %% for emodel %s"
                 % (name, stimulus, amplitude, self.emodel)
             )
 
         if len(resources) > 1:
-            raise NexusAPIException(
+            raise NexusAccessPointException(
                 "More than one feature %s for %s %s %% for emodel %s"
                 % (name, stimulus, amplitude, self.emodel)
             )
@@ -1711,12 +1814,6 @@ class NexusAPI(DatabaseAPI):
             "path": str(filepath),
         }
 
-    def get_morph_modifiers(self):
-        """Retrieve the morph modifiers if any."""
-
-        # TODO:
-        return None
-
     def get_name_validation_protocols(self):
         """Get the names of the protocols used for validation"""
 
@@ -1754,14 +1851,14 @@ class NexusAPI(DatabaseAPI):
 
         try:
             self.get_features()
-        except NexusAPIException as e:
+        except NexusAccessPointException as e:
             if "Could not get " in str(e):
                 return False
             raise e
 
         try:
             self.get_protocols()
-        except NexusAPIException as e:
+        except NexusAccessPointException as e:
             if "Could not get protocol" in str(e):
                 return False
             raise e
@@ -1791,7 +1888,7 @@ class NexusAPI(DatabaseAPI):
             return False
 
         if len(resources) > 1:
-            raise NexusAPIException(
+            raise NexusAccessPointException(
                 "More than one model for emodel "
                 "%s, seed %s, githash %s" % (self.emodel, seed, githash)
             )
@@ -1801,7 +1898,7 @@ class NexusAPI(DatabaseAPI):
 
         return False
 
-    def is_validated(self, githash, n_models_to_pass_validation):
+    def is_validated(self, githash):
         """Check if enough models have been validated.
 
         Reminder: the logic of validation is as follows:
@@ -1821,4 +1918,4 @@ class NexusAPI(DatabaseAPI):
             if hasattr(resource, "passedValidation") and resource.passedValidation:
                 n_validated += 1
 
-        return n_validated >= n_models_to_pass_validation
+        return n_validated >= self.pipeline_settings.n_model

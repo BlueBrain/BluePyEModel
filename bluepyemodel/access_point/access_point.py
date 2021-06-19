@@ -1,23 +1,30 @@
-"""Abstract API class."""
+"""Abstract data access point class."""
 
 import glob
 import logging
 from pathlib import Path
 
+from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+
 logger = logging.getLogger(__name__)
 
 
-class DatabaseAPI:
-    """Database API"""
+class DataAccessPoint:
+    """Data access point"""
 
     def __init__(self, emodel):
         """Init"""
 
         self.emodel = emodel
+        self.pipeline_settings = self.load_pipeline_settings()
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel."""
         self.emodel = emodel
+
+    def load_pipeline_settings(self):
+        """ """
+        return EModelPipelineSettings()
 
     def store_efeatures(
         self,
@@ -45,24 +52,12 @@ class DatabaseAPI:
         """Save a model obtained from BluePyOpt"""
 
     def get_extraction_metadata(self):
-        """Gather the metadata used to build the config dictionary used as an
-        input by BluePyEfe.
+        """Get the configuration parameters used for feature extraction.
 
         Returns:
-            cells (dict): return the cells recordings metadata
-            protocols (dict): return the protocols metadata
-
-        """
-
-    def get_feature_extraction_config(self, threshold_nvalue_save=1):
-        """Get config for feature extraction.
-
-        Args:
-            threshold_nvalue_save (int): lower bounds of the number of values required
-                to save an efeature.
-
-        Returns:
-            extract_config (dict): config dict used in extract.extract_efeatures()
+            files_metadata (dict)
+            targets (dict)
+            protocols_threshold (list)
         """
 
     def get_emodel(self):
@@ -113,9 +108,6 @@ class DatabaseAPI:
 
         """
 
-    def get_morph_modifiers(self):
-        """Get the morph modifiers if any."""
-
     def get_mechanism_paths(self, mechanism_names):
         """Get the path of the mod files
 
@@ -132,6 +124,10 @@ class DatabaseAPI:
         Returns:
             dict: keys are emodel names with seed, values are names without seed.
         """
+
+    def get_morph_modifiers(self):
+        """Get the morph modifiers if any."""
+        return self.pipeline_settings.morph_modifiers
 
     def optimisation_state(self, checkpoint_dir, seed=1, githash=""):
         """Return the state of the optimisation.

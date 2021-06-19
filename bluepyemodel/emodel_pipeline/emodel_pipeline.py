@@ -1,148 +1,321 @@
-"""Define a class for a pipeline allowing the creation of emodels."""
+"""Allows to execute the steps of the e-model building pipeline using python or CLI"""
+
+import argparse
 import datetime
+import glob
 import logging
 import os
-import tarfile
-import time
-from pathlib import Path
+import pathlib
 
-from git import Repo
-
-from bluepyemodel.api import get_db
-from bluepyemodel.efeatures_extraction import extract_save_features_protocols
+from bluepyemodel.access_point import get_db
+from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
-from bluepyemodel.evaluation.evaluation import compute_responses
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
-from bluepyemodel.optimisation import optimisation
+from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.validation.validation import validate
 
-# pylint: disable=W0621
-
-logger = logging.getLogger(__name__)
-
-mechanisms_dir = "mechanisms"
-run_dir = "run"
-final_path = "final.json"
+logger = logging.getLogger()
 
 
-def get_logger(level="INFO"):
-    """Instantiate a logger"""
+class EModel_pipeline:
 
-    if level == "WARNING":
-        log_level = logging.WARNING
-    elif level == "INFO":
-        log_level = logging.INFO
-    elif level == "DEBUG":
-        log_level = logging.DEBUG
+    """EModel pipeline"""
 
-    logger = logging.getLogger()
-    logging.basicConfig(level=log_level, handlers=[logging.StreamHandler()])
+    def __init__(
+        self,
+        emodel,
+        species,
+        brain_region,
+        data_access_point,
+        recipes_path=None,
+        forge_path=None,
+        githash=None,
+        nexus_organisation=None,
+        nexus_project=None,
+        nexus_endpoint="staging",
+        ttype=None,
+        nexus_iteration_tag=None,
+        use_ipyparallel=None,
+    ):
+        """Initialize the emodel_pipeline.
 
-    return logger
+        Args:
+            emodel (str): name of the emodel. Has to match the name of the emodel under which the
+                configuration data are stored.
+            species (str): name of the species.
+            brain_region (str): name of the brain region.
+            data_access_point (str): name of the access_point used to access the data,
+                can be "nexus" or "local".
+                "local" expect the configuration to be  defined in a "config" directory
+                containing recipes as in proj38. "nexus" expect the configuration to be defined
+                on Nexus using NexusForge, see bluepyemodel/api/nexus.py.
+            recipes_path (str): path of the recipes.json, only needed if the data access point is
+                "local".
+            forge_path (str): path to the .yml used to connect to Nexus Forge, only needed if
+                db_api="nexus".
+            githash (str): if provided, the pipeline will work in the directory
+                working_dir/run/githash. Needed when continuing work or resuming optimisations.
+            nexus_organisation (str): name of the Nexus organisation in which the project is
+                located.
+            nexus_project (str): name of the Nexus project to which the forge will connect to
+                retrieve the data
+            nexus_endpoint (str): Nexus endpoint ("prod" or "staging")
+            ttype (str): name of the t-type. Required if using the gene expression or IC selector.
+            nexus_iteration_tag (str): tag associated to the current run. Used to tag the
+                Resources generated during the different run
+            : should the parallelization map be base on ipyparallel.
+        """
+
+        self.emodel = emodel
+        self.species = species
+        self.brain_region = brain_region
+        self.githash = githash
+
+        self.mapper = instantiate_map_function(
+            use_ipyparallel=use_ipyparallel, ipython_profil="IPYTHON_PROFILE"
+        )
+
+        self.access_point = self.init_access_point(
+            data_access_point,
+            recipes_path,
+            forge_path,
+            nexus_organisation,
+            nexus_endpoint,
+            nexus_project,
+            ttype,
+            nexus_iteration_tag,
+        )
+
+    def init_access_point(
+        self,
+        data_access_point,
+        recipes_path,
+        forge_path,
+        nexus_organisation,
+        nexus_endpoint,
+        nexus_project,
+        ttype,
+        nexus_iteration_tag,
+    ):
+        """Instantiate a data access point, either to Nexus or GPFS"""
+
+        endpoint = None
+        if nexus_endpoint == "prod":
+            endpoint = "https://bbp.epfl.ch/nexus/v1"
+        elif nexus_endpoint == "staging":
+            endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
+
+        emodel_dir = "./"
+        if self.githash:
+            emodel_dir = str(pathlib.Path("./") / "run" / self.githash)
+
+        return get_db(
+            access_point=data_access_point,
+            emodel=self.emodel,
+            emodel_dir=emodel_dir,
+            recipes_path=recipes_path,
+            final_path="final.json",
+            species=self.species,
+            brain_region=self.brain_region,
+            organisation=nexus_organisation,
+            project=nexus_project,
+            endpoint=endpoint,
+            forge_path=forge_path,
+            ttype=ttype,
+            iteration_tag=nexus_iteration_tag,
+        )
+
+    def extract_efeatures(self):
+        """"""
+
+        extract_save_features_protocols(
+            emodel=self.emodel, access_point=self.access_point, mapper=self.mapper
+        )
+
+    def optimize(self, seed=1):
+        """"""
+
+        setup_and_run_optimisation(
+            self.access_point,
+            emodel=self.emodel,
+            seed=seed,
+            mapper=self.mapper,
+            continue_opt=False,
+            githash=self.githash,
+            terminator=None,
+        )
+
+    def store_optimisation_results(self):
+        """"""
+
+        for chkp_path in glob.glob("./checkpoints/*.pkl"):
+
+            if self.emodel not in chkp_path:
+                continue
+
+            if self.githash and self.githash not in chkp_path:
+                continue
+
+            splitted_path = pathlib.Path(chkp_path).stem.split("__")
+            seed = int(splitted_path[-1])
+
+            store_best_model(
+                access_point=self.access_point,
+                emodel=self.emodel,
+                seed=seed,
+                checkpoint_path=chkp_path,
+                githash=self.githash,
+            )
+
+    def validation(self):
+        """"""
+
+        validate(
+            access_point=self.access_point,
+            emodel=self.emodel,
+            mapper=self.mapper,
+        )
+
+    def plot(self):
+
+        for chkp_path in glob.glob("./checkpoints/*.pkl"):
+
+            if self.emodel not in chkp_path:
+                continue
+
+            if self.githash and self.githash not in chkp_path:
+                continue
+
+            plotting.optimization(checkpoint_path=chkp_path, figures_dir="./figures")
+
+        githashs = None
+        if self.githash:
+            githashs = [self.githash]
+
+        return plotting.plot_models(
+            self.access_point,
+            self.emodel,
+            mapper=self.mapper,
+            seeds=None,
+            githashs=githashs,
+            figures_dir="./figures",
+            plot_distributions=True,
+            plot_scores=True,
+            plot_traces=True,
+        )
 
 
-def update_gitignore():
-    """
-    Adds the following lines to .gitignore: 'run/', 'checkpoints/', 'figures/',
-    'logs/', '.ipython/', '.ipynb_checkpoints/'
-    """
+def get_parser():
+    """Instantiate a parser that can configure the steps of the E-Model pipeline"""
 
-    path_gitignore = Path("./.gitignore")
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter, description="E-Model pipeline"
+    )
 
-    if not (path_gitignore.is_file()):
-        raise Exception("Could not update .gitignore as it does not exist.")
+    # Arguments that define the E-Model:
+    parser.add_argument("--emodel", type=str, help="Name of the e-model")
+    parser.add_argument("--species", type=str, help="Name of the species")
+    parser.add_argument("--brain_region", type=str, help="Name of the brain region")
 
-    with open(str(path_gitignore), "r") as f:
-        lines = f.readlines()
+    # Arguments used in the instantiation of the data access point:
+    parser.add_argument(
+        "--data_access_point",
+        type=str,
+        required=True,
+        choices=["local", "nexus"],
+        help="Which data access point to use.",
+    )
+    parser.add_argument("--recipes_path", type=str, help="Relative path to the recipes.json.")
+    parser.add_argument(
+        "--nexus_organisation",
+        type=str,
+        help="Name of the organisation to which the Nexus project belong.",
+    )
+    parser.add_argument("--nexus_project", type=str, help="Name of the Nexus project.")
+    parser.add_argument(
+        "--nexus_endpoint",
+        type=str,
+        choices=["prod", "staging"],
+        help="Name of the Nexus endpoint.",
+    )
+    parser.add_argument(
+        "--nexus_iteration_tag",
+        type=str,
+        default=None,
+        help="Tag associated to the current run, used to tag the Resources "
+        "generated during the different run",
+    )
+    parser.add_argument(
+        "--forge_path",
+        type=str,
+        default=None,
+        help="Path to the .yml used to configure Nexus Forge.",
+    )
+    parser.add_argument("--ttype", type=str, help="Name of the t-type.")
 
-    lines = " ".join(line for line in lines)
+    # Argument used for the steps of the pipeline:
+    parser.add_argument(
+        "--step",
+        type=str,
+        required=True,
+        choices=["extract", "optimize", "store", "plot", "validate"],
+        help="Stage of the E-Model building pipeline to execute",
+    )
+    parser.add_argument("--seed", type=int, default=1, help="Seed to use for optimization")
+    parser.add_argument(
+        "--githash",
+        type=str,
+        required=False,
+        default=None,
+        help="Githash associated to the current E-Model " "building iteration.",
+    )
+    parser.add_argument(
+        "--use_ipyparallel", action="store_true", default=False, help="Use ipyparallel"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        dest="verbosity",
+        default=0,
+        help="-v for INFO, -vv for DEBUG",
+    )
 
-    to_add = [
-        run_dir + "/",
-        "checkpoints/",
-        "figures/",
-        "logs/",
-        ".ipython/",
-        ".ipynb_checkpoints/",
-    ]
-
-    with open(str(path_gitignore), "a") as f:
-        for a in to_add:
-            if a not in lines:
-                f.write(f"{a}\n")
-
-
-def generate_versions():
-    """
-    Save a list of the versions of the python packages in the current environnement.
-    """
-
-    path_versions = Path("./list_versions.log")
-
-    if path_versions.is_file():
-        logger.warning("%s already exists and will overwritten.", path_versions)
-
-    os.popen(f"pip list > {str(path_versions)}").read()
-
-
-def generate_githash():
-    """
-    Generate a githash and create the associated run directory
-    """
-    path_run = Path(run_dir)
-
-    if not path_run.is_dir():
-        logger.warning("Directory %s does not exist and will be created.", str(path_run))
-        path_run.mkdir(parents=True, exist_ok=True)
-
-    while Path("./.git/index.lock").is_file():
-        time.sleep(5.0)
-        logger.info("emodel_pipeline waiting for ./.git/index.lock.")
-
-    repo = Repo("./")
-    changedFiles = [item.a_path for item in repo.index.diff(None)]
-    if changedFiles:
-        os.popen('git add -A && git commit --allow-empty -a -m "Running pipeline"').read()
-
-    githash = os.popen("git rev-parse --short HEAD").read()[:-1]
-
-    tar_source = path_run / f"{githash}.tar"
-    tar_target = path_run / githash
-
-    if not tar_target.is_dir():
-
-        logger.info("New githash directory: %s", githash)
-
-        repo = Repo("./")
-        with open(str(tar_source), "wb") as fp:
-            repo.archive(fp)
-        with tarfile.open(str(tar_source)) as tf:
-            tf.extractall(str(tar_target))
-
-        if tar_source.is_file():
-            os.popen(f"rm -rf {str(tar_source)}").read()
-
-    else:
-        logger.info("Working from existing githash directory: %s", githash)
-
-    return githash
+    return parser
 
 
-def ipyparallel_map_function(flag_use_IPYP=None, ipython_profil="IPYTHON_PROFILE"):
-    """Get the map function linked to the ipython profile
+def get_arguments():
+    """Get the arguments and check their validity"""
 
-    Args:
-       flag_use_IPYP (str): name of the environement variable used as boolean
-           to check if ipyparallel should be used
-       ipython_profil (str): name fo the environement variable containing
-           the name of the name of the ipython profile
+    args = get_parser().parse_args()
 
-    Returns:
-        map
-    """
+    if args.verbosity > 2:
+        raise Exception("Verbosity cannot be more verbose than -vv")
 
-    if flag_use_IPYP and os.getenv(flag_use_IPYP) and int(os.getenv(flag_use_IPYP)):
+    if args.data_access_point == "local":
+        required_args = ["recipes_path"]
+    elif args.data_access_point == "nexus":
+        required_args = [
+            "nexus_organisation",
+            "nexus_project",
+            "nexus_endpoint",
+            "nexus_iteration_tag",
+        ]
+
+    for arg in required_args:
+        if getattr(args, arg) is None:
+            raise Exception(
+                "When using %s as a data access point. The argument "
+                "%s has to be informed." % (args.data_access_point, arg)
+            )
+
+    return args
+
+
+def instantiate_map_function(use_ipyparallel=False, ipython_profil="IPYTHON_PROFILE"):
+    """Instantiate a map function"""
+
+    if use_ipyparallel:
         from ipyparallel import Client
 
         rc = Client(profile=os.getenv(ipython_profil))
@@ -160,475 +333,67 @@ def ipyparallel_map_function(flag_use_IPYP=None, ipython_profil="IPYTHON_PROFILE
     return mapper
 
 
-class EModel_pipeline:
+def sanitize_gitignore():
+    """In order to avoid git issue when archiving the current working directory,
+    adds the following lines to .gitignore: 'run/', 'checkpoints/', 'figures/',
+    'logs/', '.ipython/', '.ipynb_checkpoints/'"""
 
-    """EModel pipeline"""
+    path_gitignore = pathlib.Path("./.gitignore")
 
-    def __init__(
-        self,
-        emodel,
-        species,
-        brain_region,
-        db_api,
-        recipes_path=None,
-        forge_path=None,
-        use_git=False,
-        githash=None,
-        nexus_organisation="demo",
-        nexus_projet="emodel_pipeline",
-        nexus_enpoint="https://bbp.epfl.ch/nexus/v1",
-        ttype=None,
-        nexus_iteration_tag=None,
-    ):
-        """Initialize the emodel_pipeline.
+    if not (path_gitignore.is_file()):
+        raise Exception("Could not update .gitignore as it does not exist.")
 
-        Args:
-            emodel (str): name of the emodel. Has to match the name of the emodel under which the
-                configuration data are stored.
-            species (str): name of the species.
-            brain_region (str): name of the brain region.
-            db_api (str): name of the API used to access the data, can be "nexus" or "singlecell".
-                "singlecell" expect the configuration to be  defined in a "config" directory
-                containing recipes as in proj38. "nexus" expect the configuration to be defined
-                on Nexus using NexusForge, see bluepyemodel/api/nexus.py.
-            recipes_path (str): path of the recipes.json, only needed if db_api="singlecell".
-            forge_path (str): path to the .yml used to connect to Nexus Forge, only needed if
-                db_api="nexus".
-            use_git (bool): if True, work will be perfomed in a sub-directory:
-                working_dir/run/githash. If use_git is True and githash is None, a new githash will
-                be generated. The pipeline will expect a git repository to exist in working_dir.
-            githash (str): if provided, the pipeline will work in the directory
-                working_dir/run/githash. Needed when continuing work or resuming optimisations.
-            nexus_organisation (str): name of the Nexus organisation in which the project is
-                located.
-            nexus_projet (str): name of the Nexus project to which the forge will connect to
-                retrieve the data
-            nexus_enpoint (str): url of the Nexus endpoint (prod or staging)
-            ttype (str): name of the t-type. Required if using the gene expression or IC selector.
-            nexus_iteration_tag (str): tag associated to the current run. Used to tag the
-                Resources generated during the different run
-        """
+    with open(str(path_gitignore), "r") as f:
+        lines = f.readlines()
 
-        self.emodel = emodel
-        self.species = species
-        self.brain_region = brain_region
+    lines = " ".join(line for line in lines)
 
-        if use_git:
+    to_add = ["run/", "checkpoints/", "figures/", "logs/", ".ipython/", ".ipynb_checkpoints/"]
 
-            is_git = str(os.popen("git rev-parse --is-inside-work-tree").read())[:-1]
-            if is_git != "true":
-                raise Exception(
-                    "use_git is true, but there is no git repository initialized in working_dir."
-                )
+    with open(str(path_gitignore), "a") as f:
+        for a in to_add:
+            if a not in lines:
+                f.write(f"{a}\n")
 
-            if githash is None:
 
-                update_gitignore()
-                # generate_version has to be ran before generating the githash as a change
-                # in a package version should induce the creation of a new githash
-                generate_versions()
-                self.githash = generate_githash()
+def main():
+    """This function can be used to run the different steps of an e-model building pipeline.
+    It can also be used as an starting point to build your own."""
 
-            else:
+    args = get_arguments()
 
-                self.githash = githash
-                logger.info("Working from existing githash directory: %s", self.githash)
+    logging.basicConfig(
+        level=(logging.WARNING, logging.INFO, logging.DEBUG)[args.verbosity],
+        handlers=[logging.StreamHandler()],
+    )
 
-        elif githash:
-            raise Exception("A githash was provided but use_git is False.")
+    pipeline = EModel_pipeline(
+        emodel=args.emodel,
+        species=args.species,
+        brain_region=args.brain_region,
+        data_access_point=args.data_access_point,
+        recipes_path=args.recipes_path,
+        forge_path=args.forge_path,
+        githash=args.githash,
+        nexus_organisation=args.nexus_organisation,
+        nexus_project=args.nexus_project,
+        nexus_endpoint=args.nexus_endpoint,
+        ttype=args.ttype,
+        nexus_iteration_tag=args.nexus_iteration_tag,
+        use_ipyparallel=args.use_ipyparallel,
+    )
 
-        else:
-            self.githash = None
+    if args.step == "extract":
+        pipeline.extract_efeatures()
+    elif args.step == "optimize":
+        pipeline.optimize(seed=args.seed)
+    elif args.step == "store":
+        pipeline.store_optimisation_results()
+    elif args.step == "validate":
+        pipeline.validation()
+    elif args.step == "plot":
+        pipeline.plot()
 
-        self.db = self.connect_db(
-            db_api,
-            recipes_path,
-            nexus_organisation,
-            nexus_projet,
-            nexus_enpoint,
-            forge_path,
-            ttype,
-            nexus_iteration_tag,
-        )
 
-    @property
-    def working_dir(self):
-        if self.githash:
-            return str(Path("./") / run_dir / self.githash)
-        return "./"
-
-    def connect_db(
-        self,
-        db_api,
-        recipes_path,
-        nexus_organisation,
-        nexus_projet,
-        nexus_enpoint,
-        forge_path,
-        ttype,
-        nexus_iteration_tag,
-    ):
-        """
-        Instantiate the api from which the pipeline will get and store the data.
-        """
-        return get_db(
-            db_api,
-            emodel=self.emodel,
-            emodel_dir=self.working_dir,
-            recipes_path=recipes_path,
-            final_path=final_path,
-            species=self.species,
-            brain_region=self.brain_region,
-            organisation=nexus_organisation,
-            project=nexus_projet,
-            endpoint=nexus_enpoint,
-            forge_path=forge_path,
-            ttype=ttype,
-            iteration_tag=nexus_iteration_tag,
-        )
-
-    def get_evaluator(
-        self,
-        stochasticity=False,
-        include_validation_protocols=False,
-        additional_protocols=None,
-        timeout=600,
-    ):
-        """Create an evaluator for the emodel.
-
-        Args:
-            stochasticity (bool): should channels behave stochastically if they can.
-            include_validation_protocols (bool): should the validation protocols
-                and validation efeatures be added to the evaluator.
-            additional_protocols (dict): definition of supplementary protocols. See
-                examples/optimisation for usage.
-            timeout (float): duration (in second) after which the evaluation of a protocol will
-                be interrupted.
-
-        Returns:
-            Evaluator
-        """
-
-        return get_evaluator_from_db(
-            emodel=self.emodel,
-            db=self.db,
-            stochasticity=stochasticity,
-            include_validation_protocols=include_validation_protocols,
-            additional_protocols=additional_protocols,
-            timeout=timeout,
-        )
-
-    def extract_efeatures(
-        self,
-        files_metadata=None,
-        targets=None,
-        threshold_nvalue_save=1,
-        protocols_threshold=None,
-        name_Rin_protocol=None,
-        name_rmp_protocol=None,
-        validation_protocols=None,
-        plot=False,
-    ):
-        """Extract efeatures from traces using BluePyEfe 2. Extraction is performed
-            as defined in the argument "config_dict". See example/efeatures_extraction
-            for usage. The resulting efeatures, protocols and currents will be saved
-            in the medium chosen by the api.
-
-        Args:
-            files_metadata (dict): define for which cell and protocol each file
-                has to be used. Of the form:
-                {
-                    cell_id: {
-                        protocol_name: [{file_metadata1}, {file_metadata1}]
-                    }
-                }
-                A same file path might be present in the file metadata for
-                different protocols.
-                The entries required in the file_metadata are specific to each
-                trace_reader (see bluepyemodel/reader.py to know which one are
-                needed for your trace_reader).
-            targets (dict): define the efeatures to extract for each protocols
-                and the amplitude around which these features should be
-                averaged. Of the form:
-                {
-                    protocol_name: {
-                        "amplitudes": [50, 100],
-                        "tolerances": [10, 10],
-                        "efeatures": ["Spikecount", "AP_amplitude"],
-                        "location": "soma"
-                    }
-                }
-                If efeatures must be computed only for a given time interval,
-                the beginning and end of this interval can be specified as
-                follows (in ms):
-                "efeatures": {
-                    "Spikecount": [500, 1100],
-                    "AP_amplitude": [100, 600],
-                }
-            threshold_nvalue_save (int): lower bounds of the number of values required
-                to save an efeature.
-            protocols_threshold (list): names of the protocols that will be
-                used to compute the rheobase of the cells. E.g: ['IDthresh'].
-            name_Rin_protocol (str): name of the protocol that should be used to compute
-                the input resistance. Only used when db_api is 'singlecell'
-            name_rmp_protocol (str): name of the protocol that should be used to compute
-                the resting membrane potential. Only used when db_api is 'singlecell'.
-            validation_protocols (dict): Of the form {"ecodename": [targets]}. Only used
-                when db_api is 'singlecell'.
-
-        Returns:
-            efeatures (dict): mean and standard deviation of efeatures at targets.
-            stimuli (dict): definitions of mean stimuli/protocols.
-            current (dict): mean and standard deviation of holding and threshold currents.
-        """
-
-        if validation_protocols is None:
-            validation_protocols = {}
-        if protocols_threshold is None:
-            protocols_threshold = []
-
-        map_function = ipyparallel_map_function("USEIPYP")
-
-        efeatures, stimuli, current = extract_save_features_protocols(
-            emodel=self.emodel,
-            emodel_db=self.db,
-            files_metadata=files_metadata,
-            targets=targets,
-            protocols_threshold=protocols_threshold,
-            threshold_nvalue_save=threshold_nvalue_save,
-            mapper=map_function,
-            name_Rin_protocol=name_Rin_protocol,
-            name_rmp_protocol=name_rmp_protocol,
-            validation_protocols=validation_protocols,
-            plot=plot,
-        )
-
-        return efeatures, stimuli, current
-
-    def optimize(
-        self,
-        max_ngen=1000,
-        stochasticity=False,
-        opt_params=None,
-        optimizer="IBEA",
-        checkpoint_path=None,
-        continue_opt=False,
-        timeout=600,
-    ):
-        """Run optimisation.
-
-        Args:
-            max_ngen (int): maximum number of generations of the evolutionary process.
-            stochasticity (bool): should channels behave stochastically if they can.
-            opt_params (dict): optimisation parameters. Keys have to match the
-                optimizer's call.
-            optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
-                "MO-CMA" (use cma option in pip install for CMA optimizers).
-            checkpoint_path (str): path to the file used as a checkpoint by BluePyOpt.
-            continue_opt (bool): should the optimization restart from a previously
-                created checkpoint file.
-            timeout (float): duration (in second) after which the evaluation of a
-                protocol will be interrupted.
-
-        """
-        if opt_params is None:
-            opt_params = {}
-
-        if checkpoint_path is None:
-
-            checkpoint_path = f"./checkpoints/emodel:{self.emodel}"
-
-            if self.githash:
-                checkpoint_path += f"__githash:{self.githash}"
-
-            if "seed" in opt_params:
-                checkpoint_path += f"__seed:{opt_params['seed']}.pkl"
-            else:
-                checkpoint_path += ".pkl"
-
-        logger.info("Path to the checkpoint file is %s", checkpoint_path)
-
-        map_function = ipyparallel_map_function("USEIPYP")
-
-        _evaluator = self.get_evaluator(
-            stochasticity=stochasticity,
-            include_validation_protocols=False,
-            timeout=timeout,
-        )
-
-        p = Path(checkpoint_path)
-        p.parents[0].mkdir(parents=True, exist_ok=True)
-        if continue_opt and not (p.is_file()):
-            raise Exception(
-                "continue_opt is True but the path specified in checkpoint_path does not exist."
-            )
-
-        opt = optimisation.setup_optimizer(
-            _evaluator, map_function, opt_params, optimizer=optimizer
-        )
-
-        return optimisation.run_optimization(
-            optimizer=opt,
-            checkpoint_path=Path(checkpoint_path),
-            max_ngen=max_ngen,
-            continue_opt=continue_opt,
-        )
-
-    def store_best_model(
-        self,
-        checkpoint_path,
-        stochasticity=False,
-        opt_params=None,
-        optimizer="IBEA",
-    ):
-        """Store the best model from an optimization. Reads a checkpoint file generated
-            by BluePyOpt and store the best individual of the hall of fame.
-
-        Args:
-            stochasticity (bool): should channels behave stochastically if they can.
-            opt_params (dict): optimisation parameters. Keys have to match the optimizer's call.
-            optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA", "MO-CMA".
-        """
-
-        if opt_params is None:
-            opt_params = {}
-
-        store_best_model(
-            emodel_db=self.db,
-            emodel=self.emodel,
-            seed=opt_params.get("seed", ""),
-            stochasticity=stochasticity,
-            include_validation_protocols=False,
-            optimizer=optimizer,
-            checkpoint_path=checkpoint_path,
-            githash=self.githash,
-        )
-
-    def compute_responses(
-        self,
-        cell_evaluator=None,
-        map_function=None,
-        stochasticity=False,
-        additional_protocols=None,
-    ):
-        """Wrapper around compute_responses.
-
-        Compute the responses of the emodel to the optimisation and validation protocols.
-
-        Args:
-            cell_evaluator (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
-            map_function (map): used to parallelize the evaluation of the
-                individual in the population.
-            stochasticity (bool): should channels behave stochastically if they can.
-            additional_protocols (dict): definition of supplementary protocols. See
-                examples/optimisation for usage.
-        Returns:
-            emodels (list): list of emodels.
-        """
-
-        if cell_evaluator is None:
-
-            if additional_protocols is None:
-                additional_protocols = {}
-
-            cell_evaluator = self.get_evaluator(
-                stochasticity=stochasticity,
-                include_validation_protocols=True,
-                additional_protocols=additional_protocols,
-            )
-
-        if map_function is None:
-            map_function = ipyparallel_map_function("USEIPYP")
-
-        return compute_responses(
-            self.db,
-            self.emodel,
-            cell_evaluator,
-            map_function,
-        )
-
-    def validate(
-        self,
-        validation_function=None,
-        stochasticity=False,
-    ):
-        """Compute the scores and traces for the optimisation and validation
-        protocols and perform validation.
-
-        Args:
-            validation_function (python function): function used to decide if a model
-                passes validation or not. Should rely on emodel['scores'] and
-                emodel['scores_validation']. See bluepyemodel/validation for examples.
-            stochasticity (bool): should channels behave stochastically if they can.
-
-        Returns:
-            emodels (list): list of emodels.
-        """
-
-        mapper = ipyparallel_map_function("USEIPYP")
-
-        return validate(
-            emodel_db=self.db,
-            emodel=self.emodel,
-            mapper=mapper,
-            validation_function=validation_function,
-            stochasticity=stochasticity,
-            additional_protocols=None,
-            threshold=5.0,
-            validation_protocols_only=False,
-        )
-
-    def plot_models(
-        self,
-        figures_dir="./figures",
-        stochasticity=False,
-        additional_protocols=None,
-        map_function=None,
-        seeds=None,
-        plot_distributions=True,
-        plot_scores=True,
-        plot_traces=True,
-        only_validated=False,
-    ):
-        """Plot the traces, scores and parameter distributions for all the models
-            matching the emodels name.
-
-        Args:
-            figures_dir (str): path of the directory in which the figures should be saved.
-            stochasticity (bool): should channels behave stochastically if they can.
-            additional_protocols (dict): definition of supplementary protocols. See
-                examples/optimisation for usage.
-            map_function (map): used to parallelize the evaluation of the
-                individual in the population.
-            seeds (list): if not None, filter emodels to keep only the ones with these seeds.
-            plot_distributions (bool): True to plot the parameters distributions
-            plot_scores (bool): True to plot the scores
-            plot_traces (bool): True to plot the traces
-            only_validated (bool): True to only plot validated models
-
-        Returns:
-            emodels (list): list of emodels.
-        """
-
-        if map_function is None:
-            map_function = ipyparallel_map_function("USEIPYP")
-
-        if self.githash:
-            githashs = [self.githash]
-        else:
-            githashs = None
-
-        return plotting.plot_models(
-            self.db,
-            self.emodel,
-            mapper=map_function,
-            seeds=seeds,
-            githashs=githashs,
-            figures_dir=figures_dir,
-            stochasticity=stochasticity,
-            additional_protocols=additional_protocols,
-            plot_distributions=plot_distributions,
-            plot_scores=plot_scores,
-            plot_traces=plot_traces,
-            only_validated=only_validated,
-        )
+if __name__ == "__main__":
+    main()

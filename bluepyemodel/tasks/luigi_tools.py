@@ -13,7 +13,7 @@ from luigi.parameter import _no_value
 from luigi_tools.task import WorkflowTask as _WorkflowTask
 from luigi_tools.task import _no_default_value
 
-from bluepyemodel import api
+from bluepyemodel import access_point
 from bluepyemodel.tasks.config import EmodelAPIConfig
 from bluepyemodel.tasks.utils import change_cwd
 from bluepyemodel.tasks.utils import generate_githash
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class WorkflowTask(_WorkflowTask):
-    """Workflow task with loaded emodel_db."""
+    """Workflow task with loaded data access point."""
 
     backend = luigi.Parameter(default=None, config_path=dict(section="parallel", name="backend"))
     emodel = luigi.Parameter()
@@ -36,7 +36,7 @@ class WorkflowTask(_WorkflowTask):
         """ """
         super().__init__(*args, **kwargs)
 
-        self.emodel_db = api.get_db(
+        self.access_point = access_point.get_db(
             EmodelAPIConfig().api, self.emodel, **EmodelAPIConfig().api_args
         )
 
@@ -50,7 +50,7 @@ class WorkflowTask(_WorkflowTask):
 
 
 class WorkflowTarget(luigi.Target, ABC):
-    """Workflow target with loaded emodel_db."""
+    """Workflow target with loaded access_point."""
 
     def __init__(self, emodel, *args, **kwargs):
         """ """
@@ -58,7 +58,7 @@ class WorkflowTarget(luigi.Target, ABC):
 
         self.emodel = emodel
 
-        self.emodel_db = api.get_db(
+        self.access_point = access_point.get_db(
             EmodelAPIConfig().api, self.emodel, **EmodelAPIConfig().api_args
         )
 

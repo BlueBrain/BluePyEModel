@@ -192,7 +192,7 @@ def build_ais_resistance_models(
 
     Args:
         morphs_combos_df (dataframe): data for me combos
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         emodel (str): emodel to consider
         ais_models: (dict): dict with ais models
         scales_params (dict): parmeter for scales of AIS to use
@@ -302,7 +302,7 @@ def find_target_rho_axon(
 
     Args:
         morphs_combos_df (dataframe): data for me combos
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         emodel (str): emodel to consider
         ais_models_file (str): path to yaml with ais models
         scales_params (dict): parameter for scales of AIS to use

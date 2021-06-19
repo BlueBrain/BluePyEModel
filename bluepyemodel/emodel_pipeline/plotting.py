@@ -230,13 +230,12 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
 
 
 def plot_models(
-    emodel_db,
+    access_point,
     emodel,
     mapper,
     seeds=None,
     githashs=None,
     figures_dir="./figures",
-    stochasticity=False,
     additional_protocols=None,
     plot_distributions=True,
     plot_scores=True,
@@ -247,7 +246,7 @@ def plot_models(
         matching the emodels name.
 
     Args:
-        emodel_db (DatabaseAPI): API used to access the database.
+        access_point (DataAccessPoint): data access point.
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         mapper (map): used to parallelize the evaluation of the
@@ -255,7 +254,6 @@ def plot_models(
         seeds (list): if not None, filter emodels to keep only the ones with these seeds.
         githashs (list): if not None, filter emodels to keep only the ones with these githashs.
         figures_dir (str): path of the directory in which the figures should be saved.
-        stochasticity (bool): should channels behave stochastically if they can.
         additional_protocols (dict): definition of supplementary protocols. See
             examples/optimisation for usage.
         plot_distributions (bool): True to plot the parameters distributions
@@ -273,16 +271,15 @@ def plot_models(
 
     cell_evaluator = get_evaluator_from_db(
         emodel,
-        emodel_db,
-        stochasticity=stochasticity,
+        access_point,
         include_validation_protocols=True,
         additional_protocols=additional_protocols,
     )
 
     if plot_traces:
-        emodels = compute_responses(emodel_db, emodel, cell_evaluator, mapper, seeds, githashs)
+        emodels = compute_responses(access_point, emodel, cell_evaluator, mapper, seeds, githashs)
     else:
-        emodels = emodel_db.get_emodels([emodel])
+        emodels = access_point.get_emodels([emodel])
         if seeds:
             emodels = [model for model in emodels if model["seed"] in seeds]
         if githashs:

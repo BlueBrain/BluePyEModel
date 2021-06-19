@@ -17,7 +17,7 @@ from morphio.mut import Morphology
 from tqdm import tqdm
 from voxcell import CellCollection
 
-from bluepyemodel.api.singlecell import SinglecellAPI
+from bluepyemodel.access_point.singlecell import SinglecellAPI
 from bluepyemodel.generalisation.ais_model import taper_function
 
 L = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
     """Create hoc files for a given emodel.
     Args:
         emodel (str): name of emodel
-        emodel_db (DatabaseAPI): database for emodels
+        emodel_db (DataAccessPoint): database for emodels
         template_path (str): path to jinja2 template file
         ais_models (dict): contains information about the AIS shape and eletrical properties
     """

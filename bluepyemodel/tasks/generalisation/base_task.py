@@ -5,7 +5,7 @@ import luigi
 from luigi_tools.task import WorkflowTask
 from luigi_tools.task import WorkflowWrapperTask
 
-from bluepyemodel.api.singlecell import SinglecellAPI
+from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.tasks.generalisation.config import EmodelAPIConfig
 
 
@@ -15,7 +15,7 @@ class EmodelAwareTask:
     def get_database(self):
         """Fetch emodel AP."""
         if EmodelAPIConfig().api == "singlecell":
-            return SinglecellAPI(
+            return LocalAccessPoint(
                 emodel=None,
                 emodel_dir=EmodelAPIConfig().emodel_dir,
                 final_path=EmodelAPIConfig().final_path,

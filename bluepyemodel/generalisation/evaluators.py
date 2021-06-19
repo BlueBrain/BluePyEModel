@@ -104,7 +104,7 @@ def evaluate_scores(
 
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         save_traces (bool): save responses as pickles to plot traces
         trace_folder (str): folder name to save traces pickles
@@ -211,7 +211,7 @@ def evaluate_ais_rin(
 
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         resume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
@@ -253,7 +253,7 @@ def evaluate_somadend_rin(
 
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         resume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
@@ -293,7 +293,7 @@ def evaluate_rho_axon(
 
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         rersume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database
@@ -339,7 +339,7 @@ def evaluate_combos_rho(
 
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         save_traces (bool): save responses as pickles to plot traces
         trace_folder (str): folder name to save traces pickles
@@ -386,7 +386,7 @@ def evaluate_currents(
 
     Args:
         morphs_combos_df (DataFrame): each row reprensents a computation
-        emodel_db (DatabaseAPI): object which contains API to access emodel data
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         resume (bool): if True, it will use only compute the empty rows of the database,
             if False, it will ecrase or generate the database

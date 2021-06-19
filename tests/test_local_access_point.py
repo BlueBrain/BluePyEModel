@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 import json
 
-from bluepyemodel.api import get_db
+from bluepyemodel.access_point import get_db
 from dictdiffer import diff
 
 
@@ -21,7 +21,7 @@ def api_config():
 
 @pytest.fixture
 def db(api_config):
-    return get_db("singlecell", **api_config)
+    return get_db("local", **api_config)
 
 
 def test_get_morphologies(db):

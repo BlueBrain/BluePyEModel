@@ -9,7 +9,6 @@
         ],
         "params": "config/params.json",
         "protocol": "config/protocols.json",
-        "features": "config/features.json",
-        "use_powertransform": false
+        "features": "config/features.json"
     }
 }
