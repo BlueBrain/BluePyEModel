@@ -1,7 +1,7 @@
 """Cell model creation."""
-
 import collections
 import logging
+import pathlib
 from importlib.machinery import SourceFileLoader
 
 import bluepyopt.ephys as ephys
@@ -217,19 +217,22 @@ def define_morphology(
     Returns:
         bluepyopt.ephys.morphologies.NrnFileMorphology: a morphology object
     """
+
     if morph_modifiers is None:
         morph_modifiers = [replace_axon_with_taper]
         morph_modifiers_hoc = [replace_axon_hoc]  # TODO: check the hoc is correct
         logger.warning("No morphology modifiers provided, replace_axon_with_taper will be used.")
+    else:
+        for i, morph_modifier in enumerate(morph_modifiers):
+            if isinstance(morph_modifier, list):
+                # pylint: disable=deprecated-method,no-value-for-parameter
+                modifier_module = SourceFileLoader(
+                    pathlib.Path(morph_modifier[0]).stem, morph_modifier[0]
+                ).load_module()
+                morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
 
-    for i, morph_modifier in enumerate(morph_modifiers):
-        if isinstance(morph_modifier, list):
-            # pylint: disable=deprecated-method,no-value-for-parameter
-            modifier_module = SourceFileLoader("morph_modifier", morph_modifier[0]).load_module()
-            morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
-
-        elif not callable(morph_modifier):
-            raise Exception("A morph modifier is not callable nor a list of two str")
+            elif not callable(morph_modifier):
+                raise Exception("A morph modifier is not callable nor a list of two str")
 
     return NrnFileMorphology(
         morphology_path,
@@ -266,6 +269,7 @@ def create_cell_model(
     Returns:
         CellModel
     """
+
     morph = define_morphology(
         morphology["path"],
         do_set_nseg=True,

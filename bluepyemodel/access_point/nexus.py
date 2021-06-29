@@ -197,7 +197,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         resource = self.access_point.fetch_one(
             filters={
-                "type": "PipelineSettings",
+                "type": "EModelPipelineSettings",
                 "eModel": self.emodel,
                 "subject": self.get_subject(for_search=True),
                 "brainLocation": self.brain_region,
@@ -776,7 +776,7 @@ class NexusAccessPoint(DataAccessPoint):
         plot_extraction=True,
         plot_optimisation=True,
     ):
-        """Creates a PipelineSettings resource.
+        """Creates an EModelPipelineSettings resource.
 
         Args:
             extraction_threshold_value_save (int): name of the mechanism.
@@ -814,7 +814,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         resource_description = {
             "name": f"Pipeline settings {self.emodel}",
-            "type": ["Entity", "Parameter", "PipelineSettings"],
+            "type": ["Entity", "Parameter", "EModelPipelineSettings"],
             "eModel": self.emodel,
             "subject": self.get_subject(for_search=False),
             "brainLocation": self.brain_region,
@@ -837,7 +837,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         resource_search = {
             "name": f"Pipeline parameters {self.emodel}",
-            "type": ["Entity", "Parameter", "PipelineSettings"],
+            "type": ["Entity", "Parameter", "EModelPipelineSettings"],
             "eModel": self.emodel,
             "subject": self.get_subject(for_search=False),
             "brainLocation": self.brain_region,
