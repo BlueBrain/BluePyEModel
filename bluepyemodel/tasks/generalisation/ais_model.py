@@ -149,7 +149,8 @@ class TargetRhoAxon(BaseTask):
         rho_scan_df.to_csv(self.set_tmp(self.add_emodel(self.rho_scan_df_path)), index=False)
 
         if Path(self.custom_target_rhos_path).exists():
-            custom_target_rho = yaml.full_load(open(self.custom_target_rhos_path, "r"))
+            with open(self.custom_target_rhos_path, "r") as custom_target_file:
+                custom_target_rho = yaml.full_load(custom_target_file)
             if custom_target_rho is not None and self.emodel in custom_target_rho:
                 logger.info("Using custom value for target rho axon")
                 target_rhos = {self.emodel: {"all": custom_target_rho[self.emodel]}}

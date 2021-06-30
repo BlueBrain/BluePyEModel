@@ -4,7 +4,7 @@ import logging
 import pathlib
 from importlib.machinery import SourceFileLoader
 
-import bluepyopt.ephys as ephys
+from bluepyopt import ephys
 from bluepyopt.ephys.morphologies import NrnFileMorphology
 
 from .modifiers import replace_axon_hoc

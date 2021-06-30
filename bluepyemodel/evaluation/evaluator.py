@@ -375,7 +375,7 @@ def define_protocol(
 
             recordings.append(recording)
 
-    for k in eCodes:
+    for k, ecode in eCodes.items():
         if k in name.lower():
 
             if "stimuli" in protocol_definition:
@@ -383,7 +383,7 @@ def define_protocol(
             else:
                 stim_def = {}
 
-            stimulus = eCodes[k](location=soma_loc, **stim_def)
+            stimulus = ecode(location=soma_loc, **stim_def)
 
             break
 

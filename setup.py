@@ -15,7 +15,7 @@ with open("README.rst", encoding="utf-8") as f:
     README = f.read()
 
 
-EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow", "bbp-workflow-cli"]
+EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow>=2.1.19", "bbp-workflow-cli"]
 EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3"]
 EXTRA_NEXUS = ["nexusforge", "entity_management", "pyJWT==1.7.1"]
 EXTRA_TEST = ["pytest", "dictdiffer"]

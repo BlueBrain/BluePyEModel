@@ -76,6 +76,8 @@ class LocalAccessPoint(DataAccessPoint):
         self.rw_lock_final = fasteners.InterProcessReaderWriterLock(".tmp/final.lock")
         self.rw_lock_final_tmp = fasteners.InterProcessReaderWriterLock(".tmp/final_tmp.lock")
 
+        self.pipeline_settings = self.load_pipeline_settings()
+
     def set_emodel(self, emodel):
         """Setter for the name of the emodel."""
         if self.with_seeds:
@@ -772,3 +774,7 @@ class LocalAccessPoint(DataAccessPoint):
                 n_validated += 1
 
         return n_validated >= n_models_to_pass_validation
+
+    def get_morph_modifiers(self):
+        """Get the morph modifiers if any."""
+        return self.pipeline_settings.morph_modifiers

@@ -130,7 +130,8 @@ def get_cell(
     calc_threshold=False,
 ):
     if morphology_name is not None:
-        protocol_config = yaml.safe_load(open("protocol_config.yaml"))
+        with open("protocol_config.yaml", "r") as prot_file:
+            protocol_config = yaml.safe_load(prot_file)
         cell_kwargs = _get_cell_kwargs_custom_template(
             morphology_name, morphology_dir, emodel, emodels_hoc_dir
         )

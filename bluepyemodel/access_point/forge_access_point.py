@@ -180,13 +180,15 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch_one(self, filters, use_version=True):
+    def fetch_one(self, filters, use_version=True, at_least_one=True):
         """Fetch one and only one resource based on filters."""
 
         resources = self.fetch(filters, use_version=use_version)
 
         if resources is None:
-            raise AccessPointException("Could not get resource for filters %s" % filters)
+            if at_least_one:
+                raise AccessPointException("Could not get resource for filters %s" % filters)
+            return None
 
         if len(resources) > 1:
             raise AccessPointException("More than one resource for filters %s" % filters)

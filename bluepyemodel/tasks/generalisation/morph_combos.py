@@ -76,7 +76,8 @@ class CreateMorphCombosDF(BaseTask):
         """ """
         morphs_df = pd.read_csv(self.input().path)
 
-        cell_composition = yaml.safe_load(open(self.cell_composition_path, "r"))
+        with open(self.cell_composition_path, "r") as cell_file:
+            cell_composition = yaml.safe_load(cell_file)
         morphs_combos_df = ComboDB.from_dataframe(
             morphs_df, cell_composition, self.emodel_db
         ).combo_df

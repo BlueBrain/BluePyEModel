@@ -16,7 +16,6 @@ class DataAccessPoint:
         """Init"""
 
         self.emodel = emodel
-        self.pipeline_settings = self.load_pipeline_settings()
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel."""
@@ -124,10 +123,6 @@ class DataAccessPoint:
         Returns:
             dict: keys are emodel names with seed, values are names without seed.
         """
-
-    def get_morph_modifiers(self):
-        """Get the morph modifiers if any."""
-        return self.pipeline_settings.morph_modifiers
 
     def optimisation_state(self, checkpoint_dir, seed=1, githash=""):
         """Return the state of the optimisation.

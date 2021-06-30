@@ -116,6 +116,8 @@ class NexusAccessPoint(DataAccessPoint):
             iteration_tag=iteration_tag,
         )
 
+        self.pipeline_settings = self.load_pipeline_settings(at_least_one=False)
+
     def get_subject(self, for_search=False):
         """Get the ontology of a species based n the species name. The id is not used
         during search as if it is specified the search fail (will be fixed soon)."""
@@ -192,8 +194,10 @@ class NexusAccessPoint(DataAccessPoint):
             filters = {"type": type_}
             self.access_point.deprecate(filters, use_version=use_version)
 
-    def load_pipeline_settings(self):
+    def load_pipeline_settings(self, at_least_one=False):
         """ """
+
+        settings = {}
 
         resource = self.access_point.fetch_one(
             filters={
@@ -202,9 +206,41 @@ class NexusAccessPoint(DataAccessPoint):
                 "subject": self.get_subject(for_search=True),
                 "brainLocation": self.brain_region,
             },
+            at_least_one=at_least_one,
         )
 
-        return EModelPipelineSettings(**self.access_point.forge.as_json(resource))
+        if not resource:
+            return settings
+
+        resource_dict = self.access_point.forge.as_json(resource)
+
+        # Removes the unwanted entries of the Resource such as the metadata
+        for setting in [
+            "extraction_threshold_value_save",
+            "plot_extraction",
+            "efel_settings",
+            "stochasticity",
+            "morph_modifiers",
+            "optimizer",
+            "optimisation_params",
+            "optimisation_timeout",
+            "threshold_efeature_std",
+            "max_ngen",
+            "validation_threshold",
+            "validation_function",
+            "plot_optimisation",
+            "n_model",
+            "optimisation_batch_size",
+            "max_n_batch",
+            "path_extract_config",
+            "name_Rin_protocol",
+            "name_rmp_protocol",
+            "validation_protocols",
+        ]:
+            if setting in resource_dict:
+                settings[setting] = resource_dict[setting]
+
+        return EModelPipelineSettings(**settings)
 
     def store_channel_gene_expression(
         self, table_path, name="Mouse_met_types_ion_channel_expression"
@@ -276,8 +312,8 @@ class NexusAccessPoint(DataAccessPoint):
             version (str): version number of the mod files, if None, returns the
                 highest version number
         """
-
-        mapping = json.load(open(path_mapping, "r"))
+        with open(path_mapping, "r") as mapping_file:
+            mapping = json.load(mapping_file)
 
         lower_gene = gene.lower()
 
@@ -1919,3 +1955,7 @@ class NexusAccessPoint(DataAccessPoint):
                 n_validated += 1
 
         return n_validated >= self.pipeline_settings.n_model
+
+    def get_morph_modifiers(self):
+        """Get the morph modifiers if any."""
+        return self.pipeline_settings.morph_modifiers

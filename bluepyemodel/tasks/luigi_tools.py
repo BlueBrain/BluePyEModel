@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import luigi
-from bbp_workflow.task import IPyParallelTask as _IPyParallelTask
+from bbp_workflow.task import IPyParallel as _IPyParallelTask
 from luigi.parameter import MissingParameterException
 from luigi.parameter import _no_value
 from luigi_tools.task import WorkflowTask as _WorkflowTask
@@ -96,8 +96,11 @@ class IPyParallelTask(_IPyParallelTask):
                 elif getattr(self, attr) is not False and getattr(self, attr) is not None:
                     # be sure that lists and dicts are inside ' '
                     # so that argparse detect them as one argument
+                    # have to change ' to '\\'' because args would already be
+                    # inside quotes (') in command from bbp-workflow
+                    # single quotes would mess that up
                     self.args = " ".join(
-                        [self.args, "--" + attr, "'" + str(getattr(self, attr)) + "'"]
+                        [self.args, "--" + attr, "'\\''" + str(getattr(self, attr)) + "'\\''"]
                     )
 
         # append API-related arguments
@@ -105,7 +108,10 @@ class IPyParallelTask(_IPyParallelTask):
         self.args += " --api_from_config " + EmodelAPIConfig().api
         # api_args is dict
         self.args += (
-            " --api_args_from_config " + "'" + json.dumps(dict(EmodelAPIConfig().api_args)) + "'"
+            " --api_args_from_config "
+            + "'\\''"
+            + json.dumps(dict(EmodelAPIConfig().api_args))
+            + "'\\''"
         )
 
 

@@ -22,10 +22,12 @@ def read_checkpoint(checkpoint_path):
     p_tmp = p.with_suffix(p.suffix + ".tmp")
 
     try:
-        run = pickle.load(open(str(p), "rb"))
+        with open(str(p), "rb") as checkpoint_file:
+            run = pickle.load(checkpoint_file)
     except EOFError:
         try:
-            run = pickle.load(open(str(p_tmp), "rb"))
+            with open(str(p_tmp), "rb") as checkpoint_tmp_file:
+                run = pickle.load(checkpoint_tmp_file)
         except EOFError:
             logger.error(
                 "Cannot store model. Checkpoint file %s does not exist or is corrupted.",

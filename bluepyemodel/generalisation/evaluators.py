@@ -84,10 +84,8 @@ def _save_traces(trace_folder, responses, combo_hash):
     """Save traces in a pickle using hashed id from combo data."""
     if not Path(trace_folder).exists():
         os.mkdir(trace_folder)
-    pickle.dump(
-        responses,
-        open(Path(trace_folder) / ("trace_id_" + str(combo_hash) + ".pkl"), "wb"),
-    )
+    with open(Path(trace_folder) / ("trace_id_" + str(combo_hash) + ".pkl"), "wb") as traces_file:
+        pickle.dump(responses, traces_file)
 
 
 def evaluate_scores(

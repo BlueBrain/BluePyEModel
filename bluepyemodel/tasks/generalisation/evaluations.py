@@ -47,7 +47,8 @@ class EvaluateSynthesis(BaseTask):
             db_url=eval_db_path,
         )
 
-        megate_thresholds = yaml.safe_load(open(SelectConfig().megate_thresholds_path, "r"))
+        with open(SelectConfig().megate_thresholds_path, "r") as megate_thres_file:
+            megate_thresholds = yaml.safe_load(megate_thres_file)
         synth_combos_with_scores_df = get_scores(synth_combos_df, megate_thresholds["ignore"])
         ensure_dir(self.output().path)
         synth_combos_with_scores_df.to_csv(self.output().path, index=False)
@@ -90,7 +91,8 @@ class EvaluateGeneric(BaseTask):
             save_traces=self.save_traces,
             db_url=eval_db_path,
         )
-        megate_thresholds = yaml.safe_load(open(SelectConfig().megate_thresholds_path, "r"))
+        with open(SelectConfig().megate_thresholds_path, "r") as megate_thres_file:
+            megate_thresholds = yaml.safe_load(megate_thres_file)
         morphs_combos_with_scores_df = get_scores(morphs_combos_df, megate_thresholds["ignore"])
         ensure_dir(self.output().path)
         morphs_combos_with_scores_df.to_csv(self.output().path, index=False)
@@ -141,7 +143,8 @@ class EvaluateExemplars(BaseTask):
             db_url=self.set_tmp(self.add_emodel(self.eval_db_path)),
         )
 
-        megate_thresholds = yaml.safe_load(open(SelectConfig().megate_thresholds_path, "r"))
+        with open(SelectConfig().megate_thresholds_path, "r") as megate_thres_file:
+            megate_thresholds = yaml.safe_load(megate_thres_file)
         morphs_combos_with_scores_df = get_scores(morphs_combos_df, megate_thresholds["ignore"])
 
         ensure_dir(self.output().path)

@@ -3,7 +3,7 @@ import logging
 import time
 from collections import OrderedDict
 
-import bluepyopt.ephys as ephys
+from bluepyopt import ephys
 
 from ..ecode import eCodes
 

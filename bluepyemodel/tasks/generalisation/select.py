@@ -37,7 +37,8 @@ class ApplyGenericMegating(BaseTask):
         """ """
         selected_combos_df = pd.read_csv(self.input()["generic"].path)
         exemplar_combos_df = pd.read_csv(self.input()["exemplar"].path)
-        megate_thresholds = yaml.full_load(open(SelectConfig().megate_thresholds_path, "r"))
+        with open(SelectConfig().megate_thresholds_path, "r") as megate_thres_file:
+            megate_thresholds = yaml.full_load(megate_thres_file)
 
         megated_scores_df = apply_megating(
             selected_combos_df,
@@ -72,7 +73,8 @@ class ApplyMegating(BaseTask):
         """ """
         selected_combos_df = pd.read_csv(self.input()["synth"].path)
         exemplar_combos_df = pd.read_csv(self.input()["exemplar"].path)
-        megate_thresholds = yaml.full_load(open(SelectConfig().megate_thresholds_path, "r"))
+        with open(SelectConfig().megate_thresholds_path, "r") as megate_thres_file:
+            megate_thresholds = yaml.full_load(megate_thres_file)
         megated_scores_df = apply_megating(
             selected_combos_df,
             exemplar_combos_df,

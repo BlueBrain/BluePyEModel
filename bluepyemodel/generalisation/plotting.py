@@ -182,6 +182,7 @@ def plot_target_rho_axon(
     original_morphs_combos_path="../evaluate_original_cells/evaluation_results.csv",
 ):
     """Plot the results of the search for target rhow axon."""
+    # pylint: disable=no-member
     mtypes = sorted(list(set(rho_scan_df.mtype.to_list())))
     emodels = sorted(list(set(rho_scan_df.emodel.to_list())))
 
