@@ -3,12 +3,12 @@
 
 ## Introduction
 
-The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package dedicated to simplify the configuration and execution of E-Model building tasks. It covers tasks such as feature extraction, model optimisation, validation, model management and AIS synthesis. As such, it builds on top of BluePyEfe, BluePyOpt and BluePyMM.
+The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package facilitating the configuration and execution of E-Model building tasks. It covers tasks such as feature extraction, model optimisation, validation, model management and AIS synthesis. As such, it builds on top of BluePyEfe, BluePyOpt and BluePyMM.
 
 
 ## To get started with the E-Model building pipeline
 
-This part will talk specificly about the E-Model building pipeline which for now encapsulate feature extraction, optimisation and model analysis. For model management and AIS synthesis, documentation is not available yet.
+This section will talk specificly about the E-Model building pipeline which for now encapsulate feature extraction, optimisation and model analysis. For model management and AIS synthesis, documentation is not available yet.
 
 Despite the presence of the following explanation, E-Model building pipeline is not a trivial process, therefore, do not hesitate to contact the Cells team for help to get you setup (tanguy.damart@epfl.ch).
 
@@ -17,13 +17,18 @@ Despite the presence of the following explanation, E-Model building pipeline is 
 
 The E-Model building pipeline can be executed either step by step using Python or all at once as a Luigi workflow.
 
+For either, three information will always be required:
+- A name for the emodel.
+- The name of the species. As of now, it can be human, rat or mouse.
+- The name of the brain region.
+
 #### Running the pipeline with Python/CLI
 
 To run the pipeline using Python, you will need to use the class EModel_pipeline located in bluepyemodel/emodel_pipeline/emodel_pipeline.py. An example of the use of this class can be seen in the function `main` of the same file. To start, we recommend that you copy the inside of this function `main` or directly call the file bluepyemodel/emodel_pipeline/emodel_pipeline.py using the command line. In the latter case, please run the command `python emodel_pipeline.py --help` for a list of expected arguments.
 
 The pipeline is divided in 4 steps:
-- extraction: extracts efeatures from the ephys recordings and avergages the results along the requested targets.
-- optimisation: builds a NEURON cell model and optimizes its parameters using as target the efeatures computed during efeature extraction.
+- extraction: extracts efeatures from the ephys recordings and averages the results along the requested targets.
+- optimisation: builds a NEURON cell model and optimizes its parameters using as targets the efeatures computed during efeature extraction.
 - storage of the model: reads the results of the extraction and stores the models (best set of parameters) in local or on Nexus.
 - validation: reads the models and runs the optimisation protocols and/or validation protocols on them. The efeature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
 - plotting: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the efeature scores and parameter distributions.
@@ -32,7 +37,7 @@ These four steps are to be run in order as, for example, validation cannot be ru
 
 #### Running the pipeline with Luigi
 
-To run the pipeline with luigi, you will need a luigi.cfg file. This file will contain all the arguments for the pipeline, similar to the ones that were provided when running with Python.
+To run the pipeline with luigi, you will need a luigi.cfg file. This file will contain all the arguments for the pipeline, similar to the ones that were provided when running with Python, plus a few luigi specific settings.
 
 Here is a template that can be used as a starting point:
 ```
@@ -44,44 +49,39 @@ workflows-sync=/gpfs/bbp.cscs.ch/home/${USER}/workflows
 workers=10
 chdir=PATH_TO_CURRENT_WORKING_DIRECTORY
 time=24:00:00
-enable-internet: True
+enable-internet=True
 
 [BB5-WORKER]
-exclusive: True
-mem: 0
-nodes: 4
-enable-internet: True
+exclusive=True
+mem=0
+nodes=4
+enable-internet=True
 
 [core]
 log_level=INFO
 
 [parallel]
-backend = ipyparallel
+backend=ipyparallel
 
 [EmodelAPIConfig]
-api=nexus
-species=mouse
-brain_region=SSCX
-forge_path=./forge.yml
-nexus_poject=emodel_pipeline
-nexus_organisation=Cells
-nexus_endpoint=https://staging.nexus.ocp.bbp.epfl.ch/v1
-nexus_iteration_tag=v0
-ttype=_
+api=local
+recipes_path=./recipes.json
 ```
 
 The pipeline can then be run using the command:
 `bbp-workflow launch-bb5 -f --config=luigi.cfg bluepyemodel.tasks.emodel_creation.optimisation EModelCreation emodel=L5PC species=mouse brain-region=SSCX`
+Where the emodel, species and brain-region have to be replace by the ones at hand.
+
 
 ### The data access points
 
-To access the data needed during the E-Model building process such as settings, ephys data, morphology and more, the E-Model building pipeline relies on a data access point. This role of this access point is to retrieve the data from local storage or from Nexus and put it in the format used by the different steps.
+To access the data needed by the E-Model building process such as settings, ephys, morphology and more, the E-Model building pipeline relies on a data access point. The role of the access point is to retrieve the data from local storage or from Nexus and shape it in the format expected by the different tasks.
 
 There are two types of data access points: "local" and "nexus".
 
 #### The local data access point
 
-The local data access point retrieves and stores data from local storage and, for most operations, from the current working directory.
+The local data access point retrieves and stores data from local storage and, for most operations, from the current working directory. An example of an E-Model building pipeline using local storage can be seen in example/emodel_pipeline_local_python.
 
 To use the local data access point, you first need to create a recipes.json, which will contain, for each e-model, a recipe describing how to build it. Here is an example of a recipe for a fictitious L5PC model:
 ```
@@ -89,9 +89,9 @@ To use the local data access point, you first need to create a recipes.json, whi
     "L5PC": {
         "morph_path": "morphologies/",
         "morphology": [["L5TPC","FILENAME.asc"]],
-        "params": "config/params/pyr.json",
-        "protocol": "config/protocols/L5PC.json",
-        "features": "config/features/L5PC.json",
+        "params": "params_pyr.json",
+        "protocol": "protocol_L5PC.json",
+        "features": "features_L5PC.json",
         "pipeline_settings": {
             "optimisation_timeout": 300,
             "optimizer": "MO-CMA",
@@ -102,13 +102,23 @@ To use the local data access point, you first need to create a recipes.json, whi
     }
 }
 ```
+The path to this recipes.json will need to be provided in the argument `recipes_path` (to the Python script or in the luigi.cfg).
 
-TO FINISH
+The recipes.json contains two types of information:
+- It provides paths to the json files containing the morphology, parameters, features and protocols used to build the models. The format of the parameter file can be seen in example/emodel_pipeline_local_python, while the protocol and efeatures files will be generated by BluePyEModel (they can also be created by hand).
+- It contains settings used to configure the pipeline. A complete list of the settings available can be seen below.
+
+The final models generated using the local access point are stored in the file final.json.
 
 #### The Nexus data access point
 
-TO COME
+The Nexus data access point retrieves and stores data from a Nexus project where the data is stored as Resources. We highly recommend that you read the Nexus documentation and configure your Nexus project with the help of the DKE team before proceeding with E-Model building using the Nexus access point. Additionally, contact tanguy.damart@epfl.ch to help you get started.
+An example of an E-Model building pipeline using Nexus can be seen in example/emodel_pipeline_nexus_luigi.
 
+As the Nexus access point expects all data and settings to be obtained through Nexus, the first step is to register all the related required information in your Nexus project. To do so you will need to instantiate a Nexus access point (bluepyemodel/access_point/nexus.py) and register the data as Resources using the following methods of this class: `store_trace_metadata`, `store_emodel_targets`, `store_optimisation_parameter`, `store_channel_distribution`, `store_morphology`.
+For a more detailed description of these functions, please refer to the file example/emodel_pipeline_nexus_luigi/pipeline.py and to the docstring of the function in bluepyemodel/access_point/nexus.py.
+
+The final models generated using the Nexus access point are stored in the Nexus project in Resources of `type EModel`.
 
 Pipeline settings:
 -----------------

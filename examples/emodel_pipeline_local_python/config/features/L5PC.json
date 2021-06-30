@@ -1,0 +1,137 @@
+{
+  "SearchHoldingCurrent": {
+    "soma.v": [
+      {
+        "feature": "bpo_holding_current",
+        "val": [
+          -0.089,
+          0.1
+        ],
+        "strict_stim": true
+      },
+      {
+        "feature": "steady_state_voltage_stimend",
+        "val": [
+          -82.81958690811605,
+          1.0475676922867347
+        ],
+        "strict_stim": true
+      }
+    ]
+  },
+  "SearchThresholdCurrent": {
+    "soma.v": [
+      {
+        "feature": "bpo_threshold_current",
+        "val": [
+          0.3217038670887372,
+          0.00001
+        ],
+        "strict_stim": true
+      }
+    ]
+  },
+  "IDRest_150": {
+    "soma.v": [
+      {
+        "feature": "mean_frequency",
+        "val": [
+          5.745575680803232,
+          3.0170303744338165
+        ],
+        "n": 97
+      },
+      {
+        "feature": "ISI_CV",
+        "val": [
+          0.202907467686871,
+          0.20024383072094523
+        ],
+        "n": 97
+      },
+      {
+        "feature": "AP_amplitude",
+        "val": [
+          70.5709033030217,
+          7.30247145813405
+        ],
+        "n": 97
+      },
+      {
+        "feature": "AP_begin_width",
+        "val": [
+          8.951554239663182,
+          3.848902616111871
+        ],
+        "n": 97
+      }
+    ],
+    "validation": false
+  },
+  "APWaveform_300": {
+    "soma.v": [
+      {
+        "feature": "AP_amplitude",
+        "val": [
+          82.42927107280917,
+          4.083761054230715
+        ],
+        "n": 30
+      },
+      {
+        "feature": "AP_begin_width",
+        "val": [
+          10.101666666666716,
+          5.326070314969607
+        ],
+        "n": 30
+      }
+    ],
+    "validation": true
+  },
+  "IV_0": {
+    "soma.v": [
+      {
+        "feature": "voltage_base",
+        "val": [
+          -83.01058529566203,
+          1.0252726526561142
+        ],
+        "n": 126
+      },
+      {
+        "feature": "ohmic_input_resistance_vb_ssse",
+        "val": [
+          64.32817922946982,
+          409.45465812657494
+        ],
+        "n": 126
+      }
+    ],
+    "validation": false
+  },
+  "RMPProtocol": {
+    "soma.v": [
+      {
+        "feature": "steady_state_voltage_stimend",
+        "val": [
+          -83.01058529566203,
+          1.0252726526561142
+        ],
+        "strict_stim": true
+      }
+    ]
+  },
+  "RinProtocol": {
+    "soma.v": [
+      {
+        "feature": "ohmic_input_resistance_vb_ssse",
+        "val": [
+          48.84779554364659,
+          15.594516146490195
+        ],
+        "n": 136
+      }
+    ]
+  }
+}

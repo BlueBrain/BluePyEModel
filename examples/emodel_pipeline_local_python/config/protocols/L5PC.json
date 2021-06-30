@@ -1,0 +1,70 @@
+{
+  "IDRest_150": {
+    "holding": {
+      "delay": 0.0,
+      "amp": -0.15189755119901804,
+      "duration": 3000.0,
+      "totduration": 3000.0
+    },
+    "step": {
+      "delay": 700.0000000000001,
+      "amp": 0.48053560894395575,
+      "thresh_perc": 149.37203375656256,
+      "duration": 2000.0,
+      "totduration": 3000.0
+    },
+    "type": "StepThresholdProtocol",
+    "validation": false
+  },
+  "APWaveform_300": {
+    "holding": {
+      "delay": 0.0,
+      "amp": -0.1596666656434536,
+      "duration": 59.99,
+      "totduration": 59.99
+    },
+    "step": {
+      "delay": 5.0,
+      "amp": 0.9652642778077226,
+      "thresh_perc": 300.04745872124346,
+      "duration": 50.00000000000001,
+      "totduration": 59.99
+    },
+    "type": "StepThresholdProtocol",
+    "validation": true
+  },
+  "IV_0": {
+    "holding": {
+      "delay": 0.0,
+      "amp": -0.12798735087816898,
+      "duration": 1320.0,
+      "totduration": 1320.0
+    },
+    "step": {
+      "delay": 20.0,
+      "amp": -0.0017345045991436403,
+      "thresh_perc": -0.5391618741919577,
+      "duration": 1000.0,
+      "totduration": 1320.0
+    },
+    "type": "StepThresholdProtocol",
+    "validation": false
+  },
+  "IV_-40": {
+    "holding": {
+      "delay": 0.0,
+      "amp": -0.1317784919119731,
+      "duration": 1320.0,
+      "totduration": 1320.0
+    },
+    "step": {
+      "delay": 20.0,
+      "amp": -0.1256686033741383,
+      "thresh_perc": -39.06344195094008,
+      "duration": 1000.0,
+      "totduration": 1320.0
+    },
+    "type": "StepThresholdProtocol",
+    "validation": false
+  }
+}
