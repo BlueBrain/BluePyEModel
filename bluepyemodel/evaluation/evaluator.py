@@ -567,6 +567,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     ais_recording=False,
     efel_settings=None,
     threshold_efeature_std=None,
+    score_threshold=12.0,
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
 
@@ -669,7 +670,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
         search_threshold_protocol,
         threshold_protocols=threshold_protocols,
         other_protocols=other_protocols,
-        score_threshold=12.0,
+        score_threshold=score_threshold,
     )
 
     return main_protocol, features
@@ -787,6 +788,7 @@ def create_evaluator(
     timeout=None,
     efel_settings=None,
     threshold_efeature_std=None,
+    score_threshold=12.0,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -803,6 +805,7 @@ def create_evaluator(
             in the targets per efeature, the latter will have priority.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
+        score_threshold (float): threshold for score of protocols to stop evaluations
 
     Returns:
         CellEvaluator
@@ -818,6 +821,7 @@ def create_evaluator(
         stochasticity,
         efel_settings=efel_settings,
         threshold_efeature_std=threshold_efeature_std,
+        score_threshold=score_threshold,
     )
 
     fitness_calculator = define_fitness_calculator(features)

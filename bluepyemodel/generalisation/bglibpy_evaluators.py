@@ -220,7 +220,8 @@ def _current_bglibpy_evaluation(
 
     cell.delete()
 
-    return {"holding_current": holding_current, "threshold_current": threshold_current}
+    out = {"holding_current": holding_current, "threshold_current": threshold_current}
+    return out
 
 
 def _isolated_current_bglibpy_evaluation(*args, **kwargs):

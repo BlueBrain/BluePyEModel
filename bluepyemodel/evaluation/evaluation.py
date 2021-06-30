@@ -94,6 +94,7 @@ def get_evaluator_from_db(
     include_validation_protocols=False,
     additional_protocols=None,
     timeout=600.0,
+    score_threshold=12.0,
 ):
     """Create an evaluator for the emodel.
 
@@ -152,4 +153,5 @@ def get_evaluator_from_db(
         timeout=timeout,
         efel_settings=access_point.pipeline_settings.efel_settings,
         threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std,
+        score_threshold=score_threshold,
     )

@@ -24,6 +24,7 @@ def run_step_sim(
     sim_end=1000,
     sim_dt=0.025,
     holding_current=None,
+    cvode=False,
 ):
     """Run step protocol simulation."""
 
@@ -39,7 +40,7 @@ def run_step_sim(
         dt=sim_dt,
         celsius=34.0,
         v_init=-80.0,
-        cvode=False,
+        cvode=cvode,
     )
 
     results = pd.DataFrame()

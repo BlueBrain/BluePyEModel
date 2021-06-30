@@ -16,10 +16,11 @@ class EmodelAwareTask:
         """Fetch emodel AP."""
         if EmodelAPIConfig().api == "local":
             return LocalAccessPoint(
-                emodel=None,
+                emodel="cADpyr_L5TPC",
                 emodel_dir=EmodelAPIConfig().emodel_dir,
                 final_path=EmodelAPIConfig().final_path,
                 legacy_dir_structure=True,
+                with_seeds=True,
             )
         raise NotImplementedError(f"api {EmodelAPIConfig().api} is not implemented")
 

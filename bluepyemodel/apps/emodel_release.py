@@ -24,6 +24,9 @@ from bluepyemodel.access_point import get_db
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 from bluepyemodel.evaluation.modifiers import synth_axon
 from bluepyemodel.generalisation.ais_model import taper_function
+from bluepyemodel.tools.bglibpy_helper import get_cell
+from bluepyemodel.tools.bglibpy_helper import get_time_to_last_spike
+from bluepyemodel.tools.if_curve import run_step_sim
 
 L = logging.getLogger(__name__)
 
@@ -182,14 +185,19 @@ def create_emodel_release(
         shutil.copytree(mechanisms, release_paths["mechanisms"])
 
 
-def _load_cells(cells_path, mtype=None, n_cells=None):
+def _load_cells(cells_path, mtype=None, n_cells=None, regions=None, emodel=None):
     """Load cells from a circuit into a dataframe."""
     cells = CellCollection.load(cells_path).as_dataframe()
-
+    if regions is not None:
+        cells = cells[cells.region.isin(regions)]
     if mtype is not None:
         cells = cells[cells.mtype == mtype]
+    if emodel is not None:
+        cells["emodel"] = cells["model_template"].str.rsplit(":", 1, expand=True)[1]
+        cells = cells[cells.emodel == emodel]
     if n_cells is not None:
         cells = cells.sample(min(len(cells.index), n_cells), random_state=42)
+
     assert len(cells.index) > 0, "no cells selected!"
 
     return cells
@@ -272,7 +280,7 @@ def save_mecombos(combos_df, output, with_scaler=True):
 @click.option("--parallel-lib", default="multiprocessing")
 @click.option("--resume", is_flag=True)
 @click.option("--with-db", is_flag=True)
-@click.option("--drop_failed", is_flag=True)
+@click.option("--drop-failed", is_flag=True)
 def get_me_combos_scales(
     cells_path,
     release_path,
@@ -445,7 +453,6 @@ def get_me_combos_currents(
     """
     if resume and not with_db:
         raise Exception("If --with-db is not used, --resume cannot work")
-
     if protocol_config_path is None:
         from bluepyemodel.generalisation.evaluators import evaluate_currents
     else:
@@ -538,45 +545,6 @@ def get_me_combos_currents(
     parallel_factory.shutdown()
 
 
-def fix_ais(combo, out_path="fixed_cells_test", morph_name="combo_name"):
-    """Modify morphology first axon section in place from combo data."""
-    morphology = Morphology(combo.morphology_path)
-
-    if combo.AIS_model is not None:
-        ais_model = json.loads(combo.AIS_model)["popt"]
-        _taper_func = partial(
-            taper_function,
-            strength=ais_model[1],
-            taper_scale=ais_model[2],
-            terminal_diameter=ais_model[3] * combo.AIS_scale,
-        )
-        modify_ais(morphology, _taper_func)
-    else:
-        raise Exception(combo)
-
-    morphology = Morphology(morphology, morphio.Option.nrn_order)  # ensures NEURON order
-    morphology.write(str(Path(out_path) / combo[morph_name]) + ".asc")
-
-
-def modify_ais(morphology, taper_func, L_target=65):
-    """Modify morphology first axon section in place using taper_func."""
-    for root_section in morphology.root_sections:
-        if root_section.type == morphio.SectionType.axon:
-            dist = 0
-            prev_point = root_section.points[0]
-            for section in root_section.iter():
-                diams = copy(section.diameters)  # this is needed because of morphio
-                for i, point in enumerate(section.points):
-                    dist += np.linalg.norm(point - prev_point)
-                    prev_point = copy(point)
-                    diams[i] = taper_func(dist)
-                    if dist >= L_target:
-                        break
-                section.diameters = diams
-                if dist >= L_target:
-                    break
-
-
 def _create_etype_column(cells, cell_composition):
     """Create etype column from cell_composition.yaml data."""
     dfs = []
@@ -596,6 +564,7 @@ def _single_evaluation(
     morphology_path="morphology_path",
     stochasticity=False,
     timeout=1000,
+    score_threshold=100.0,
     trace_data_path=None,
 ):
     """Evaluating single protocol and save traces."""
@@ -615,7 +584,11 @@ def _single_evaluation(
             partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
         ]
     evaluator = get_evaluator_from_db(
-        combo["emodel"], emodel_db, stochasticity=stochasticity, timeout=timeout
+        combo["emodel"],
+        emodel_db,
+        stochasticity=stochasticity,
+        timeout=timeout,
+        score_threshold=score_threshold,
     )
     responses = evaluator.run_protocols(
         evaluator.fitness_protocols.values(), emodel_db.get_emodel()["parameters"]
@@ -647,7 +620,13 @@ def _single_evaluation(
 
 
 def _evaluate_exemplars(
-    emodel_path, final_path, emodel_api, parallel_factory, emodel, trace_data_path
+    emodel_path,
+    final_path,
+    emodel_api,
+    parallel_factory,
+    emodel,
+    trace_data_path,
+    score_threshold=12.0,
 ):
     """Evaluate exemplars."""
     emodel_path = Path(emodel_path)
@@ -673,6 +652,7 @@ def _evaluate_exemplars(
         final_path=final_path,
         trace_data_path=trace_data_path,
         stochasticity=False,
+        score_threshold=score_threshold,
     )
 
     return evaluate(
@@ -696,11 +676,12 @@ def _evaluate_emodels(
     seed,
     parallel_factory,
     trace_data_path,
+    score_threshold=100.0,
 ):
     """Evaluate emodels."""
 
     combos_df = CellCollection.load_sonata(sonata_path).as_dataframe()
-    combos_df["path"] = morphology_path + combos_df["morphology"] + ".asc"
+    combos_df["path"] = morphology_path + "/" + combos_df["morphology"] + ".asc"
     combos_df["emodel"] = combos_df["model_template"].apply(lambda m: m.split(":")[-1])
     if region is not None:
         combos_df = combos_df[combos_df.region == region]
@@ -731,6 +712,7 @@ def _evaluate_emodels(
         final_path=final_path,
         trace_data_path=trace_data_path,
         stochasticity=False,
+        score_threshold=score_threshold,
     )
 
     return evaluate(
@@ -818,6 +800,160 @@ def _plot_reports(exemplar_df, result_df, folder, clip, feature_threshold, megat
                 plt.close()
 
 
+def _parse_regions(regions):
+    """Parse region str as a list or single region."""
+    if regions is None:
+        return [None]
+    if regions[0] == "[":
+        return json.loads(regions)
+    else:
+        return [regions]
+
+
+def _get_stuck(
+    row,
+    emodel_hoc_dir,
+    morphology_dir,
+    amplitude,
+    step_length=2000,
+    threshold=0.8,
+    step_start=500,
+    after_step=500,
+    protocol_config_path="protocol_configs.yaml",
+):
+    """This computes stuck and depol stuck cells."""
+    cell = get_cell(
+        morphology_name=row["morphology"],
+        emodel=row["emodel"],
+        emodels_hoc_dir=emodel_hoc_dir,
+        morphology_dir=morphology_dir,
+        calc_threshold=True,
+        scale=row["@dynamics:AIS_scaler"],
+        protocol_config_path=protocol_config_path,
+    )
+    result = run_step_sim(
+        cell,
+        amplitude * cell.threshold,
+        step_start=step_start,
+        step_stop=step_start + step_length,
+        sim_end=step_start + step_length + 500,
+        cvode=True,
+    )
+
+    t = result["time"]
+    v = result["voltage_soma"]
+
+    stuck = np.mean(v[t > step_start + step_length + 10]) > np.min(
+        v[(t > step_start + 10) & (t < step_start + step_length - 10)]
+    )
+
+    time_to_last_spike = get_time_to_last_spike(result, step_start, step_start + step_length)
+    depol_stuck = time_to_last_spike < threshold * step_length
+
+    return {"stuck": float(stuck), "depol_stuck": float(depol_stuck)}
+
+
+@cli.command("detect_stuck_cells")
+@click.option("--sonata-path", type=click.Path(exists=True), required=True)
+@click.option("--regions", type=str, default=None)
+@click.option("--emodel", type=str, default=None)
+@click.option("--mtype", type=str, default=None)
+@click.option("--n-cells", type=int, default=10)
+@click.option("--amplitude", type=float, default=3.0)
+@click.option("--emodel-hoc-path", type=str, default=None)
+@click.option("--morphology-path", type=str, default=None)
+@click.option("--parallel-factory", type=str, default="multiprocessing")
+@click.option("--result-path", type=str, default="stuck_df")
+@click.option("--figure-path", type=str, default="stuck_figures")
+@click.option("--seed", type=int, default=42)
+@click.option("--step-length", type=float, default=2000)
+@click.option("--threshold", type=float, default=0.8)
+@click.option("--protocol-config-path", default=None, type=str)
+def detect_stuck_cells(
+    sonata_path,
+    regions,
+    emodel,
+    mtype,
+    n_cells,
+    amplitude,
+    emodel_hoc_path,
+    morphology_path,
+    parallel_factory,
+    result_path,
+    figure_path,
+    seed,
+    step_length,
+    threshold,
+    protocol_config_path,
+):
+    """Detect possible stuck cells.
+
+    Depol stuck are obained by comparing the number of spikes from the first and last half of the
+    step. They correspond to cells which don't fire anymore after some times.
+    Stuck are obtained by comparing the average voltage value after the step and the min
+    voltage in the step. They correspond to cells which are stuck to high voltages, even after the
+    end of the step.
+    """
+    parallel_factory = init_parallel_factory(parallel_factory)
+    Path(result_path).mkdir(parents=True, exist_ok=True)
+    Path(figure_path).mkdir(parents=True, exist_ok=True)
+    cells = CellCollection.load_sonata(sonata_path).as_dataframe()
+    cells["path"] = morphology_path + cells["morphology"] + ".asc"
+    cells["emodel"] = cells["model_template"].apply(lambda m: m.split(":")[-1])
+    cells["morphology"] = cells["morphology"] + ".asc"
+    if emodel is not None:
+        cells = cells[cells.emodel == emodel]
+
+    for region in _parse_regions(regions):
+        L.info("Evaluating region %s", region)
+        if region is not None:
+            _cells = cells[cells.region == region]
+        else:
+            _cells = cells
+
+        _cells = pd.concat(
+            [
+                _cells[cells.model_template == model_template].sample(
+                    min(n_cells, len(_cells[cells.model_template == model_template].index)),
+                    random_state=seed,
+                )
+                for model_template in _cells.model_template.unique()
+            ]
+        )
+
+        evaluation_function = partial(
+            _get_stuck,
+            emodel_hoc_dir=emodel_hoc_path,
+            morphology_dir=morphology_path,
+            amplitude=amplitude,
+            step_length=step_length,
+            threshold=threshold,
+            protocol_config_path=protocol_config_path,
+        )
+        result = evaluate(
+            _cells,
+            evaluation_function,
+            new_columns=[["stuck", ""], ["depol_stuck", ""]],
+            parallel_factory=parallel_factory,
+        )
+
+        result[["morphology", "mtype", "etype", "emodel", "stuck", "depol_stuck"]].to_csv(
+            f"{result_path}/stuck_df_{region}.csv"
+        )
+
+        import matplotlib.pyplot as plt
+
+        summary = result[["emodel", "stuck"]].groupby("emodel").mean()
+        plt.figure()
+        summary.plot.barh(ax=plt.gca())
+        plt.savefig(f"{figure_path}/stuck_cells_{region}.pdf", bbox_inches="tight")
+
+        summary = result[["emodel", "depol_stuck"]].groupby("emodel").mean()
+        plt.figure()
+        summary.plot.barh(ax=plt.gca())
+        plt.savefig(f"{figure_path}/depol_stuck_cells_{region}.pdf", bbox_inches="tight")
+
+
 @cli.command("evaluate_emodels")
 @click.option("--emodel-api", type=str, default="local")
 @click.option("--emodel-path", type=click.Path(exists=True), required=True)
@@ -840,6 +976,7 @@ def _plot_reports(exemplar_df, result_df, folder, clip, feature_threshold, megat
 @click.option("--report-folder", type=str, default="figures")
 @click.option("--plot-only", is_flag=True)
 @click.option("--trace-data-path", type=str, default=None)
+@click.option("--score-threshold", type=float, default=100.0)
 def evaluate_emodels(
     emodel_api,
     emodel_path,
@@ -860,13 +997,11 @@ def evaluate_emodels(
     report_folder,
     plot_only,
     trace_data_path,
+    score_threshold=100.0,
 ):
     """Evaluate exemplars and emodels."""
     parallel_factory = init_parallel_factory(parallel_factory)
-    if regions[0] == "[":
-        regions = json.loads(regions)
-    else:
-        regions = [regions]
+    regions = _parse_regions(regions)
 
     if not plot_only:
         L.info("Evaluating exemplars")
@@ -877,6 +1012,7 @@ def evaluate_emodels(
             parallel_factory,
             emodel,
             trace_data_path,
+            score_threshold=score_threshold,
         )
         exemplar_df.to_csv(exemplar_path, index=False)
     else:
@@ -905,6 +1041,7 @@ def evaluate_emodels(
                 seed,
                 parallel_factory,
                 trace_data_path,
+                score_threshold=score_threshold,
             )
             result_df.to_csv(_result_path / "results.csv", index=False)
         else:
@@ -916,6 +1053,45 @@ def evaluate_emodels(
 
 
 # below not maintained, was used in sscx to fix some morphologies
+
+
+def fix_ais(combo, out_path="fixed_cells_test", morph_name="combo_name"):
+    """Modify morphology first axon section in place from combo data."""
+    morphology = Morphology(combo.morphology_path)
+
+    if combo.AIS_model is not None:
+        ais_model = json.loads(combo.AIS_model)["popt"]
+        _taper_func = partial(
+            taper_function,
+            strength=ais_model[1],
+            taper_scale=ais_model[2],
+            terminal_diameter=ais_model[3] * combo.AIS_scale,
+        )
+        modify_ais(morphology, _taper_func)
+    else:
+        raise Exception(combo)
+
+    morphology = Morphology(morphology, morphio.Option.nrn_order)  # ensures NEURON order
+    morphology.write(str(Path(out_path) / combo[morph_name]) + ".asc")
+
+
+def modify_ais(morphology, taper_func, L_target=65):
+    """Modify morphology first axon section in place using taper_func."""
+    for root_section in morphology.root_sections:
+        if root_section.type == morphio.SectionType.axon:
+            dist = 0
+            prev_point = root_section.points[0]
+            for section in root_section.iter():
+                diams = copy(section.diameters)  # this is needed because of morphio
+                for i, point in enumerate(section.points):
+                    dist += np.linalg.norm(point - prev_point)
+                    prev_point = copy(point)
+                    diams[i] = taper_func(dist)
+                    if dist >= L_target:
+                        break
+                section.diameters = diams
+                if dist >= L_target:
+                    break
 
 
 @cli.command("set_me_combos_scales_inplace")
@@ -981,6 +1157,7 @@ def set_me_combos_scales_inplace(  # pylint: disable-all
         target_rhos = yaml.full_load(rho_file)
 
     if Path(release_paths["mechanisms"]).exists():
+        raise Exception(release_paths["mechanisms"])
         sh.nrnivmodl(release_paths["mechanisms"])  # pylint: disable=no-member
     emodel_db = _get_database(emodel_api, release_paths["emodel_path"])
 

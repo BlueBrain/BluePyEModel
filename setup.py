@@ -16,8 +16,8 @@ with open("README.rst", encoding="utf-8") as f:
 
 
 EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow>=2.1.19", "bbp-workflow-cli"]
-EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3"]
 EXTRA_NEXUS = ["nexusforge", "entity_management", "pyJWT>=2.1.0"]
+EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3", 'bglibpy', 'seaborn']
 EXTRA_TEST = ["pytest", "dictdiffer"]
 EXTRA_DOC = [
     "graphviz",

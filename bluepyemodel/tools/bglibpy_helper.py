@@ -1,4 +1,6 @@
 """Helper functions to use bglibpy."""
+import json
+import logging
 from pathlib import Path
 
 import bglibpy
@@ -9,6 +11,8 @@ import yaml
 
 from bluepyemodel.generalisation.bglibpy_evaluators import calculate_holding_current
 from bluepyemodel.generalisation.bglibpy_evaluators import calculate_threshold_current
+
+L = logging.getLogger(__name__)
 
 
 def _get_cell_kwargs_custom_template(
@@ -118,6 +122,24 @@ def _add_recordings(cell):
     cell.add_recordings(["neuron.h._ref_t", axon_loc(cell)], dt=cell.record_dt)
 
 
+def set_cell_deterministic(cell, deterministic):
+    """Disable stochasticity in ion channels"""
+    is_deterministic = True
+    for section in cell.cell.all:
+        for compartment in section:
+            for mech in compartment:
+                mech_name = mech.name()
+                if "Stoch" in mech_name:
+                    if not deterministic:
+                        is_deterministic = False
+                    setattr(
+                        section,
+                        "deterministic_%s" % mech_name,
+                        1 if deterministic else 0,
+                    )
+    return is_deterministic
+
+
 def get_cell(
     circuit_config=None,
     gid=None,
@@ -128,15 +150,19 @@ def get_cell(
     emodels_hoc_dir=None,
     out_h5=None,
     calc_threshold=False,
+    scale=None,
+    deterministic=True,
+    protocol_config_path="protocol_config.yaml",
 ):
     if morphology_name is not None:
-        with open("protocol_config.yaml", "r") as prot_file:
+        with open(protocol_config_path, "r") as prot_file:
             protocol_config = yaml.safe_load(prot_file)
         cell_kwargs = _get_cell_kwargs_custom_template(
-            morphology_name, morphology_dir, emodel, emodels_hoc_dir
+            morphology_name, morphology_dir, emodel, emodels_hoc_dir, scale=scale
         )
-
         cell = bglibpy.Cell(**cell_kwargs)
+        set_cell_deterministic(cell, deterministic)
+
         cell.hypamp = calculate_holding_current(cell, protocol_config)
         if calc_threshold:
             cell.threshold = calculate_threshold_current(cell, protocol_config, cell.hypamp)
@@ -149,13 +175,13 @@ def get_cell(
         _copy_cell_attrs(_cell, cell)
 
         if add_synapses and out_h5 is not None:
-            # print("adding synapses")
+            L.debug("adding synapses")
             cell = _add_synapses(_cell, cell, ssim, out_h5)
 
         _cell.delete()
 
-    # print("cell_kwargs: ", json.dumps(cell_kwargs, indent=4), gid)
-    # print(f"threshold = {cell.threshold}, holding = {cell.hypamp}")
+    L.debug("cell_kwargs:  %s", json.dumps(cell_kwargs, indent=4))
+    L.debug("threshold = %s, holding = %s", cell.threshold, cell.hypamp)
     _add_recordings(cell)
     return cell
 
@@ -164,18 +190,15 @@ def get_spikefreq(results, start, stop, location="voltage_soma"):
     """Compute spikefreq from a trace."""
     efel.reset()
     efel.setIntSetting("strict_stiminterval", True)
-    return (
-        efel.getFeatureValues(
-            [
-                {
-                    "T": results["time"],
-                    "V": results[location],
-                    "stim_start": [start],
-                    "stim_end": [stop],
-                }
-            ],
-            ["Spikecount"],
-        )[0]["Spikecount"][0]
-        / (stop - start)
-        * 1000.0
-    )
+    data = {"T": results["time"], "V": results[location], "stim_start": [start], "stim_end": [stop]}
+    feat = efel.getFeatureValues([data], ["Spikecount"])
+    return feat[0]["Spikecount"][0] / (stop - start) * 1000.0
+
+
+def get_time_to_last_spike(results, start, stop, location="voltage_soma"):
+    """Compute time_to_last_spike from a trace."""
+    efel.reset()
+    efel.setIntSetting("strict_stiminterval", True)
+    data = {"T": results["time"], "V": results[location], "stim_start": [start], "stim_end": [stop]}
+    feat = efel.getFeatureValues([data], ["time_to_last_spike"])
+    return feat[0]["time_to_last_spike"][0]

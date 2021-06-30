@@ -19,17 +19,23 @@ def single_feature_evaluation(
     stochasticity=False,
     timeout=1000,
     trace_data_path=None,
+    score_threshold=12.0,
 ):
     """Evaluating single protocol and save traces."""
-    emodel_db.emodel = combo["emodel"]
-    emodel_db.morph_path = combo[morphology_path]
+    emodel_db.set_emodel(combo["emodel"])
+    if morphology_path in combo:
+        emodel_db.morph_path = combo[morphology_path]
     if "AIS_scaler" in combo and "AIS_params" in combo:
         emodel_db.pipeline_settings.morph_modifiers = [
             partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
         ]
 
     evaluator = get_evaluator_from_db(
-        combo["emodel"], emodel_db, stochasticity=stochasticity, timeout=timeout
+        combo["emodel"],
+        emodel_db,
+        stochasticity=stochasticity,
+        timeout=timeout,
+        score_threshold=score_threshold,
     )
     responses = evaluator.run_protocols(
         evaluator.fitness_protocols.values(), emodel_db.get_emodel()["parameters"]
@@ -70,6 +76,7 @@ def feature_evaluation(
     parallel_factory=None,
     trace_data_path=None,
     stochasticity=False,
+    score_threshold=12.0,
 ):
     """Compute the features and the scores on the combos dataframe.
 
@@ -91,6 +98,7 @@ def feature_evaluation(
         morphology_path=morphology_path,
         trace_data_path=trace_data_path,
         stochasticity=stochasticity,
+        score_threshold=score_threshold,
     )
 
     return evaluate(
