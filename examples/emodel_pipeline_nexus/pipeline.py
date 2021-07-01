@@ -7,6 +7,7 @@ import logging
 import time
 
 from bluepyemodel.access_point.nexus import NexusAccessPoint
+from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from kgforge.core import Resource
 
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
@@ -264,50 +265,53 @@ def download_traces():
             "C060209A3-SR-C1",
         ]
 
-        token = getpass.getpass()
-
-        nexus_forge = KnowledgeGraphForge(
-            "https://raw.githubusercontent.com/BlueBrain/nexus-forge/master/"
-            "examples/notebooks/use-cases/prod-forge-nexus.yml",
-            token=token,
-            bucket="public/sscx",
+        nexus_access_point = NexusForgeAccessPoint(
+            project="sscx",
+            organisation="public",
+            endpoint="https://bbp.epfl.ch/nexus/v1",
+            forge_path="https://raw.githubusercontent.com/BlueBrain/nexus-forge/master/examples/notebooks/use-cases/prod-forge-nexus.yml",
+            cross_bucket=False
         )
 
-        p = nexus_forge.paths("Dataset")
+        p = nexus_access_point.forge.paths("Dataset")
 
         for f in file_names:
 
-            resources = nexus_forge.search(
+            resources = nexus_access_point.forge.search(
                 p.type.id == "Trace",
                 p.distribution.encodingFormat == "application/nwb",
                 p.name == f,
                 limit=1000,
             )
 
-            nexus_forge.download(
+            nexus_access_point.forge.download(
                 resources, "distribution.contentUrl", "./sscx_ephys_data", overwrite=True
             )
 
 
 def upload_data(pipeline):
-    
+
     for nexus_type in [
        "SubCellularModelScript",
        "NeuronMorphology",
        "Trace",
     ]:
+        print(f"Deprecating {nexus_type}...")
         pipeline.access_point.access_point.deprecate({"type": nexus_type}, False)
     
+    print(f"Downloading traces from Nexus public/sscx...")
     download_traces()
     
     forge = pipeline.access_point.access_point.forge
-
+    
+    print(f"Registering Traces...")
     for trace_file in glob.glob("./sscx_ephys_data/*.nwb"):
         distribution = forge.attach(trace_file)
         name = pathlib.Path(trace_file).stem
         resource = Resource(type="Trace", name=name, distribution=distribution)
         forge.register(resource)
-
+    
+    print(f"Registering mechanisms...")
     for mod_files in glob.glob("../emodel_pipeline_local_python/mechanisms/*.mod"):
         distribution = forge.attach(mod_files)
         name = pathlib.Path(mod_files).stem
@@ -315,7 +319,8 @@ def upload_data(pipeline):
             type="SubCellularModelScript", name=name, distribution=distribution
         )
         forge.register(resource)    
-
+    
+    print(f"Registering morphology...")
     morphology_path = "../emodel_pipeline_local_python/morphologies/C060114A5.asc"
     name = pathlib.Path(morphology_path).stem
     distribution = forge.attach(morphology_path)
@@ -345,13 +350,20 @@ def store_pipeline_settings(access_point):
 
 
 def configure(pipeline):
-
-    pipeline.access_point.deprecate_project(use_version=True)
+    
+    print(f"Deprecating project...")
+    pipeline.access_point.deprecate_project(use_version=False)
+    print(f"Storing morphology...")
     store_morphology(pipeline.access_point)
+    print(f"Storing parameter distribution...")
     store_distribution(pipeline.access_point)
+    print(f"Storing parameters...")
     store_parameters(pipeline.access_point)
+    print(f"Storing targets...")
     store_extraction_targets(pipeline.access_point)
+    print(f"Storing ephys files metadata...")
     extraction_metadata(pipeline.access_point)
+    print(f"Storing pipeline settings...")
     store_pipeline_settings(pipeline.access_point)
 
 
@@ -368,7 +380,7 @@ if __name__ == "__main__":
     nexus_organisation = "Cells"
     nexus_endpoint = "staging"
     forge_path = "forge.yml"
-    iteration_tag = "v10"
+    iteration_tag = "v0"
 
     pipeline = EModel_pipeline(
         emodel=emodel,

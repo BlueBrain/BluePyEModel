@@ -116,7 +116,7 @@ class NexusAccessPoint(DataAccessPoint):
             iteration_tag=iteration_tag,
         )
 
-        self.pipeline_settings = self.load_pipeline_settings(at_least_one=False)
+        self.pipeline_settings = self.load_pipeline_settings(strict=False)
 
     def get_subject(self, for_search=False):
         """Get the ontology of a species based n the species name. The id is not used
@@ -194,7 +194,7 @@ class NexusAccessPoint(DataAccessPoint):
             filters = {"type": type_}
             self.access_point.deprecate(filters, use_version=use_version)
 
-    def load_pipeline_settings(self, at_least_one=False):
+    def load_pipeline_settings(self, strict=True):
         """ """
 
         settings = {}
@@ -206,7 +206,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "subject": self.get_subject(for_search=True),
                 "brainLocation": self.brain_region,
             },
-            at_least_one=at_least_one,
+            strict=strict,
         )
 
         if not resource:
@@ -873,9 +873,9 @@ class NexusAccessPoint(DataAccessPoint):
 
         resource_search = {
             "name": f"Pipeline parameters {self.emodel}",
-            "type": ["Entity", "Parameter", "EModelPipelineSettings"],
+            "type": "EModelPipelineSettings",
             "eModel": self.emodel,
-            "subject": self.get_subject(for_search=False),
+            "subject": self.get_subject(for_search=True),
             "brainLocation": self.brain_region,
         }
 

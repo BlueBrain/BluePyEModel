@@ -49,7 +49,7 @@ class NexusForgeAccessPoint:
 
         self.iteration_tag = iteration_tag
 
-        decoded_token = jwt.decode(self.access_token, algorithms=["ES256"], verify=False)
+        decoded_token = jwt.decode(self.access_token, options={"verify_signature": False})
         self.agent = self.forge.reshape(
             self.forge.from_json(decoded_token), keep=["name", "email", "sub", "preferred_username"]
         )
@@ -180,18 +180,20 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch_one(self, filters, use_version=True, at_least_one=True):
+    def fetch_one(self, filters, use_version=True, strict=True):
         """Fetch one and only one resource based on filters."""
 
         resources = self.fetch(filters, use_version=use_version)
 
         if resources is None:
-            if at_least_one:
+            if strict:
                 raise AccessPointException("Could not get resource for filters %s" % filters)
             return None
 
         if len(resources) > 1:
-            raise AccessPointException("More than one resource for filters %s" % filters)
+            if strict:
+                raise AccessPointException("More than one resource for filters %s" % filters)
+            return resources[0]
 
         return resources[0]
 
