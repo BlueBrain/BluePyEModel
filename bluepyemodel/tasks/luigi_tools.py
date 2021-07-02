@@ -7,10 +7,9 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import luigi
-from bbp_workflow.task import IPyParallel as _IPyParallelTask
+from bbp_workflow.task import IPyParallelExclusive
 from luigi.parameter import MissingParameterException
 from luigi.parameter import _no_value
-from luigi_tools.task import WorkflowTask as _WorkflowTask
 from luigi_tools.task import _no_default_value
 
 from bluepyemodel import access_point
@@ -26,7 +25,7 @@ from bluepyemodel.tasks.utils import update_gitignore
 logger = logging.getLogger(__name__)
 
 
-class WorkflowTask(_WorkflowTask):
+class WorkflowTask(luigi.Task):
     """Workflow task with loaded data access point."""
 
     backend = luigi.Parameter(default=None, config_path=dict(section="parallel", name="backend"))
@@ -67,7 +66,7 @@ class WorkflowWrapperTask(WorkflowTask, luigi.WrapperTask):
     """Base wrapper class with global parameters."""
 
 
-class IPyParallelTask(_IPyParallelTask):
+class IPyParallelTask(IPyParallelExclusive):
     """Wrapper around IPyParallelTask to get chdir param from [DEFAULT] in config."""
 
     chdir = luigi.configuration.get_config().get("DEFAULT", "chdir")

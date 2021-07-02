@@ -236,6 +236,8 @@ class NexusAccessPoint(DataAccessPoint):
             "name_Rin_protocol",
             "name_rmp_protocol",
             "validation_protocols",
+            "additional_protocols",
+            "compile_mechanisms",
         ]:
             if setting in resource_dict:
                 settings[setting] = resource_dict[setting]
@@ -811,6 +813,8 @@ class NexusAccessPoint(DataAccessPoint):
         n_model=3,
         plot_extraction=True,
         plot_optimisation=True,
+        additional_protocols=None,
+        compile_mechanisms=False,
     ):
         """Creates an EModelPipelineSettings resource.
 
@@ -840,6 +844,8 @@ class NexusAccessPoint(DataAccessPoint):
                 to consider the EModel building task done.
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
             plot_optimisation (bool): should the EModel scores and traces be plotted.
+            additional_protocols(dict):
+            compile_mechanisms (bool):
         """
 
         if efel_settings is None:
@@ -869,10 +875,12 @@ class NexusAccessPoint(DataAccessPoint):
             "plot_optimisation": plot_optimisation,
             "threshold_efeature_std": threshold_efeature_std,
             "morph_modifiers": morph_modifiers,
+            "additional_protocols": additional_protocols,
+            "compile_mechanisms": compile_mechanisms,
         }
 
         resource_search = {
-            "name": f"Pipeline parameters {self.emodel}",
+            "name": f"Pipeline settings {self.emodel}",
             "type": "EModelPipelineSettings",
             "eModel": self.emodel,
             "subject": self.get_subject(for_search=True),
@@ -1081,9 +1089,6 @@ class NexusAccessPoint(DataAccessPoint):
         self,
         efeatures,
         current,
-        name_Rin_protocol,
-        name_rmp_protocol,
-        validation_protocols,
     ):
         """Store the efeatures and currents obtained from BluePyEfe in ElectrophysiologyFeature
         resources.
@@ -1125,7 +1130,7 @@ class NexusAccessPoint(DataAccessPoint):
         for cur in ["holding_current", "threshold_current"]:
             self.register_efeature(name=cur, val=current[cur])
 
-    def store_protocols(self, stimuli, validation_protocols):
+    def store_protocols(self, stimuli):
         """Store the protocols obtained from BluePyEfe in
             ElectrophysiologyFeatureExtractionProtocol resources.
 
@@ -1325,7 +1330,7 @@ class NexusAccessPoint(DataAccessPoint):
             if hasattr(resource, "githash"):
                 githash = resource.githash
             else:
-                githash = None
+                githash = ""
 
             # WARNING: should be self.brain_region.brainRegion.label in the future
 

@@ -10,6 +10,11 @@ from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 logger = logging.getLogger(__name__)
 
 
+def get_checkpoint_path(emodel, seed, githash=""):
+    """"""
+    return Path("./checkpoints") / f"checkpoint__{emodel}__{githash}__{seed}.pkl"
+
+
 def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
     """Setup the bluepyopt optimiser.
 
@@ -97,7 +102,7 @@ def setup_and_run_optimisation(
         optimizer=access_point.pipeline_settings.optimizer,
     )
 
-    checkpoint_path = Path("./checkpoints") / f"checkpoint__{emodel}__{githash}__{seed}.pkl"
+    checkpoint_path = get_checkpoint_path(emodel, seed, githash)
 
     run_optimization(
         optimizer=opt,
@@ -137,7 +142,7 @@ def store_best_model(
     )
 
     if checkpoint_path is None:
-        checkpoint_path = Path("./checkpoints") / f"checkpoint__{emodel}__{githash}__{seed}.pkl"
+        checkpoint_path = get_checkpoint_path(emodel, seed, githash)
 
     run = read_checkpoint(checkpoint_path)
 

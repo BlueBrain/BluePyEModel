@@ -22,6 +22,7 @@ class EModelPipelineSettings:
         validation_threshold=5.0,
         validation_function=None,
         plot_optimisation=True,
+        compile_mechanisms=False,
         n_model=3,
         optimisation_batch_size=5,
         max_n_batch=3,
@@ -29,6 +30,7 @@ class EModelPipelineSettings:
         name_Rin_protocol=None,
         name_rmp_protocol=None,
         validation_protocols=None,
+        additional_protocols=None,
     ):
         """Init
 
@@ -59,6 +61,8 @@ class EModelPipelineSettings:
                 to consider the EModel building task done.
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
             plot_optimisation (bool): should the EModel scores and traces be plotted.
+            compile_mechanisms (bool): should the mod files be copied in the local
+                mechanisms_dir directory.
             path_extract_config (str): path to the .json containing the extraction targets, files
                 metadata and the name of the protocols used to compute the threshold of the cell.
             name_Rin_protocol (str): name of the protocol associated with the efeatures used for
@@ -72,6 +76,7 @@ class EModelPipelineSettings:
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
+            additional_protocols (dict): definition of supplementary protocols.
         """
 
         # Settings related to E-features extraction
@@ -95,11 +100,13 @@ class EModelPipelineSettings:
         self.threshold_efeature_std = threshold_efeature_std
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation
+        self.compile_mechanisms = compile_mechanisms
 
         # Settings related to the validation
         self.validation_threshold = validation_threshold
         self.validation_function = validation_function
         self.validation_protocols = validation_protocols  # only when using local access point
+        self.additional_protocols = additional_protocols  # for plotting
 
         # Settings specific to the Luigi pipeline
         self.n_model = n_model

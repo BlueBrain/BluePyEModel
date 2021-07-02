@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.optimisation import get_checkpoint_path
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +30,10 @@ class DataAccessPoint:
         self,
         efeatures,
         current,
-        name_Rin_protocol,
-        name_rmp_protocol,
-        validation_protocols,
     ):
         """Save the efeatures and currents obtained from BluePyEfe"""
 
-    def store_protocols(self, stimuli, validation_protocols):
+    def store_protocols(self, stimuli):
         """Save the protocols obtained from BluePyEfe"""
 
     def store_emodel(
@@ -124,14 +122,14 @@ class DataAccessPoint:
             dict: keys are emodel names with seed, values are names without seed.
         """
 
-    def optimisation_state(self, checkpoint_dir, seed=1, githash=""):
+    def optimisation_state(self, seed=1, githash=""):
         """Return the state of the optimisation.
 
         TODO: - should return three states: completed, in progress, empty
               - better management of checkpoints
         """
 
-        checkpoint_path = Path(checkpoint_dir) / f"checkpoint__{self.emodel}__{githash}__{seed}.pkl"
+        checkpoint_path = get_checkpoint_path(self.emodel, seed, githash)
 
         return checkpoint_path.is_file()
 

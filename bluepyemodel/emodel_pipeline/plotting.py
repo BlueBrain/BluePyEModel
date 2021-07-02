@@ -234,7 +234,7 @@ def plot_models(
     emodel,
     mapper,
     seeds=None,
-    githashs=None,
+    githashs="",
     figures_dir="./figures",
     additional_protocols=None,
     plot_distributions=True,

@@ -7,13 +7,13 @@ import luigi
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline.plotting import optimization
 from bluepyemodel.emodel_pipeline.plotting import plot_models
+from bluepyemodel.optimisation import get_checkpoint_path
 from bluepyemodel.optimisation import store_best_model
-from bluepyemodel.tasks.luigi_tools import BoolParameterCustom
 from bluepyemodel.tasks.luigi_tools import IPyParallelTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
-from bluepyemodel.tools.mechanisms import copy_and_compile_mechanisms
+from bluepyemodel.tools.mechanisms import compile_mechs
 
 # pylint: disable=W0235
 
@@ -37,17 +37,7 @@ class ExtractEFeatures(WorkflowTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
-        name_Rin_protocol (str): name of the protocol that should be used to compute
-            the input resistance. Only used when db_api is 'local'
-        name_rmp_protocol (str): name of the protocol that should be used to compute
-            the resting membrane potential. Only used when db_api is 'local'.
-        validation_protocols (dict): Of the form {"ecodename": [targets]}. Only used
-            when db_api is 'local'.
     """
-
-    name_Rin_protocol = luigi.Parameter(default=None)
-    name_rmp_protocol = luigi.Parameter(default=None)
-    validation_protocols = luigi.DictParameter(default=None)
 
     def run(self):
         """ """
@@ -63,7 +53,7 @@ class ExtractEFeatures(WorkflowTask):
 
 
 class CompileMechanisms(WorkflowTask):
-    """Luigi wrapper for optimisation.copy_and_compile_mechs
+    """Luigi wrapper for optimisation.compile_mechs
 
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
@@ -77,11 +67,11 @@ class CompileMechanisms(WorkflowTask):
 
     species = luigi.Parameter(default=None)
     brain_region = luigi.Parameter(default=None)
-    mechanisms_dir = luigi.Parameter(default="mechanisms")
+    mechanisms_dir = luigi.Parameter(default="./mechanisms")
 
     def run(self):
         """ """
-        copy_and_compile_mechanisms(self.emodel_db)
+        compile_mechs(self.mechanisms_dir)
 
     def output(self):
         """ """
@@ -95,23 +85,19 @@ class OptimisationTarget(WorkflowTarget):
         self,
         emodel,
         seed=1,
-        checkpoint_dir=None,
     ):
         """Constructor.
 
         Args:
            seed (int): seed used in the optimisation.
-           checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
         """
         super().__init__(emodel=emodel)
 
-        self.checkpoint_dir = checkpoint_dir
         self.seed = seed
 
     def exists(self):
         """Check if the model is completed."""
         return self.access_point.optimisation_state(
-            self.checkpoint_dir,
             seed=self.seed,
             githash="",
         )
@@ -140,9 +126,11 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
     def requires(self):
         """ """
+        compile_mechanisms = self.access_point.pipeline_settings.compile_mechanisms
+
         targets = [ExtractEFeatures(emodel=self.emodel)]
 
-        if self.compile_mechanisms:
+        if compile_mechanisms:
             targets.append(
                 CompileMechanisms(
                     emodel=self.emodel,
@@ -207,11 +195,11 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
         # -- run optimisation -- #
         mapper = get_mapper(args.backend)
-        access_point = access_point.get_db(
+        access_pt = access_point.get_db(
             args.api_from_config, args.emodel, **args.api_args_from_config
         )
         setup_and_run_optimisation(
-            access_point,
+            access_pt,
             args.emodel,
             args.seed,
             mapper=mapper,
@@ -220,9 +208,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
     def output(self):
         """ """
-        return OptimisationTarget(
-            checkpoint_dir=self.checkpoint_dir, seed=self.seed, emodel=self.emodel
-        )
+        return OptimisationTarget(seed=self.seed, emodel=self.emodel)
 
 
 class BestModelTarget(WorkflowTarget):
@@ -259,19 +245,19 @@ class StoreBestModels(WorkflowTask):
         species (str): name of the species.
         brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
-        batch_size (int): number of seeds to optimize at the same time before each validation.
     """
 
     species = luigi.Parameter(default="")
     brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=1)
-    batch_size = luigi.IntParameter(default=3)
 
     def requires(self):
         """ """
+        batch_size = self.access_point.pipeline_settings.optimisation_batch_size
+
         to_run = []
 
-        for seed in range(self.seed, self.seed + self.batch_size):
+        for seed in range(self.seed, self.seed + batch_size):
             to_run.append(
                 Optimize(
                     emodel=self.emodel,
@@ -296,7 +282,8 @@ class StoreBestModels(WorkflowTask):
 
     def run(self):
         """ """
-        for seed in range(self.seed, self.seed + self.batch_size):
+        batch_size = self.access_point.pipeline_settings.optimisation_batch_size
+        for seed in range(self.seed, self.seed + batch_size):
             # can have unfulfilled dependecies if slurm has send signal near time limit.
             if OptimisationTarget(
                 emodel=self.emodel,
@@ -311,8 +298,9 @@ class StoreBestModels(WorkflowTask):
 
     def output(self):
         """ """
+        batch_size = self.access_point.pipeline_settings.optimisation_batch_size
         targets = []
-        for seed in range(self.seed, self.seed + self.batch_size):
+        for seed in range(self.seed, self.seed + batch_size):
             targets.append(BestModelTarget(emodel=self.emodel, seed=seed))
         return targets
 
@@ -324,25 +312,24 @@ class ValidationTarget(WorkflowTarget):
         even if the model is not validated.
     """
 
-    def __init__(self, emodel, seed, batch_size):
+    def __init__(self, emodel, seed):
         """Constructor.
 
         Args:
            emodel (str): name of the emodel. Has to match the name of the emodel
                 under which the configuration data are stored.
             seed (int): seed used in the optimisation.
-            batch_size (int): number of seeds to optimize at the same time before each validation.
         """
         super().__init__(emodel=emodel)
 
         self.seed = seed
-        self.batch_size = batch_size
 
     def exists(self):
         """Check if the model is completed for all given seeds."""
+        batch_size = self.access_point.pipeline_settings.optimisation_batch_size
         checked_for_all_seeds = [
             self.access_point.is_checked_by_validation(seed=seed, githash="")
-            for seed in range(self.seed, self.seed + self.batch_size)
+            for seed in range(self.seed, self.seed + batch_size)
         ]
         return all(checked_for_all_seeds)
 
@@ -356,14 +343,6 @@ class Validation(WorkflowTask, IPyParallelTask):
         species (str): name of the species.
         brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
-        additional_protocols (dict): definition of supplementary protocols. See
-            examples/optimisation for usage.
-        validation_protocols_only (bool): True to only use validation protocols
-            during validation.
-        validation_function (str): function used to decide if a model
-            passes validation or not. Should rely on emodel['scores'] and
-            emodel['scores_validation']. See bluepyemodel/validation for examples.
-            Should be a function name in bluepyemodel.validation.validation_functions
         graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
             Has to use multiprocessing event for communicating between processes
             when there is more than 1 luigi worker. Skip task if set.
@@ -372,19 +351,13 @@ class Validation(WorkflowTask, IPyParallelTask):
     species = luigi.Parameter(default="")
     brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=1)
-    additional_protocols = luigi.DictParameter(default=None)
-    validation_protocols_only = BoolParameterCustom(default=False)
-    # default should be string and not None, because
-    # when this task is yielded, the default is serialized
-    # and None becomes 'None'
-    validation_function = luigi.Parameter(default="")
     graceful_killer = multiprocessing.Event()
 
     def requires(self):
         """ """
 
-        batch_size = self.access_point.pipeline_settings.optimisation_batch_size
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
+        compile_mechanisms = self.access_point.pipeline_settings.compile_mechanisms
 
         to_run = [
             StoreBestModels(
@@ -392,10 +365,9 @@ class Validation(WorkflowTask, IPyParallelTask):
                 species=self.species,
                 brain_region=self.brain_region,
                 seed=self.seed,
-                batch_size=batch_size,
             )
         ]
-        if self.compile_mechanisms:
+        if compile_mechanisms:
             to_run.append(
                 CompileMechanisms(
                     emodel=self.emodel,
@@ -411,11 +383,6 @@ class Validation(WorkflowTask, IPyParallelTask):
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=self.seed,
-                    batch_size=batch_size,
-                    plot_distributions=plot_optimisation,
-                    plot_traces=plot_optimisation,
-                    plot_scores=plot_optimisation,
-                    additional_protocols=self.additional_protocols,
                 )
             )
 
@@ -428,11 +395,6 @@ class Validation(WorkflowTask, IPyParallelTask):
         attrs = [
             "backend",
             "emodel",
-            "species",
-            "brain_region",
-            "validation_function",
-            "additional_protocols",
-            "validation_protocols_only",
         ]
         self.prepare_args_for_remote_script(attrs)
 
@@ -466,22 +428,20 @@ class Validation(WorkflowTask, IPyParallelTask):
             type=json.loads,
         )
         parser.add_argument("--emodel", default=None, type=str)
-        parser.add_argument("--species", default=None, type=str)
-        parser.add_argument("--brain_region", default="", type=str)
 
         args = parser.parse_args()
 
         # -- run validation -- #
         mapper = get_mapper(args.backend)
-        access_point = access_point.get_db(
+        access_pt = access_point.get_db(
             args.api_from_config, args.emodel, **args.api_args_from_config
         )
 
-        validate(access_point, args.emodel, mapper)
+        validate(access_pt, args.emodel, mapper)
 
     def output(self):
         """ """
-        return ValidationTarget(emodel=self.emodel, seed=self.seed, batch_size=self.batch_size)
+        return ValidationTarget(emodel=self.emodel, seed=self.seed)
 
 
 class EModelCreationTarget(WorkflowTarget):
@@ -625,7 +585,6 @@ class PlotOptimisation(WorkflowTask):
         brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
         checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
-        figures_dir (str): path to figures repo.
     """
 
     species = luigi.Parameter(default="")
@@ -641,9 +600,7 @@ class PlotOptimisation(WorkflowTask):
     def run(self):
         """ """
         githash = ""
-        checkpoint_path = (
-            Path("./checkpoints/") / f"checkpoint__{self.emodel}__{githash}__{self.seed}.pkl"
-        )
+        checkpoint_path = get_checkpoint_path(self.emodel, self.seed, githash)
         optimization(
             checkpoint_path=checkpoint_path,
             figures_dir=Path("./figures") / self.emodel / "optimisation",
@@ -652,7 +609,7 @@ class PlotOptimisation(WorkflowTask):
     def output(self):
         """ """
         githash = ""
-        fname = f"checkpoint__{self.emodel}__{githash}__{self.seed}.pdf"
+        fname = "{}.pdf".format(get_checkpoint_path(self.emodel, self.seed, githash).stem)
         return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
@@ -663,25 +620,14 @@ class PlotModels(WorkflowTask):
         species (str): name of the species.
         brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
-        batch_size (int): number of seeds to optimize at the same time before each validation.
-        additional_protocols (dict): definition of supplementary protocols. See
-            examples/optimisation for usage.
-        plot_distributions (bool): True to plot parameters distributions of required models.
-        plot_traces (bool): True to plot traces of required models.
-        plot_scores (bool): True to plot scores of required models.
-        figures_dir (str): path to figures repo.
     """
 
     species = luigi.Parameter(default="")
     brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=42)
-    additional_protocols = luigi.DictParameter(default=None)
 
     def requires(self):
         """ """
-
-        batch_size = self.access_point.pipeline_settings.optimisation_batch_size
-
         requires = [
             ExtractEFeatures(emodel=self.emodel),
             StoreBestModels(
@@ -689,7 +635,6 @@ class PlotModels(WorkflowTask):
                 species=self.species,
                 brain_region=self.brain_region,
                 seed=self.seed,
-                batch_size=batch_size,
             ),
         ]
 
@@ -699,15 +644,18 @@ class PlotModels(WorkflowTask):
         """ """
 
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
+        batch_size = self.access_point.pipeline_settings.optimisation_batch_size
+        additional_protocols = self.access_point.pipeline_settings.additional_protocols
 
         mapper = self.get_mapper()
         plot_models(
             access_point=self.access_point,
             emodel=self.emodel,
             mapper=mapper,
-            seeds=range(self.seed, self.seed + self.batch_size),
-            figures_dir=Path(self.figures_dir) / self.emodel,
-            additional_protocols=self.additional_protocols,
+            seeds=range(self.seed, self.seed + batch_size),
+            githashs="",
+            figures_dir=Path("./figures") / self.emodel,
+            additional_protocols=additional_protocols,
             plot_distributions=plot_optimisation,
             plot_traces=plot_optimisation,
             plot_scores=plot_optimisation,
@@ -718,28 +666,30 @@ class PlotModels(WorkflowTask):
         """ """
 
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
+        plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
 
         outputs = []
-        if self.plot_distributions:
+        if plot_optimisation:
+            # distribution
             fname = f"{self.emodel}_parameters_distribution.pdf"
-            fpath = Path(self.figures_dir) / self.emodel / "distributions" / "all" / fname
+            fpath = Path("./figures") / self.emodel / "distributions" / "all" / fname
             outputs.append(luigi.LocalTarget(fpath))
 
-        if self.plot_scores:
+            # scores
             for seed in range(self.seed, self.seed + batch_size):
                 # change fname if githash is implemented
                 fname = "{}_{}_scores.pdf".format(self.emodel, seed)
-                fpath = Path(self.figures_dir) / self.emodel / "scores" / "all" / fname
+                fpath = Path("./figures") / self.emodel / "scores" / "all" / fname
                 outputs.append(luigi.LocalTarget(fpath))
 
-        if self.plot_traces:
+            # traces
             for seed in range(self.seed, self.seed + batch_size):
                 fname = "{}_{}_{}_traces.pdf".format(
                     self.emodel,
                     "",  # githash
                     seed,
                 )
-                fpath = Path(self.figures_dir) / self.emodel / "traces" / "all" / fname
+                fpath = Path("./figures") / self.emodel / "traces" / "all" / fname
                 outputs.append(luigi.LocalTarget(fpath))
 
         return outputs
