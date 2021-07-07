@@ -207,12 +207,12 @@ class LocalAccessPoint(DataAccessPoint):
             protocols_threshold (list)
         """
 
-        settings = self.pipeline_settings.path_extract_config
+        path_extract_config = self.pipeline_settings.path_extract_config
 
-        if not settings.get("path_extract_config", None):
+        if not path_extract_config:
             return None, None, None
 
-        with open(settings["path_extract_config"], "r") as f:
+        with open(path_extract_config, "r") as f:
             config_dict = json.load(f)
 
         files_metadata = config_dict["files_metadata"]

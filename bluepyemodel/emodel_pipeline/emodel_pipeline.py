@@ -128,7 +128,7 @@ class EModel_pipeline:
     def extract_efeatures(self):
         """"""
 
-        extract_save_features_protocols(
+        return extract_save_features_protocols(
             emodel=self.emodel, access_point=self.access_point, mapper=self.mapper
         )
 
