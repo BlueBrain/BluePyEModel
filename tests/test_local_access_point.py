@@ -79,3 +79,29 @@ def test_get_final(db):
     final = db.get_final()
     assert "cADpyr_L5TPC" in final
     assert "params" in final["cADpyr_L5TPC"]
+
+
+def test_load_pipeline_settings(db):
+    assert db.pipeline_settings.path_extract_config == "tests/test_data/config/config_dict.json"
+    assert db.pipeline_settings.validation_protocols == {"APWaveform": [140]}
+
+
+def test_get_extraction_metadata(db):
+    path_extract_config = DATA / "config" / "config_dict.json"
+    with open(path_extract_config, "r") as f:
+        config_dict = json.load(f)
+
+    expected_files_metadata = config_dict["files_metadata"]
+    expected_targets = config_dict["targets"]
+    expected_protocols_threshold = config_dict["protocols_threshold"]
+
+    (files_metadata, targets, protocols_threshold) = db.get_extraction_metadata()
+    assert list(diff(files_metadata, expected_files_metadata)) == []
+    assert list(diff(targets, expected_targets)) == []
+    assert list(diff(protocols_threshold, expected_protocols_threshold)) == []
+
+
+def test_get_model_name_for_final(db):
+    assert db.get_model_name_for_final(seed=42, githash="") == "cADpyr_L5TPC__42"
+    assert db.get_model_name_for_final(seed=42, githash=None) == "cADpyr_L5TPC__42"
+    assert db.get_model_name_for_final(seed=42, githash="hash") == "cADpyr_L5TPC__hash__42"

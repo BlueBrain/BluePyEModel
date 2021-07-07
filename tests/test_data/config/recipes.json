@@ -9,6 +9,14 @@
         ],
         "params": "config/params.json",
         "protocol": "config/protocols.json",
-        "features": "config/features.json"
+        "features": "config/features.json",
+        "pipeline_settings": {
+            "path_extract_config": "tests/test_data/config/config_dict.json",
+            "validation_protocols": {
+                "APWaveform": [
+                    140
+                ]
+            }
+        }
     }
 }
