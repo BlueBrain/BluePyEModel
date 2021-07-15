@@ -6,8 +6,8 @@ before_script:
   - chmod 700 ~/.ssh
   - ssh-keyscan bbpcode.epfl.ch >> ~/.ssh/known_hosts
   - chmod 644 ~/.ssh/known_hosts
-  - git config --global user.email "darth@empire.com"
-  - git config --global user.name "Darth Vader"
+  - git config --global user.email "$GITLAB_USER_EMAIL"
+  - git config --global user.name "$GITLAB_USER_NAME"
 
 include:
    - project: nse/ci
