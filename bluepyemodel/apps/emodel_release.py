@@ -24,9 +24,6 @@ from bluepyemodel.access_point import get_db
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 from bluepyemodel.evaluation.modifiers import synth_axon
 from bluepyemodel.generalisation.ais_model import taper_function
-from bluepyemodel.tools.bglibpy_helper import get_cell
-from bluepyemodel.tools.bglibpy_helper import get_time_to_last_spike
-from bluepyemodel.tools.if_curve import run_step_sim
 
 L = logging.getLogger(__name__)
 
@@ -680,7 +677,7 @@ def _evaluate_emodels(
 ):
     """Evaluate emodels."""
 
-    combos_df = CellCollection.load_sonata(sonata_path).as_dataframe()
+    combos_df = CellCollection.load(sonata_path).as_dataframe()
     combos_df["path"] = morphology_path + "/" + combos_df["morphology"] + ".asc"
     combos_df["emodel"] = combos_df["model_template"].str.rsplit(":", 1, expand=True)[1]
     if region is not None:
@@ -698,10 +695,13 @@ def _evaluate_emodels(
             for model_template in combos_df.model_template.unique()
         ]
     )
-    ais_models = yaml.safe_load(open(ais_emodels_path, "r"))
-    combos_df["AIS_params"] = len(combos_df) * [ais_models["mtype"]["all"]["AIS"]["popt"]]
-    combos_df["AIS_scaler"] = combos_df["@dynamics:AIS_scaler"]
-    combos_df = combos_df[["AIS_params", "AIS_scaler", "path", "mtype", "morphology", "emodel"]]
+    if ais_emodels_path is not None:
+        ais_models = yaml.safe_load(open(ais_emodels_path, "r"))
+        combos_df["AIS_params"] = len(combos_df) * [ais_models["mtype"]["all"]["AIS"]["popt"]]
+        combos_df["AIS_scaler"] = combos_df["@dynamics:AIS_scaler"]
+        combos_df = combos_df[["AIS_params", "AIS_scaler", "path", "mtype", "morphology", "emodel"]]
+    else:
+        combos_df = combos_df[["path", "mtype", "morphology", "emodel"]]
     combos_df["gid"] = combos_df.index
     combos_df = combos_df.reset_index(drop=True)
 
@@ -822,6 +822,10 @@ def _get_stuck(
     protocol_config_path="protocol_configs.yaml",
 ):
     """This computes stuck and depol stuck cells."""
+    from bluepyemodel.tools.bglibpy_helper import get_cell
+    from bluepyemodel.tools.bglibpy_helper import get_time_to_last_spike
+    from bluepyemodel.tools.if_curve import run_step_sim
+
     cell = get_cell(
         morphology_name=row["morphology"],
         emodel=row["emodel"],
@@ -897,7 +901,7 @@ def detect_stuck_cells(
     parallel_factory = init_parallel_factory(parallel_factory)
     Path(result_path).mkdir(parents=True, exist_ok=True)
     Path(figure_path).mkdir(parents=True, exist_ok=True)
-    cells = CellCollection.load_sonata(sonata_path).as_dataframe()
+    cells = CellCollection.load(sonata_path).as_dataframe()
     cells["path"] = morphology_path + cells["morphology"] + ".asc"
     cells["emodel"] = cells["model_template"].apply(lambda m: m.split(":")[-1])
     cells["morphology"] = cells["morphology"] + ".asc"
@@ -961,7 +965,7 @@ def detect_stuck_cells(
 @click.option("--exemplar-path", type=str, default="exemplar_evaluations.csv")
 @click.option("--sonata-path", type=click.Path(exists=True), required=True)
 @click.option("--morphology-path", type=click.Path(exists=True), required=True)
-@click.option("--ais-emodels-path", type=click.Path(exists=True), required=True)
+@click.option("--ais-emodels-path", type=click.Path(exists=True), default=None)
 @click.option("--regions", type=str, default=None)
 @click.option("--emodel", type=str, default=None)
 @click.option("--n-cells", type=int, default=10)
