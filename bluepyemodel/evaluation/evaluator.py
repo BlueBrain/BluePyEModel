@@ -288,8 +288,8 @@ def define_feature(
     )
 
     std = meanstd[1]
-    if threshold_efeature_std and std < threshold_efeature_std * meanstd[0]:
-        std = threshold_efeature_std * meanstd[0]
+    if threshold_efeature_std and std < abs(threshold_efeature_std * meanstd[0]):
+        std = abs(threshold_efeature_std * meanstd[0])
 
     if protocol_name:
         recording_names = {"": "%s.%s" % (protocol_name, recording_name)}
