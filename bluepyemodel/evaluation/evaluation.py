@@ -96,6 +96,7 @@ def get_evaluator_from_db(
     timeout=600.0,
     score_threshold=12.0,
     max_threshold_voltage=-30,
+    nseg_frequency=40,
 ):
     """Create an evaluator for the emodel.
 
@@ -144,6 +145,7 @@ def get_evaluator_from_db(
         mechanisms=mechanisms,
         parameters=parameters,
         morph_modifiers=access_point.pipeline_settings.morph_modifiers,
+        nseg_frequency=nseg_frequency,
     )
 
     timeout = timeout or access_point.pipeline_settings.timeout
