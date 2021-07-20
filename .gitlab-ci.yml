@@ -10,6 +10,7 @@ include:
 
 py36:
    before_script:
+      - echo ${SSH_KEY_BBPCODE}
       - SSH_CONFIG=$HOME/.ssh/config
       - if [[ -f $SSH_CONFIG ]]; then echo "SSH config file $SSH_CONFIG already exists, exiting"; exit 1; fi
       - if [[ -z $SSH_KEY_BBPCODE ]]; then echo 'Please set the $SSH_KEY_BBPCODE variable'; exit 1; fi
