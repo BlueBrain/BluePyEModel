@@ -98,7 +98,7 @@ class RMPProtocol:
         self.stimulus_duration = stimulus_duration
         self.target_voltage = target_voltage
 
-        self.target_voltage.stim_start = self.stimulus_duration - 100.0
+        self.target_voltage.stim_start = 0.3 * self.stimulus_duration
         self.target_voltage.stim_end = self.stimulus_duration
         self.target_voltage.stimulus_current = 0.0
 
@@ -139,7 +139,7 @@ class RinProtocol:
     """Protocol used to find the input resistance of a model"""
 
     def __init__(
-        self, name, location, target_rin, amp=-0.02, stimulus_delay=500.0, stimulus_duration=500.0
+        self, name, location, target_rin, amp=-0.03, stimulus_delay=500.0, stimulus_duration=500.0
     ):
 
         self.name = name

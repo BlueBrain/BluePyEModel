@@ -205,7 +205,11 @@ class NexusForgeAccessPoint:
         if resource is None:
             raise AccessPointException("Could not find resource for id: %s" % resource_id)
 
-        filename = resource.distribution.name
+        if isinstance(resource.distribution, list):
+            filename = resource.distribution[0].name
+        else:
+            filename = resource.distribution.name
+
         file_path = pathlib.Path(download_directory) / filename
 
         if not file_path.is_file():
