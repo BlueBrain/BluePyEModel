@@ -132,7 +132,7 @@ class EModel_pipeline:
             emodel=self.emodel, access_point=self.access_point, mapper=self.mapper
         )
 
-    def optimize(self, seed=1):
+    def optimize(self, seed=1, continue_opt=False):
         """"""
 
         setup_and_run_optimisation(
@@ -140,7 +140,7 @@ class EModel_pipeline:
             emodel=self.emodel,
             seed=seed,
             mapper=self.mapper,
-            continue_opt=False,
+            continue_opt=continue_opt,
             githash=self.githash,
             terminator=None,
         )
