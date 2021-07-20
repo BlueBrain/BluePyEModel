@@ -271,6 +271,7 @@ class SearchHoldingCurrent:
         timeout=None,
     ):
         """Run protocol"""
+
         return {
             "bpo_holding_current": self.bisection_search(
                 cell_model,

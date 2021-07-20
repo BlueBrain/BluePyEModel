@@ -490,7 +490,7 @@ class LocalAccessPoint(DataAccessPoint):
         parameters = self._get_json("params")
 
         params_definition = {
-            "distributions": parameters["distributions"],
+            "distributions": parameters.get("distributions", {}),
             "parameters": parameters["parameters"],
         }
 

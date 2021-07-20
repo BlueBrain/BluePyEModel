@@ -11,7 +11,7 @@ if sys.version_info < (3, 6):
 VERSION = imp.load_source("", "bluepyemodel/version.py").__version__
 
 # Read the contents of the README file
-with open("README.rst", encoding="utf-8") as f:
+with open("README.md", encoding="utf-8") as f:
     README = f.read()
 
 

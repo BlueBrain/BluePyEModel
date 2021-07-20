@@ -1,5 +1,6 @@
 """Optimisation function"""
 import logging
+import os
 from pathlib import Path
 
 import bluepyopt
@@ -65,6 +66,11 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
         None
     """
     checkpoint_path.parents[0].mkdir(parents=True, exist_ok=True)
+
+    if continue_opt and not os.path.isfile(checkpoint_path):
+        raise Exception(
+            "continue_opt is True but the checkpoint %s does not exist" % checkpoint_path
+        )
 
     logger.info("Running optimisation ...")
     pop, hof, log, history = optimizer.run(
