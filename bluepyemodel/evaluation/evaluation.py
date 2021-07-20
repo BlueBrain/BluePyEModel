@@ -105,8 +105,7 @@ def get_evaluator_from_db(
         stochasticity (bool): should channels behave stochastically if they can.
         include_validation_protocols (bool): should the validation protocols
             and validation efeatures be added to the evaluator.
-        additional_protocols (dict): definition of supplementary protocols. See
-            examples/optimisation for usage.
+        additional_protocols (dict): definition of supplementary protocols.
         timeout (float): duration (in second) after which the evaluation of a
             protocol will be interrupted.
 

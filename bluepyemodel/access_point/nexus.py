@@ -1517,7 +1517,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         params_definition["distributions"] = self.get_distributions(set(distributions))
 
-        # Remove the parameters of to the distributions that are not used
+        # Remove the parameters of the distributions that are not used
         tmp_params = {}
         for loc, params in params_definition["parameters"].items():
             if "distribution_" in loc:

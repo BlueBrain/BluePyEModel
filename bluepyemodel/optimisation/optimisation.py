@@ -66,9 +66,6 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
         None
     """
     checkpoint_path.parents[0].mkdir(parents=True, exist_ok=True)
-    
-    if continue_opt and not os.path.isfile(checkpoint_path):
-        raise Exception("continue_opt is True but the checkpoint %s does not exist" % checkpoint_path)
 
     if continue_opt and not os.path.isfile(checkpoint_path):
         raise Exception(
