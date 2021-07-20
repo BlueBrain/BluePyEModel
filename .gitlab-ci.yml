@@ -15,7 +15,6 @@ py36:
       - if [[ -z $SSH_KEY_BBPCODE ]]; then echo 'Please set the $SSH_KEY_BBPCODE variable'; exit 1; fi
       - !reference [.define-functions]
       - !reference [.bb5, clean-env]
-      - !reference [.bb5, install-packages]
       - !reference [.bb5, load-python-36]
       - !reference [.run-pre-build-command]
       - !reference [.setup-venv]
