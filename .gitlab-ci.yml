@@ -18,11 +18,11 @@ py36:
       - !reference [.bb5, load-python-36]
       - !reference [.run-pre-build-command]
       - !reference [.setup-venv]
-      - git config --global user.email "$GITLAB_USER_EMAIL"
-      - git config --global user.name "$GITLAB_USER_NAME"
+      - git config --global user.email tanguy.damart@epfl.ch
+      - git config --global user.name damart
       - |
          mkdir -p $(dirname $SSH_CONFIG) && cat > $SSH_CONFIG <<EOF
-         User ${GITLAB_USER_NAME}
+         User damart
          IdentityFile ${SSH_KEY_BBPCODE}
          StrictHostKeyChecking no
          IdentitiesOnly yes
