@@ -31,6 +31,7 @@ BPEM_NEXUS_SCHEMA = [
     "ElectrophysiologyFeature",
     "ElectrophysiologyFeatureExtractionProtocol",
     "EModel",
+    "EModelPipelineSettings"
 ]
 
 
@@ -426,7 +427,7 @@ class NexusAccessPoint(DataAccessPoint):
                 {
                     "type": "Trace",
                     "name": name,
-                    # "distribution": {"encodingFormat": "application/nwb"},
+                    "distribution": {"encodingFormat": "application/nwb"},
                 },
                 use_version=False,
             )
@@ -744,6 +745,7 @@ class NexusAccessPoint(DataAccessPoint):
             {
                 "type": ["Entity", "ElectrophysiologyFeatureOptimisationChannelDistribution"],
                 "channelDistribution": name,
+                "name": name,
                 "function": function,
                 "parameter": parameters,
                 "somaReferenceLocation": soma_reference_location,
@@ -766,9 +768,17 @@ class NexusAccessPoint(DataAccessPoint):
         if id_:
             resource = self.access_point.retrieve(id_)
         elif name:
-            resource = self.access_point.fetch_one(
+            resources = self.access_point.fetch(
                 {"type": "SubCellularModelScript", "name": name}, use_version=False
             )
+            # Genetic channel can have several versions, we want the most recent one:
+            if len(resources) > 1 and all(hasattr(r, "version") for r in resources):
+                resource = sorted(resources, key=lambda x: x.version)[-1]
+            else:
+                resource = resources[0]
+#             resource = self.access_point.fetch_one(
+#                 {"type": "SubCellularModelScript", "name": name}, use_version=False
+#             )
         else:
             raise NexusAccessPointException("At least name or id_ should be informed.")
 
@@ -1061,9 +1071,6 @@ class NexusAccessPoint(DataAccessPoint):
             resource_description["pdfs"] = pdfs
 
         if protocol_name and protocol_amplitude:
-
-            # TODO: How to get the ontology for the stimulus ?
-            #  is the url string always of the same format ?
 
             resource_description["stimulus"] = {
                 "stimulusType": {
@@ -1366,14 +1373,16 @@ class NexusAccessPoint(DataAccessPoint):
                 }
             )
 
-            # TODO: HANDLE SEVERAL PARAMETERS
-            if hasattr(resource, "parameter"):
-                distributions_definitions[dist] = {
+            distributions_definitions[dist] = {
                     "fun": resource.function,
-                    "parameters": [resource.parameter],
+                    "soma_ref_point": resource.somaReferenceLocation,
                 }
-            else:
-                distributions_definitions[dist] = {"fun": resource.function}
+
+            if hasattr(resource, "parameter"):
+                if isinstance(resource.parameter, list):
+                    distributions_definitions[dist]["parameters"] = resource.parameter
+                else:
+                    distributions_definitions[dist]["parameters"] = [resource.parameter]
 
         return distributions_definitions
 
@@ -1482,10 +1491,10 @@ class NexusAccessPoint(DataAccessPoint):
                         resource_mech.modelScript.id, "./mechanisms/"
                     )
                     # Rename the file in case its different from the name of the resource
-                    filename = pathlib.Path(filepath).stem
-                    if filename != resource_mech.name:
-                        filename.rename(
-                            pathlib.Path(filename.parent / f"{resource_mech.name}{filename.suffix}")
+                    filepath = pathlib.Path(filepath)
+                    if filepath.stem != resource_mech.name:
+                        filepath.rename(
+                            pathlib.Path(filepath.parent / f"{resource_mech.name}{filepath.suffix}")
                         )
 
                 else:
@@ -1507,7 +1516,16 @@ class NexusAccessPoint(DataAccessPoint):
                     }
 
         params_definition["distributions"] = self.get_distributions(set(distributions))
-
+        
+        # Remove the parameters of to the distributions that are not used
+        tmp_params = {}
+        for loc, params in params_definition["parameters"].items():
+            if "distribution_" in loc:
+                if loc.split("distribution_")[1] not in distributions:
+                    continue
+            tmp_params[loc] = params
+        params_definition["parameters"] = tmp_params
+        
         # It is necessary to sort the parameters as it impacts the order of
         # the parameters in the checkpoint.pkl
         # TODO: Find a better solution. Right now, if a new parameter is added,

@@ -26,7 +26,7 @@ def extract_save_features_protocols(
 
     # extract features
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
-        output_directory=emodel,
+        output_directory="./figures/efeatures_extraction/{emodel}",
         files_metadata=files_metadata,
         targets=targets,
         threshold_nvalue_save=threshold_nvalue_save,
