@@ -43,7 +43,7 @@ class NexusForgeAccessPoint:
         self.access_token = access_token
         if not self.access_token:
             self.access_token = self.get_access_token()
-
+        
         bucket = organisation + "/" + project
         self.forge = self.connect_forge(bucket, endpoint, self.access_token, forge_path)
 
@@ -204,6 +204,11 @@ class NexusForgeAccessPoint:
 
         if resource is None:
             raise AccessPointException("Could not find resource for id: %s" % resource_id)
+        
+        if isinstance(resource.distribution, list):
+            filename = resource.distribution[0].name
+        else:
+            filename = resource.distribution.name
 
         if isinstance(resource.distribution, list):
             filename = resource.distribution[0].name
