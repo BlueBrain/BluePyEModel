@@ -28,3 +28,5 @@ py36:
          IdentitiesOnly yes
          EOF
       - chmod 600 $SSH_CONFIG $SSH_KEY_BBPCODE
+      - cat $SSH_CONFIG
+      - cat $SSH_KEY_BBPCODE
