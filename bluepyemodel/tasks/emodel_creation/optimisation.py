@@ -71,6 +71,9 @@ class CompileMechanisms(WorkflowTask):
 
     def run(self):
         """ """
+        # Necessary as it downloads the mechanisms when using the Nexus access_point
+        _ = self.access_point.get_parameters()
+        
         compile_mechs(self.mechanisms_dir)
 
     def output(self):
