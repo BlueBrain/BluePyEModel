@@ -467,7 +467,11 @@ def get_me_combos_currents(
     if morphology_path is None:
         morphology_path = Path(input_sonata_path).parent
     combos_df["morphology_path"] = str(morphology_path) + "/" + combos_df["morphology"] + ".asc"
-    combos_df["AIS_scaler"] = combos_df["@dynamics:AIS_scaler"]
+    if "@dynamics:AIS_scaler" in combos_df.columns:
+        combos_df["AIS_scaler"] = combos_df["@dynamics:AIS_scaler"]
+    else:
+        bglibpy_template_format = "v6"
+        L.info("No @dynamics:AIS_scaler column, switching to v6")
 
     # 2) compute holding and threshold currents
     if protocol_config_path is None:
