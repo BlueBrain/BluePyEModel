@@ -1390,6 +1390,19 @@ class NexusAccessPoint(DataAccessPoint):
 
         return distributions_definitions
 
+    def _download_mod_file(self):
+        """Download a mod file if it is not already downloaded"""
+        mode_file_name = f"{resource_mech.name}.mod"
+
+        if not os.path.isfile(f"./mechanisms/{mode_file_name}"):
+
+            filepath = self.access_point.download(resource_mech.modelScript.id, "./mechanisms/")
+
+            # Rename the file in case it's different from the name of the resource
+            filepath = pathlib.Path(filepath)
+            if filepath.stem != resource_mech.name:
+                filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
+
     def get_parameters(self):
         """Get the definition of the parameters to optimize from the
             optimization parameters resources, as well as the
@@ -1489,17 +1502,9 @@ class NexusAccessPoint(DataAccessPoint):
                         }
                     )
                     resource_mech = resource_mech[0]
-
                     is_stochastic = resource_mech.stochastic
-                    filepath = self.access_point.download(
-                        resource_mech.modelScript.id, "./mechanisms/"
-                    )
-                    # Rename the file in case its different from the name of the resource
-                    filepath = pathlib.Path(filepath)
-                    if filepath.stem != resource_mech.name:
-                        filepath.rename(
-                            pathlib.Path(filepath.parent / f"{resource_mech.name}{filepath.suffix}")
-                        )
+
+                    self._download_mod_file(resource_mech)
 
                 else:
                     is_stochastic = False
