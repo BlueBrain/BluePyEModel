@@ -63,6 +63,9 @@ def scores(model, figures_dir="./figures"):
 
     score = list(model["scores"].values())
     scores_names = list(model["scores"].keys())
+    if "scores_validation" in model:
+        score += list(model["scores_validation"].values())
+        scores_names += list(model["scores_validation"].keys())
     pos = [*range(len(model["scores"]))]
 
     fig, axs = plt.subplots(1, figsize=(6, 0.8 + 0.150 * len(pos)), squeeze=False)

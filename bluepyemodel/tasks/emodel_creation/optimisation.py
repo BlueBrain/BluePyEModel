@@ -659,7 +659,6 @@ class PlotModels(WorkflowTask):
             plot_distributions=plot_optimisation,
             plot_traces=plot_optimisation,
             plot_scores=plot_optimisation,
-            only_validated=False,
         )
 
     def output(self):
