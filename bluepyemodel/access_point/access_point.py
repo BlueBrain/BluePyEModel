@@ -153,11 +153,10 @@ class DataAccessPoint:
     def search_figure_efeatures(self, protocol_name, efeature):
         """Search for the pdf representing the efeature extracted from ephys recordings"""
 
-        pdf_amp = self.search_figure_path(f"./{self.emodel}/*{protocol_name}_{efeature}_amp.pdf")
+        path = f"./figures/{self.emodel}/efeatures_extraction/*{protocol_name}_{efeature}"
 
-        pdf_amp_rel = self.search_figure_path(
-            f"./{self.emodel}/*{protocol_name}_{efeature}_amp_rel.pdf"
-        )
+        pdf_amp = self.search_figure_path(path + "_amp.pdf")
+        pdf_amp_rel = self.search_figure_path(path + "_amp_rel.pdf")
 
         return pdf_amp, pdf_amp_rel
 

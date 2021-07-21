@@ -186,7 +186,10 @@ class EModel_pipeline:
             if self.githash and self.githash not in chkp_path:
                 continue
 
-            plotting.optimization(checkpoint_path=chkp_path, figures_dir="./figures")
+            plotting.optimization(
+                checkpoint_path=chkp_path,
+                figures_dir=pathlib.Path("./figures") / self.emodel / "optimisation",
+            )
 
         githashs = None
         if self.githash:
@@ -198,7 +201,7 @@ class EModel_pipeline:
             mapper=self.mapper,
             seeds=None,
             githashs=githashs,
-            figures_dir="./figures",
+            figures_dir=pathlib.Path("./figures") / self.emodel,
             plot_distributions=True,
             plot_scores=True,
             plot_traces=True,

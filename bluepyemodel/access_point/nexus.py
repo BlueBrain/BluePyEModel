@@ -198,8 +198,6 @@ class NexusAccessPoint(DataAccessPoint):
     def load_pipeline_settings(self, strict=True):
         """ """
 
-        settings = {}
-
         resource = self.access_point.fetch_one(
             filters={
                 "type": "EModelPipelineSettings",
@@ -210,38 +208,44 @@ class NexusAccessPoint(DataAccessPoint):
             strict=strict,
         )
 
-        if not resource:
-            return settings
+        settings = {}
 
-        resource_dict = self.access_point.forge.as_json(resource)
+        if resource:
 
-        # Removes the unwanted entries of the Resource such as the metadata
-        for setting in [
-            "extraction_threshold_value_save",
-            "plot_extraction",
-            "efel_settings",
-            "stochasticity",
-            "morph_modifiers",
-            "optimizer",
-            "optimisation_params",
-            "optimisation_timeout",
-            "threshold_efeature_std",
-            "max_ngen",
-            "validation_threshold",
-            "validation_function",
-            "plot_optimisation",
-            "n_model",
-            "optimisation_batch_size",
-            "max_n_batch",
-            "path_extract_config",
-            "name_Rin_protocol",
-            "name_rmp_protocol",
-            "validation_protocols",
-            "additional_protocols",
-            "compile_mechanisms",
-        ]:
-            if setting in resource_dict:
-                settings[setting] = resource_dict[setting]
+            resource_dict = self.access_point.forge.as_json(resource)
+
+            # Removes the unwanted entries of the Resource such as the metadata
+            for setting in [
+                "extraction_threshold_value_save",
+                "plot_extraction",
+                "efel_settings",
+                "stochasticity",
+                "morph_modifiers",
+                "optimizer",
+                "optimisation_params",
+                "optimisation_timeout",
+                "threshold_efeature_std",
+                "max_ngen",
+                "validation_threshold",
+                "validation_function",
+                "plot_optimisation",
+                "n_model",
+                "optimisation_batch_size",
+                "max_n_batch",
+                "path_extract_config",
+                "name_Rin_protocol",
+                "name_rmp_protocol",
+                "validation_protocols",
+                "additional_protocols",
+                "compile_mechanisms",
+            ]:
+                if setting in resource_dict:
+                    settings[setting] = resource_dict[setting]
+
+        else:
+            logger.warning(
+                "No EModelPipelineSettings for emodel %s, default values will be used", self.emodel
+            )
 
         return EModelPipelineSettings(**settings)
 
