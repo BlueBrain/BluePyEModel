@@ -511,13 +511,10 @@ class MainProtocol(ephys.protocols.Protocol):
     Pseudo code:
         Find resting membrane potential
         Find input resistance
-        If both of these scores are within bounds, run other protocols:
-            Find holding current
-            Find lowest current inducing an AP
-            Run the other protocols
-            Return all the responses
+        Find holding current
+        Find threshold current (lowest current inducing an AP)
+        Run the other protocols
         Run the none-threshold based protocols
-        Otherwise return return Rin and RMP protocol responses
     """
 
     def __init__(
