@@ -556,6 +556,12 @@ class LocalAccessPoint(DataAccessPoint):
         protocols_out = {}
         for protocol_name, protocol in protocols.items():
 
+            if protocol_name in (
+                self.pipeline_settings.name_Rin_protocol,
+                self.pipeline_settings.name_rmp_protocol,
+            ):
+                continue
+
             if "validation" in protocol:
                 if not include_validation and protocol["validation"]:
                     continue

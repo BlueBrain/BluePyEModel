@@ -593,6 +593,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     features = []
 
     for name, definition in protocols_definition.items():
+
         protocol = define_protocol(name, definition, stochasticity)
 
         if definition["type"] == "StepThresholdProtocol":
