@@ -86,6 +86,8 @@ class EModel_pipeline:
             nexus_iteration_tag,
         )
 
+        self.access_point.download_mechanisms()
+
     def init_access_point(
         self,
         data_access_point,

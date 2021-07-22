@@ -60,21 +60,16 @@ class CompileMechanisms(WorkflowTask):
             under which the configuration data are stored.
         species (str): name of the species.
         brain_region (str): name of the brain_region.
-        mechanisms_dir (str): path of the directory in which the mechanisms
-            will be copied and/or compiled. It has to be a subdirectory of
-            working_dir.
     """
 
     species = luigi.Parameter(default=None)
     brain_region = luigi.Parameter(default=None)
-    mechanisms_dir = luigi.Parameter(default="./mechanisms")
 
     def run(self):
         """ """
-        # Necessary as it downloads the mechanisms when using the Nexus access_point
-        _ = self.access_point.get_parameters()
+        self.access_point.download_mechanisms()
 
-        compile_mechs(self.mechanisms_dir)
+        compile_mechs("./mechanisms")
 
     def output(self):
         """ """

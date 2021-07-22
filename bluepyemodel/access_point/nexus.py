@@ -309,7 +309,54 @@ class NexusAccessPoint(DataAccessPoint):
 
         return gene_expression
 
-    def get_mechanism_from_gene(self, path_mapping, gene, channel_version=None):
+    def fetch_mechanism(self, mechanism_name, mechanism_version=None):
+        """Retrieve a channel based on its name and return the most recent version"""
+        filters = {"type": "SubCellularModel", "name": mechanism_name}
+
+        if mechanism_version:
+            filters["version"] = mechanism_version
+
+        # TODO: change once instantaneous registering is operational
+        # self.access_point.fetch_one(filters, use_version=True)
+
+        return self.access_point.fetch(filters, use_version=True)[0]
+
+    def download_mechanisms(self):
+        """Download the mod files if not already downloaded"""
+
+        resources_params = self.access_point.fetch(
+            filters={
+                "type": "ElectrophysiologyFeatureOptimisationParameter",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+            }
+        )
+
+        if resources_params is None:
+            return
+
+        for resource in resources_params:
+            if (
+                hasattr(resource, "subCellularMechanism")
+                and resource.subCellularMechanism is not None
+                and resource.subCellularMechanism != "pas"
+            ):
+
+                resource_mech = self.fetch_mechanism(resource.subCellularMechanism)
+                mode_file_name = f"{resource_mech.name}.mod"
+
+                if os.path.isfile(f"./mechanisms/{mode_file_name}"):
+                    continue
+
+                filepath = self.access_point.download(resource_mech.modelScript.id, "./mechanisms/")
+
+                # Rename the file in case it's different from the name of the resource
+                filepath = pathlib.Path(filepath)
+                if filepath.stem != resource_mech.name:
+                    filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
+
+    def get_mechanism_from_gene(self, path_mapping, gene):
         """Returns Nexus resource for a SubCellularModel file corresponding to a given
         gene name.
 
@@ -327,19 +374,13 @@ class NexusAccessPoint(DataAccessPoint):
         if lower_gene in mapping["genes"]:
             mechanism_name = mapping["genes"][lower_gene]["protein"]
 
-            filters = {"type": "SubCellularModel", "name": mechanism_name}
+            search_version = None
+            if "versions" in mapping["genes"][lower_gene] and len(
+                mapping["genes"][lower_gene]["versions"]
+            ):
+                search_version = sorted(mapping["genes"][lower_gene]["versions"])[-1]
 
-            search_version = channel_version
-            if search_version is None:
-                if "versions" in mapping["genes"][lower_gene] and len(
-                    mapping["genes"][lower_gene]["versions"]
-                ):
-                    search_version = sorted(mapping["genes"][lower_gene]["versions"])[-1]
-
-            if search_version:
-                filters["version"] = search_version
-
-            return self.access_point.fetch_one(filters, use_version=False)
+            return self.fetch_mechanism(mechanism_name, search_version)
 
         return None
 
@@ -1390,19 +1431,6 @@ class NexusAccessPoint(DataAccessPoint):
 
         return distributions_definitions
 
-    def _download_mod_file(self):
-        """Download a mod file if it is not already downloaded"""
-        mode_file_name = f"{resource_mech.name}.mod"
-
-        if not os.path.isfile(f"./mechanisms/{mode_file_name}"):
-
-            filepath = self.access_point.download(resource_mech.modelScript.id, "./mechanisms/")
-
-            # Rename the file in case it's different from the name of the resource
-            filepath = pathlib.Path(filepath)
-            if filepath.stem != resource_mech.name:
-                filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
-
     def get_parameters(self):
         """Get the definition of the parameters to optimize from the
             optimization parameters resources, as well as the
@@ -1487,25 +1515,8 @@ class NexusAccessPoint(DataAccessPoint):
                 mechanisms_names.append(resource.subCellularMechanism)
 
                 if resource.subCellularMechanism != "pas":
-                    # TODO when instantaneous registering:
-                    # resource_mech = self.access_point.fetch_one(
-                    #    filters={
-                    #        "type": "SubCellularModel",
-                    #        "subCellularMechanism": resource.subCellularMechanism,
-                    #    }
-                    # )
-
-                    resource_mech = self.access_point.fetch(
-                        filters={
-                            "type": "SubCellularModel",
-                            "subCellularMechanism": resource.subCellularMechanism,
-                        }
-                    )
-                    resource_mech = resource_mech[0]
+                    resource_mech = self.fetch_mechanism(resource.subCellularMechanism)
                     is_stochastic = resource_mech.stochastic
-
-                    self._download_mod_file(resource_mech)
-
                 else:
                     is_stochastic = False
 

@@ -105,15 +105,8 @@ class DataAccessPoint:
 
         """
 
-    def get_mechanism_paths(self, mechanism_names):
-        """Get the path of the mod files
-
-        Args:
-            mechanism_names (list): names of the mechanisms
-
-        Returns:
-            mechanism_paths (dict): {'mech_name': 'mech_path'}
-        """
+    def donwload_mechanisms(self):
+        """Download the mod files when not already downloaded"""
 
     def get_emodel_names(self):
         """Get the list of all the names of emodels
