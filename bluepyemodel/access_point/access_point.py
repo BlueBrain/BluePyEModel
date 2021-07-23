@@ -105,7 +105,7 @@ class DataAccessPoint:
 
         """
 
-    def donwload_mechanisms(self):
+    def download_mechanisms(self):
         """Download the mod files when not already downloaded"""
 
     def get_emodel_names(self):
