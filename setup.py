@@ -51,6 +51,8 @@ setup(
         "psycopg2",
         "bluepy",
         "neuron",
+        # TODO replace it with 'neurom>=3.0.0', when 3.0.0 is released
+        "neurom @ git+https://git@github.com/BlueBrain/neurom.git@3.0.0#egg=neurom",
         "morph_tool",
         "fasteners",
     ],
