@@ -6,6 +6,35 @@
 The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package facilitating the configuration and execution of E-Model building tasks. It covers tasks such as feature extraction, model optimisation, validation, model management and AIS synthesis. As such, it builds on top of BluePyEfe, BluePyOpt and BluePyMM.
 
 
+## Installation
+
+If you want to use BluePyEModel, you can either load the bluepyemodel module, or install BluePyEModel in a virtual environment.
+
+For loading the module, type the following lines in your command line interface:
+
+    module load unstable
+    module load py-bluepyemodel
+
+For installing BluePyEModel in a virtual environment, you first have to have cmake and GCC installed (the same your python has been compiled with), as some BluePyEModel dependencies need them. You can easily load the cmake and gcc modules using the following lines:
+
+    module load unstable
+    module load gcc/9.3.0 cmake
+
+And replace 9.3.0 by the gcc version your python has been compiled with. You might have to load archived modules if gcc < 9.3.0 is needed.
+
+Then, you can install BluePyEModel with the following line:
+
+    pip install -i https://bbpteam.epfl.ch/repository/devpi/simple/ bluepyemodel[all]
+
+If you want all the dependencies to be available. You can also select the dependencies you want by putting them into the brackets instead of 'all' (If you want multiple dependencies, you have to separate them by commas). The available dependencies are:
+
+- luigi
+- nexus
+- generalisation
+- cma
+- all
+
+
 ## To get started with the E-Model building pipeline
 
 This section will talk specificly about the E-Model building pipeline which for now encapsulate feature extraction, optimisation and model analysis. For model management and AIS synthesis, documentation is not available yet.
