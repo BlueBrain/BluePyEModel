@@ -8,14 +8,14 @@ The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python packag
 
 ## Installation
 
-If you want to use BluePyEModel, you can either load the bluepyemodel module, or install BluePyEModel in a virtual environment.
+If you want to use BluePyEModel, you can either load the  `bluepyemodel` module if you are on BB5, or install BluePyEModel in a virtual environment.
 
 For loading the module, type the following lines in your command line interface:
 
     module load unstable
     module load py-bluepyemodel
 
-For installing BluePyEModel in a virtual environment, you first have to have cmake and GCC installed (the same your python has been compiled with), as some BluePyEModel dependencies need them. You can easily load the cmake and gcc modules using the following lines:
+For installing BluePyEModel in a virtual environment, you first have to have cmake and GCC installed (the same your python has been compiled with), as some BluePyEModel dependencies need them. If you are on BB5, you can easily load the cmake and gcc modules using the following lines:
 
     module load unstable
     module load gcc/9.3.0 cmake
