@@ -22,7 +22,7 @@ from morphio.mut import Morphology
 from scipy.stats import pearsonr
 from tqdm import tqdm
 
-from bluepyemodel.api import get_db
+from bluepyemodel.access_point import get_db
 from bluepyemodel.apps.emodel_release import modify_ais
 from bluepyemodel.generalisation.ais_model import get_scales
 from bluepyemodel.generalisation.ais_model import taper_function
@@ -315,8 +315,8 @@ class ExtractEFeatures(BaseTask):
     def run(self):
 
         emodel_db = get_db(
-            "singlecell",
-            None,
+            "local",
+            "cADpyr_L5TPC",
             emodel_dir=self.emodel_dir,
             legacy_dir_structure=True,
         )
@@ -330,6 +330,8 @@ class ExtractEFeatures(BaseTask):
             morphology_path="path",
             parallel_factory=init_parallel_factory(self.parallel_lib),
             nseg_frequency=self.nseg_frequency,
+            trace_data_path='traces',
+            timeout=10000000,
         )
         features_df.to_csv(self.output().path)
 
@@ -364,7 +366,6 @@ class PlotCorrelations(BaseTask):
         for name in scores_df.index:
             for feat, val in json.loads(scores_df.loc[name, "features"]).items():
                 feat_df.loc[name, feat] = val
-        print(feat_df["Step_280.soma.v.time_to_last_spike"].to_list())
         feat_path = Path(self.output().pathlib_path.parent) / "features_plot"
         feat_path.mkdir(exist_ok=True, parents=True)
         for feat in feat_df.columns:
@@ -385,8 +386,8 @@ class PlotCorrelations(BaseTask):
                 original_scale = _s[_s.columns[col]].iloc[np.argmin(abs(scales - 1))]
                 original_feature = _f[feat].iloc[np.argmin(abs(scales - 1))]
                 plt.plot(
-                    100 * _s[_s.columns[col]].to_numpy(dtype=float) / original_scale,
-                    100 * _f[feat] / original_feature,
+                    _s[_s.columns[col]].to_numpy(dtype=float) / original_scale,
+                    _f[feat] / original_feature,
                     "-",
                     c=colors[col],
                     lw=1.0,
