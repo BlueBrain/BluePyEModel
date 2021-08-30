@@ -10,8 +10,8 @@ import pandas as pd
 import seaborn as sns
 from bluepyopt.ephys.responses import TimeVoltageResponse
 from matplotlib.backends.backend_pdf import PdfPages
-from neurom import load_neuron
-from neurom import viewer
+from neurom import load_morphology
+from neurom.view import matplotlib_impl
 from tqdm import tqdm
 
 from bluepyemodel.generalisation.ais_model import taper_function
@@ -323,8 +323,8 @@ def plot_synth_ais_evaluations(
 
 
 def _plot_neuron(selected_combos_df, cell_id, ax, color="k", morphology_path="morphology_path"):
-    neuron = load_neuron(selected_combos_df.loc[cell_id, morphology_path])
-    viewer.plot_neuron(ax, neuron, realistic_diameters=True)
+    neuron = load_morphology(selected_combos_df.loc[cell_id, morphology_path])
+    matplotlib_impl.plot_morph(neuron, ax, realistic_diameters=True)
 
     ax.set_title(
         selected_combos_df.loc[cell_id, "name"]
