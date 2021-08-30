@@ -51,6 +51,7 @@ setup(
         "psycopg2",
         "bluepy",
         "neuron",
+        "neurom>=3.0,<4.0",
         "morph_tool",
         "fasteners",
     ],
