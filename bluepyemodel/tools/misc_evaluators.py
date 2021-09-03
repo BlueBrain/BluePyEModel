@@ -20,6 +20,7 @@ def single_feature_evaluation(
     timeout=1000000,
     trace_data_path=None,
     score_threshold=12.0,
+    max_threshold_voltage=0,
 ):
     """Evaluating single protocol and save traces."""
     emodel_db.set_emodel(combo["emodel"])
@@ -36,6 +37,7 @@ def single_feature_evaluation(
         stochasticity=stochasticity,
         timeout=timeout,
         score_threshold=score_threshold,
+        max_threshold_voltage=max_threshold_voltage,
     )
     params = emodel_db.get_emodel()["parameters"]
     if "new_parameters" in combo:
