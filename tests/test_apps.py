@@ -157,12 +157,12 @@ def test_evaluate_emodels():
 
     df_exemplar = pd.read_csv("exemplar_evaluations.csv")
     expected_df_exemplar = pd.read_csv(DATA / "exemplar_evaluations.csv")
-    assert_frame_equal(df_exemplar, expected_df_exemplar, rtol=1e-3)
+    assert_frame_equal(df_exemplar, expected_df_exemplar, rtol=1e-2)
 
     # remove path column to avoid issues with absolute paths
     df_eval = pd.read_csv("results/region_None/results.csv").drop(columns=["path"])
     expected_df_eval = pd.read_csv(DATA / "cell_evaluations.csv")
-    assert_frame_equal(df_eval, expected_df_eval, rtol=1e-3)
+    assert_frame_equal(df_eval, expected_df_eval, rtol=1e-2)
 
 
 def test_detect_stuck_cells():
