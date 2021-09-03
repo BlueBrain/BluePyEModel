@@ -94,6 +94,7 @@ def test_get_me_combos_scales():
 
 
 def test_get_me_combos_currents():
+    del os.environ["USE_NEURODAMUS"]
     response = runner.invoke(
         cli,
         [
