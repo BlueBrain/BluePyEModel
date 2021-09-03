@@ -66,7 +66,8 @@ def scores(model, figures_dir="./figures"):
     if "scores_validation" in model:
         score += list(model["scores_validation"].values())
         scores_names += list(model["scores_validation"].keys())
-    pos = [*range(len(model["scores"]))]
+
+    pos = [*range(len(score))]
 
     fig, axs = plt.subplots(1, figsize=(6, 0.8 + 0.150 * len(pos)), squeeze=False)
 
@@ -325,7 +326,6 @@ def plot_models(
         if plot_scores:
             figures_dir_scores = figures_dir / "scores" / dest_leaf
             scores(mo, figures_dir_scores)
-
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             traces(mo, mo["responses"], stimuli, figures_dir_traces)

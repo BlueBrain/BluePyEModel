@@ -6,7 +6,7 @@ import logging
 
 import pandas as pd
 from numpy.testing import assert_allclose
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 from bluepyemodel.access_point import get_db

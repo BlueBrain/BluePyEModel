@@ -178,7 +178,7 @@ class EModel_pipeline:
             mapper=self.mapper,
         )
 
-    def plot(self):
+    def plot(self, only_validated=False):
 
         for chkp_path in glob.glob("./checkpoints/*.pkl"):
 
@@ -207,6 +207,7 @@ class EModel_pipeline:
             plot_distributions=True,
             plot_scores=True,
             plot_traces=True,
+            only_validated=only_validated,
         )
 
 

@@ -65,14 +65,14 @@ targets = {
         "used_for_rheobase": True,
         "used_for_optimization": False,
         "protocol_type": [""],
-        "amplitudes": [1.0],
+        "amplitudes": [0.0],
         "efeatures": ["Spikecount"],
     },
     "IV": {
         "protocol_type": ["StepThresholdProtocol", "RinProtocol", "RMPProtocol"],
         "used_for_rheobase": False,
         "used_for_optimization": True,
-        "amplitudes": [-100.0, -40.0, 1.0],
+        "amplitudes": [-100.0, -40.0, 0.],
         "efeatures": [
             "Spikecount",
             "voltage_base",

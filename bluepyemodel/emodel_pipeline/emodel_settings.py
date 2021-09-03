@@ -20,7 +20,7 @@ class EModelPipelineSettings:
         threshold_efeature_std=0.05,
         max_ngen=100,
         validation_threshold=5.0,
-        validation_function=None,
+        validation_function="max_score",
         plot_optimisation=True,
         compile_mechanisms=False,
         n_model=3,
@@ -54,7 +54,9 @@ class EModelPipelineSettings:
                 optimization.
             validation_threshold (float): score threshold under which the emodel passes
                 validation.
-            validation_function (): TO DO
+            validation_function (str or list): if str, can be "max_score" or "mean_score".
+                If list, must contain the path to the file containing the function and name
+                of the function. E.g: validation_function = ["path_to_module", "name_of_function"]
             optimisation_batch_size (int): number of optimisation seeds to run in parallel.
             max_n_batch (int): maximum number of optimisation batches.
             n_model (int): minimum number of models to pass validation
