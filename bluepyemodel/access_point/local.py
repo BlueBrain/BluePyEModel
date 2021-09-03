@@ -608,12 +608,13 @@ class LocalAccessPoint(DataAccessPoint):
             "SearchThresholdCurrent": {"soma.v": []},
         }
         # pylint: disable=too-many-nested-blocks
+
         for prot_name in features:
 
             if (
                 "validation" in features[prot_name]
-                and not include_validation
                 and features[prot_name]["validation"]
+                and not include_validation
             ):
                 continue
 
@@ -700,6 +701,8 @@ class LocalAccessPoint(DataAccessPoint):
 
         if "validated" not in out_data:
             out_data["validated"] = None
+        if "validation_fitness" in model_data:
+            out_data["scores_validation"] = model_data["validation_fitness"]
 
         return out_data
 
