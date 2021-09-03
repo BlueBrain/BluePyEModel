@@ -17,7 +17,7 @@ def single_feature_evaluation(
     emodel_db,
     morphology_path="morphology_path",
     stochasticity=False,
-    timeout=1000,
+    timeout=1000000,
     trace_data_path=None,
     score_threshold=12.0,
 ):
@@ -37,9 +37,11 @@ def single_feature_evaluation(
         timeout=timeout,
         score_threshold=score_threshold,
     )
-    responses = evaluator.run_protocols(
-        evaluator.fitness_protocols.values(), emodel_db.get_emodel()["parameters"]
-    )
+    params = emodel_db.get_emodel()["parameters"]
+    if "new_parameters" in combo:
+        params.update(combo["new_parameters"])
+
+    responses = evaluator.run_protocols(evaluator.fitness_protocols.values(), params)
     features = evaluator.fitness_calculator.calculate_values(responses)
     scores = evaluator.fitness_calculator.calculate_scores(responses)
 
@@ -77,6 +79,7 @@ def feature_evaluation(
     trace_data_path=None,
     stochasticity=False,
     score_threshold=12.0,
+    timeout=1000000,
 ):
     """Compute the features and the scores on the combos dataframe.
 
@@ -99,6 +102,7 @@ def feature_evaluation(
         trace_data_path=trace_data_path,
         stochasticity=stochasticity,
         score_threshold=score_threshold,
+        timeout=timeout,
     )
 
     return evaluate(

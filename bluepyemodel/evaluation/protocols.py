@@ -346,7 +346,7 @@ class SearchThresholdCurrent:
         target_threshold=None,
         max_depth=7,
         stimulus_duration=1000.0,
-        max_threshold_voltage=-30,
+        max_threshold_voltage=0,
     ):
         """Constructor
 
