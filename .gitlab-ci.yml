@@ -5,7 +5,28 @@ include:
         - /ci/jobs/check-version.yml
         - /ci/jobs/lint.yml
         - /ci/jobs/py36.yml
-        - /ci/jobs/py37.yml
-        - /ci/jobs/py38.yml
         - /ci/jobs/docs.yml
         - /ci/jobs/build-package.yml
+
+py36:
+   before_script:
+      - SSH_CONFIG=$HOME/.ssh/config
+      - if [[ -f $SSH_CONFIG ]]; then echo "SSH config file $SSH_CONFIG already exists, exiting"; exit 1; fi
+      - if [[ -z $SSH_KEY_BBPCODE ]]; then echo 'Please set the $SSH_KEY_BBPCODE variable'; exit 1; fi
+      - !reference [.define-functions]
+      - !reference [.bb5, clean-env]
+      - !reference [.bb5, load-python-36]
+      - !reference [.run-pre-build-command]
+      - !reference [.setup-venv]
+      - git config --global user.email tanguy.damart@epfl.ch
+      - git config --global user.name damart
+      - |
+         mkdir -p $(dirname $SSH_CONFIG) && cat > $SSH_CONFIG <<EOF
+         User damart
+         IdentityFile ${SSH_KEY_BBPCODE}
+         StrictHostKeyChecking no
+         IdentitiesOnly yes
+         EOF
+      - chmod 600 $SSH_CONFIG $SSH_KEY_BBPCODE
+      - cat $SSH_CONFIG
+      - cat $SSH_KEY_BBPCODE
