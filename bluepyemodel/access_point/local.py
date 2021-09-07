@@ -1,6 +1,5 @@
 """Access point to get data from Singlecell-like repositories"""
 
-import copy
 import json
 import logging
 from collections import defaultdict
@@ -222,108 +221,19 @@ class LocalAccessPoint(DataAccessPoint):
 
         return files_metadata, targets, protocols_threshold
 
-    def store_efeatures(
-        self,
-        efeatures,
-        current,
-    ):
-        """Save the efeatures and currents obtained from BluePyEfe.
+    def store_efeatures(self, efeatures):
+        """Save the efeatures obtained from BluePyEfe.
 
         Args:
             efeatures (dict): efeatures means and standard deviations. Format as returned by
                 BluePyEfe 2.
-            current (dict): threshold and holding current as returned by BluePyEfe. Format as
-                returned by BluePyEfe 2.
         """
-
-        name_Rin_protocol = self.pipeline_settings.name_Rin_protocol
-        name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
-        validation_protocols = self.pipeline_settings.validation_protocols
-
-        out_features = {
-            "SearchHoldingCurrent": {
-                "soma.v": [
-                    {
-                        "feature": "bpo_holding_current",
-                        "val": current["holding_current"],
-                        "strict_stim": True,
-                    }
-                ]
-            },
-            "SearchThresholdCurrent": {
-                "soma.v": [
-                    {
-                        "feature": "bpo_threshold_current",
-                        "val": current["threshold_current"],
-                        "strict_stim": True,
-                    }
-                ]
-            },
-        }
-
-        for protocol in efeatures:
-
-            # Handle a legacy case
-            if "soma" in efeatures[protocol]:
-                out_features[protocol] = {"soma.v": efeatures[protocol]["soma"]}
-            else:
-                out_features[protocol] = {"soma.v": efeatures[protocol]["soma.v"]}
-
-            # Check if the protocol is to be used for validation
-            ecode_name = str(protocol.split("_")[0])
-            stimulus_target = float(protocol.split("_")[1])
-
-            if ecode_name in validation_protocols:
-                for target in validation_protocols[ecode_name]:
-                    if int(target) == int(stimulus_target):
-                        out_features[protocol]["validation"] = True
-                        break
-
-            if "validation" not in out_features[protocol]:
-                out_features[protocol]["validation"] = False
-
-            # Handle the features related to RMP, Rin and threshold and holding current.
-            for efeat in out_features[protocol]["soma.v"]:
-                if protocol == name_rmp_protocol and efeat["feature"] == "voltage_base":
-                    out_features["RMPProtocol"] = {
-                        "soma.v": [
-                            {
-                                "feature": "steady_state_voltage_stimend",
-                                "val": efeat["val"],
-                                "strict_stim": True,
-                            }
-                        ]
-                    }
-
-                elif protocol == name_Rin_protocol and efeat["feature"] == "voltage_base":
-                    out_features["SearchHoldingCurrent"]["soma.v"].append(
-                        {
-                            "feature": "steady_state_voltage_stimend",
-                            "val": efeat["val"],
-                            "strict_stim": True,
-                        }
-                    )
-
-                elif (
-                    protocol == name_Rin_protocol
-                    and efeat["feature"] == "ohmic_input_resistance_vb_ssse"
-                ):
-                    out_features["RinProtocol"] = {"soma.v": [copy.copy(efeat)]}
-
-        # If some features are part of the RMP, Rin and threshold and holding current protocols,
-        # they should be removed from their original protocol.
-        # TODO: to rework when we will have the possibility of extracting different efeatures for
-        # the different ampliudes of the same eCode.
-        if name_Rin_protocol:
-            out_features.pop(name_Rin_protocol)
-        if name_rmp_protocol:
-            out_features.pop(name_rmp_protocol)
 
         features_path = Path(self.get_recipes()["features"])
         features_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(str(features_path), "w") as f:
-            f.write(json.dumps(out_features, indent=2, cls=NumpyEncoder))
+            f.write(json.dumps(efeatures, indent=2, cls=NumpyEncoder))
 
     def store_protocols(self, stimuli):
         """Save the protocols obtained from BluePyEfe.
@@ -331,25 +241,6 @@ class LocalAccessPoint(DataAccessPoint):
         Args:
             stimuli (dict): protocols definition in the format returned by BluePyEfe 2.
         """
-
-        validation_protocols = self.pipeline_settings.validation_protocols
-
-        for stimulus_name, stimulus in stimuli.items():
-
-            stimulus["type"] = "StepThresholdProtocol"
-
-            # Check if the protocol is to be used for validation
-            ecode_name = str(stimulus_name.split("_")[0])
-            stimulus_target = float(stimulus_name.split("_")[1])
-
-            if ecode_name in validation_protocols:
-                for target in validation_protocols[ecode_name]:
-                    if int(target) == int(stimulus_target):
-                        stimulus["validation"] = True
-                        break
-
-            if "validation" not in stimulus:
-                stimulus["validation"] = False
 
         protocols_path = Path(self.get_recipes()["protocol"])
         protocols_path.parent.mkdir(parents=True, exist_ok=True)
@@ -514,7 +405,7 @@ class LocalAccessPoint(DataAccessPoint):
         stimulus_def = protocol["step"]
         stimulus_def["holding_current"] = protocol["holding"]["amp"]
 
-        protocol_definition = {"type": protocol["type"], "stimuli": stimulus_def}
+        protocol_definition = {"stimuli": stimulus_def}
 
         if "extra_recordings" in protocol:
             protocol_definition["extra_recordings"] = protocol["extra_recordings"]
@@ -534,7 +425,7 @@ class LocalAccessPoint(DataAccessPoint):
         else:
             stimulus_def["holding_current"] = None
 
-        protocol_definition = {"type": protocol["type"], "stimuli": stimulus_def}
+        protocol_definition = {"stimuli": stimulus_def}
         if "extra_recordings" in protocol:
             protocol_definition["extra_recordings"] = protocol["extra_recordings"]
 
@@ -555,12 +446,6 @@ class LocalAccessPoint(DataAccessPoint):
 
         protocols_out = {}
         for protocol_name, protocol in protocols.items():
-
-            if protocol_name in (
-                self.pipeline_settings.name_Rin_protocol,
-                self.pipeline_settings.name_rmp_protocol,
-            ):
-                continue
 
             if "validation" in protocol:
                 if not include_validation and protocol["validation"]:
@@ -807,7 +692,3 @@ class LocalAccessPoint(DataAccessPoint):
                 n_validated += 1
 
         return n_validated >= n_models_to_pass_validation
-
-    def get_morph_modifiers(self):
-        """Get the morph modifiers if any."""
-        return self.pipeline_settings.morph_modifiers

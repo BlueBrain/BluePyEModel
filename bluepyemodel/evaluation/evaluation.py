@@ -143,7 +143,7 @@ def get_evaluator_from_db(
         morphology=morphologies,
         mechanisms=mechanisms,
         parameters=parameters,
-        morph_modifiers=access_point.get_morph_modifiers(),
+        morph_modifiers=access_point.pipeline_settings.morph_modifiers,
     )
 
     timeout = timeout or access_point.pipeline_settings.timeout

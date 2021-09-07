@@ -105,7 +105,7 @@
   },
   "cADpyr_L5TPC__XXXXXX__1": {
     "emodel": "cADpyr_L5TPC",
-    "score": 55.36873682735883,
+    "score": 55.36873682735882,
     "params": {
       "gSK_E2bar_SK_E2.somatic": 0.02023934993186524,
       "gK_Tstbar_K_Tst.somatic": 0.01315314265442069,
@@ -140,6 +140,10 @@
       "gSKv3_1bar_SKv3_1.axonal": 0.2196590456561799
     },
     "fitness": {
+      ".bpo_threshold_current.bpo_threshold_current": 1.8442071014893664,
+      ".bpo_holding_current.bpo_holding_current": 0.12820030120481923,
+      "RinProtocol.soma.v.ohmic_input_resistance_vb_ssse": 0.9368088998722918,
+      "RMPProtocol.soma.v.steady_state_voltage_stimend": 0.02899906925558758,
       "bAP.soma.v.Spikecount": 0.0,
       "bAP.dend1.v.maximum_voltage_from_voltagebase": 1.3444710318854185,
       "bAP.dend2.v.maximum_voltage_from_voltagebase": 0.2871093375837539,
@@ -195,13 +199,13 @@
       "IV_-100.soma.v.voltage_deflection_begin": 0.029715968243271322,
       "SpikeRec_600.soma.v.decay_time_constant_after_stim": 0.5941656401726296,
       "SpikeRec_600.soma.v.voltage_after_stim": 0.029512559157835277,
-      "SpikeRec_600.soma.v.Spikecount": 1.684199363732768,
-      ".bpo_threshold_current.bpo_threshold_current": 1.8442071014893664,
-      ".bpo_holding_current.bpo_holding_current": 0.12820030120481923,
-      "RinProtocol.soma.v.ohmic_input_resistance_vb_ssse": 0.9368088998722918,
-      "RMPProtocol.soma.v.steady_state_voltage_stimend": 0.02899906925558758
+      "SpikeRec_600.soma.v.Spikecount": 1.684199363732768
     },
     "features": {
+      ".bpo_threshold_current.bpo_threshold_current": 0.48312430896029834,
+      ".bpo_holding_current.bpo_holding_current": -0.14453125,
+      "RinProtocol.soma.v.ohmic_input_resistance_vb_ssse": 37.338835741775966,
+      "RMPProtocol.soma.v.steady_state_voltage_stimend": -77.23141983106817,
       "bAP.soma.v.Spikecount": 1.0,
       "bAP.dend1.v.maximum_voltage_from_voltagebase": 65.23263353090142,
       "bAP.dend2.v.maximum_voltage_from_voltagebase": 55.888473466396846,
@@ -257,11 +261,7 @@
       "IV_-100.soma.v.voltage_deflection_begin": -16.856090710086875,
       "SpikeRec_600.soma.v.decay_time_constant_after_stim": 8.883353781891753,
       "SpikeRec_600.soma.v.voltage_after_stim": -73.95366730386213,
-      "SpikeRec_600.soma.v.Spikecount": NaN,
-      ".bpo_threshold_current.bpo_threshold_current": 0.48312430896029834,
-      ".bpo_holding_current.bpo_holding_current": -0.14453125,
-      "RinProtocol.soma.v.ohmic_input_resistance_vb_ssse": 37.338835741775966,
-      "RMPProtocol.soma.v.steady_state_voltage_stimend": -77.23141983106817
+      "SpikeRec_600.soma.v.Spikecount": NaN
     },
     "validation_fitness": {},
     "validated": true,

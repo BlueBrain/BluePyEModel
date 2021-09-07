@@ -176,7 +176,7 @@ List of settings:
 - max_n_batch (int, default: 3, nexus access point only, Luigi only): maximum number of optimisation batches that the Luigi pipeline will run if n_model is not reached.
 - path_extract_config (str, default: None, local access point only): path to the .json containing the extraction targets, files metadata and the name of the protocols used to compute the threshold of the cell.
 - name_Rin_protocol (str, default: None, local access point only): name of the protocol associated with the efeatures used for the computation of the input resistance scores during optimisation. This settings has to be set before efeature extraction if you wish to run a threshold based optimisation.
-- name_rmp_protocol (str, default: None, local access point only): name of the protocol associated with the efeatures used for the computation of the resting membrane potential scores during optimisation. This settings has to be set before efeature extraction if you wish to run a threshold based optimisation. 
+- name_rmp_protocol (str, default: None, local access point only): name of the protocol associated with the efeatures used for the computation of the resting membrane potential scores during optimisation. This settings has to be set before efeature extraction if you wish to run a threshold based optimisation. Can also be 'all', in which case the RMP will be estimated as the mean of all the voltage_base.
 - validation_protocols (dict default: None, local access point only): names and targets of the protocol that will be used for validation only. This settings has to be set before efeature extraction if you wish to run validation.
 
 

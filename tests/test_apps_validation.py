@@ -45,9 +45,17 @@ def test_evaluate_emodels():
 
     df_exemplar = pd.read_csv("exemplar_evaluations.csv")
     expected_df_exemplar = pd.read_csv(DATA / "exemplar_evaluations.csv")
-    assert_frame_equal(df_exemplar, expected_df_exemplar, rtol=1e-3)
+    print()
+    print(df_exemplar)
+    print(expected_df_exemplar)
+    print()
+    assert_frame_equal(df_exemplar, expected_df_exemplar, rtol=1e-3, check_like=True)
 
     # remove path column to avoid issues with absolute paths
     df_eval = pd.read_csv("results/region_None/results.csv").drop(columns=["path"])
     expected_df_eval = pd.read_csv(DATA / "cell_evaluations.csv")
-    assert_frame_equal(df_eval, expected_df_eval, rtol=1e-3)
+    print()
+    print(df_eval)
+    print(expected_df_eval)
+    print()
+    assert_frame_equal(df_eval, expected_df_eval, rtol=1e-3, check_like=True)
