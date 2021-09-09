@@ -15,10 +15,10 @@ with open("README.md", encoding="utf-8") as f:
     README = f.read()
 
 
-EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow>=2.1.19", "bbp-workflow-cli"]
-EXTRA_NEXUS = ["nexusforge", "entity_management", "pyJWT>=2.1.0"]
-EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3", 'bglibpy', 'seaborn']
-EXTRA_TEST = ["pytest", "dictdiffer"]
+EXTRA_LUIGI = ["luigi>=3.0", "luigi-tools"] #, "bbp-workflow>=2.1.19", "bbp-workflow-cli"]
+EXTRA_NEXUS = ["nexusforge>=0.6", "entity_management>=1.2", "pyJWT>=2.1.0"]
+EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3", 'bglibpy>4.4', 'seaborn>=0.11']
+EXTRA_TEST = ["pytest>=6.2", "dictdiffer>=0.8"]
 EXTRA_DOC = [
     "graphviz",
     "sphinx",
@@ -38,22 +38,22 @@ setup(
     long_description_content_type="text/x-rst",
     license="BBP-internal-confidential",
     install_requires=[
-        "numpy",
-        "scipy",
-        "pandas",
-        "ipyparallel",
-        "tqdm",
-        "pyyaml",
-        "gitpython",
-        "bluepyopt",
+        "numpy>=1.20",
+        "scipy>=1.7",
+        "pandas>=1.2",
+        "ipyparallel>=6.3",
+        "tqdm>=4.60",
+        "pyyaml>=5.4",
+        "gitpython>=3.1",
+        "bluepyopt>=1.9",
         "bluepyefe @ git+http://github.com/BlueBrain/BluePyEfe@BPE2#egg=bluepyefe",
-        "efel",
-        "psycopg2",
-        "bluepy",
-        "neuron",
         "neurom>=3.0,<4.0",
-        "morph_tool",
-        "fasteners",
+        "efel>=3.1",
+        "psycopg2>=2.8",
+        "bluepy>=2.4",
+        "neuron>=8.0",
+        "morph_tool>=2.8",
+        "fasteners>=0.16",
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,
