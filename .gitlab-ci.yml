@@ -8,8 +8,6 @@ include:
         - /ci/jobs/lint.yml
         - /ci/jobs/docs.yml
         - /ci/jobs/build-package.yml
-   - project: nse/ci
-     file:
         - /ci/jobs/publish-package.yml
         - /ci/jobs/publish-docs.yml
         - /ci/jobs/tag.yml
