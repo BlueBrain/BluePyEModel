@@ -1,6 +1,7 @@
 """Module to simulate MCMC in emodel parameter space."""
 import itertools
 import logging
+from copy import deepcopy
 from collections import defaultdict
 from copy import copy
 from functools import partial
@@ -11,6 +12,8 @@ import jpype as jp
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import json
+from scipy.spatial import distance_matrix
 import pandas as pd
 import seaborn as sns
 from bluepyparallel import evaluate
@@ -89,7 +92,7 @@ class MarkovChain:
         self.result_df = pd.DataFrame(
             columns=pd.MultiIndex.from_tuples(_param_names + _feature_names)
         )
-        self.accepted = False
+        self.accepted = True
 
     def _un_normalize_parameters(self, parameters):
         return [
@@ -132,12 +135,12 @@ class MarkovChain:
         )
         scores = self.evaluator.objective_list(
             self.evaluator.fitness_calculator.calculate_scores(
-                responses, self.evaluator.cell_model, parameters_dict
+                responses, cell_model=self.evaluator.cell_model, param_dict=parameters_dict
             )
         )
         values = self.evaluator.objective_list(
             self.evaluator.fitness_calculator.calculate_values(
-                responses, self.evaluator.cell_model, parameters_dict
+                responses, cell_model=self.evaluator.cell_model, param_dict=parameters_dict
             )
         )
         for i, val in enumerate(values):
@@ -204,19 +207,23 @@ class MarkovChain:
         self.temperature *= current.cost
         current.probability = self._probability_distribution(current.cost)
 
+        n_accepted = 0.0
         for step in range(self.n_steps):
+            if self.accepted:
+                self._append_result(step, current)
+                n_accepted += 1.0
+
             logger.info(
-                "Chain with seed %s at step %s / %s with cost %s",
+                "Chain with seed %s at step %s / %s with cost %s, acceptance rate %s.",
                 self.seed,
                 step,
                 self.n_steps,
                 current.cost,
+                np.round(100.0 * (n_accepted / (step + 1)), 1),
             )
 
-            self._append_result(step, current)
             current = self._run_one_step(current)
-        if self.accepted:
-            self._append_result(step, current)
+
         return self.results_df
 
 
@@ -280,22 +287,31 @@ def run_several_chains(
     df.to_csv(run_df_path, index=False)
 
 
-def load_chains(run_df):
-    """Load chains from main run_df file where the first row contains initial condition."""
+def load_chains(run_df, base_path="."):
+    """Load chains from main run_df file where the first row contains initial condition.
+
+    If run_df is a path to .csv, we will load it.
+    """
+    if isinstance(run_df, (Path, str)):
+        run_df = pd.read_csv(run_df)
 
     # load all but first point
-    _df = []
+    _dfs = []
     for res in run_df.result_df_path:
         try:
-            _df.append(pd.read_csv(res, header=[0, 1]).loc[1:])
-        except:
-            print(f"Cannot read {res}")
-    df = pd.concat(_df)
+            _df = pd.read_csv(Path(base_path) / res, header=[0, 1]).loc[1:]
+            _df["chain_id"] = int(Path(res).stem.split("_")[-1])
+            _dfs.append(_df)
+        except Exception as exc:
+            print(f"Cannot read {res}, {exc}")
+    df = pd.concat(_dfs)
     df = df.rename(columns=lambda name: "" if name.startswith("Unnamed:") else name)
     df = df.reset_index(drop=True)
 
     # add the original point in front
-    df_orig = pd.read_csv(run_df.result_df_path[0], header=[0, 1])
+    df_orig = pd.read_csv(Path(base_path) / run_df.result_df_path[0], header=[0, 1])
+    df_orig = df_orig.rename(columns=lambda name: "" if name.startswith("Unnamed:") else name)
+    df_orig["chain_id"] = int(-1)
     df.loc[-1] = df_orig.loc[0]
     return df.sort_index().reset_index(drop=True)
 
@@ -314,9 +330,11 @@ def _plot_distributions(df, split, filename="parameters.pdf", column="normalized
     df_2 = plot_df[_df["cost"] == 1].melt()
     df_2["cost"] = f">= {split}"
     plot_df = pd.concat([df_1, df_2])
+    if column == "scores":
+        plot_df["value"] = np.clip(plot_df["value"], 0, 10)
 
     n_rows = len(plot_df.variable.unique())
-    plt.figure(figsize=(3, int(0.3 * n_rows)))
+    plt.figure(figsize=(3, int(0.5 * n_rows)))
     ax = plt.gca()
 
     sns.violinplot(
@@ -340,10 +358,9 @@ def _plot_distributions(df, split, filename="parameters.pdf", column="normalized
         plt.axvline(1, c="k")
         ax.set_xlim(-1.05, 1.05)
     if column == "scores":
-
         plt.axvline(0, c="k")
         plt.axvline(5, c="k")
-        ax.set_xlim(-0.05, 10.00)
+        ax.set_xlim(-0.05, 11.00)
 
     plt.savefig(filename, bbox_inches="tight")
 
@@ -418,7 +435,7 @@ def _get_pair_correlation_function(correlation_type, pvalue_threshold=0.01):
     return corr_f
 
 
-def _cluster_matrix(df, distance=False):
+def cluster_matrix(df, distance=False):
     """Return sorted labels to cluster a matrix with linkage.
 
     If distance matrix already set distance=True.
@@ -496,6 +513,8 @@ def plot_pair_correlations(
         col_2 = _df_2.columns[id_2]
         x = _df_1[col_1].to_numpy()
         y = _df_2[col_2].to_numpy()
+        x[np.isnan(x)] = 0
+        y[np.isnan(y)] = 0
         corr = corr_f(x, y)
         corr_df.loc[col_1, col_2] = corr
         if column_2 is None:
@@ -509,8 +528,9 @@ def plot_pair_correlations(
             plt.scatter(x[0], y[0], marker="o", c="r", s=0.5)
             plt.xlabel(_df_1.columns[id_1])
             plt.ylabel(_df_2.columns[id_2])
+            plt.gca().set_rasterized(True)
             plt.suptitle(f"{correlation_type} = {np.around(corr, 2)}")
-            pdf.savefig(bbox_inches="tight")
+            pdf.savefig(bbox_inches="tight", dpi=200)
             plt.close()
 
     if with_plots:
@@ -519,7 +539,7 @@ def plot_pair_correlations(
     corr_df = corr_df.sort_index(axis=0).sort_index(axis=1)
     if column_2 is None:
         corr_df[corr_df.isna()] = 0.001
-        sorted_labels = _cluster_matrix(corr_df.abs())
+        sorted_labels = cluster_matrix(corr_df.abs())
         corr_df = corr_df.loc[sorted_labels, sorted_labels]
     plt.figure(figsize=(15, 15))
     ax = plt.gca()
@@ -589,6 +609,8 @@ def _compute_higher_order_single_feature(
     gid = 0
     miniters = int(len(param_tuples) ** (1 / 1.5))
     for param_tuple in tqdm(param_tuples, miniters=miniters, maxinterval=1000.0):
+        if feature in param_tuple:
+            continue
         col_1 = _df_1.columns[feature]
         col_2 = _df_2.columns[tuple([param_tuple])]
         x = np.hstack([_df_1[col_1].to_numpy()[:, np.newaxis], _df_2[col_2].to_numpy()])
@@ -617,7 +639,9 @@ def compute_higher_order(
     _df_1 = _df[column_1]
     _df_1 = _df_1.T[_df_1.std().T > 0].T
     _df_2 = _df[column_2 or column_1]
+    print(_df_1, _df_2)
     param_tuples = list(itertools.combinations(range(len(_df_2.columns)), order - 1))
+    print(param_tuples)
     _compute = partial(
         _compute_higher_order_single_feature,
         _df_1=_df_1,
@@ -652,3 +676,79 @@ def filter_features(df):
     df = df.drop(columns=features_to_remove)
     df["features"] = df["features"].apply(lambda data: (data - data.mean()) / data.std(), axis=0)
     return df
+
+
+# below some functions to select emodels from mcmc with large distances between them
+
+
+def select_emodels(df, threshold=3.5, method='local_min'):
+    """Select emodels far away from each others in parameter space.
+
+    if method == local_min: we look for local minimum with radius = threshold
+    if method == distance: we naively search for points at minimum threshold radius
+    """
+    p = df["normalized_parameters"].to_numpy()
+    dists = distance_matrix(p, p)
+    logger.info("max dist %s", np.max(dists))
+
+    if method == 'local_min':
+        emodel_ids = []
+        for i in range(len(dists)):
+            if np.mean(
+                df.loc[dists[i] < threshold, "cost"].to_numpy() >= df.loc[i, "cost"].to_numpy()[0]
+            ) >= 1.0:
+                emodel_ids.append(i)
+
+    if method == 'distance':
+        emodel_ids = [0]
+        for i in range(len(dists)):
+            if all(dists[i, j] > threshold for j in emodel_ids):
+                emodel_ids.append(i)
+
+    logger.info("selected %s emodels", len(emodel_ids))
+    return emodel_ids, dists
+
+
+def plot_selected_emodels(df, emodel_ids, dists, threshold=3.5):
+    """Plot histogram of emodel distances, and clustered distance matrix with selected emodels."""
+    plt.figure()
+    plt.hist(dists.flatten(), bins=100)
+    plt.axvline(np.mean(dists), c="k")
+    plt.savefig("dist_hist.pdf")
+
+    labels = cluster_matrix(pd.DataFrame(dists), distance=True)
+
+    plt.figure()
+    plt.imshow(dists[labels, :][:, labels])
+    o = np.argwhere(labels == 0)[0]
+    plt.scatter(o, o, c="r")
+    _emodel_ids = [np.argwhere(m == labels)[0][0] for m in emodel_ids]
+    plt.scatter(_emodel_ids, _emodel_ids, c="m", marker="+")
+    plt.savefig("dists.pdf")
+
+    plt.figure()
+    with PdfPages("local_min.pdf") as pdf:
+        for i, emodel_id in enumerate(emodel_ids):
+            close_ids = dists[emodel_id] < threshold
+            _costs = df.loc[close_ids, "cost"].to_list()
+            _dists = dists[emodel_id, close_ids]
+            plt.figure()
+            plt.scatter(_dists, _costs, marker=".", color=f"C{i}")
+            plt.xlabel("euclidean distance")
+            plt.ylabel("cost")
+            plt.gca().set_xlim(0, threshold)
+            pdf.savefig()
+            plt.close()
+
+
+def save_selected_emodels(
+    df, emodel_ids, in_final_path="configs/final.json", out_final_path="selected_final.json"
+):
+    """Create a final.json file with selected emodels."""
+    final = json.load(open(in_final_path, "r"))
+    full_final = {}
+    for gid in emodel_ids:
+        params = df.loc[gid, "parameters"]
+        full_final[f"cADpyr_L5TPC_{gid}"] = deepcopy(final["cADpyr_L5TPC"])
+        full_final[f"cADpyr_L5TPC_{gid}"]["params"] = params.to_dict()
+    json.dump(full_final, open(out_final_path, "w"), indent=4)
