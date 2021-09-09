@@ -8,3 +8,7 @@ include:
         - /ci/jobs/lint.yml
         - /ci/jobs/docs.yml
         - /ci/jobs/build-package.yml
+.tox-template: 
+  variables: 
+    EXTRA_MODULES: 
+      unstable:neurodamus-neocortex
