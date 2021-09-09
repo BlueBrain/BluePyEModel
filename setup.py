@@ -38,7 +38,7 @@ setup(
     long_description_content_type="text/x-rst",
     license="BBP-internal-confidential",
     install_requires=[
-        "numpy>=1.20",
+        "numpy>=1.19",
         "scipy>=1.7",
         "pandas>=1.2",
         "ipyparallel>=6.3",
