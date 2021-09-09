@@ -3,7 +3,6 @@ include:
      file:
         - /ci/lib/tox-bb5-with-gerrit-access.yml
         - /ci/jobs/check-version.yml
-        - /ci/jobs/py36.yml
         - /ci/jobs/py37.yml
         - /ci/jobs/py38.yml
         - /ci/jobs/lint.yml
