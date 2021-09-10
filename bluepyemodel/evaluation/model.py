@@ -253,6 +253,7 @@ def create_cell_model(
     morph_modifiers_hoc=None,
     seclist_names=None,
     secarray_names=None,
+    nseg_frequency=40,
 ):
     """Create a cell model based on a morphology, mechanisms and parameters
 
@@ -273,7 +274,7 @@ def create_cell_model(
     morph = define_morphology(
         morphology["path"],
         do_set_nseg=True,
-        nseg_frequency=40,
+        nseg_frequency=nseg_frequency,
         morph_modifiers=morph_modifiers,
         morph_modifiers_hoc=morph_modifiers_hoc,
     )

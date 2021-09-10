@@ -36,9 +36,9 @@ def get_ais(neuron):
     raise Exception("AIS not found")
 
 
-def taper_function(length, strength, scale, terminal_diam):
+def taper_function(length, strength, taper_scale, terminal_diameter):
     """Function to model tappers AIS."""
-    return strength * np.exp(-length / scale) + terminal_diam
+    return strength * np.exp(-length / taper_scale) + terminal_diameter
 
 
 def extract_ais_diameters(morphologies):
@@ -155,7 +155,7 @@ def build_ais_diameter_models(
     return models
 
 
-def _get_scales(scales_params, with_unity=False):
+def get_scales(scales_params, with_unity=False):
     """Create scale array from parameters."""
     if scales_params["lin"]:
         scales = np.linspace(scales_params["min"], scales_params["max"], scales_params["n"])
@@ -169,7 +169,7 @@ def _get_scales(scales_params, with_unity=False):
 
 def _prepare_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel):
     """Prepare combos with scaled AIS."""
-    scales = _get_scales(scales_params)
+    scales = get_scales(scales_params)
 
     fit_df = pd.DataFrame()
     mask = morphs_combos_df.emodel == emodel
@@ -242,7 +242,7 @@ def build_ais_resistance_models(
 
 def _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel):
     """Prepare the combos for scaning rho."""
-    scales = _get_scales(scales_params, with_unity=True)
+    scales = get_scales(scales_params, with_unity=True)
 
     mask = morphs_combos_df.emodel == emodel
     rho_scan_df = pd.DataFrame()

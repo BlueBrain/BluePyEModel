@@ -21,6 +21,7 @@ def single_feature_evaluation(
     trace_data_path=None,
     score_threshold=12.0,
     max_threshold_voltage=0,
+    nseg_frequency=40,
 ):
     """Evaluating single protocol and save traces."""
     emodel_db.set_emodel(combo["emodel"])
@@ -38,6 +39,7 @@ def single_feature_evaluation(
         timeout=timeout,
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
+        nseg_frequency=nseg_frequency,
     )
     params = emodel_db.get_emodel()["parameters"]
     if "new_parameters" in combo:
@@ -82,6 +84,7 @@ def feature_evaluation(
     stochasticity=False,
     score_threshold=12.0,
     timeout=1000000,
+    nseg_frequency=40,
 ):
     """Compute the features and the scores on the combos dataframe.
 
@@ -105,6 +108,7 @@ def feature_evaluation(
         stochasticity=stochasticity,
         score_threshold=score_threshold,
         timeout=timeout,
+        nseg_frequency=nseg_frequency,
     )
 
     return evaluate(
