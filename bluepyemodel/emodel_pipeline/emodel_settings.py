@@ -9,6 +9,7 @@ class EModelPipelineSettings:
 
     def __init__(
         self,
+        extraction_reader=None,
         extraction_threshold_value_save=1,
         plot_extraction=True,
         efel_settings=None,
@@ -35,6 +36,9 @@ class EModelPipelineSettings:
         """Init
 
         Args:
+            extraction_reader (function or list): function used to read the ephys data during
+                efeature extraction. If list, must contain the path to the file containing the
+                function and name of the function. E.g: ["path_to_module", "name_of_function"]
             extraction_threshold_value_save (int): name of the mechanism.
             efel_settings (dict): efel settings in the form {setting_name: setting_value}.
                 If settings are also informed in the targets per efeature, the latter
@@ -56,7 +60,7 @@ class EModelPipelineSettings:
                 validation.
             validation_function (str or list): if str, can be "max_score" or "mean_score".
                 If list, must contain the path to the file containing the function and name
-                of the function. E.g: validation_function = ["path_to_module", "name_of_function"]
+                of the function. E.g: ["path_to_module", "name_of_function"]
             optimisation_batch_size (int): number of optimisation seeds to run in parallel.
             max_n_batch (int): maximum number of optimisation batches.
             n_model (int): minimum number of models to pass validation
@@ -74,7 +78,8 @@ class EModelPipelineSettings:
             name_rmp_protocol (str): name of the protocol associated with the efeatures used for
                 the computation of the resting membrane potential scores during optimisation. This
                 settings has to be set before efeature extraction if you wish to run a threshold
-                based optimisation.
+                based optimisation. Can also be 'all', in which case the RMP will be estimated as
+                the mean of all the voltage_base.
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
@@ -82,6 +87,7 @@ class EModelPipelineSettings:
         """
 
         # Settings related to E-features extraction
+        self.extraction_reader = extraction_reader
         self.extraction_threshold_value_save = extraction_threshold_value_save
         self.plot_extraction = plot_extraction
         self.efel_settings = efel_settings  # Also used during optimisation
@@ -108,6 +114,8 @@ class EModelPipelineSettings:
         self.validation_threshold = validation_threshold
         self.validation_function = validation_function
         self.validation_protocols = validation_protocols  # only when using local access point
+        if self.validation_protocols is None:
+            self.validation_protocols = []
         self.additional_protocols = additional_protocols  # for plotting
 
         # Settings specific to the Luigi pipeline
