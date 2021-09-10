@@ -530,7 +530,9 @@ def define_holding_protocol(features_definition, efel_settings=None, threshold_e
     return None, []
 
 
-def define_threshold_protocol(features_definition, efel_settings=None, threshold_efeature_std=None):
+def define_threshold_protocol(
+    features_definition, efel_settings=None, threshold_efeature_std=None, max_threshold_voltage=-30
+):
     """Define the search threshold current protocol"""
 
     feature_def = get_features_by_name(
@@ -548,7 +550,10 @@ def define_threshold_protocol(features_definition, efel_settings=None, threshold
         )
 
         protocol = SearchThresholdCurrent(
-            name="SearchThresholdCurrent", location=soma_loc, target_threshold=target_threshold
+            name="SearchThresholdCurrent",
+            location=soma_loc,
+            target_threshold=target_threshold,
+            max_threshold_voltage=max_threshold_voltage,
         )
 
         return protocol, [target_threshold]
@@ -568,6 +573,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     efel_settings=None,
     threshold_efeature_std=None,
     score_threshold=12.0,
+    max_threshold_voltage=-30,
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
 
@@ -643,7 +649,10 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
         features_definition, efel_settings, threshold_efeature_std
     )
     search_threshold_protocol, thres_features = define_threshold_protocol(
-        features_definition, efel_settings, threshold_efeature_std
+        features_definition,
+        efel_settings,
+        threshold_efeature_std,
+        max_threshold_voltage=max_threshold_voltage,
     )
 
     features += thres_features + hold_features + rin_features + rmp_features
@@ -790,6 +799,7 @@ def create_evaluator(
     efel_settings=None,
     threshold_efeature_std=None,
     score_threshold=12.0,
+    max_threshold_voltage=-30,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -807,11 +817,12 @@ def create_evaluator(
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
         score_threshold (float): threshold for score of protocols to stop evaluations
+        max_threshold_voltage (float): maximum voltage used as upper
+            bound in the threshold current search
 
     Returns:
         CellEvaluator
     """
-
     protocols_definition, features_definition = _handle_extra_recordings(
         protocols_definition, features_definition, cell_model
     )
@@ -823,6 +834,7 @@ def create_evaluator(
         efel_settings=efel_settings,
         threshold_efeature_std=threshold_efeature_std,
         score_threshold=score_threshold,
+        max_threshold_voltage=max_threshold_voltage,
     )
 
     fitness_calculator = define_fitness_calculator(features)

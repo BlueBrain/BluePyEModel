@@ -35,9 +35,7 @@ def evaluator(db):
         os.popen("rm -rf x86_64").read()
     os.popen(f"nrnivmodl {DATA}/mechanisms").read()
 
-    eva = get_evaluator_from_db(emodel=db.emodel, access_point=db)
-
-    return eva
+    return get_evaluator_from_db(emodel=db.emodel, access_point=db)
 
 
 def test_protocols(db, evaluator):

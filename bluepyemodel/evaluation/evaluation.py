@@ -95,6 +95,7 @@ def get_evaluator_from_db(
     additional_protocols=None,
     timeout=600.0,
     score_threshold=12.0,
+    max_threshold_voltage=-30,
 ):
     """Create an evaluator for the emodel.
 
@@ -108,6 +109,10 @@ def get_evaluator_from_db(
         additional_protocols (dict): definition of supplementary protocols.
         timeout (float): duration (in second) after which the evaluation of a
             protocol will be interrupted.
+        score_threshold (float): threshold for score of protocols to stop evaluations
+        max_threshold_voltage (float): maximum voltage used as upper
+            bound in the threshold current search
+
 
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
@@ -153,4 +158,5 @@ def get_evaluator_from_db(
         efel_settings=access_point.pipeline_settings.efel_settings,
         threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std,
         score_threshold=score_threshold,
+        max_threshold_voltage=max_threshold_voltage,
     )
