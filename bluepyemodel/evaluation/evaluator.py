@@ -291,6 +291,14 @@ def define_feature(
     if threshold_efeature_std and std < abs(threshold_efeature_std * meanstd[0]):
         std = abs(threshold_efeature_std * meanstd[0])
 
+    if not std:
+        logger.warning(
+            "Std of efeature %s is 0 and will be set to "
+            "threshold_efeature_std ({threshold_efeature_std})",
+            efel_feature_name,
+        )
+        std = threshold_efeature_std
+
     if protocol_name:
         recording_names = {"": "%s.%s" % (protocol_name, recording_name)}
     else:
@@ -315,11 +323,7 @@ def define_feature(
     )
 
 
-def define_protocol(
-    name,
-    protocol_definition,
-    stochasticity=True,
-):
+def define_protocol(name, protocol_definition, stochasticity=True, threshold_based=False):
     """Create the protocol.
 
     Args:
@@ -328,6 +332,8 @@ def define_protocol(
             define_main_protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
+        threshold_based (bool): is the protocol being instantiated a threshold-based or a
+            fix protocol.
 
     Returns:
         Protocol
@@ -394,25 +400,13 @@ def define_protocol(
             "names".format(name.lower())
         )
 
-    if protocol_definition["type"] == "StepThresholdProtocol":
-        return BPEM_Protocol(
-            name=name,
-            stimulus=stimulus,
-            recordings=recordings,
-            stochasticity=stochasticity,
-            threshold_based=True,
-        )
-
-    if protocol_definition["type"] == "StepProtocol":
-        return BPEM_Protocol(
-            name=name,
-            stimulus=stimulus,
-            recordings=recordings,
-            stochasticity=stochasticity,
-            threshold_based=False,
-        )
-
-    raise Exception('Protocol type "{}" unknown.'.format(protocol_definition["type"]))
+    return BPEM_Protocol(
+        name=name,
+        stimulus=stimulus,
+        recordings=recordings,
+        stochasticity=stochasticity,
+        threshold_based=threshold_based,
+    )
 
 
 def get_features_by_name(list_features, name):
@@ -594,20 +588,50 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
 
     Returns:
     """
+
+    rmp_protocol, rmp_features = define_RMP_protocol(
+        features_definition, efel_settings, threshold_efeature_std
+    )
+    rin_protocol, rin_features = define_Rin_protocol(
+        features_definition,
+        ais_recording=ais_recording,
+        efel_settings=efel_settings,
+        threshold_efeature_std=threshold_efeature_std,
+    )
+
+    search_holding_protocol, hold_features = define_holding_protocol(
+        features_definition, efel_settings, threshold_efeature_std
+    )
+    search_threshold_protocol, thres_features = define_threshold_protocol(
+        features_definition, efel_settings, threshold_efeature_std, max_threshold_voltage
+    )
+
+    features = thres_features + hold_features + rin_features + rmp_features
+
+    threshold_based = True
+    if (
+        not rmp_protocol
+        or not rin_protocol
+        or not search_holding_protocol
+        or not search_threshold_protocol
+    ):
+        logger.warning(
+            "Optimisation will NOT be threshold based as rmp, Rin, holding or threshold"
+            " protocol couldn't be instantiated"
+        )
+        threshold_based = False
+
     threshold_protocols = {}
     other_protocols = {}
-    features = []
 
     for name, definition in protocols_definition.items():
 
-        protocol = define_protocol(name, definition, stochasticity)
+        protocol = define_protocol(name, definition, stochasticity, threshold_based)
 
-        if definition["type"] == "StepThresholdProtocol":
+        if threshold_based:
             threshold_protocols[name] = protocol
-        elif definition["type"] == "StepProtocol":
-            other_protocols[name] = protocol
         else:
-            raise Exception('Protocol type "{}" unknown.'.format(definition["type"]))
+            other_protocols[name] = protocol
 
         # Define the efeatures associated to the protocol
         if name in features_definition:
@@ -634,43 +658,6 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
                         threshold_efeature_std=threshold_efeature_std,
                     )
                     features.append(feature)
-
-    rmp_protocol, rmp_features = define_RMP_protocol(
-        features_definition, efel_settings, threshold_efeature_std
-    )
-    rin_protocol, rin_features = define_Rin_protocol(
-        features_definition,
-        ais_recording=ais_recording,
-        efel_settings=efel_settings,
-        threshold_efeature_std=threshold_efeature_std,
-    )
-
-    search_holding_protocol, hold_features = define_holding_protocol(
-        features_definition, efel_settings, threshold_efeature_std
-    )
-    search_threshold_protocol, thres_features = define_threshold_protocol(
-        features_definition,
-        efel_settings,
-        threshold_efeature_std,
-        max_threshold_voltage=max_threshold_voltage,
-    )
-
-    features += thres_features + hold_features + rin_features + rmp_features
-
-    if threshold_protocols:
-
-        for pre_protocol in [
-            rmp_protocol,
-            rin_protocol,
-            search_holding_protocol,
-            search_threshold_protocol,
-        ]:
-            if not pre_protocol:
-                raise Exception(
-                    "MainProtocol creation failed as there are "
-                    "StepThresholdProtocols but a pre-protocol is"
-                    " {}".format(pre_protocol)
-                )
 
     main_protocol = MainProtocol(
         "Main",
@@ -734,6 +721,7 @@ def _get_apical_point(cell):
 # pylint: disable=too-many-nested-blocks
 def _handle_extra_recordings(protocols, features, _cell):
     """Here we deal with special types of recordings."""
+
     cell = deepcopy(_cell)
     cell.params = None
     cell.mechanisms = None
@@ -787,6 +775,7 @@ def _handle_extra_recordings(protocols, features, _cell):
                         if rec["name"].startswith(_loc_name[:-1]):
                             _loc = rec["name"] + "." + _rec_name
                             features_out[prot_name][_loc].append(deepcopy(feat))
+
     return protocols, features_out
 
 

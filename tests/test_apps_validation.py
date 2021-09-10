@@ -1,14 +1,10 @@
 """Test apps module."""
-import numpy.testing as npt
-import shutil
 import os
 from pathlib import Path
 import pandas as pd
 
 from pandas.testing import assert_frame_equal
 from click.testing import CliRunner
-
-from voxcell import CellCollection
 
 runner = CliRunner()
 
@@ -17,6 +13,7 @@ output_path = Path("out_emodel_release")
 os.environ["USE_NEURODAMUS"] = str(1)
 
 from bluepyemodel.apps.emodel_release import cli
+
 
 def test_evaluate_emodels():
     response = runner.invoke(
@@ -44,10 +41,12 @@ def test_evaluate_emodels():
     assert response.exit_code == 0
 
     df_exemplar = pd.read_csv("exemplar_evaluations.csv")
+    # df_exemplar.to_csv(DATA / "exemplar_evaluations.csv", index=False)
     expected_df_exemplar = pd.read_csv(DATA / "exemplar_evaluations.csv")
-    assert_frame_equal(df_exemplar, expected_df_exemplar, rtol=1e-3)
+    assert_frame_equal(df_exemplar, expected_df_exemplar)
 
     # remove path column to avoid issues with absolute paths
     df_eval = pd.read_csv("results/region_None/results.csv").drop(columns=["path"])
+    # df_eval.to_csv(DATA / "cell_evaluations.csv", index=False)
     expected_df_eval = pd.read_csv(DATA / "cell_evaluations.csv")
-    assert_frame_equal(df_eval, expected_df_eval, rtol=1e-3)
+    assert_frame_equal(df_eval, expected_df_eval)
