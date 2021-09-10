@@ -1,6 +1,7 @@
 include:
    - project: cells/ci
      file:
+        - /ci/lib/tox-bb5.yml
         - /ci/jobs/check-version.yml
         - /ci/jobs/py37.yml
         - /ci/jobs/py38.yml
