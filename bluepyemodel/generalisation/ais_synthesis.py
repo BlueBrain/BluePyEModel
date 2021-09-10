@@ -131,7 +131,6 @@ def synthesize_ais(
         parallel_factory=parallel_factory,
         db_url=db_url,
     )
-
     morphs_combos_df = morphs_combos_df.rename(columns={"exception": "exception_rin"})
 
     return evaluate(
