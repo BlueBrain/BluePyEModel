@@ -293,9 +293,9 @@ def define_feature(
 
     if not std:
         logger.warning(
-            "Std of efeature %s is 0 and will be set to "
-            "threshold_efeature_std ({threshold_efeature_std})",
+            "Std of efeature %s is 0 and will be set to " "threshold_efeature_std (%s)",
             efel_feature_name,
+            threshold_efeature_std,
         )
         std = threshold_efeature_std
 
@@ -568,6 +568,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     threshold_efeature_std=None,
     score_threshold=12.0,
     max_threshold_voltage=-30,
+    threshold_based_evaluator=True,
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
 
@@ -585,6 +586,8 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
         efel_settings (dict): eFEl settings.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
+        threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
+            by the holding and threshold current of the model.
 
     Returns:
     """
@@ -608,27 +611,25 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
 
     features = thres_features + hold_features + rin_features + rmp_features
 
-    threshold_based = True
-    if (
+    if threshold_based_evaluator and (
         not rmp_protocol
         or not rin_protocol
         or not search_holding_protocol
         or not search_threshold_protocol
     ):
-        logger.warning(
-            "Optimisation will NOT be threshold based as rmp, Rin, holding or threshold"
-            " protocol couldn't be instantiated"
+        raise Exception(
+            "A threshold based evaluator was requested by either the protocol RMP, Rin, threshold"
+            " or holding couldn't be instantiated."
         )
-        threshold_based = False
 
     threshold_protocols = {}
     other_protocols = {}
 
     for name, definition in protocols_definition.items():
 
-        protocol = define_protocol(name, definition, stochasticity, threshold_based)
+        protocol = define_protocol(name, definition, stochasticity, threshold_based_evaluator)
 
-        if threshold_based:
+        if threshold_based_evaluator:
             threshold_protocols[name] = protocol
         else:
             other_protocols[name] = protocol
@@ -792,6 +793,7 @@ def create_evaluator(
     score_threshold=12.0,
     max_threshold_voltage=-30,
     dt=None,
+    threshold_based_evaluator=True,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -812,6 +814,8 @@ def create_evaluator(
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
+        threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
+            by the holding and threshold current of the model.
 
     Returns:
         CellEvaluator
@@ -830,6 +834,7 @@ def create_evaluator(
         threshold_efeature_std=threshold_efeature_std,
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
+        threshold_based_evaluator=threshold_based_evaluator,
     )
 
     fitness_calculator = define_fitness_calculator(features)

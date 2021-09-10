@@ -163,4 +163,5 @@ def get_evaluator_from_db(
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
         dt=dt,
+        threshold_based_evaluator=access_point.pipeline_settings.threshold_based_evaluator,
     )

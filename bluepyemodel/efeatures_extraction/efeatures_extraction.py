@@ -6,6 +6,7 @@ import pathlib
 from importlib.machinery import SourceFileLoader
 
 import bluepyefe.extract
+import numpy
 
 logger = logging.getLogger(__name__)
 
@@ -49,16 +50,16 @@ def format_threshold_based_efeatures(
 
     out_protocols = {}
     out_features = {}
-
+    
     if name_rmp_protocol not in features and name_rmp_protocol != "all":
         raise Exception(
-            f"The stimulus {name_rmp_protocol} you want to use for RMP"
-            "computation couldn't be extracted from the ephys data."
+            "The stimulus %s requested for RMP "
+            "computation couldn't be extracted from the ephys data." % name_rmp_protocol
         )
     if name_Rin_protocol not in features:
         raise Exception(
-            f"The stimulus {name_Rin_protocol} you want to use for Rin"
-            "computation couldn't be extracted from the ephys data."
+            "The stimulus %s requested for Rin "
+            "computation couldn't be extracted from the ephys data." % name_Rin_protocol
         )
 
     out_features = {
@@ -120,6 +121,31 @@ def format_threshold_based_efeatures(
         if protocol in out_features:
             out_protocols[protocol] = protocols[protocol]
 
+    if name_rmp_protocol == "all":
+
+        voltage_bases = []
+        for protocol in features:
+            for efeat in features[protocol]["soma"]:
+                if efeat["feature"] == "voltage_base":
+                    voltage_bases.append(efeat["val"])
+        
+        if not voltage_bases:
+            raise Exception(
+                "name_rmp_protocol is 'all' but no voltage_base were requested or extracted."
+            )
+
+        voltage_bases = numpy.asarray(voltage_bases)
+
+        out_features["RMPProtocol"] = {
+            "soma.v": [
+                {
+                    "feature": "steady_state_voltage_stimend",
+                    "val": [numpy.mean(voltage_bases[:, 0]), numpy.mean(voltage_bases[:, 1])],
+                    "strict_stim": True,
+                }
+            ]
+        }
+
     return out_protocols, out_features
 
 
@@ -171,7 +197,7 @@ def extract_save_features_protocols(
 
     threshold_nvalue_save = access_point.pipeline_settings.extraction_threshold_value_save
     plot = access_point.pipeline_settings.plot_extraction
-
+    
     # extract features
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
         output_directory=f"./figures/{emodel}/efeatures_extraction/",
@@ -186,10 +212,7 @@ def extract_save_features_protocols(
     )
 
     # Reformat the features & protocols in case of threshold-based optimization
-    if (
-        access_point.pipeline_settings.name_Rin_protocol
-        and access_point.pipeline_settings.name_rmp_protocol
-    ):
+    if access_point.pipeline_settings.threshold_based_evaluator:
         stimuli, efeatures = format_threshold_based_efeatures(
             stimuli,
             efeatures,

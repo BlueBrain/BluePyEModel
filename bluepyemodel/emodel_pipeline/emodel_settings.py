@@ -15,6 +15,7 @@ class EModelPipelineSettings:
         efel_settings=None,
         stochasticity=False,
         morph_modifiers=None,
+        threshold_based_evaluator=True,
         optimizer="IBEA",
         optimisation_params=None,
         optimisation_timeout=600.0,
@@ -47,6 +48,9 @@ class EModelPipelineSettings:
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
+            threshold_based_evaluator (bool): if the evaluator is threshold-based. All
+                protocol's amplitude and holding current will be rescaled by the ones of the
+                models. If True, name_Rin_protocol and name_rmp_protocol have to be informed.
             optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
                 "MO-CMA" (use cma option in pip install for CMA optimizers).
             optimisation_params (dict): optimisation parameters. Keys have to match the
@@ -72,14 +76,14 @@ class EModelPipelineSettings:
             path_extract_config (str): path to the .json containing the extraction targets, files
                 metadata and the name of the protocols used to compute the threshold of the cell.
             name_Rin_protocol (str): name of the protocol associated with the efeatures used for
-                the computation of the input resistance scores during optimisation. This settings
-                has to be set before efeature extraction if you wish to run a threshold based
-                optimisation.
+                the computation of the input resistance scores during optimisation, e.g: IV_-20.
+                This settings as to be set before efeature extraction if you wish to run a
+                threshold based evaluator.
             name_rmp_protocol (str): name of the protocol associated with the efeatures used for
-                the computation of the resting membrane potential scores during optimisation. This
-                settings has to be set before efeature extraction if you wish to run a threshold
-                based optimisation. Can also be 'all', in which case the RMP will be estimated as
-                the mean of all the voltage_base.
+                the computation of the resting membrane potential scores during optimisation,
+                e.g: IV_0. This settings has to be set before efeature extraction if you wish
+                to run a threshold based evaluator. Can also be 'all', in which case the RMP
+                will be estimated as the mean of the voltage_base for all the protocols.
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
@@ -98,6 +102,7 @@ class EModelPipelineSettings:
         self.name_rmp_protocol = name_rmp_protocol  # only when using local access point
 
         # Settings related to the optimisation
+        self.threshold_based_evaluator = threshold_based_evaluator
         self.stochasticity = stochasticity
         self.morph_modifiers = morph_modifiers
         self.optimizer = optimizer

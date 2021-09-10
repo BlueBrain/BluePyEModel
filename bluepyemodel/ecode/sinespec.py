@@ -60,13 +60,14 @@ class SineSpec(BPEM_stimulus):
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, self.holding_current, dtype="float64")
 
-        t_sine = numpy.arange(0.0, self.duration / 1e3, dt / 1e3)
+        ton_idx = int(self.stim_start / dt)
+        toff_idx = int(self.stim_end / dt)
+
+        t_sine = numpy.linspace(0., self.duration / 1e3, toff_idx - ton_idx)
         current_sine = self.amplitude * numpy.sin(
             2.0 * numpy.pi * (1.0 + (1.0 / (5.15 - (t_sine - 0.1)))) * (t_sine - 0.1)
         )
 
-        ton_idx = int(self.stim_start / dt)
-        toff_idx = int(self.stim_end / dt)
         current[ton_idx:toff_idx] += current_sine
 
         return t, current
