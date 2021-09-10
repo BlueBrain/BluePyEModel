@@ -198,6 +198,15 @@ class NexusAccessPoint(DataAccessPoint):
     def load_pipeline_settings(self, strict=True):
         """ """
 
+        resource = self.access_point.forge.search(
+            {
+                "type": "EModelPipelineSettings",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+            }
+        )
+
         resource = self.access_point.fetch_one(
             filters={
                 "type": "EModelPipelineSettings",
@@ -238,6 +247,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "validation_protocols",
                 "additional_protocols",
                 "compile_mechanisms",
+                "threshold_based_evaluator",
             ]:
                 if setting in resource_dict:
                     settings[setting] = resource_dict[setting]
@@ -857,6 +867,7 @@ class NexusAccessPoint(DataAccessPoint):
         efel_settings=None,
         stochasticity=False,
         morph_modifiers=None,
+        threshold_based_evaluator=True,
         optimizer="IBEA",
         optimisation_params=None,
         optimisation_timeout=600.0,
@@ -870,6 +881,8 @@ class NexusAccessPoint(DataAccessPoint):
         plot_optimisation=True,
         additional_protocols=None,
         compile_mechanisms=False,
+        name_Rin_protocol=None,
+        name_rmp_protocol=None,
     ):
         """Creates an EModelPipelineSettings resource.
 
@@ -882,6 +895,9 @@ class NexusAccessPoint(DataAccessPoint):
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
+            threshold_based_evaluator (bool): if the evaluator is threshold-based. All
+                protocol's amplitude and holding current will be rescaled by the ones of the
+                models. If True, name_Rin_protocol and name_rmp_protocol have to be informed.
             optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
                 "MO-CMA" (use cma option in pip install for CMA optimizers).
             optimisation_params (dict): optimisation parameters. Keys have to match the
@@ -918,6 +934,7 @@ class NexusAccessPoint(DataAccessPoint):
             "extraction_threshold_value_save": extraction_threshold_value_save,
             "efel_settings": efel_settings,
             "stochasticity": stochasticity,
+            "threshold_based_evaluator": threshold_based_evaluator,
             "optimizer": optimizer,
             "optimisation_params": optimisation_params,
             "optimisation_timeout": optimisation_timeout,
@@ -932,6 +949,8 @@ class NexusAccessPoint(DataAccessPoint):
             "morph_modifiers": morph_modifiers,
             "additional_protocols": additional_protocols,
             "compile_mechanisms": compile_mechanisms,
+            "name_Rin_protocol": name_Rin_protocol,
+            "name_rmp_protocol": name_rmp_protocol,
         }
 
         resource_search = {
@@ -1106,34 +1125,29 @@ class NexusAccessPoint(DataAccessPoint):
             },
         }
 
-        pdf_amp, pdf_amp_rel = self.search_figure_efeatures(protocol_name, name)
-        pdfs = {}
-        if pdf_amp:
-            pdfs["amp"] = self.access_point.forge.attach(pdf_amp)
-        if pdf_amp_rel:
-            pdfs["amp_rel"] = self.access_point.forge.attach(pdf_amp_rel)
-        if pdfs:
-            resource_description["pdfs"] = pdfs
+        # Temporarily commented:
+        # pdf_amp, pdf_amp_rel = self.search_figure_efeatures(protocol_name, name)
+        # pdfs = {}
+        # if pdf_amp:
+        #     pdfs["amp"] = self.access_point.forge.attach(pdf_amp)
+        # if pdf_amp_rel:
+        #     pdfs["amp_rel"] = self.access_point.forge.attach(pdf_amp_rel)
+        # if pdfs:
+        #     resource_description["pdfs"] = pdfs
 
-        if protocol_name and protocol_amplitude:
+        resource_description["stimulus"] = {
+            "stimulusType": {
+                "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies"
+                "/stimulustypes/{}".format(protocol_name),
+                "label": protocol_name,
+            },
+            "recordingLocation": "soma",
+        }
+        resource_description["name"] = f"{name}_{protocol_name}"
 
-            resource_description["stimulus"] = {
-                "stimulusType": {
-                    "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies"
-                    "/stimulustypes/{}".format(protocol_name),
-                    "label": protocol_name,
-                },
-                "stimulusTarget": float(protocol_amplitude),
-                "recordingLocation": "soma",
-            }
-
-            resource_description["name"] = f"{name}_{protocol_name}_{protocol_amplitude}"
-
-        else:
-            resource_description["stimulus"] = {
-                "stimulusType": {"id": "", "label": "global"},
-                "recordingLocation": "soma",
-            }
+        if protocol_amplitude:
+            resource_description["stimulus"]["stimulusTarget"] = float(protocol_amplitude)
+            resource_description["name"] += f"_{protocol_amplitude}"
 
         self.access_point.register(resource_description)
 
@@ -1148,10 +1162,19 @@ class NexusAccessPoint(DataAccessPoint):
 
         for protocol in efeatures:
 
-            for feature in efeatures[protocol]["soma"]:
+            for feature in efeatures[protocol]["soma.v"]:
 
-                protocol_name = "_".join(protocol.split("_")[:-1])
-                prot_amplitude = protocol.split("_")[-1]
+                if protocol in [
+                    "SearchHoldingCurrent",
+                    "SearchThresholdCurrent",
+                    "RinProtocol",
+                    "RMPProtocol",
+                ]:
+                    protocol_name = protocol
+                    prot_amplitude = None
+                else:
+                    protocol_name = "_".join(protocol.split("_")[:-1])
+                    prot_amplitude = protocol.split("_")[-1]
 
                 self.register_efeature(
                     name=feature["feature"],
