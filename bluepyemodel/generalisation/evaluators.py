@@ -37,7 +37,7 @@ def _get_synth_modifiers(combo, morph_modifiers=None):
                 scale=combo["AIS_scaler"],
             ),
         )
-    else:
+    elif replace_axon_with_taper not in morph_modifiers:
         morph_modifiers.insert(0, replace_axon_with_taper)
     return morph_modifiers
 
