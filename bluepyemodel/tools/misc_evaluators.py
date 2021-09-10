@@ -85,7 +85,6 @@ def feature_evaluation(
     score_threshold=12.0,
     timeout=1000000,
     nseg_frequency=40,
-    timeout=1000,
 ):
     """Compute the features and the scores on the combos dataframe.
 
@@ -110,7 +109,6 @@ def feature_evaluation(
         score_threshold=score_threshold,
         timeout=timeout,
         nseg_frequency=nseg_frequency,
-        timeout=timeout,
     )
 
     return evaluate(
