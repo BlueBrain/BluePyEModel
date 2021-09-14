@@ -99,7 +99,7 @@ def feature_evaluation(
             if False, it will ecrase or generate the database
         db_url (str): filename for the combos sqlite database
         parallel_factory (ParallelFactory): parallel factory instance
-        dt (float): is not None, cvode will be disabled and fixed timesteps used.
+        dt (float): if not None, cvode will be disabled and fixed timesteps used.
 
     Returns:
         pandas.DataFrame: original combos with computed scores and features

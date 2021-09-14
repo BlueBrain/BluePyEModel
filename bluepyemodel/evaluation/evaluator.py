@@ -694,7 +694,7 @@ def get_simulator(stochasticity, cell_model, dt=None):
     Args:
         stochasticity (Bool): allow the use of simulator for stochastic channels
         cell_model (CellModel): used to check if any stochastic channels are present
-        dt (float): is not None, cvode will be disabled and fixed timesteps used.
+        dt (float): if not None, cvode will be disabled and fixed timesteps used.
     """
     if stochasticity:
         for mechanism in cell_model.mechanisms:
@@ -811,7 +811,7 @@ def create_evaluator(
         score_threshold (float): threshold for score of protocols to stop evaluations
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
-        dt (float): is not None, cvode will be disabled and fixed timesteps used.
+        dt (float): if not None, cvode will be disabled and fixed timesteps used.
 
     Returns:
         CellEvaluator
