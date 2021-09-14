@@ -97,6 +97,7 @@ def get_evaluator_from_db(
     score_threshold=12.0,
     max_threshold_voltage=-30,
     nseg_frequency=40,
+    dt=None,
 ):
     """Create an evaluator for the emodel.
 
@@ -113,7 +114,7 @@ def get_evaluator_from_db(
         score_threshold (float): threshold for score of protocols to stop evaluations
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
-
+        dt (float): if not None, cvode will be disabled and fixed timesteps used.
 
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
@@ -161,4 +162,5 @@ def get_evaluator_from_db(
         threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std,
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
+        dt=dt,
     )
