@@ -114,7 +114,7 @@ def get_evaluator_from_db(
         score_threshold (float): threshold for score of protocols to stop evaluations
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
-        dt (float): is not None, cvode will be disabled and fixed timesteps used.
+        dt (float): if not None, cvode will be disabled and fixed timesteps used.
 
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
