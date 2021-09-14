@@ -688,24 +688,26 @@ def define_fitness_calculator(features):
     return ObjectivesCalculator(objectives)
 
 
-def get_simulator(stochasticity, cell_model):
+def get_simulator(stochasticity, cell_model, dt=None):
     """Get NrnSimulator
 
     Args:
         stochasticity (Bool): allow the use of simulator for stochastic channels
         cell_model (CellModel): used to check if any stochastic channels are present
+        dt (float): is not None, cvode will be disabled and fixed timesteps used.
     """
     if stochasticity:
         for mechanism in cell_model.mechanisms:
             if not mechanism.deterministic:
-                return NrnSimulator(dt=0.025, cvode_active=False)
+                return NrnSimulator(dt=dt or 0.025, cvode_active=False)
 
         logger.warning(
             "Stochasticity is True but no mechanisms are stochastic. Switching to "
             "non-stochastic."
         )
-
-    return NrnSimulator()
+    if dt is None:
+        return NrnSimulator()
+    return NrnSimulator(dt=dt, cvode_active=False)
 
 
 def _get_apical_point(cell):
@@ -719,13 +721,13 @@ def _get_apical_point(cell):
 
 
 # pylint: disable=too-many-nested-blocks
-def _handle_extra_recordings(protocols, features, _cell):
+def _handle_extra_recordings(protocols, features, _cell, simulator):
     """Here we deal with special types of recordings."""
 
     cell = deepcopy(_cell)
     cell.params = None
     cell.mechanisms = None
-    cell.instantiate(sim=NrnSimulator())
+    cell.instantiate(sim=simulator)
 
     for protocol_name, protocol in protocols.items():
         if "extra_recordings" in protocol:
@@ -789,6 +791,7 @@ def create_evaluator(
     threshold_efeature_std=None,
     score_threshold=12.0,
     max_threshold_voltage=-30,
+    dt=None,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -808,12 +811,15 @@ def create_evaluator(
         score_threshold (float): threshold for score of protocols to stop evaluations
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
+        dt (float): is not None, cvode will be disabled and fixed timesteps used.
 
     Returns:
         CellEvaluator
     """
+    simulator = get_simulator(stochasticity, cell_model, dt)
+
     protocols_definition, features_definition = _handle_extra_recordings(
-        protocols_definition, features_definition, cell_model
+        protocols_definition, features_definition, cell_model, simulator
     )
 
     main_protocol, features = define_main_protocol(
@@ -830,8 +836,6 @@ def create_evaluator(
     fitness_protocols = {"main_protocol": main_protocol}
 
     param_names = [param.name for param in cell_model.params.values() if not param.frozen]
-
-    simulator = get_simulator(stochasticity, cell_model)
 
     cell_eval = CellEvaluator(
         cell_model=cell_model,
