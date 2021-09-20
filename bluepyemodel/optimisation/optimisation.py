@@ -72,6 +72,12 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
             "continue_opt is True but the checkpoint %s does not exist" % checkpoint_path
         )
 
+    import json
+
+    s = json.dumps({"max_ngen": max_ngen}, indent=2)
+    with open("opt.json", "w") as f:
+        f.write(s)
+
     logger.info("Running optimisation ...")
     pop, hof, log, history = optimizer.run(
         max_ngen=max_ngen,

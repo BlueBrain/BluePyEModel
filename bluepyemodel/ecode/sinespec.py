@@ -63,7 +63,7 @@ class SineSpec(BPEM_stimulus):
         ton_idx = int(self.stim_start / dt)
         toff_idx = int(self.stim_end / dt)
 
-        t_sine = numpy.linspace(0., self.duration / 1e3, toff_idx - ton_idx)
+        t_sine = numpy.linspace(0.0, self.duration / 1e3, toff_idx - ton_idx)
         current_sine = self.amplitude * numpy.sin(
             2.0 * numpy.pi * (1.0 + (1.0 / (5.15 - (t_sine - 0.1)))) * (t_sine - 0.1)
         )

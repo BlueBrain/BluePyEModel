@@ -336,19 +336,19 @@ class LocalAccessPoint(DataAccessPoint):
 
         pdfs = {}
 
-        opt_pdf = self.search_figure_emodel_optimisation(seed, githash)
+        opt_pdf = seach_pdfs.search_figure_emodel_optimisation(self.emodel, seed, githash)
         if opt_pdf:
             pdfs["optimisation"] = opt_pdf
 
-        traces_pdf = self.search_figure_emodel_traces(seed, githash)
+        traces_pdf = seach_pdfs.search_figure_emodel_traces(self.emodel, seed, githash)
         if traces_pdf:
             pdfs["traces"] = traces_pdf
 
-        scores_pdf = self.search_figure_emodel_score(seed, githash)
+        scores_pdf = seach_pdfs.search_figure_emodel_score(self.emodel, seed, githash)
         if scores_pdf:
             pdfs["scores"] = scores_pdf
 
-        parameters_pdf = self.search_figure_emodel_parameters()
+        parameters_pdf = seach_pdfs.search_figure_emodel_parameters(self.emodel)
         if parameters_pdf:
             pdfs["parameters"] = parameters_pdf
 

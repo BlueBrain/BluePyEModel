@@ -173,7 +173,7 @@ class NexusForgeAccessPoint:
             filters, cross_bucket=self.cross_bucket, limit=self.limit, debug=self.debug
         )
 
-        if resources:   
+        if resources:
             return resources
 
         logger.debug("No resources for filters: %s", filters)

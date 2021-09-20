@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 import numpy
 import pandas
+from bluepyemode.tools import seach_pdfs
 from kgforge.specializations.resources import Dataset
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
@@ -365,34 +366,6 @@ class NexusAccessPoint(DataAccessPoint):
                 filepath = pathlib.Path(filepath)
                 if filepath.stem != resource_mech.name:
                     filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
-
-    def get_mechanism_from_gene(self, path_mapping, gene):
-        """Returns Nexus resource for a SubCellularModel file corresponding to a given
-        gene name.
-
-        Args:
-            path_mapping (str): path to the gene expression table
-            gene (str): name of the gene or protein for which to retrieve the channel name
-            version (str): version number of the mod files, if None, returns the
-                highest version number
-        """
-        with open(path_mapping, "r") as mapping_file:
-            mapping = json.load(mapping_file)
-
-        lower_gene = gene.lower()
-
-        if lower_gene in mapping["genes"]:
-            mechanism_name = mapping["genes"][lower_gene]["protein"]
-
-            search_version = None
-            if "versions" in mapping["genes"][lower_gene] and len(
-                mapping["genes"][lower_gene]["versions"]
-            ):
-                search_version = sorted(mapping["genes"][lower_gene]["versions"])[-1]
-
-            return self.fetch_mechanism(mechanism_name, search_version)
-
-        return None
 
     def store_morphology(
         self,
@@ -1072,7 +1045,7 @@ class NexusAccessPoint(DataAccessPoint):
         traces_metadata = {}
         targets = {}
         protocols_threshold = []
-        
+
         filters = {
             "type": "ElectrophysiologyFeatureExtractionTarget",
             "eModel": self.emodel,
@@ -1080,38 +1053,32 @@ class NexusAccessPoint(DataAccessPoint):
             "brainLocation": self.brain_region,
         }
         resources_extraction_target = self.access_point.fetch(filters)
-        
-        import json
-        filters = {
-                "type": "ElectrophysiologyFeatureExtractionTarget",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
         resources = self.access_point.fetch(filters)
-        d = {"request": filters}
-        d["resources"] = len(resources) if resources else 0
-        d["resources_extraction_target"] = len(resources_extraction_target) if resources_extraction_target else 0
-        with open("request_target.json", "w") as f:
-            f.write(json.dumps(d))
-        
-        if resources_extraction_target is None:
+
+        # d = {"request": filters}
+        # d["resources"] = len(resources) if resources else 0
+        # d["resources_extraction_target"] = len(resources_extraction_target) if resources_extraction_target else 0
+        # import json
+        # with open("request_target.json", "w") as f:
+        #    f.write(json.dumps(d))
+
+        if resources is None:
             logger.warning(
-                "NexusForge warning: could not get extraction metadata for emodel %s", self.emodel
+                "Could not get extraction metadata from Nexus for emodel %s", self.emodel
             )
             return traces_metadata, targets, protocols_threshold
-        
-        targets, protocols_threshold = self._build_extraction_targets(resources_extraction_target)
+
+        targets, protocols_threshold = self._build_extraction_targets(resources)
         if not protocols_threshold:
             raise NexusAccessPointException(
                 "No eCode have been informed to compute the rheobase during extraction."
             )
-        
+
         traces_metadata = self._build_extraction_metadata(targets)
-        
+
         return traces_metadata, targets, protocols_threshold
 
-    def register_efeature(self, name, val, protocol_name=None, protocol_amplitude=None):
+    def register_efeature(self, name, val, protocol_name=None, protocol_amplitude=None, pdfs=None):
         """Register an ElectrophysiologyFeature resource"""
 
         resource_description = {
@@ -1138,16 +1105,6 @@ class NexusAccessPoint(DataAccessPoint):
             },
         }
 
-        # Temporarily commented:
-        # pdf_amp, pdf_amp_rel = self.search_figure_efeatures(protocol_name, name)
-        # pdfs = {}
-        # if pdf_amp:
-        #     pdfs["amp"] = self.access_point.forge.attach(pdf_amp)
-        # if pdf_amp_rel:
-        #     pdfs["amp_rel"] = self.access_point.forge.attach(pdf_amp_rel)
-        # if pdfs:
-        #     resource_description["pdfs"] = pdfs
-
         resource_description["stimulus"] = {
             "stimulusType": {
                 "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies"
@@ -1161,6 +1118,14 @@ class NexusAccessPoint(DataAccessPoint):
         if protocol_amplitude:
             resource_description["stimulus"]["stimulusTarget"] = float(protocol_amplitude)
             resource_description["name"] += f"_{protocol_amplitude}"
+
+        if pdfs:
+            attachement = {}
+            if "amp" in pdfs:
+                attachement["amp"] = self.access_point.forge.attach(pdfs["amp"])
+            if "amp_rel" in pdfs:
+                attachement["amp_rel"] = self.access_point.forge.attach(pdfs["amp_rel"])
+            resource_description["pdfs"] = attachement
 
         self.access_point.register(resource_description)
 
@@ -1194,6 +1159,7 @@ class NexusAccessPoint(DataAccessPoint):
                     val=feature["val"],
                     protocol_name=protocol_name,
                     protocol_amplitude=prot_amplitude,
+                    pdfs=feature.get("pdfs", None),
                 )
 
     def store_protocols(self, stimuli):
@@ -1317,19 +1283,19 @@ class NexusAccessPoint(DataAccessPoint):
 
         pdfs = {}
 
-        opt_pdf = self.search_figure_emodel_optimisation(seed, githash)
+        opt_pdf = seach_pdfs.search_figure_emodel_optimisation(self.emodel, seed, githash)
         if opt_pdf:
             pdfs["optimisation"] = self.access_point.forge.attach(opt_pdf)
 
-        traces_pdf = self.search_figure_emodel_traces(seed, githash)
+        traces_pdf = seach_pdfs.search_figure_emodel_traces(self.emodel, seed, githash)
         if traces_pdf:
             pdfs["traces"] = self.access_point.forge.attach(traces_pdf)
 
-        scores_pdf = self.search_figure_emodel_score(seed, githash)
+        scores_pdf = seach_pdfs.search_figure_emodel_score(self.emodel, sseed, githash)
         if scores_pdf:
             pdfs["scores"] = self.access_point.forge.attach(scores_pdf)
 
-        parameters_pdf = self.search_figure_emodel_parameters()
+        parameters_pdf = seach_pdfs.search_figure_emodel_parameters(self.emodel)
         if parameters_pdf:
             pdfs["parameters"] = self.access_point.forge.attach(parameters_pdf)
 
@@ -1435,44 +1401,9 @@ class NexusAccessPoint(DataAccessPoint):
 
         return distributions_definitions
 
-    def get_parameters(self):
-        """Get the definition of the parameters to optimize from the
-            optimization parameters resources, as well as the
-            locations of the mechanisms. Also returns the names of the mechanisms.
-
-        Returns:
-            params_definition (dict): of the format:
-                definitions = {
-                        'distributions':
-                            {'distrib_name': {
-                                'function': function,
-                                'parameters': ['param_name']}
-                             },
-                        'parameters':
-                            {'sectionlist_name': [
-                                    {'name': param_name1, 'val': [lbound1, ubound1]},
-                                    {'name': param_name2, 'val': 3.234}
-                                ]
-                             }
-                    }
-            mech_definition (dict): of the format:
-                mechanisms_definition = {
-                    section_name1: {
-                        "mech":[
-                            mech_name1,
-                            mech_name2
-                        ]
-                    },
-                    section_name2: {
-                        "mech": [
-                            mech_name3,
-                            mech_name4
-                        ]
-                    }
-                }
-            mech_names (list): list of mechanisms names
-
-        """
+    def _get_user_defined_parameters(self):
+        """Get the definition of the parameters to optimize as well as the locations of the
+        mechanisms from Nexus"""
 
         resources_params = self.access_point.fetch(
             filters={
@@ -1549,6 +1480,66 @@ class NexusAccessPoint(DataAccessPoint):
                     continue
             tmp_params[loc] = params
         params_definition["parameters"] = tmp_params
+
+        return params_definition, mech_definition, set(mechanisms_names)
+
+    def _get_IC_parameters(self):
+        """"""
+
+        # 1. Get the genes for the current emodel
+        # genes = self.get_channel_gene_expression(self, table_name)
+        # 2. Get the IC params and bounds
+        # IC_parameters = ICSelector.get_params_and_macha(genes)
+        # 3a. Register the mechanisms that do not exist yet
+        # 3b. Register the distribution that do not exist yet
+
+        return params_definition, mech_definition, set(mechanisms_names)
+
+    def get_parameters(self):
+        """Get the definition of the parameters and mechanisms from Nexus and gene expression
+        data and concatenate both. In case a mechanisms is specified both in the gene expression
+        data and Nexus, the value or bound for the Nexus one are taken into account.
+
+        Returns:
+            params_definition (dict): of the format:
+                definitions = {
+                        'distributions':
+                            {'distrib_name': {
+                                'function': function,
+                                'parameters': ['param_name']}
+                             },
+                        'parameters':
+                            {'sectionlist_name': [
+                                    {'name': param_name1, 'val': [lbound1, ubound1]},
+                                    {'name': param_name2, 'val': 3.234}
+                                ]
+                             }
+                    }
+            mech_definition (dict): of the format:
+                mechanisms_definition = {
+                    section_name1: {
+                        "mech":[
+                            mech_name1,
+                            mech_name2
+                        ]
+                    },
+                    section_name2: {
+                        "mech": [
+                            mech_name3,
+                            mech_name4
+                        ]
+                    }
+                }
+            mech_names (list): list of mechanisms names
+
+        """
+
+        # Get the parameter resources
+        # selector_params, selector_mechs = self._get_IC_parameters()
+        # user_params, user_mechs = self._get_user_defined_parameters()
+        params_definition, mech_definition, mechanisms_names = self._get_user_defined_parameters()
+
+        # 5. Concatenate both
 
         # It is necessary to sort the parameters as it impacts the order of
         # the parameters in the checkpoint.pkl
