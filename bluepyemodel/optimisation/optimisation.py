@@ -48,7 +48,7 @@ def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
             selector_name="multi_objective",
             **params,
         )
-    raise Exception("Unknown optimizer: {}".format(optimizer))
+    raise Exception(f"Unknown optimizer: {optimizer}")
 
 
 def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, terminator=None):
@@ -68,15 +68,7 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
     checkpoint_path.parents[0].mkdir(parents=True, exist_ok=True)
 
     if continue_opt and not os.path.isfile(checkpoint_path):
-        raise Exception(
-            "continue_opt is True but the checkpoint %s does not exist" % checkpoint_path
-        )
-
-    import json
-
-    s = json.dumps({"max_ngen": max_ngen}, indent=2)
-    with open("opt.json", "w") as f:
-        f.write(s)
+        raise Exception(f"continue_opt is True but the checkpoint {checkpoint_path} does not exist")
 
     logger.info("Running optimisation ...")
     pop, hof, log, history = optimizer.run(

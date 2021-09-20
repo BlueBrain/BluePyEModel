@@ -27,7 +27,7 @@ class Ramp(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
+            raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         self.delay = kwargs.get("delay", 250.0)
         self.duration = kwargs.get("duration", 1350.0)

@@ -124,19 +124,19 @@ def get_evaluator_from_db(
 
     parameters, mechanisms, _ = access_point.get_parameters()
     if not parameters or not mechanisms:
-        raise Exception("No parameters for emodel %s" % emodel)
+        raise Exception(f"No parameters for emodel {emodel}")
 
     morphologies = access_point.get_morphologies()
     if not morphologies:
-        raise Exception("No morphologies for emodel %s" % emodel)
+        raise Exception(f"No morphologies for emodel {emodel}")
 
     features = access_point.get_features(include_validation_protocols)
     if not features:
-        raise Exception("No efeatures for emodel %s" % emodel)
+        raise Exception(f"No efeatures for emodel {emodel}")
 
     protocols = access_point.get_protocols(include_validation_protocols)
     if not protocols:
-        raise Exception("No protocols for emodel %s" % emodel)
+        raise Exception(f"No protocols for emodel {emodel}")
     if additional_protocols:
         protocols.update(additional_protocols)
 

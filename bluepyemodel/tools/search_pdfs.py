@@ -1,4 +1,5 @@
-"""Helper functions used to find the path to the pdfs generated during the different steps of the emodel pipeline"""
+"""Helper functions used to find the path to the pdfs generated during the different steps
+of the emodel pipeline"""
 
 import glob
 import logging
@@ -17,7 +18,7 @@ def search_figure_path(pathname):
         return None
 
     if len(matches) > 1:
-        raise Exception("More than one pdf for pathname %s" % pathname)
+        raise Exception(f"More than one pdf for pathname {pathname}")
 
     return matches[0]
 
@@ -51,8 +52,9 @@ def search_figure_emodel_traces(emodel, seed, githash=""):
 
     fname = f"{emodel}_{githash}_{seed}_traces.pdf"
     pathname = Path("./figures") / emodel / "traces" / "all" / fname
+    pathname_val = Path("./figures") / emodel / "traces" / "validated" / fname
 
-    return search_figure_path(str(pathname))
+    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
 
 
 def search_figure_emodel_score(emodel, seed, githash=None):
@@ -64,8 +66,9 @@ def search_figure_emodel_score(emodel, seed, githash=None):
         fname = f"{emodel}_{seed}_scores.pdf"
 
     pathname = Path("./figures") / emodel / "scores" / "all" / fname
+    pathname_val = Path("./figures") / emodel / "scores" / "validated" / fname
 
-    return search_figure_path(str(pathname))
+    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
 
 
 def search_figure_emodel_parameters(emodel):
@@ -73,6 +76,8 @@ def search_figure_emodel_parameters(emodel):
     of an emodel"""
 
     fname = f"{emodel}_parameters_distribution.pdf"
-    pathname = Path("./figures") / emodel / "distributions" / "all" / fname
 
-    return search_figure_path(str(pathname))
+    pathname = Path("./figures") / emodel / "distributions" / "all" / fname
+    pathname_val = Path("./figures") / emodel / "distributions" / "validated" / fname
+
+    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]

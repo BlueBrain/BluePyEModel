@@ -111,7 +111,7 @@ def define_parameters(definitions):
             elif dist:
                 parameters.append(
                     ephys.parameters.MetaParameter(
-                        name="%s.%s" % (param_name, sectionlist),
+                        name=f"{param_name}.{sectionlist}",
                         obj=dist,
                         attr_name=param_name,
                         frozen=is_frozen,
@@ -123,7 +123,7 @@ def define_parameters(definitions):
             elif "dist" in param_config:
                 parameters.append(
                     ephys.parameters.NrnRangeParameter(
-                        name="%s.%s" % (param_name, sectionlist),
+                        name=f"{param_name}.{sectionlist}",
                         param_name=param_name,
                         value_scaler=distributions[param_config["dist"]],
                         value=value,
@@ -135,7 +135,7 @@ def define_parameters(definitions):
             else:
                 parameters.append(
                     ephys.parameters.NrnSectionParameter(
-                        name="%s.%s" % (param_name, sectionlist),
+                        name=f"{param_name}.{sectionlist}",
                         param_name=param_name,
                         value_scaler=distributions["uniform"],
                         value=value,
@@ -181,7 +181,7 @@ def define_mechanisms(mechanisms_definition):
         for channel, stoch in zip(channels["mech"], channels["stoch"]):
             mechanisms.append(
                 ephys.mechanisms.NrnMODMechanism(
-                    name="%s.%s" % (channel, sectionlist),
+                    name="{channel}.{sectionlist}",
                     mod_path=None,
                     prefix=channel,
                     locations=seclist_locs,

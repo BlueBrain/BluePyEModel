@@ -7,7 +7,8 @@ from importlib.machinery import SourceFileLoader
 
 import bluepyefe.extract
 import numpy
-from bluepyemode.tools.seach_pdfs import search_figure_efeatures
+
+from bluepyemodel.tools.search_pdfs import search_figure_efeatures
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +38,11 @@ def define_extraction_reader_function(access_point):
     return extraction_reader
 
 
-def attach_efeatures_pdf(emodel, efeatures, output_directory):
-    """If the efeatures are plotted, attach the path to the plot to the elated efeature"""
+def attach_efeatures_pdf(emodel, efeatures):
+    """If the efeatures are plotted, attach the path to the plot to the related efeature"""
 
-    for protocol in features:
-        for i, efeat in enumerate(features[protocol]["soma"]):
+    for protocol in efeatures:
+        for efeat in efeatures[protocol]["soma"]:
 
             pdfs = {}
 
@@ -53,7 +54,7 @@ def attach_efeatures_pdf(emodel, efeatures, output_directory):
                 pdfs["amp_rel"] = pdf_amp_rel
 
             if pdfs:
-                features[protocol]["soma"][i]["pdfs"] = pdfs
+                efeat["pdfs"] = pdfs
 
 
 def format_threshold_based_efeatures(
@@ -73,13 +74,13 @@ def format_threshold_based_efeatures(
 
     if name_rmp_protocol not in features and name_rmp_protocol != "all":
         raise Exception(
-            "The stimulus %s requested for RMP "
-            "computation couldn't be extracted from the ephys data." % name_rmp_protocol
+            f"The stimulus {name_rmp_protocol} requested for RMP "
+            "computation couldn't be extracted from the ephys data."
         )
     if name_Rin_protocol not in features:
         raise Exception(
-            "The stimulus %s requested for Rin "
-            "computation couldn't be extracted from the ephys data." % name_Rin_protocol
+            f"The stimulus {name_Rin_protocol} requested for Rin "
+            "computation couldn't be extracted from the ephys data."
         )
 
     out_features = {
@@ -157,9 +158,7 @@ def format_threshold_based_efeatures(
                         pdfs += efeat["pdfs"]
 
         if not voltage_bases:
-            raise Exception(
-                "name_rmp_protocol is 'all' but no voltage_base were requested or extracted."
-            )
+            raise Exception("name_rmp_protocol is 'all' but no voltage_base were extracted.")
 
         voltage_bases = numpy.asarray(voltage_bases)
 
@@ -241,7 +240,7 @@ def extract_save_features_protocols(
     )
 
     if plot:
-        attach_efeatures_pdf(emodel, efeatures, output_directory)
+        attach_efeatures_pdf(emodel, efeatures)
 
     # Reformat the features & protocols in case of threshold-based optimization
     if access_point.pipeline_settings.threshold_based_evaluator:

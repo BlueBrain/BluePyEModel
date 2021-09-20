@@ -187,12 +187,12 @@ class NexusForgeAccessPoint:
 
         if resources is None:
             if strict:
-                raise AccessPointException("Could not get resource for filters %s" % filters)
+                raise AccessPointException(f"Could not get resource for filters {filters}")
             return None
 
         if len(resources) > 1:
             if strict:
-                raise AccessPointException("More than one resource for filters %s" % filters)
+                raise AccessPointException(f"More than one resource for filters {filters}")
             return resources[0]
 
         return resources[0]
@@ -203,7 +203,7 @@ class NexusForgeAccessPoint:
         resource = self.forge.retrieve(resource_id, cross_bucket=True)
 
         if resource is None:
-            raise AccessPointException("Could not find resource for id: %s" % resource_id)
+            raise AccessPointException(f"Could not find resource for id: {resource_id}")
 
         if isinstance(resource.distribution, list):
             filename = resource.distribution[0].name
@@ -238,7 +238,7 @@ class NexusForgeAccessPoint:
         paths = []
 
         if not hasattr(resource, "distribution"):
-            raise AccessPointException("Resource %s does not have distribution" % resource)
+            raise AccessPointException(f"Resource {resource} does not have distribution")
 
         if isinstance(resource.distribution, list):
             distribution_iter = resource.distribution

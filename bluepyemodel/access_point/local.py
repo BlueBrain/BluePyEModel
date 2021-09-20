@@ -10,6 +10,7 @@ from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.tools import search_pdfs
 
 logger = logging.getLogger(__name__)
 
@@ -252,14 +253,14 @@ class LocalAccessPoint(DataAccessPoint):
         """Return model name used as key in final.json."""
 
         if githash:
-            return "{}__{}__{}".format(self.emodel, githash, seed)
+            return f"{self.emodel}__{githash}__{seed}"
 
         logger.warning(
             "Githash is %s. It is strongly advised to use githash in the future.",
             githash,
         )
 
-        return "{}__{}".format(self.emodel, seed)
+        return f"{self.emodel}__{seed}"
 
     def store_emodel(
         self,
@@ -336,21 +337,12 @@ class LocalAccessPoint(DataAccessPoint):
 
         pdfs = {}
 
-        opt_pdf = seach_pdfs.search_figure_emodel_optimisation(self.emodel, seed, githash)
-        if opt_pdf:
-            pdfs["optimisation"] = opt_pdf
-
-        traces_pdf = seach_pdfs.search_figure_emodel_traces(self.emodel, seed, githash)
-        if traces_pdf:
-            pdfs["traces"] = traces_pdf
-
-        scores_pdf = seach_pdfs.search_figure_emodel_score(self.emodel, seed, githash)
-        if scores_pdf:
-            pdfs["scores"] = scores_pdf
-
-        parameters_pdf = seach_pdfs.search_figure_emodel_parameters(self.emodel)
-        if parameters_pdf:
-            pdfs["parameters"] = parameters_pdf
+        pdfs["optimisation"] = search_pdfs.search_figure_emodel_optimisation(
+            self.emodel, seed, githash
+        )
+        pdfs["traces"] = search_pdfs.search_figure_emodel_traces(self.emodel, seed, githash)
+        pdfs["scores"] = search_pdfs.search_figure_emodel_score(self.emodel, seed, githash)
+        pdfs["parameters"] = search_pdfs.search_figure_emodel_parameters(self.emodel)
 
         return pdfs
 

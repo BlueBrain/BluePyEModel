@@ -1,8 +1,6 @@
 """Abstract data access point class."""
 
-import glob
 import logging
-from pathlib import Path
 
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.optimisation import get_checkpoint_path
