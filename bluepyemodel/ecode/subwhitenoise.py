@@ -30,7 +30,7 @@ class SubWhiteNoise(BPEM_stimulus):
         if self.amp is None and self.amp_rel is None:
             raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
 
-        self.data_filepath = kwargs.get("data_filepath", None)
+        data_filepath = kwargs.get("data_filepath", None)
 
         if data_filepath is not None:
             series = numpy.loadtxt(data_filepath)

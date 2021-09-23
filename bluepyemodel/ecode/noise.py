@@ -2,7 +2,6 @@
 import logging
 
 import numpy
-import pkg_resources
 
 from bluepyemodel.ecode.stimulus import BPEM_stimulus
 
@@ -24,7 +23,7 @@ class Noise(BPEM_stimulus):
         self.holding_current = kwargs.get("holding_current", None)
 
         self.mu = kwargs.get("mu", None)
-        self.data_filepath = kwargs.get("data_filepath", None)
+        data_filepath = kwargs.get("data_filepath", None)
 
         if data_filepath is None:
             raise Exception(

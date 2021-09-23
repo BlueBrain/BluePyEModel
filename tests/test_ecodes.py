@@ -897,7 +897,7 @@ def check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duratio
 
 def test_spikerecmultispikes():
     """Test SpikeRec generate."""
-    stimulus, delay, n_spikes, spike_duration, delta, total_duration,, amp, holding_curr = get_spikerecmultispikes_stimulus()
+    stimulus, delay, n_spikes, spike_duration, delta, total_duration, amp, holding_curr = get_spikerecmultispikes_stimulus()
     time, current = stimulus.generate()
 
     assert stimulus.name == "SpikeRec"
@@ -908,7 +908,7 @@ def test_spikerecmultispikes():
 
 def test_spikerecmultispikes_instantiate():
     """Test SpikeRec instantiate."""
-    stimulus, delay, n_spikes, spike_duration, delta, total_duration,, amp, holding_curr = get_spikerecmultispikes_stimulus()
+    stimulus, delay, n_spikes, spike_duration, delta, total_duration, amp, holding_curr = get_spikerecmultispikes_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
 
     check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duration, delta, total_duration, holding_curr, amp)

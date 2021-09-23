@@ -30,9 +30,9 @@ class PosCheops(BPEM_stimulus):
             raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
 
         if self.amplitude < self.holding_current:
-            raise Excpetion(
+            raise Exception(
                 f"Amplitude {self.amplitude} is supposed to be greater than "
-                +  f"holding current {self.holding_current} in {self.name} stimulus."
+                + f"holding current {self.holding_current} in {self.name} stimulus."
             )
 
         self.delay = kwargs.get("delay", 250.0)

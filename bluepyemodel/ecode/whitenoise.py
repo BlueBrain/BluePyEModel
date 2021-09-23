@@ -31,7 +31,7 @@ class WhiteNoise(Noise):
             raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
 
         self.mu = kwargs.get("mu", None)
-        self.data_filepath = kwargs.get("data_filepath", None)
+        data_filepath = kwargs.get("data_filepath", None)
 
         if data_filepath is not None:
             series = numpy.loadtxt(data_filepath)
