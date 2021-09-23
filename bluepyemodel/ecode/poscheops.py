@@ -29,8 +29,13 @@ class PosCheops(BPEM_stimulus):
         if self.amp is None and self.amp_rel is None:
             raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
 
+        if self.amplitude < self.holding_current:
+            raise Excpetion(
+                f"Amplitude {self.amplitude} is supposed to be greater than "
+                +  f"holding current {self.holding_current} in {self.name} stimulus."
+            )
+
         self.delay = kwargs.get("delay", 250.0)
-        self.duration = kwargs.get("duration", 1350.0)
 
         self.ramp1_duration = kwargs.get("ramp1_duration", 4000.0)
         self.ramp2_duration = kwargs.get("ramp2_duration", 2000.0)
@@ -40,8 +45,6 @@ class PosCheops(BPEM_stimulus):
         super().__init__(
             location=location,
         )
-
-        self.toff = self.duration + self.delay
 
     @property
     def stim_start(self):

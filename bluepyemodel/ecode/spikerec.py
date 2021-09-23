@@ -21,7 +21,7 @@ class SpikeRec(BPEM_stimulus):
         """
 
         self.amp = kwargs.get("amp", None)
-        self.amp_rel = kwargs.get("thresh_perc", 200.0)
+        self.amp_rel = kwargs.get("thresh_perc", None)
 
         self.holding_current = kwargs.get("holding_current", None)
         self.threshold_current = None
@@ -31,10 +31,11 @@ class SpikeRec(BPEM_stimulus):
                 "In stimulus %s, amp and thresh_perc cannot be both None." % self.name
             )
 
-        self.tspike = kwargs.get("tspike")
-        self.spike_duration = kwargs.get("spike_duration")
-        self.delta = kwargs.get("delta")
-        self.total_duration = kwargs.get("totduration", 1850.0)
+        self.delay = kwargs.get("delay", 10.0)
+        self.n_spikes = kwargs.get("n_spikes", 2)
+        self.spike_duration = kwargs.get("spike_duration", 3.5)
+        self.delta = kwargs.get("delta", 3.5)
+        self.total_duration = kwargs.get("totduration", 1500.0)
 
         super().__init__(
             location=location,
@@ -42,14 +43,14 @@ class SpikeRec(BPEM_stimulus):
 
     @property
     def stim_start(self):
-        return self.tspike[0]
+        return self.delay
 
     @property
     def stim_end(self):
         return (
-            self.tspike[0]
-            + len(self.tspike) * self.spike_duration
-            + (len(self.tspike) - 1) * self.delta
+            self.delay
+            + self.n_spikes * self.spike_duration
+            + (self.n_spikes - 1) * self.delta
         )
 
     @property
@@ -72,7 +73,7 @@ class SpikeRec(BPEM_stimulus):
         self.time_vec.append(0.0)
         self.current_vec.append(self.holding_current)
 
-        spike_start = self.tspike[0]
+        spike_start = self.delay
         spike_end = spike_start + self.spike_duration
 
         self.time_vec.append(spike_start)
@@ -87,7 +88,7 @@ class SpikeRec(BPEM_stimulus):
         self.time_vec.append(spike_end)
         self.current_vec.append(self.holding_current)
 
-        for _ in range(1, len(self.tspike)):
+        for _ in range(1, self.n_spikes):
             spike_start = spike_end + self.delta
             spike_end = spike_start + self.spike_duration
 
@@ -120,11 +121,11 @@ class SpikeRec(BPEM_stimulus):
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, self.holding_current, dtype="float64")
 
-        spike_start_idx = int(self.tspike[0] / dt)
-        spike_end_idx = int((self.tspike[0] + self.spike_duration) / dt)
+        spike_start_idx = int(self.delay / dt)
+        spike_end_idx = int((self.delay + self.spike_duration) / dt)
         current[spike_start_idx:spike_end_idx] += self.amplitude
 
-        for _ in range(1, len(self.tspike)):
+        for _ in range(1, self.n_spikes):
             spike_start_idx = int(spike_end_idx + (self.delta / dt))
             spike_end_idx = spike_start_idx + int(self.spike_duration / dt)
             current[spike_start_idx:spike_end_idx] += self.amplitude
