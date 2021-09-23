@@ -1,41 +1,22 @@
 """Noise stimulus class"""
 import logging
 
-import numpy
-
 from bluepyemodel.ecode.stimulus import BPEM_stimulus
 
 logger = logging.getLogger(__name__)
 
 
-class Noise(BPEM_stimulus):
+class NoiseMixin(BPEM_stimulus):
 
     """Noise current stimulus"""
 
     name = "Noise"
 
-    def __init__(self, location, **kwargs):
+    def __init__(self, location):
         """Constructor
         Args:
             location(Location): location of stimulus
         """
-
-        self.holding_current = kwargs.get("holding_current", None)
-
-        self.mu = kwargs.get("mu", None)
-        data_filepath = kwargs.get("data_filepath", None)
-
-        if data_filepath is None:
-            raise Exception(
-                "Please, set data_filepath or use NoiseOU3 or WhiteNoise stimuli"
-                + "to get the default noise data files."
-            )
-
-        series = numpy.loadtxt(data_filepath)
-
-        self.current_series = series[1]
-        self.time_series = series[0]
-
         super().__init__(
             location=location,
         )

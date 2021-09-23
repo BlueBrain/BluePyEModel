@@ -4,12 +4,12 @@ import logging
 import numpy
 import pkg_resources
 
-from bluepyemodel.ecode.noise import Noise
+from bluepyemodel.ecode.noise import NoiseMixin
 
 logger = logging.getLogger(__name__)
 
 
-class NoiseOU3(Noise):
+class NoiseOU3(NoiseMixin):
 
     """NoiseOU3 current stimulus"""
 

@@ -886,7 +886,7 @@ def check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duratio
         assert numpy.all(current_during == holding_current)
 
         # during stimulus
-        spike_end = spike_start + duration
+        spike_end = spike_start + spike_duration
         current_during = current[numpy.where((spike_start < time) & (time < spike_end))]
         assert numpy.all(current_during == holding_current + amp)
 

@@ -7,9 +7,9 @@ from .firepattern import FirePattern
 from .hyperdepol import HyperDepol
 from .idrest import IDrest
 from .iv import IV
-from .noise import Noise
 from .noiseou3 import NoiseOU3
 from .poscheops import PosCheops
+from .negcheops import NegCheops
 from .ramp import Ramp
 from .sahp import sAHP
 from .sinespec import SineSpec
@@ -40,12 +40,12 @@ eCodes = {
     "hyperdepol": HyperDepol,
     "dehyperpol": DeHyperpol,
     "poscheops": PosCheops,
+    "negcheops": NegCheops,
     "ramp": Ramp,
     "ap_thresh": Ramp,
     "apthresh": Ramp,
     "sinespec": SineSpec,
     "subwhitenoise": SubWhiteNoise,
-    "noise": Noise,
     "noiseou3": NoiseOU3,
     "whitenoise": WhiteNoise,
     "highfreq": Comb,
