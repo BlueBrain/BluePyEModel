@@ -257,7 +257,7 @@ def get_spikerecmultispikes_stimulus():
 
     # generate stimulus
     prot_def = {"amp": 0.2, "holding_current": -0.001}
-    stimulus = eCodes["spikerec"](location=soma_loc, **prot_def)
+    stimulus = eCodes["spikerecmultispikes"](location=soma_loc, **prot_def)
 
     return stimulus, delay, n_spikes, spike_duration, delta, total_duration, prot_def["amp"], prot_def["holding_current"]
 

@@ -27,7 +27,7 @@ eCodes = {
     "sponhold30": IDrest,
     "rinholdcurrent": IDrest,
     "bap": IDrest,
-    "spikerec1spike": IDrest,
+    "spikerec": IDrest,
     "spikerecmultispikes": SpikeRec,
     "iv": IV,
     "apwaveform": APWaveform,
