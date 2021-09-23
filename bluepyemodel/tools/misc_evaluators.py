@@ -17,9 +17,12 @@ def single_feature_evaluation(
     emodel_db,
     morphology_path="morphology_path",
     stochasticity=False,
-    timeout=1000,
+    timeout=1000000,
     trace_data_path=None,
     score_threshold=12.0,
+    max_threshold_voltage=0,
+    nseg_frequency=40,
+    dt=None,
 ):
     """Evaluating single protocol and save traces."""
     emodel_db.set_emodel(combo["emodel"])
@@ -36,10 +39,15 @@ def single_feature_evaluation(
         stochasticity=stochasticity,
         timeout=timeout,
         score_threshold=score_threshold,
+        max_threshold_voltage=max_threshold_voltage,
+        nseg_frequency=nseg_frequency,
+        dt=dt,
     )
-    responses = evaluator.run_protocols(
-        evaluator.fitness_protocols.values(), emodel_db.get_emodel()["parameters"]
-    )
+    params = emodel_db.get_emodel()["parameters"]
+    if "new_parameters" in combo:
+        params.update(combo["new_parameters"])
+
+    responses = evaluator.run_protocols(evaluator.fitness_protocols.values(), params)
     features = evaluator.fitness_calculator.calculate_values(responses)
     scores = evaluator.fitness_calculator.calculate_scores(responses)
 
@@ -77,6 +85,9 @@ def feature_evaluation(
     trace_data_path=None,
     stochasticity=False,
     score_threshold=12.0,
+    timeout=1000000,
+    nseg_frequency=40,
+    dt=None,
 ):
     """Compute the features and the scores on the combos dataframe.
 
@@ -88,6 +99,7 @@ def feature_evaluation(
             if False, it will ecrase or generate the database
         db_url (str): filename for the combos sqlite database
         parallel_factory (ParallelFactory): parallel factory instance
+        dt (float): if not None, cvode will be disabled and fixed timesteps used.
 
     Returns:
         pandas.DataFrame: original combos with computed scores and features
@@ -99,6 +111,9 @@ def feature_evaluation(
         trace_data_path=trace_data_path,
         stochasticity=stochasticity,
         score_threshold=score_threshold,
+        timeout=timeout,
+        nseg_frequency=nseg_frequency,
+        dt=dt,
     )
 
     return evaluate(

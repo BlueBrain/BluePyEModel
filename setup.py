@@ -15,10 +15,10 @@ with open("README.md", encoding="utf-8") as f:
     README = f.read()
 
 
-EXTRA_LUIGI = ["luigi", "luigi-tools", "bbp-workflow>=2.1.19", "bbp-workflow-cli"]
-EXTRA_NEXUS = ["nexusforge", "entity_management", "pyJWT>=2.1.0"]
-EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3", 'bglibpy', 'seaborn']
-EXTRA_TEST = ["pytest", "dictdiffer"]
+EXTRA_LUIGI = ["luigi>=3.0", "luigi-tools>=0.0.12", "bbp-workflow>=2.1.19", "bbp-workflow-cli"]
+EXTRA_NEXUS = ["nexusforge>=0.6", "entity_management>=1.2", "pyJWT>=2.1.0"]
+EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3", 'bglibpy>4.4', 'seaborn>=0.11']
+EXTRA_TEST = ["pytest>=6.2", "dictdiffer>=0.8"]
 EXTRA_DOC = [
     "graphviz",
     "sphinx",
@@ -41,18 +41,19 @@ setup(
         "numpy",
         "scipy",
         "pandas",
-        "ipyparallel",
+        "ipyparallel>=6.3",
         "tqdm",
         "pyyaml",
         "gitpython",
-        "bluepyopt",
+        "bluepyopt>=1.9",
         "bluepyefe @ git+http://github.com/BlueBrain/BluePyEfe@BPE2#egg=bluepyefe",
-        "efel",
-        "psycopg2",
-        "bluepy",
-        "neuron",
-        "morph_tool",
-        "fasteners",
+        "neurom>=3.0,<4.0",
+        "efel>=3.1",
+        "psycopg2>=2.8",
+        "bluepy>=2.4",
+        "neuron>=8.0",
+        "morph_tool>=2.8",
+        "fasteners>=0.16",
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,

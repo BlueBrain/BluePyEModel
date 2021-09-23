@@ -198,6 +198,15 @@ class NexusAccessPoint(DataAccessPoint):
     def load_pipeline_settings(self, strict=True):
         """ """
 
+        resource = self.access_point.forge.search(
+            {
+                "type": "EModelPipelineSettings",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+            }
+        )
+
         resource = self.access_point.fetch_one(
             filters={
                 "type": "EModelPipelineSettings",
@@ -238,6 +247,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "validation_protocols",
                 "additional_protocols",
                 "compile_mechanisms",
+                "threshold_based_evaluator",
             ]:
                 if setting in resource_dict:
                     settings[setting] = resource_dict[setting]
@@ -857,6 +867,7 @@ class NexusAccessPoint(DataAccessPoint):
         efel_settings=None,
         stochasticity=False,
         morph_modifiers=None,
+        threshold_based_evaluator=True,
         optimizer="IBEA",
         optimisation_params=None,
         optimisation_timeout=600.0,
@@ -870,6 +881,8 @@ class NexusAccessPoint(DataAccessPoint):
         plot_optimisation=True,
         additional_protocols=None,
         compile_mechanisms=False,
+        name_Rin_protocol=None,
+        name_rmp_protocol=None,
     ):
         """Creates an EModelPipelineSettings resource.
 
@@ -882,6 +895,9 @@ class NexusAccessPoint(DataAccessPoint):
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
+            threshold_based_evaluator (bool): if the evaluator is threshold-based. All
+                protocol's amplitude and holding current will be rescaled by the ones of the
+                models. If True, name_Rin_protocol and name_rmp_protocol have to be informed.
             optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
                 "MO-CMA" (use cma option in pip install for CMA optimizers).
             optimisation_params (dict): optimisation parameters. Keys have to match the
@@ -918,6 +934,7 @@ class NexusAccessPoint(DataAccessPoint):
             "extraction_threshold_value_save": extraction_threshold_value_save,
             "efel_settings": efel_settings,
             "stochasticity": stochasticity,
+            "threshold_based_evaluator": threshold_based_evaluator,
             "optimizer": optimizer,
             "optimisation_params": optimisation_params,
             "optimisation_timeout": optimisation_timeout,
@@ -932,6 +949,8 @@ class NexusAccessPoint(DataAccessPoint):
             "morph_modifiers": morph_modifiers,
             "additional_protocols": additional_protocols,
             "compile_mechanisms": compile_mechanisms,
+            "name_Rin_protocol": name_Rin_protocol,
+            "name_rmp_protocol": name_rmp_protocol,
         }
 
         resource_search = {
@@ -1106,71 +1125,56 @@ class NexusAccessPoint(DataAccessPoint):
             },
         }
 
-        pdf_amp, pdf_amp_rel = self.search_figure_efeatures(protocol_name, name)
-        pdfs = {}
-        if pdf_amp:
-            pdfs["amp"] = self.access_point.forge.attach(pdf_amp)
-        if pdf_amp_rel:
-            pdfs["amp_rel"] = self.access_point.forge.attach(pdf_amp_rel)
-        if pdfs:
-            resource_description["pdfs"] = pdfs
+        # Temporarily commented:
+        # pdf_amp, pdf_amp_rel = self.search_figure_efeatures(protocol_name, name)
+        # pdfs = {}
+        # if pdf_amp:
+        #     pdfs["amp"] = self.access_point.forge.attach(pdf_amp)
+        # if pdf_amp_rel:
+        #     pdfs["amp_rel"] = self.access_point.forge.attach(pdf_amp_rel)
+        # if pdfs:
+        #     resource_description["pdfs"] = pdfs
 
-        if protocol_name and protocol_amplitude:
+        resource_description["stimulus"] = {
+            "stimulusType": {
+                "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies"
+                "/stimulustypes/{}".format(protocol_name),
+                "label": protocol_name,
+            },
+            "recordingLocation": "soma",
+        }
+        resource_description["name"] = f"{name}_{protocol_name}"
 
-            resource_description["stimulus"] = {
-                "stimulusType": {
-                    "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies"
-                    "/stimulustypes/{}".format(protocol_name),
-                    "label": protocol_name,
-                },
-                "stimulusTarget": float(protocol_amplitude),
-                "recordingLocation": "soma",
-            }
-
-            resource_description["name"] = f"{name}_{protocol_name}_{protocol_amplitude}"
-
-        else:
-            resource_description["stimulus"] = {
-                "stimulusType": {"id": "", "label": "global"},
-                "recordingLocation": "soma",
-            }
+        if protocol_amplitude:
+            resource_description["stimulus"]["stimulusTarget"] = float(protocol_amplitude)
+            resource_description["name"] += f"_{protocol_amplitude}"
 
         self.access_point.register(resource_description)
 
-    def store_efeatures(
-        self,
-        efeatures,
-        current,
-    ):
+    def store_efeatures(self, efeatures):
         """Store the efeatures and currents obtained from BluePyEfe in ElectrophysiologyFeature
         resources.
 
         Args:
-            efeatures (dict): of the format:
-                {
-                    'protocol_name':[
-                        {'feature': feature_name, value: [mean, std]},
-                        {'feature': feature_name2, value: [mean, std]}
-                    ]
-                }
-            current (dict): of the format:
-                {
-                    "hypamp": [mean, std],
-                    "thresh": [mean, std]
-                }
-            name_Rin_protocol (str): not used.
-            name_rmp_protocol (str): not used.
-            validation_protocols (list): not used.
+            efeatures (dict):  efeatures means and standard deviations. Format as returned by
+                BluePyEfe 2.
         """
-
-        # TODO: add dependencies on Files
 
         for protocol in efeatures:
 
-            for feature in efeatures[protocol]["soma"]:
+            for feature in efeatures[protocol]["soma.v"]:
 
-                protocol_name = "_".join(protocol.split("_")[:-1])
-                prot_amplitude = protocol.split("_")[-1]
+                if protocol in [
+                    "SearchHoldingCurrent",
+                    "SearchThresholdCurrent",
+                    "RinProtocol",
+                    "RMPProtocol",
+                ]:
+                    protocol_name = protocol
+                    prot_amplitude = None
+                else:
+                    protocol_name = "_".join(protocol.split("_")[:-1])
+                    prot_amplitude = protocol.split("_")[-1]
 
                 self.register_efeature(
                     name=feature["feature"],
@@ -1179,26 +1183,13 @@ class NexusAccessPoint(DataAccessPoint):
                     protocol_amplitude=prot_amplitude,
                 )
 
-        for cur in ["holding_current", "threshold_current"]:
-            self.register_efeature(name=cur, val=current[cur])
-
     def store_protocols(self, stimuli):
         """Store the protocols obtained from BluePyEfe in
             ElectrophysiologyFeatureExtractionProtocol resources.
 
         Args:
-            stimuli (dict): of the format:
-                {
-                    'protocol_name':
-                        {"step": ..., "holding": ...}
-                }
-            validation_protocols (list): not used by API NexusForge
+            stimuli (dict): protocols definition in the format returned by BluePyEfe 2.
         """
-
-        # TODO: How to get the ontology for the stimulus ? is the url string
-        # always of the same format ?
-
-        # TODO: add dependencies on Files
 
         for protocol_name, protocol in stimuli.items():
 
@@ -1697,7 +1688,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         return protocols_out
 
-    def fetch_extraction_efeature(self, name, stimulus, amplitude):
+    def fetch_extraction_efeature(self, name, stimulus, amplitude=None):
         """Fetch a singular extraction protocol resource based on an ecode name and amplitude"""
 
         resources_feature = self.access_point.fetch(
@@ -1711,23 +1702,27 @@ class NexusAccessPoint(DataAccessPoint):
             }
         )
 
-        # This makes up for the fact that the sitmulus target (amplitude) cannot
-        # be used directly for the fetch as filters does not alllow to check
-        # equality of lists.
-        resources = None
-        if resources_feature:
-            resources = []
-            for r in resources_feature:
+        if amplitude:
 
-                tmp_amp = None
+            # This makes up for the fact that the stimulus target (amplitude) cannot be used
+            # directly for the fetch as filters does not alllow to check equality of lists.
+            resources = None
+            if resources_feature:
+                resources = []
+                for r in resources_feature:
 
-                if isinstance(r.stimulus.stimulusTarget, list):
-                    tmp_amp = int(r.stimulus.stimulusTarget[0])
-                else:
-                    tmp_amp = int(r.stimulus.stimulusTarget)
+                    tmp_amp = None
 
-                if tmp_amp == int(amplitude):
-                    resources.append(r)
+                    if isinstance(r.stimulus.stimulusTarget, list):
+                        tmp_amp = float(r.stimulus.stimulusTarget[0])
+                    else:
+                        tmp_amp = float(r.stimulus.stimulusTarget)
+
+                    if tmp_amp == float(amplitude):
+                        resources.append(r)
+
+        else:
+            resources = resources_feature
 
         if resources is None:
             raise NexusAccessPointException(
@@ -1741,7 +1736,13 @@ class NexusAccessPoint(DataAccessPoint):
                 % (name, stimulus, amplitude, self.emodel)
             )
 
-        return resources[0]
+        feature_mean = next(s.value for s in resources[0].feature.series if s.statistic == "mean")
+
+        feature_std = next(
+            s.value for s in resources[0].feature.series if s.statistic == "standard deviation"
+        )
+
+        return resources[0], feature_mean, feature_std
 
     def get_features(self, include_validation=False):
         """Get the e-features used as targets in the CellEvaluator.
@@ -1762,60 +1763,29 @@ class NexusAccessPoint(DataAccessPoint):
 
         for resource_target in self.get_opt_targets(include_validation):
 
+            # RMP, Rin, Threshold and holding current are handeld below
+            if resource_target.protocolType not in ["StepProtocol", "StepThresholdProtocol"]:
+                continue
+
             for feature in resource_target.feature:
 
-                resource_feature = self.fetch_extraction_efeature(
+                _, feature_mean, feature_std = self.fetch_extraction_efeature(
                     feature.name,
                     resource_target.stimulus.stimulusType.label,
                     resource_target.stimulus.target,
                 )
 
-                feature_mean = next(
-                    s.value for s in resource_feature.feature.series if s.statistic == "mean"
+                protocol_name = "{}_{}".format(
+                    resource_target.stimulus.stimulusType.label,
+                    resource_target.stimulus.target,
                 )
-                feature_std = next(
-                    s.value
-                    for s in resource_feature.feature.series
-                    if s.statistic == "standard deviation"
-                )
-
-                feature_name = feature.name
-
-                if resource_target.protocolType == "RinProtocol":
-                    if feature.name == "ohmic_input_resistance_vb_ssse":
-                        protocol_name = "RinProtocol"
-                    elif feature.name == "voltage_base":
-                        protocol_name = "SearchHoldingCurrent"
-                        feature_name = "steady_state_voltage_stimend"
-                    else:
-                        continue
-
-                elif resource_target.protocolType == "RMPProtocol":
-                    if feature.name == "steady_state_voltage_stimend":
-                        protocol_name = "RMPProtocol"
-                    else:
-                        continue
-
-                elif resource_target.protocolType == "RinProtocol":
-                    if feature.name == "voltage_base":
-                        protocol_name = "SearchHoldingCurrent"
-                        feature_name = "steady_state_voltage_stimend"
-                    else:
-                        continue
-
-                else:
-                    protocol_name = "{}_{}".format(
-                        resource_target.stimulus.stimulusType.label,
-                        resource_target.stimulus.target,
-                    )
-                    feature_name = feature.name
 
                 if protocol_name not in efeatures_out:
                     efeatures_out[protocol_name] = {"soma.v": []}
 
                 efeatures_out[protocol_name]["soma.v"].append(
                     {
-                        "feature": feature_name,
+                        "feature": feature.name,
                         "val": [feature_mean, feature_std],
                         "strict_stim": True,
                     }
@@ -1830,43 +1800,26 @@ class NexusAccessPoint(DataAccessPoint):
                         "stim_end"
                     ] = feature.offsetTime.value
 
-        # Add holding current and threshold current as target efeatures
-        for current in ["holding_current", "threshold_current"]:
+        # Add holding current, threshold current, Rin and RMP
+        special_efeatures = {
+            "SearchHoldingCurrent": ["bpo_holding_current", "steady_state_voltage_stimend"],
+            "SearchThresholdCurrent": ["bpo_threshold_current"],
+            "RinProtocol": ["ohmic_input_resistance_vb_ssse"],
+            "RMPProtocol": ["steady_state_voltage_stimend"],
+        }
 
-            resource_feature = self.access_point.fetch_one(
-                filters={
-                    "type": "ElectrophysiologyFeature",
-                    "eModel": self.emodel,
-                    "subject": self.get_subject(for_search=True),
-                    "brainLocation": self.brain_region,
-                    "feature": {"name": current},
-                    "stimulus": {"stimulusType": {"label": "global"}},
-                }
-            )
+        for pre_protocol, efeatures in special_efeatures.items():
+            for efeature in efeatures:
 
-            feature_mean = next(
-                s.value for s in resource_feature.feature.series if s.statistic == "mean"
-            )
-            feature_std = next(
-                s.value
-                for s in resource_feature.feature.series
-                if s.statistic == "standard deviation"
-            )
+                _, feature_mean, feature_std = self.fetch_extraction_efeature(
+                    efeature, pre_protocol
+                )
 
-            if current == "holding_current":
-                protocol_name = "SearchHoldingCurrent"
-            elif current == "threshold_current":
-                protocol_name = "SearchThresholdCurrent"
-
-            if protocol_name not in efeatures_out:
-                efeatures_out[protocol_name] = {"soma.v": []}
-
-            efeatures_out[protocol_name]["soma.v"].append(
-                {"feature": "bpo_{}".format(current), "val": [feature_mean, feature_std]}
-            )
-
-        # Remove the empty protocols
-        efeatures_out = {k: v for k, v in efeatures_out.items() if len(v["soma.v"])}
+                if pre_protocol not in efeatures_out:
+                    efeatures_out[pre_protocol] = {"soma.v": []}
+                efeatures_out[pre_protocol]["soma.v"].append(
+                    {"feature": efeature, "val": [feature_mean, feature_std]}
+                )
 
         return efeatures_out
 
@@ -1998,7 +1951,3 @@ class NexusAccessPoint(DataAccessPoint):
                 n_validated += 1
 
         return n_validated >= self.pipeline_settings.n_model
-
-    def get_morph_modifiers(self):
-        """Get the morph modifiers if any."""
-        return self.pipeline_settings.morph_modifiers

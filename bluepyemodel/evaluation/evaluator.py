@@ -291,6 +291,14 @@ def define_feature(
     if threshold_efeature_std and std < abs(threshold_efeature_std * meanstd[0]):
         std = abs(threshold_efeature_std * meanstd[0])
 
+    if not std:
+        logger.warning(
+            "Std of efeature %s is 0 and will be set to " "threshold_efeature_std (%s)",
+            efel_feature_name,
+            threshold_efeature_std,
+        )
+        std = threshold_efeature_std
+
     if protocol_name:
         recording_names = {"": "%s.%s" % (protocol_name, recording_name)}
     else:
@@ -315,11 +323,7 @@ def define_feature(
     )
 
 
-def define_protocol(
-    name,
-    protocol_definition,
-    stochasticity=True,
-):
+def define_protocol(name, protocol_definition, stochasticity=True, threshold_based=False):
     """Create the protocol.
 
     Args:
@@ -328,6 +332,8 @@ def define_protocol(
             define_main_protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
+        threshold_based (bool): is the protocol being instantiated a threshold-based or a
+            fix protocol.
 
     Returns:
         Protocol
@@ -394,25 +400,13 @@ def define_protocol(
             "names".format(name.lower())
         )
 
-    if protocol_definition["type"] == "StepThresholdProtocol":
-        return BPEM_Protocol(
-            name=name,
-            stimulus=stimulus,
-            recordings=recordings,
-            stochasticity=stochasticity,
-            threshold_based=True,
-        )
-
-    if protocol_definition["type"] == "StepProtocol":
-        return BPEM_Protocol(
-            name=name,
-            stimulus=stimulus,
-            recordings=recordings,
-            stochasticity=stochasticity,
-            threshold_based=False,
-        )
-
-    raise Exception('Protocol type "{}" unknown.'.format(protocol_definition["type"]))
+    return BPEM_Protocol(
+        name=name,
+        stimulus=stimulus,
+        recordings=recordings,
+        stochasticity=stochasticity,
+        threshold_based=threshold_based,
+    )
 
 
 def get_features_by_name(list_features, name):
@@ -530,7 +524,9 @@ def define_holding_protocol(features_definition, efel_settings=None, threshold_e
     return None, []
 
 
-def define_threshold_protocol(features_definition, efel_settings=None, threshold_efeature_std=None):
+def define_threshold_protocol(
+    features_definition, efel_settings=None, threshold_efeature_std=None, max_threshold_voltage=-30
+):
     """Define the search threshold current protocol"""
 
     feature_def = get_features_by_name(
@@ -548,7 +544,10 @@ def define_threshold_protocol(features_definition, efel_settings=None, threshold
         )
 
         protocol = SearchThresholdCurrent(
-            name="SearchThresholdCurrent", location=soma_loc, target_threshold=target_threshold
+            name="SearchThresholdCurrent",
+            location=soma_loc,
+            target_threshold=target_threshold,
+            max_threshold_voltage=max_threshold_voltage,
         )
 
         return protocol, [target_threshold]
@@ -568,6 +567,8 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     efel_settings=None,
     threshold_efeature_std=None,
     score_threshold=12.0,
+    max_threshold_voltage=-30,
+    threshold_based_evaluator=True,
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
 
@@ -585,23 +586,53 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
         efel_settings (dict): eFEl settings.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
+        threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
+            by the holding and threshold current of the model.
 
     Returns:
     """
+
+    rmp_protocol, rmp_features = define_RMP_protocol(
+        features_definition, efel_settings, threshold_efeature_std
+    )
+    rin_protocol, rin_features = define_Rin_protocol(
+        features_definition,
+        ais_recording=ais_recording,
+        efel_settings=efel_settings,
+        threshold_efeature_std=threshold_efeature_std,
+    )
+
+    search_holding_protocol, hold_features = define_holding_protocol(
+        features_definition, efel_settings, threshold_efeature_std
+    )
+    search_threshold_protocol, thres_features = define_threshold_protocol(
+        features_definition, efel_settings, threshold_efeature_std, max_threshold_voltage
+    )
+
+    features = thres_features + hold_features + rin_features + rmp_features
+
+    if threshold_based_evaluator and (
+        not rmp_protocol
+        or not rin_protocol
+        or not search_holding_protocol
+        or not search_threshold_protocol
+    ):
+        raise Exception(
+            "A threshold based evaluator was requested by either the protocol RMP, Rin, threshold"
+            " or holding couldn't be instantiated."
+        )
+
     threshold_protocols = {}
     other_protocols = {}
-    features = []
 
     for name, definition in protocols_definition.items():
 
-        protocol = define_protocol(name, definition, stochasticity)
+        protocol = define_protocol(name, definition, stochasticity, threshold_based_evaluator)
 
-        if definition["type"] == "StepThresholdProtocol":
+        if threshold_based_evaluator:
             threshold_protocols[name] = protocol
-        elif definition["type"] == "StepProtocol":
-            other_protocols[name] = protocol
         else:
-            raise Exception('Protocol type "{}" unknown.'.format(definition["type"]))
+            other_protocols[name] = protocol
 
         # Define the efeatures associated to the protocol
         if name in features_definition:
@@ -628,40 +659,6 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
                         threshold_efeature_std=threshold_efeature_std,
                     )
                     features.append(feature)
-
-    rmp_protocol, rmp_features = define_RMP_protocol(
-        features_definition, efel_settings, threshold_efeature_std
-    )
-    rin_protocol, rin_features = define_Rin_protocol(
-        features_definition,
-        ais_recording=ais_recording,
-        efel_settings=efel_settings,
-        threshold_efeature_std=threshold_efeature_std,
-    )
-
-    search_holding_protocol, hold_features = define_holding_protocol(
-        features_definition, efel_settings, threshold_efeature_std
-    )
-    search_threshold_protocol, thres_features = define_threshold_protocol(
-        features_definition, efel_settings, threshold_efeature_std
-    )
-
-    features += thres_features + hold_features + rin_features + rmp_features
-
-    if threshold_protocols:
-
-        for pre_protocol in [
-            rmp_protocol,
-            rin_protocol,
-            search_holding_protocol,
-            search_threshold_protocol,
-        ]:
-            if not pre_protocol:
-                raise Exception(
-                    "MainProtocol creation failed as there are "
-                    "StepThresholdProtocols but a pre-protocol is"
-                    " {}".format(pre_protocol)
-                )
 
     main_protocol = MainProtocol(
         "Main",
@@ -692,24 +689,26 @@ def define_fitness_calculator(features):
     return ObjectivesCalculator(objectives)
 
 
-def get_simulator(stochasticity, cell_model):
+def get_simulator(stochasticity, cell_model, dt=None):
     """Get NrnSimulator
 
     Args:
         stochasticity (Bool): allow the use of simulator for stochastic channels
         cell_model (CellModel): used to check if any stochastic channels are present
+        dt (float): if not None, cvode will be disabled and fixed timesteps used.
     """
     if stochasticity:
         for mechanism in cell_model.mechanisms:
             if not mechanism.deterministic:
-                return NrnSimulator(dt=0.025, cvode_active=False)
+                return NrnSimulator(dt=dt or 0.025, cvode_active=False)
 
         logger.warning(
             "Stochasticity is True but no mechanisms are stochastic. Switching to "
             "non-stochastic."
         )
-
-    return NrnSimulator()
+    if dt is None:
+        return NrnSimulator()
+    return NrnSimulator(dt=dt, cvode_active=False)
 
 
 def _get_apical_point(cell):
@@ -723,12 +722,13 @@ def _get_apical_point(cell):
 
 
 # pylint: disable=too-many-nested-blocks
-def _handle_extra_recordings(protocols, features, _cell):
+def _handle_extra_recordings(protocols, features, _cell, simulator):
     """Here we deal with special types of recordings."""
+
     cell = deepcopy(_cell)
     cell.params = None
     cell.mechanisms = None
-    cell.instantiate(sim=NrnSimulator())
+    cell.instantiate(sim=simulator)
 
     for protocol_name, protocol in protocols.items():
         if "extra_recordings" in protocol:
@@ -778,6 +778,7 @@ def _handle_extra_recordings(protocols, features, _cell):
                         if rec["name"].startswith(_loc_name[:-1]):
                             _loc = rec["name"] + "." + _rec_name
                             features_out[prot_name][_loc].append(deepcopy(feat))
+
     return protocols, features_out
 
 
@@ -790,6 +791,9 @@ def create_evaluator(
     efel_settings=None,
     threshold_efeature_std=None,
     score_threshold=12.0,
+    max_threshold_voltage=-30,
+    dt=None,
+    threshold_based_evaluator=True,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -807,13 +811,19 @@ def create_evaluator(
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
         score_threshold (float): threshold for score of protocols to stop evaluations
+        max_threshold_voltage (float): maximum voltage used as upper
+            bound in the threshold current search
+        dt (float): if not None, cvode will be disabled and fixed timesteps used.
+        threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
+            by the holding and threshold current of the model.
 
     Returns:
         CellEvaluator
     """
+    simulator = get_simulator(stochasticity, cell_model, dt)
 
     protocols_definition, features_definition = _handle_extra_recordings(
-        protocols_definition, features_definition, cell_model
+        protocols_definition, features_definition, cell_model, simulator
     )
 
     main_protocol, features = define_main_protocol(
@@ -823,14 +833,14 @@ def create_evaluator(
         efel_settings=efel_settings,
         threshold_efeature_std=threshold_efeature_std,
         score_threshold=score_threshold,
+        max_threshold_voltage=max_threshold_voltage,
+        threshold_based_evaluator=threshold_based_evaluator,
     )
 
     fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}
 
     param_names = [param.name for param in cell_model.params.values() if not param.frozen]
-
-    simulator = get_simulator(stochasticity, cell_model)
 
     cell_eval = CellEvaluator(
         cell_model=cell_model,

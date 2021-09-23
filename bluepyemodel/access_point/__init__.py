@@ -5,7 +5,7 @@ def get_db(access_point, emodel, **kwargs):
     """Returns a DataAccessPoint object.
 
     Args:
-        access_point (str): name of the access_point to use, can be 'nexus' or 'gpfs'.
+        access_point (str): name of the access_point to use, can be 'nexus' or 'local'.
         emodel (str): name of the emodel.
         kwargs (dict): extra arguments to pass to access_point constructors, see below.
 
