@@ -220,6 +220,14 @@ def get_sinespec_stimulus():
 
     return stimulus, delay, duration, prot_def["amp"], prot_def["holding_current"]
 
+def get_spikerec_stimulus():
+    """Return SpikeRec stimulus and stim properties."""
+    # generate stimulus
+    prot_def = {"amp": 0.2, "holding_current": -0.001, "total_duration":1500, "tspike":[500,750,1000], "spike_duration":10, "delta":240}
+    stimulus = eCodes["spikerec"](location=soma_loc, **prot_def)
+
+    return stimulus, prot_def["amp"], prot_def["holding_current"], prot_def["total_duration"], prot_def["tspike"], prot_def["spike_duration"], prot_def["delta"]
+
 
 def check_ramp(time, current, ton, duration, holding_current, amp, ramp_up=True):
     """Assert the ramp part of a stimulus behaves as expected."""
@@ -697,3 +705,50 @@ def test_sinespec_instantiate():
     time, current = run_stim_on_dummy_cell(stimulus)
 
     check_sinespec_stim(time, current, delay, duration, holding_curr, amp)
+
+
+def check_spikerec_stim(time, current, tspike, spike_duration, delta, total_duration, holding_current, amp):
+    """Assert SpikeRec stimulus behaves as expected."""
+    # before stimulus
+    current_before = current[numpy.where((0 <= time) & (time < tspike[0]))]
+    assert numpy.all(current_before == holding_current)
+
+    # during stimulus
+    spike_start = tspike[0]
+    spike_end = tspike[0] + spike_duration
+    current_during = current[numpy.where((spike_start < time) & (time < spike_end))]
+    assert numpy.all(current_during == holding_current + amp)
+
+    for _ in range(1, len(self.tspike)):
+        # between two stimuli
+        spike_start = spike_end + delta
+        current_during = current[numpy.where((spike_end < time) & (time < spike_start))]
+        assert numpy.all(current_during == holding_current)
+
+        # during stimulus
+        spike_end = spike_start + duration
+        current_during = current[numpy.where((spike_start < time) & (time < spike_end))]
+        assert numpy.all(current_during == holding_current + amp)
+
+    # after stimulus
+    current_after = current[numpy.where((spike_end < time) & (time <= total_duration))]
+    assert numpy.all(current_after == holding_current)
+
+
+def test_spikerec():
+    """Test SpikeRec generate."""
+    stimulus, amp, holding_curr, total_duration, tspike, spike_duration, delta = get_spikerec_stimulus()
+    time, current = stimulus.generate()
+
+    assert stimulus.name == "SpikeRec"
+    assert stimulus.total_duration == total_duration
+
+    check_spikerec_stim(time, current, tspike, spike_duration, delta, total_duration, holding_curr, amp)
+
+
+def test_spikerec_instantiate():
+    """Test SpikeRec instantiate."""
+    stimulus, amp, holding_curr, total_duration, tspike, spike_duration, delta = get_spikerec_stimulus()
+    time, current = run_stim_on_dummy_cell(stimulus)
+
+    check_spikerec_stim(time, current, tspike, spike_duration, delta, total_duration, holding_curr, amp)

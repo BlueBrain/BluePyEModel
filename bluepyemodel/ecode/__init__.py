@@ -11,6 +11,7 @@ from .poscheops import PosCheops
 from .ramp import Ramp
 from .sahp import sAHP
 from .sinespec import SineSpec
+from .spikerec import SpikeRec
 from .subwhitenoise import SubWhiteNoise
 
 # The ecode names have to be lower case only, to avoid having to
@@ -23,7 +24,7 @@ eCodes = {
     "sponhold30": IDrest,
     "rinholdcurrent": IDrest,
     "bap": IDrest,
-    "spikerec": IDrest,
+    "spikerec": SpikeRec,
     "iv": IV,
     "apwaveform": APWaveform,
     "firepattern": FirePattern,
