@@ -607,7 +607,7 @@ class PlotOptimisation(WorkflowTask):
     def output(self):
         """ """
         githash = ""
-        fname = "{}.pdf".format(get_checkpoint_path(self.emodel, self.seed, githash).stem)
+        fname = f"{get_checkpoint_path(self.emodel, self.seed, githash).stem}.pdf"
         return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
@@ -675,17 +675,13 @@ class PlotModels(WorkflowTask):
             # scores
             for seed in range(self.seed, self.seed + batch_size):
                 # change fname if githash is implemented
-                fname = "{}_{}_scores.pdf".format(self.emodel, seed)
+                fname = f"{self.emodel}_{seed}_scores.pdf"
                 fpath = Path("./figures") / self.emodel / "scores" / "all" / fname
                 outputs.append(luigi.LocalTarget(fpath))
 
             # traces
             for seed in range(self.seed, self.seed + batch_size):
-                fname = "{}_{}_{}_traces.pdf".format(
-                    self.emodel,
-                    "",  # githash
-                    seed,
-                )
+                fname = f"{self.emodel}__{seed}_traces.pdf"
                 fpath = Path("./figures") / self.emodel / "traces" / "all" / fname
                 outputs.append(luigi.LocalTarget(fpath))
 

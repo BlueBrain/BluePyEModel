@@ -93,7 +93,7 @@ class RMPProtocol:
         """
         self.name = name
         self.location = location
-        self.recording_name = "%s.%s.%s" % (self.name, self.location.name, "v")
+        self.recording_name = f"{self.name}.{self.location.name}.v"
 
         self.stimulus_duration = stimulus_duration
         self.target_voltage = target_voltage
@@ -144,7 +144,7 @@ class RinProtocol:
 
         self.name = name
         self.location = location
-        self.recording_name = "%s.%s.%s" % (self.name, self.location.name, "v")
+        self.recording_name = f"{self.name}.{self.location.name}.v"
 
         self.stimulus_delay = stimulus_delay
         self.stimulus_duration = stimulus_duration
@@ -372,7 +372,7 @@ class SearchThresholdCurrent:
         self.spike_feature = ephys.efeatures.eFELFeature(
             name="SearchThresholdCurrent.Spikecount",
             efel_feature_name="Spikecount",
-            recording_names={"": "SearchThresholdCurrent.{}.v".format(self.location.name)},
+            recording_names={"": f"SearchThresholdCurrent.{self.location.name}.v"},
             stim_start=0.0,
             stim_end=self.stimulus_duration,
             exp_mean=1,
@@ -396,7 +396,7 @@ class SearchThresholdCurrent:
 
         recordings = [
             ephys.recordings.CompRecording(
-                name="%s.%s.%s" % ("SearchThresholdCurrent", self.location.name, "v"),
+                name=f"SearchThresholdCurrent.{self.location.name}.v",
                 location=self.location,
                 variable="v",
             )

@@ -27,7 +27,7 @@ class SineSpec(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
+            raise Exception("In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         self.delay = kwargs.get("delay", 0.0)
         self.duration = kwargs.get("duration", 5000.0)
@@ -60,13 +60,14 @@ class SineSpec(BPEM_stimulus):
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, self.holding_current, dtype="float64")
 
-        t_sine = numpy.arange(0.0, self.duration / 1e3, dt / 1e3)
+        ton_idx = int(self.stim_start / dt)
+        toff_idx = int(self.stim_end / dt)
+
+        t_sine = numpy.linspace(0.0, self.duration / 1e3, toff_idx - ton_idx + 1)[:-1]
         current_sine = self.amplitude * numpy.sin(
             2.0 * numpy.pi * (1.0 + (1.0 / (5.15 - (t_sine - 0.1)))) * (t_sine - 0.1)
         )
 
-        ton_idx = int(self.stim_start / dt)
-        toff_idx = int(self.stim_end / dt)
         current[ton_idx:toff_idx] += current_sine
 
         return t, current

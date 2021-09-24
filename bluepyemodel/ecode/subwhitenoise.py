@@ -28,7 +28,7 @@ class SubWhiteNoise(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
+            raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         series_file = pkg_resources.resource_filename(__name__, "data/subwhitenoise.npy")
         series = numpy.load(series_file)
@@ -62,7 +62,7 @@ class SubWhiteNoise(BPEM_stimulus):
         """Return current time series"""
 
         if dt != 0.1:
-            raise Exception("For eCode {}, dt has to be 0.1ms.".format(self.name))
+            raise Exception(f"For eCode {self.name}, dt has to be 0.1ms.")
 
         current = self.holding_current + self.amplitude * self.current_series
         return self.time_series, current

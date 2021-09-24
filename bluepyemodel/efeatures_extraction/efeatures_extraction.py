@@ -8,6 +8,8 @@ from importlib.machinery import SourceFileLoader
 import bluepyefe.extract
 import numpy
 
+from bluepyemodel.tools.search_pdfs import search_figure_efeatures
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +38,25 @@ def define_extraction_reader_function(access_point):
     return extraction_reader
 
 
+def attach_efeatures_pdf(emodel, efeatures):
+    """If the efeatures are plotted, attach the path to the plot to the related efeature"""
+
+    for protocol in efeatures:
+        for efeat in efeatures[protocol]["soma"]:
+
+            pdfs = {}
+
+            pdf_amp, pdf_amp_rel = search_figure_efeatures(emodel, protocol, efeat["feature"])
+
+            if pdf_amp:
+                pdfs["amp"] = pdf_amp
+            if pdf_amp_rel:
+                pdfs["amp_rel"] = pdf_amp_rel
+
+            if pdfs:
+                efeat["pdfs"] = pdfs
+
+
 def format_threshold_based_efeatures(
     protocols, features, currents, name_Rin_protocol, name_rmp_protocol
 ):
@@ -53,13 +74,13 @@ def format_threshold_based_efeatures(
 
     if name_rmp_protocol not in features and name_rmp_protocol != "all":
         raise Exception(
-            "The stimulus %s you want to use for RMP "
-            "computation couldn't be extracted from the ephys data." % name_rmp_protocol
+            f"The stimulus {name_rmp_protocol} requested for RMP "
+            "computation couldn't be extracted from the ephys data."
         )
     if name_Rin_protocol not in features:
         raise Exception(
-            "The stimulus %s you want to use for Rin "
-            "computation couldn't be extracted from the ephys data." % name_Rin_protocol
+            f"The stimulus {name_Rin_protocol} requested for Rin "
+            "computation couldn't be extracted from the ephys data."
         )
 
     out_features = {
@@ -96,6 +117,8 @@ def format_threshold_based_efeatures(
                         }
                     ]
                 }
+                if "pdfs" in efeat:
+                    out_features["RMPProtocol"]["soma.v"][0]["pdfs"] = efeat["pdfs"]
 
             elif protocol == name_Rin_protocol and efeat["feature"] == "voltage_base":
                 out_features["SearchHoldingCurrent"]["soma.v"].append(
@@ -105,6 +128,8 @@ def format_threshold_based_efeatures(
                         "strict_stim": True,
                     }
                 )
+                if "pdfs" in efeat:
+                    out_features["SearchHoldingCurrent"]["soma.v"][0]["pdfs"] = efeat["pdfs"]
 
             elif (
                 protocol == name_Rin_protocol
@@ -124,10 +149,16 @@ def format_threshold_based_efeatures(
     if name_rmp_protocol == "all":
 
         voltage_bases = []
+        pdfs = []
         for protocol in features:
             for efeat in features[protocol]["soma"]:
                 if efeat["feature"] == "voltage_base":
                     voltage_bases.append(efeat["val"])
+                    if "pdfs" in efeat:
+                        pdfs += efeat["pdfs"]
+
+        if not voltage_bases:
+            raise Exception("name_rmp_protocol is 'all' but no voltage_base were extracted.")
 
         voltage_bases = numpy.asarray(voltage_bases)
 
@@ -137,6 +168,7 @@ def format_threshold_based_efeatures(
                     "feature": "steady_state_voltage_stimend",
                     "val": [numpy.mean(voltage_bases[:, 0]), numpy.mean(voltage_bases[:, 1])],
                     "strict_stim": True,
+                    "pdfs": pdfs,
                 }
             ]
         }
@@ -192,10 +224,11 @@ def extract_save_features_protocols(
 
     threshold_nvalue_save = access_point.pipeline_settings.extraction_threshold_value_save
     plot = access_point.pipeline_settings.plot_extraction
+    output_directory = f"./figures/{emodel}/efeatures_extraction/"
 
     # extract features
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
-        output_directory=f"./figures/{emodel}/efeatures_extraction/",
+        output_directory=output_directory,
         files_metadata=files_metadata,
         targets=targets,
         threshold_nvalue_save=threshold_nvalue_save,
@@ -205,6 +238,9 @@ def extract_save_features_protocols(
         write_files=False,
         plot=plot,
     )
+
+    if plot:
+        attach_efeatures_pdf(emodel, efeatures)
 
     # Reformat the features & protocols in case of threshold-based optimization
     if access_point.pipeline_settings.threshold_based_evaluator:

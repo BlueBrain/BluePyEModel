@@ -1,6 +1,5 @@
 """Access point using Nexus Forge"""
 
-import json
 import logging
 import os
 import pathlib
@@ -13,8 +12,9 @@ from kgforge.specializations.resources import Dataset
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.tools import search_pdfs
 
-# pylint: disable=simplifiable-if-expression,too-many-arguments
+# pylint: disable=simplifiable-if-expression,too-many-arguments,undefined-variable
 
 logger = logging.getLogger("__main__")
 
@@ -120,26 +120,34 @@ class NexusAccessPoint(DataAccessPoint):
         self.pipeline_settings = self.load_pipeline_settings(strict=False)
 
     def get_subject(self, for_search=False):
-        """Get the ontology of a species based n the species name. The id is not used
-        during search as if it is specified the search fail (will be fixed soon)."""
+        """Get the ontology of a species based on the species name."""
 
         if self.species == "human":
-            subject = {"type": "Subject", "species": {"label": "Homo sapiens"}}
+            subject = {
+                "type": "Subject",
+                "species": {"id": "http://purl.obolibrary.org/obo/NCBITaxon_9606"},
+            }
             if not for_search:
-                subject["species"]["id"] = "http://purl.obolibrary.org/obo/NCBITaxon_9606"
+                subject["species"]["label"] = "Homo sapiens"
 
         elif self.species == "rat":
-            subject = {"type": "Subject", "species": {"label": "Musca domestica"}}
+            subject = {
+                "type": "Subject",
+                "species": {"id": "http://purl.obolibrary.org /obo/NCBITaxon_7370"},
+            }
             if not for_search:
-                subject["species"]["id"] = "http://purl.obolibrary.org /obo/NCBITaxon_7370"
+                subject["species"]["label"] = "Musca domestica"
 
         elif self.species == "mouse":
-            subject = {"type": "Subject", "species": {"label": "Mus musculus"}}
+            subject = {
+                "type": "Subject",
+                "species": {"id": "http://purl.obolibrary.org/obo/NCBITaxon_10090"},
+            }
             if not for_search:
-                subject["species"]["id"] = "http://purl.obolibrary.org/obo/NCBITaxon_10090"
+                subject["species"]["label"] = "Mus musculus"
 
         else:
-            raise NexusAccessPointException("Unknown species %s." % self.species)
+            raise NexusAccessPointException(f"Unknown species {self.species}.")
 
         return subject
 
@@ -366,34 +374,6 @@ class NexusAccessPoint(DataAccessPoint):
                 if filepath.stem != resource_mech.name:
                     filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
 
-    def get_mechanism_from_gene(self, path_mapping, gene):
-        """Returns Nexus resource for a SubCellularModel file corresponding to a given
-        gene name.
-
-        Args:
-            path_mapping (str): path to the gene expression table
-            gene (str): name of the gene or protein for which to retrieve the channel name
-            version (str): version number of the mod files, if None, returns the
-                highest version number
-        """
-        with open(path_mapping, "r") as mapping_file:
-            mapping = json.load(mapping_file)
-
-        lower_gene = gene.lower()
-
-        if lower_gene in mapping["genes"]:
-            mechanism_name = mapping["genes"][lower_gene]["protein"]
-
-            search_version = None
-            if "versions" in mapping["genes"][lower_gene] and len(
-                mapping["genes"][lower_gene]["versions"]
-            ):
-                search_version = sorted(mapping["genes"][lower_gene]["versions"])[-1]
-
-            return self.fetch_mechanism(mechanism_name, search_version)
-
-        return None
-
     def store_morphology(
         self,
         name=None,
@@ -423,7 +403,7 @@ class NexusAccessPoint(DataAccessPoint):
             raise NexusAccessPointException("At least id_ or name should be informed.")
 
         if not resource:
-            raise NexusAccessPointException("No matching resource for morphology %s %s" % id_, name)
+            raise NexusAccessPointException(f"No matching resource for morphology {id_} {name}")
 
         if not name:
             name = resource.name
@@ -490,11 +470,11 @@ class NexusAccessPoint(DataAccessPoint):
             raise NexusAccessPointException("At least id_ or name should be informed.")
 
         if not resource:
-            raise NexusAccessPointException("No matching resource for %s %s" % id_, name)
+            raise NexusAccessPointException(f"No matching resource for {id_} {name}")
 
         self.access_point.register(
             {
-                "type": ["Entity", "ElectrophysiologyFeatureExtractionTrace"],
+                "type": "ElectrophysiologyFeatureExtractionTrace",
                 "eModel": self.emodel,
                 "name": f"{resource.name}_{ecode}",
                 "subject": self.get_subject(for_search=False),
@@ -593,7 +573,7 @@ class NexusAccessPoint(DataAccessPoint):
             "RinProtocol",
             "RMPProtocol",
         ]:
-            raise NexusAccessPointException("protocol_type %s unknown." % protocol_type)
+            raise NexusAccessPointException(f"protocol_type {protocol_type} unknown.")
 
         features = []
         for f in efeatures:
@@ -838,7 +818,7 @@ class NexusAccessPoint(DataAccessPoint):
             raise NexusAccessPointException("At least name or id_ should be informed.")
 
         if not resource:
-            raise NexusAccessPointException("No matching resource for mechanism %s %s" % id_, name)
+            raise NexusAccessPointException(f"No matching resource for mechanism {id_} {name}")
 
         if not name:
             name = resource.name
@@ -1034,7 +1014,7 @@ class NexusAccessPoint(DataAccessPoint):
 
             if resources_ephys is None:
                 raise NexusAccessPointException(
-                    "Could not get ephys files for ecode %s, emodel %s" % (protocol, self.emodel)
+                    f"Could not get ephys files for ecode {protocol}, emodel {self.emodel}"
                 )
 
             for resource in resources_ephys:
@@ -1073,22 +1053,22 @@ class NexusAccessPoint(DataAccessPoint):
         targets = {}
         protocols_threshold = []
 
-        resources_extraction_target = self.access_point.fetch(
-            filters={
-                "type": "ElectrophysiologyFeatureExtractionTarget",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            },
-        )
+        filters = {
+            "type": "ElectrophysiologyFeatureExtractionTarget",
+            "eModel": self.emodel,
+            "subject": self.get_subject(for_search=True),
+            "brainLocation": self.brain_region,
+        }
+        _ = self.access_point.fetch(filters)
+        resources = self.access_point.fetch(filters)
 
-        if resources_extraction_target is None:
+        if resources is None:
             logger.warning(
-                "NexusForge warning: could not get extraction metadata for emodel %s", self.emodel
+                "Could not get extraction metadata from Nexus for emodel %s", self.emodel
             )
             return traces_metadata, targets, protocols_threshold
 
-        targets, protocols_threshold = self._build_extraction_targets(resources_extraction_target)
+        targets, protocols_threshold = self._build_extraction_targets(resources)
         if not protocols_threshold:
             raise NexusAccessPointException(
                 "No eCode have been informed to compute the rheobase during extraction."
@@ -1098,7 +1078,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         return traces_metadata, targets, protocols_threshold
 
-    def register_efeature(self, name, val, protocol_name=None, protocol_amplitude=None):
+    def register_efeature(self, name, val, protocol_name=None, protocol_amplitude=None, pdfs=None):
         """Register an ElectrophysiologyFeature resource"""
 
         resource_description = {
@@ -1125,20 +1105,10 @@ class NexusAccessPoint(DataAccessPoint):
             },
         }
 
-        # Temporarily commented:
-        # pdf_amp, pdf_amp_rel = self.search_figure_efeatures(protocol_name, name)
-        # pdfs = {}
-        # if pdf_amp:
-        #     pdfs["amp"] = self.access_point.forge.attach(pdf_amp)
-        # if pdf_amp_rel:
-        #     pdfs["amp_rel"] = self.access_point.forge.attach(pdf_amp_rel)
-        # if pdfs:
-        #     resource_description["pdfs"] = pdfs
-
         resource_description["stimulus"] = {
             "stimulusType": {
-                "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies"
-                "/stimulustypes/{}".format(protocol_name),
+                "id": f"http://bbp.epfl.ch/neurosciencegraph/ontologies/stimulustypes/"
+                f"{protocol_name}",
                 "label": protocol_name,
             },
             "recordingLocation": "soma",
@@ -1148,6 +1118,14 @@ class NexusAccessPoint(DataAccessPoint):
         if protocol_amplitude:
             resource_description["stimulus"]["stimulusTarget"] = float(protocol_amplitude)
             resource_description["name"] += f"_{protocol_amplitude}"
+
+        if pdfs:
+            attachement = {}
+            if "amp" in pdfs:
+                attachement["amp"] = self.access_point.forge.attach(pdfs["amp"])
+            if "amp_rel" in pdfs:
+                attachement["amp_rel"] = self.access_point.forge.attach(pdfs["amp_rel"])
+            resource_description["pdfs"] = attachement
 
         self.access_point.register(resource_description)
 
@@ -1181,6 +1159,7 @@ class NexusAccessPoint(DataAccessPoint):
                     val=feature["val"],
                     protocol_name=protocol_name,
                     protocol_amplitude=prot_amplitude,
+                    pdfs=feature.get("pdfs", None),
                 )
 
     def store_protocols(self, stimuli):
@@ -1205,7 +1184,7 @@ class NexusAccessPoint(DataAccessPoint):
                     "stimulus": {
                         "stimulusType": {
                             "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies/stimulustypes"
-                            "/{}".format(prot_name),
+                            f"/{prot_name}",
                             "label": prot_name,
                         },
                         "stimulusTarget": float(prot_amplitude),
@@ -1270,7 +1249,7 @@ class NexusAccessPoint(DataAccessPoint):
             "eModel": self.emodel,
             "subject": self.get_subject(for_search=False),
             "brainLocation": self.brain_region,
-            "name": "{} {}".format(self.emodel, seed),
+            "name": f"{self.emodel} {seed}",
             "fitness": sum(list(scores.values())),
             "parameter": parameters_resource,
             "score": scores_resource,
@@ -1302,23 +1281,26 @@ class NexusAccessPoint(DataAccessPoint):
     def _build_pdf_dependencies(self, seed, githash):
         """Find all the pdfs associated to an emodel"""
 
-        pdfs = {}
+        pdfs = {"optimisation": [], "traces": [], "scores": [], "parameters": []}
 
-        opt_pdf = self.search_figure_emodel_optimisation(seed, githash)
+        opt_pdf = search_pdfs.search_figure_emodel_optimisation(self.emodel, seed, githash)
         if opt_pdf:
-            pdfs["optimisation"] = self.access_point.forge.attach(opt_pdf)
+            pdfs["optimisation"].append(self.access_point.forge.attach(opt_pdf))
 
-        traces_pdf = self.search_figure_emodel_traces(seed, githash)
-        if traces_pdf:
-            pdfs["traces"] = self.access_point.forge.attach(traces_pdf)
+        traces_pdf = search_pdfs.search_figure_emodel_traces(self.emodel, seed, githash)
+        for pdf_path in traces_pdf:
+            if pdf_path:
+                pdfs["traces"].append(self.access_point.forge.attach(pdf_path))
 
-        scores_pdf = self.search_figure_emodel_score(seed, githash)
-        if scores_pdf:
-            pdfs["scores"] = self.access_point.forge.attach(scores_pdf)
+        scores_pdf = search_pdfs.search_figure_emodel_score(self.emodel, seed, githash)
+        for pdf_path in scores_pdf:
+            if pdf_path:
+                pdfs["scores"].append(self.access_point.forge.attach(pdf_path))
 
-        parameters_pdf = self.search_figure_emodel_parameters()
-        if parameters_pdf:
-            pdfs["parameters"] = self.access_point.forge.attach(parameters_pdf)
+        parameters_pdf = search_pdfs.search_figure_emodel_parameters(self.emodel)
+        for pdf_path in parameters_pdf:
+            if pdf_path:
+                pdfs["parameters"].append(self.access_point.forge.attach(pdf_path))
 
         return pdfs
 
@@ -1422,44 +1404,9 @@ class NexusAccessPoint(DataAccessPoint):
 
         return distributions_definitions
 
-    def get_parameters(self):
-        """Get the definition of the parameters to optimize from the
-            optimization parameters resources, as well as the
-            locations of the mechanisms. Also returns the names of the mechanisms.
-
-        Returns:
-            params_definition (dict): of the format:
-                definitions = {
-                        'distributions':
-                            {'distrib_name': {
-                                'function': function,
-                                'parameters': ['param_name']}
-                             },
-                        'parameters':
-                            {'sectionlist_name': [
-                                    {'name': param_name1, 'val': [lbound1, ubound1]},
-                                    {'name': param_name2, 'val': 3.234}
-                                ]
-                             }
-                    }
-            mech_definition (dict): of the format:
-                mechanisms_definition = {
-                    section_name1: {
-                        "mech":[
-                            mech_name1,
-                            mech_name2
-                        ]
-                    },
-                    section_name2: {
-                        "mech": [
-                            mech_name3,
-                            mech_name4
-                        ]
-                    }
-                }
-            mech_names (list): list of mechanisms names
-
-        """
+    def _get_user_defined_parameters(self):
+        """Get the definition of the parameters to optimize as well as the locations of the
+        mechanisms from Nexus"""
 
         resources_params = self.access_point.fetch(
             filters={
@@ -1472,7 +1419,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         if resources_params is None:
             raise NexusAccessPointException(
-                "Could not get model parameters for emodel %s" % self.emodel
+                f"Could not get model parameters for emodel {self.emodel}"
             )
 
         params_definition = {"parameters": {}}
@@ -1536,6 +1483,74 @@ class NexusAccessPoint(DataAccessPoint):
                     continue
             tmp_params[loc] = params
         params_definition["parameters"] = tmp_params
+
+        return params_definition, mech_definition, set(mechanisms_names)
+
+    def _get_IC_parameters(self):
+        """Place holder for when the IC selector will be available"""
+
+        # genes = self.get_channel_gene_expression(
+        #     table_name="Mouse_met_types_ion_channel_expression"
+        # )
+
+        # resource = self.access_point.fetch_one({"type": "IonChannelMapping", "name": "icmapping"})
+
+        # 2. Get the IC params and bounds
+        # import ICselector
+        # python icselection.py
+        # --ic_map <ic_mapping_file.json>
+        # --keys <gene_name_1> <gene_name_2>
+        # IC_parameters = ICSelector.get_params_and_mecha(genes)
+        # 3a. Register the mechanisms that do not exist yet
+        # 3b. Register the distribution that do not exist yet
+
+        return {}, {}, []
+
+    def get_parameters(self):
+        """Get the definition of the parameters and mechanisms from Nexus and gene expression
+        data and concatenate both. In case a mechanisms is specified both in the gene expression
+        data and Nexus, the value or bound for the Nexus one are taken into account.
+
+        Returns:
+            params_definition (dict): of the format:
+                definitions = {
+                        'distributions':
+                            {'distrib_name': {
+                                'function': function,
+                                'parameters': ['param_name']}
+                             },
+                        'parameters':
+                            {'sectionlist_name': [
+                                    {'name': param_name1, 'val': [lbound1, ubound1]},
+                                    {'name': param_name2, 'val': 3.234}
+                                ]
+                             }
+                    }
+            mech_definition (dict): of the format:
+                mechanisms_definition = {
+                    section_name1: {
+                        "mech":[
+                            mech_name1,
+                            mech_name2
+                        ]
+                    },
+                    section_name2: {
+                        "mech": [
+                            mech_name3,
+                            mech_name4
+                        ]
+                    }
+                }
+            mech_names (list): list of mechanisms names
+
+        """
+
+        # TODO: once IC selector is available:
+        # Get the parameter resources
+        # selector_params, selector_mechs = self._get_IC_parameters()
+        # user_params, user_mechs = self._get_user_defined_parameters()
+        params_definition, mech_definition, mechanisms_names = self._get_user_defined_parameters()
+        # 5. Concatenate both
 
         # It is necessary to sort the parameters as it impacts the order of
         # the parameters in the checkpoint.pkl
@@ -1621,27 +1636,18 @@ class NexusAccessPoint(DataAccessPoint):
 
         if resources is None:
             raise NexusAccessPointException(
-                "Could not get protocol %s %s %% for emodel %s"
-                % (
-                    resource_target.stimulus.stimulusType.label,
-                    resource_target.stimulus.target,
-                    self.emodel,
-                )
+                f"Could not get protocol {resource_target.stimulus.stimulusType.label} "
+                f"{resource_target.stimulus.target}% for emodel {self.emodel}"
             )
 
         if len(resources) > 1:
             raise NexusAccessPointException(
-                "More than one protocol %s %s %% for emodel %s"
-                % (
-                    resource_target.stimulus.stimulusType.label,
-                    resource_target.stimulus.target,
-                    self.emodel,
-                )
+                f"More than one protocol {resource_target.stimulus.stimulusType.label} "
+                f"{resource_target.stimulus.target}% for emodel {self.emodel}"
             )
 
-        protocol_name = "{}_{}".format(
-            resources[0].stimulus.stimulusType.label,
-            resources[0].stimulus.stimulusTarget[0],
+        protocol_name = (
+            f"{resources[0].stimulus.stimulusType.label}_{resources[0].stimulus.stimulusTarget[0]}"
         )
 
         return resources[0], protocol_name
@@ -1726,14 +1732,14 @@ class NexusAccessPoint(DataAccessPoint):
 
         if resources is None:
             raise NexusAccessPointException(
-                "Could not get feature %s for %s %s %% for emodel %s"
-                % (name, stimulus, amplitude, self.emodel)
+                f"Could not get feature {name} for {stimulus} {amplitude}% for "
+                f"emodel {self.emodel}"
             )
 
         if len(resources) > 1:
             raise NexusAccessPointException(
-                "More than one feature %s for %s %s %% for emodel %s"
-                % (name, stimulus, amplitude, self.emodel)
+                "More than one feature {name} for {stimulus} {amplitude}% for "
+                f"emodel {self.emodel}"
             )
 
         feature_mean = next(s.value for s in resources[0].feature.series if s.statistic == "mean")
@@ -1775,9 +1781,9 @@ class NexusAccessPoint(DataAccessPoint):
                     resource_target.stimulus.target,
                 )
 
-                protocol_name = "{}_{}".format(
-                    resource_target.stimulus.stimulusType.label,
-                    resource_target.stimulus.target,
+                protocol_name = (
+                    f"{resource_target.stimulus.stimulusType.label}_"
+                    f"{resource_target.stimulus.target}"
                 )
 
                 if protocol_name not in efeatures_out:
@@ -1921,8 +1927,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         if len(resources) > 1:
             raise NexusAccessPointException(
-                "More than one model for emodel "
-                "%s, seed %s, githash %s" % (self.emodel, seed, githash)
+                "More than one model for emodel " f"{self.emodel}, seed {seed}, githash {githash}"
             )
 
         if hasattr(resources[0], "passedValidation") and resources[0].passedValidation is not None:

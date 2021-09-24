@@ -53,6 +53,7 @@ def synth_axon(sim=None, icell=None, params=None, scale=1.0):
 
 
 def get_synth_axon_hoc(params):
+    # pylint: disable=consider-using-f-string
     return """
 proc replace_axon(){ local count, i1, i2, L_target, strenght, taper_scale, terminal_diameter localobj diams
 

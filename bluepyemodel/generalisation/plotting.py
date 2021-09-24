@@ -31,7 +31,7 @@ def plot_traces(trace_df, trace_path="traces", pdf_filename="traces.pdf"):
         trace_path (str): path to folder with traces in .pkl
         pdf_filename (str): name of pdf to save
     """
-    COLORS = cycle(["C{}".format(i) for i in range(10)])
+    COLORS = cycle([f"C{i}" for i in range(10)])
 
     if "trace_highlight" not in trace_df.columns:
         trace_df["trace_highlight"] = True
@@ -76,6 +76,8 @@ def plot_traces(trace_df, trace_path="traces", pdf_filename="traces.pdf"):
 
 def plot_ais_taper(data, model, ax=None):
     """Plot AIS taper."""
+    # pylint: disable=consider-using-f-string
+
     if ax is None:
         fig = plt.figure(figsize=(5, 4))
         ax = plt.gca()

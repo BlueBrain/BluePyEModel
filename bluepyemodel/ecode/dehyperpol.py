@@ -27,12 +27,12 @@ class DeHyperpol(BPEM_stimulus):
 
         if self.hyper_amp is None and self.hyper_amp_rel is None:
             raise Exception(
-                "In stimulus %s, hyper_amp and hyper_amp_rel cannot be both None." % self.name
+                f"In stimulus {self.name}, hyper_amp and hyper_amp_rel cannot be both None."
             )
 
         if self.depol_amp is None and self.depol_amp_rel is None:
             raise Exception(
-                "In stimulus %s, depol_amp and depol_amp_rel cannot be both None." % self.name
+                f"In stimulus {self.name}, depol_amp and depol_amp_rel cannot be both None."
             )
 
         self.holding_current = kwargs.get("holding_current", None)
