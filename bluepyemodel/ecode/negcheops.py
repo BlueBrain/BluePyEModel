@@ -36,7 +36,7 @@ class NegCheops(BPEM_stimulus):
             )
 
         self.delay = kwargs.get("delay", 1750.0)
-        self.total_duration = kwargs.get("totduration", 16222.0)
+        self.total_duration = kwargs.get("totduration", 18222.0)
 
         self.ramp1_duration = kwargs.get("ramp1_duration", 3333.0)
         self.ramp2_duration = kwargs.get("ramp2_duration", 1666.0)

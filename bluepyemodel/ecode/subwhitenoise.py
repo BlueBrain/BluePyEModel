@@ -38,8 +38,8 @@ class SubWhiteNoise(BPEM_stimulus):
             series_file = pkg_resources.resource_filename(__name__, "data/SubWhiteNoise.txt")
             series = numpy.loadtxt(series_file)
 
-        self.current_series = series[1]
-        self.time_series = series[0]
+        self.current_series = series[:,1]
+        self.time_series = series[:,0]
 
         super().__init__(
             location=location,

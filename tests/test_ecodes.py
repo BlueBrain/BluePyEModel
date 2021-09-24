@@ -215,7 +215,7 @@ def get_negcheops_stimulus():
     ramp2_duration = 1666.0
     ramp3_duration = 1111.0
     inter_delay = 2000.0
-    totduration = 16222.0
+    totduration = 18222.0
     holding_current = 0.0
 
     # generate stimulus
@@ -294,7 +294,7 @@ def test_whitenoise():
 
     assert stimulus.name == "WhiteNoise"
     assert stimulus.total_duration == 60099.9
-    assert len(i) == 60100
+    assert len(i) == 601000
 
 def test_noiseou3():
 
@@ -304,7 +304,7 @@ def test_noiseou3():
 
     assert stimulus.name == "NoiseOU3"
     assert stimulus.total_duration == 60099.9
-    assert len(i) == 60100
+    assert len(i) == 601000
 
 
 def check_idrest_stim(time, current, delay, duration, total_duration, holding_current, amp):
