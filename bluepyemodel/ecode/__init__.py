@@ -7,11 +7,15 @@ from .firepattern import FirePattern
 from .hyperdepol import HyperDepol
 from .idrest import IDrest
 from .iv import IV
+from .noiseou3 import NoiseOU3
 from .poscheops import PosCheops
+from .negcheops import NegCheops
 from .ramp import Ramp
 from .sahp import sAHP
 from .sinespec import SineSpec
+from .spikerec import SpikeRec
 from .subwhitenoise import SubWhiteNoise
+from .whitenoise import WhiteNoise
 
 # The ecode names have to be lower case only, to avoid having to
 # define duplicates.
@@ -25,6 +29,7 @@ eCodes = {
     "rinholdcurrent": IDrest,
     "bap": IDrest,
     "spikerec": IDrest,
+    "spikerecmultispikes": SpikeRec,
     "iv": IV,
     "apwaveform": APWaveform,
     "firepattern": FirePattern,
@@ -36,10 +41,13 @@ eCodes = {
     "hyperdepol": HyperDepol,
     "dehyperpol": DeHyperpol,
     "poscheops": PosCheops,
+    "negcheops": NegCheops,
     "ramp": Ramp,
     "ap_thresh": Ramp,
     "apthresh": Ramp,
     "sinespec": SineSpec,
     "subwhitenoise": SubWhiteNoise,
+    "noiseou3": NoiseOU3,
+    "whitenoise": WhiteNoise,
     "highfreq": Comb,
 }
