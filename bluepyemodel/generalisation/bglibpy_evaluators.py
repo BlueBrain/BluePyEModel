@@ -161,7 +161,7 @@ def set_cell_deterministic(cell, deterministic):
                         is_deterministic = False
                     setattr(
                         section,
-                        "deterministic_%s" % mech_name,
+                        f"deterministic_{mech_name}",
                         1 if deterministic else 0,
                     )
     return is_deterministic

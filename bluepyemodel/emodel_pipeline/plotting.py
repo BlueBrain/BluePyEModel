@@ -13,7 +13,7 @@ from bluepyemodel.emodel_pipeline.utils import read_checkpoint
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
 
-# pylint: disable=W0612,W0102
+# pylint: disable=W0612,W0102,C0209
 
 matplotlib.rcParams["pdf.fonttype"] = 42
 
@@ -172,11 +172,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
 
     fig.suptitle(title)
 
-    figure_name = "{}_{}_{}_traces.pdf".format(
-        model["emodel"],
-        model["githash"],
-        model["seed"],
-    )
+    figure_name = f"{model['emodel']}_{model['githash']}_{model['seed']}_traces.pdf"
 
     plt.tight_layout()
     save_fig(figures_dir, figure_name)
@@ -228,7 +224,7 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
 
     axs[0, 0].set_title(models[0]["emodel"])
 
-    figure_name = "{}_parameters_distribution.pdf".format(models[0]["emodel"])
+    figure_name = f"{models[0]['emodel']}_parameters_distribution.pdf"
     plt.tight_layout()
     save_fig(figures_dir, figure_name)
 

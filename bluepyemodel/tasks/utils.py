@@ -99,7 +99,7 @@ def json_load(obj, name):
 
         except (FileNotFoundError, json.decoder.JSONDecodeError) as e:
             raise Exception(
-                "Expected a path to a json file or a json string in {} in luigi.cfg.".format(name)
+                f"Expected a path to a json file or a json string in {name} in luigi.cfg."
             ) from e
     return var
 

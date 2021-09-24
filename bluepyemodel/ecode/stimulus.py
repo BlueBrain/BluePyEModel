@@ -76,4 +76,4 @@ class BPEM_stimulus(Stimulus):
 
     def __str__(self):
         """String representation"""
-        return "%s current played at %s" % (self.name, self.location)
+        return f"{self.name} current played at {self.location}"

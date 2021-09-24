@@ -311,8 +311,8 @@ def get_arguments():
     for arg in required_args:
         if getattr(args, arg) is None:
             raise Exception(
-                "When using %s as a data access point. The argument "
-                "%s has to be informed." % (args.data_access_point, arg)
+                f"When using {args.data_access_point} as a data access point. The argument "
+                "{arg} has to be informed."
             )
 
     return args

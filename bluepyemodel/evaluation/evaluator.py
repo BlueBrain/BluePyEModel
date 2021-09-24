@@ -130,7 +130,7 @@ class eFELFeatureBPEM(eFELFeature):
             if location_name == "":
                 postfix = ""
             else:
-                postfix = ";%s" % location_name
+                postfix = f";{location_name}"
 
             if recording_name not in responses:
                 logger.debug(
@@ -140,18 +140,18 @@ class eFELFeatureBPEM(eFELFeature):
 
             if responses[self.recording_names[""]] is None or responses[recording_name] is None:
                 return None
-            trace["T%s" % postfix] = responses[self.recording_names[""]]["time"]
-            trace["V%s" % postfix] = responses[recording_name]["voltage"]
+            trace[f"T{postfix}"] = responses[self.recording_names[""]]["time"]
+            trace[f"V{postfix}"] = responses[recording_name]["voltage"]
 
             if callable(self.stim_start):
-                trace["stim_start%s" % postfix] = [self.stim_start()]
+                trace[f"stim_start{postfix}"] = [self.stim_start()]
             else:
-                trace["stim_start%s" % postfix] = [self.stim_start]
+                trace[f"stim_start{postfix}"] = [self.stim_start]
 
             if callable(self.stim_end):
-                trace["stim_end%s" % postfix] = [self.stim_end()]
+                trace[f"stim_end{postfix}"] = [self.stim_end()]
             else:
-                trace["stim_end%s" % postfix] = [self.stim_end]
+                trace[f"stim_end{postfix}"] = [self.stim_end]
 
         return trace
 
@@ -281,12 +281,7 @@ def define_feature(
     efel_feature_name = feature_definition["feature"]
     meanstd = feature_definition["val"]
 
-    feature_name = "%s.%s.%s" % (
-        protocol_name,
-        recording_name,
-        efel_feature_name,
-    )
-
+    feature_name = f"{protocol_name}.{recording_name}.{efel_feature_name}"
     std = meanstd[1]
     if threshold_efeature_std and std < abs(threshold_efeature_std * meanstd[0]):
         std = abs(threshold_efeature_std * meanstd[0])
@@ -300,7 +295,7 @@ def define_feature(
         std = threshold_efeature_std
 
     if protocol_name:
-        recording_names = {"": "%s.%s" % (protocol_name, recording_name)}
+        recording_names = {"": f"{protocol_name}.{recording_name}"}
     else:
         recording_names = {"": recording_name}
 
@@ -339,7 +334,7 @@ def define_protocol(name, protocol_definition, stochasticity=True, threshold_bas
         Protocol
     """
     # By default include somatic recording
-    somav_recording = CompRecording(name="%s.soma.v" % name, location=soma_loc, variable="v")
+    somav_recording = CompRecording(name=f"{name}.soma.v", location=soma_loc, variable="v")
     recordings = [somav_recording]
 
     if "extra_recordings" in protocol_definition:
@@ -370,11 +365,11 @@ def define_protocol(name, protocol_definition, stochasticity=True, threshold_bas
                 )
 
             else:
-                raise Exception("Recording type %s not supported" % recording_definition["type"])
+                raise Exception(f"Recording type {recording_definition['type']}")
 
             var = recording_definition["var"]
             recording = CompRecording(
-                name="%s.%s.%s" % (name, location.name, var),
+                name=f"{name}.{location.name}.{var}",
                 location=location,
                 variable=recording_definition["var"],
             )
@@ -395,9 +390,9 @@ def define_protocol(name, protocol_definition, stochasticity=True, threshold_bas
 
     else:
         raise KeyError(
-            "There is no eCode linked to the stimulus name {}. "
+            f"There is no eCode linked to the stimulus name {name.lower()}. "
             "See ecode/__init__.py for the available stimuli "
-            "names".format(name.lower())
+            "names"
         )
 
     return BPEM_Protocol(
