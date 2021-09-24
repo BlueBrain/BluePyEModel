@@ -37,8 +37,8 @@ class NoiseMixin(BPEM_stimulus):
         """Return current time series"""
 
         if dt != 0.1:
-            raise Exception("For eCode {}, dt has to be 0.1ms.".format(self.name))
+            raise Exception(f"For eCode {self.name}, dt has to be 0.1ms.")
 
-        current = self.holding_current + self.current_series * (self.mu / 2.) + self.mu
+        current = self.holding_current + self.current_series * (self.mu / 2.0) + self.mu
 
         return self.time_series, current

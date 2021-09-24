@@ -7,9 +7,9 @@ from .firepattern import FirePattern
 from .hyperdepol import HyperDepol
 from .idrest import IDrest
 from .iv import IV
+from .negcheops import NegCheops
 from .noiseou3 import NoiseOU3
 from .poscheops import PosCheops
-from .negcheops import NegCheops
 from .ramp import Ramp
 from .sahp import sAHP
 from .sinespec import SineSpec

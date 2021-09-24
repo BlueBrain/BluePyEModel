@@ -27,9 +27,7 @@ class SpikeRec(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception(
-                "In stimulus %s, amp and thresh_perc cannot be both None." % self.name
-            )
+            raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         self.delay = kwargs.get("delay", 10.0)
         self.n_spikes = kwargs.get("n_spikes", 2)
@@ -47,11 +45,7 @@ class SpikeRec(BPEM_stimulus):
 
     @property
     def stim_end(self):
-        return (
-            self.delay
-            + self.n_spikes * self.spike_duration
-            + (self.n_spikes - 1) * self.delta
-        )
+        return self.delay + self.n_spikes * self.spike_duration + (self.n_spikes - 1) * self.delta
 
     @property
     def amplitude(self):

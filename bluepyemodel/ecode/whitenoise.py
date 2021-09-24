@@ -28,7 +28,7 @@ class WhiteNoise(NoiseMixin):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception("In stimulus %s, amp and thresh_perc cannot be both None." % self.name)
+            raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         self.mu = kwargs.get("mu", None)
         data_filepath = kwargs.get("data_filepath", None)
@@ -39,8 +39,8 @@ class WhiteNoise(NoiseMixin):
             series_file = pkg_resources.resource_filename(__name__, "data/WhiteNoise.txt")
             series = numpy.loadtxt(series_file)
 
-        self.current_series = series[:,1]
-        self.time_series = series[:,0]
+        self.current_series = series[:, 1]
+        self.time_series = series[:, 0]
 
         super().__init__(
             location=location,
