@@ -247,7 +247,7 @@ def get_sinespec_stimulus():
     return stimulus, delay, duration, prot_def["amp"], prot_def["holding_current"]
 
 def get_spikerecmultispikes_stimulus():
-    """Return SpikeRec stimulus and stim properties."""
+    """Return SpikeRecMultiSpikes stimulus and stim properties."""
     # default values
     delay = 10.0
     n_spikes = 2
@@ -868,7 +868,7 @@ def test_sinespec_instantiate():
 
 
 def check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duration, delta, total_duration, holding_current, amp):
-    """Assert SpikeRec stimulus behaves as expected."""
+    """Assert SpikeRecMultiSpikes stimulus behaves as expected."""
     # before stimulus
     current_before = current[numpy.where((0 <= time) & (time < delay))]
     assert numpy.all(current_before == holding_current)
@@ -896,18 +896,18 @@ def check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duratio
 
 
 def test_spikerecmultispikes():
-    """Test SpikeRec generate."""
+    """Test SpikeRecMultiSpikes generate."""
     stimulus, delay, n_spikes, spike_duration, delta, total_duration, amp, holding_curr = get_spikerecmultispikes_stimulus()
     time, current = stimulus.generate()
 
-    assert stimulus.name == "SpikeRec"
+    assert stimulus.name == "SpikeRecMultiSpikes"
     assert stimulus.total_duration == total_duration
 
     check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duration, delta, total_duration, holding_curr, amp)
 
 
 def test_spikerecmultispikes_instantiate():
-    """Test SpikeRec instantiate."""
+    """Test SpikeRecMultiSpikes instantiate."""
     stimulus, delay, n_spikes, spike_duration, delta, total_duration, amp, holding_curr = get_spikerecmultispikes_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
 

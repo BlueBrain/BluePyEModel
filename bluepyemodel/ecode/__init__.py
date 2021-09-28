@@ -13,7 +13,7 @@ from .poscheops import PosCheops
 from .ramp import Ramp
 from .sahp import sAHP
 from .sinespec import SineSpec
-from .spikerec import SpikeRec
+from .spikerec import SpikeRecMultiSpikes
 from .subwhitenoise import SubWhiteNoise
 from .whitenoise import WhiteNoise
 
@@ -29,7 +29,7 @@ eCodes = {
     "rinholdcurrent": IDrest,
     "bap": IDrest,
     "spikerec": IDrest,
-    "spikerecmultispikes": SpikeRec,
+    "spikerecmultispikes": SpikeRecMultiSpikes,
     "iv": IV,
     "apwaveform": APWaveform,
     "firepattern": FirePattern,

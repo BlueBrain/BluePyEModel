@@ -8,17 +8,19 @@ from bluepyemodel.ecode.stimulus import BPEM_stimulus
 logger = logging.getLogger(__name__)
 
 
-class SpikeRec(BPEM_stimulus):
+class SpikeRecMultiSpikes(BPEM_stimulus):
 
-    """SpikeRec current stimulus"""
+    """SpikeRecMultiSpikes current stimulus"""
 
-    name = "SpikeRec"
+    name = "SpikeRecMultiSpikes"
 
     def __init__(self, location, **kwargs):
         """Constructor
 
         Attention! This is the class for the new SpikeRec containing multispikes.
-        The old spikerec containing one spike is using the IDRest class.
+        In order to use it, you should use 'SpikeRecMultiSpikes' as key in your protocol file.
+        If you use 'SpikeRec', it will use the old SpikeRec containing one spike,
+        which is using the IDRest class.
         Beware that the **kwargs for the two types (multispikes/1spike) of SpikeRec are different.
 
         Args:
@@ -62,11 +64,7 @@ class SpikeRec(BPEM_stimulus):
 
     @property
     def stim_end(self):
-        return (
-            self.delay
-            + self.n_spikes * self.spike_duration
-            + (self.n_spikes - 1) * self.delta
-        )
+        return self.delay + self.n_spikes * self.spike_duration + (self.n_spikes - 1) * self.delta
 
     @property
     def amplitude(self):
