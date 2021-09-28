@@ -17,8 +17,19 @@ class SubWhiteNoise(BPEM_stimulus):
 
     def __init__(self, location, **kwargs):
         """Constructor
+
         Args:
             location(Location): location of stimulus
+            **kwargs: See below
+
+        Keyword Arguments:
+            amp (float): amplitude (nA) that multiplies the noise from the data file
+                when the relative amplitude is not used
+            thresh_perc (float): amplitude relative to the threshold current (%)
+                that multiplies the noise from the data file
+            holding_current (float): amplitude of the holding current (nA)
+            data_filepath (str): path to the noise .txt data file
+                If not given, will use the default one at bluepyemodel/ecodes/data/SubWhiteNoise.txt
         """
 
         self.amp = kwargs.get("amp", None)

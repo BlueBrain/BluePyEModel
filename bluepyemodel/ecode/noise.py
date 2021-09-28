@@ -14,6 +14,7 @@ class NoiseMixin(BPEM_stimulus):
 
     def __init__(self, location):
         """Constructor
+
         Args:
             location(Location): location of stimulus
         """
