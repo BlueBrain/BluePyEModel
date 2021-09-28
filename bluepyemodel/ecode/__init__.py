@@ -17,6 +17,7 @@ from .subwhitenoise import SubWhiteNoise
 # define duplicates.
 eCodes = {
     "idrest": IDrest,
+    "idthres": IDrest,
     "step": IDrest,
     "spontaps": IDrest,
     "sponnohold30": IDrest,
