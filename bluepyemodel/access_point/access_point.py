@@ -61,16 +61,11 @@ class DataAccessPoint:
     def get_emodels(self, emodels):
         """Get the list of emodels dictionaries."""
 
-    def get_parameters(self):
-        """Get the definition of the parameters to optimize as well as the
-         locations of the mechanisms. Also returns the name to the mechanisms.
+    def store_model_configuration(self):
+        """Store the configuration of a model, including parameters, mechanisms and distributions"""
 
-        Returns:
-            params_definition (dict):
-            mech_definition (dict):
-            mech_names (list):
-
-        """
+    def get_model_configuration(self):
+        """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
     def get_protocols(self, include_validation=False):
         """Get the protocols from the database and put in a format that fits

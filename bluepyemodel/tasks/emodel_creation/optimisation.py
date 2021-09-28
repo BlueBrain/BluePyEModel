@@ -67,7 +67,7 @@ class CompileMechanisms(WorkflowTask):
 
     def run(self):
         """ """
-        self.access_point.download_mechanisms()
+        self.access_point.get_model_configuration()
 
         compile_mechs("./mechanisms")
 

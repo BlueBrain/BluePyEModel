@@ -136,7 +136,7 @@ def get_emodel_data(emodel_db, combo, morphology_path, morph_modifiers):
     """Gather needed emodel data and build cell model for evaluation."""
     emodel_db.emodel = "_".join(combo["emodel"].split("_")[:2])
     emodel_db.morph_path = combo[morphology_path]
-    parameters, mechanisms, _ = emodel_db.get_parameters()
+    model_configuration = emodel_db.get_model_configuration()
 
     protocols = emodel_db.get_protocols()
     features = emodel_db.get_features()
@@ -148,8 +148,7 @@ def get_emodel_data(emodel_db, combo, morphology_path, morph_modifiers):
     cell = create_cell_model(
         "cell",
         morphologies,
-        mechanisms,
-        parameters,
+        model_configuration=model_configuration,
         morph_modifiers=_get_synth_modifiers(combo, morph_modifiers=morph_modifiers),
     )
     return cell, protocols, features, emodel_params

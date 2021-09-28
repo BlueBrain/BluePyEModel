@@ -122,9 +122,9 @@ def get_evaluator_from_db(
 
     access_point.set_emodel(emodel)
 
-    parameters, mechanisms, _ = access_point.get_parameters()
-    if not parameters or not mechanisms:
-        raise Exception(f"No parameters for emodel {emodel}")
+    configuration = access_point.get_model_configuration()
+    if not configuration:
+        raise Exception(f"No configuration for emodel {emodel}")
 
     morphologies = access_point.get_morphologies()
     if not morphologies:
@@ -143,8 +143,7 @@ def get_evaluator_from_db(
     cell_model = model.create_cell_model(
         name=emodel,
         morphology=morphologies,
-        mechanisms=mechanisms,
-        parameters=parameters,
+        model_configuration=configuration,
         morph_modifiers=access_point.pipeline_settings.morph_modifiers,
         nseg_frequency=nseg_frequency,
     )

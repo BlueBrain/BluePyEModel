@@ -63,5 +63,5 @@ def copy_and_compile_mechanisms(access_point):
     if access_point.__class__.__name__ == "NexusAccessPoint":
         # Mechanisms are automatically download by the Nexus API
         # when calling this function
-        _ = access_point.get_parameters()
+        _ = access_point.get_model_configuration()
         compile_mechs("./mechanisms")
