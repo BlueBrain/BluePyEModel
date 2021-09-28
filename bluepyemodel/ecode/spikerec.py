@@ -16,8 +16,25 @@ class SpikeRec(BPEM_stimulus):
 
     def __init__(self, location, **kwargs):
         """Constructor
+
+        Attention! This is the class for the new SpikeRec containing multispikes.
+        The old spikerec containing one spike is using the IDRest class.
+        Beware that the **kwargs for the two types (multispikes/1spike) of SpikeRec are different.
+
         Args:
             location(Location): location of stimulus
+            **kwargs: See below
+
+        Keyword Arguments:
+            amp (float): amplitude of each spike(nA)
+            thresh_perc (float): amplitude of each spike relative
+                to the threshold current (%)
+            holding_current (float): amplitude of the holding current (nA)
+            delay (float): time at which the first current spike begins (ms)
+            n_spikes (int): number of spikes for the stimulus
+            spike_duration (float): duration of each spike (ms)
+            delta (float): time without stimulus between each spike (ms)
+            totduration (float): total duration of the whole stimulus (ms)
         """
 
         self.amp = kwargs.get("amp", None)
@@ -45,7 +62,11 @@ class SpikeRec(BPEM_stimulus):
 
     @property
     def stim_end(self):
-        return self.delay + self.n_spikes * self.spike_duration + (self.n_spikes - 1) * self.delta
+        return (
+            self.delay
+            + self.n_spikes * self.spike_duration
+            + (self.n_spikes - 1) * self.delta
+        )
 
     @property
     def amplitude(self):
