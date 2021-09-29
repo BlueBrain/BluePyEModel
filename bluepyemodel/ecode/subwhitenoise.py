@@ -17,8 +17,19 @@ class SubWhiteNoise(BPEM_stimulus):
 
     def __init__(self, location, **kwargs):
         """Constructor
+
         Args:
             location(Location): location of stimulus
+            **kwargs: See below
+
+        Keyword Arguments:
+            amp (float): amplitude (nA) that multiplies the noise from the data file
+                when the relative amplitude is not used
+            thresh_perc (float): amplitude relative to the threshold current (%)
+                that multiplies the noise from the data file
+            holding_current (float): amplitude of the holding current (nA)
+            data_filepath (str): path to the noise .txt data file
+                If not given, will use the default one at bluepyemodel/ecodes/data/SubWhiteNoise.txt
         """
 
         self.amp = kwargs.get("amp", None)
@@ -30,11 +41,16 @@ class SubWhiteNoise(BPEM_stimulus):
         if self.amp is None and self.amp_rel is None:
             raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
-        series_file = pkg_resources.resource_filename(__name__, "data/subwhitenoise.npy")
-        series = numpy.load(series_file)
+        data_filepath = kwargs.get("data_filepath", None)
 
-        self.current_series = series[1]
-        self.time_series = series[0]
+        if data_filepath is not None:
+            series = numpy.loadtxt(data_filepath)
+        else:
+            series_file = pkg_resources.resource_filename(__name__, "data/SubWhiteNoise.txt")
+            series = numpy.loadtxt(series_file)
+
+        self.current_series = series[:, 1]
+        self.time_series = series[:, 0]
 
         super().__init__(
             location=location,
