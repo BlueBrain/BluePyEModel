@@ -50,4 +50,5 @@ eCodes = {
     "noiseou3": NoiseOU3,
     "whitenoise": WhiteNoise,
     "highfreq": Comb,
+    "apicalstim": IDrest
 }

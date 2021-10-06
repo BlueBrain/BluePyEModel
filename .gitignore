@@ -145,3 +145,6 @@ ENV/
 
 # pytest
 .pytest_cache
+
+#vscode
+.vscode/
