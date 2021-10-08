@@ -2,8 +2,6 @@
 
 import json
 import logging
-import os
-import pathlib
 from collections import defaultdict
 from pathlib import Path
 
@@ -12,7 +10,7 @@ from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
-from bluepyemodel.model_configurator.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
 logger = logging.getLogger(__name__)
@@ -366,16 +364,12 @@ class LocalAccessPoint(DataAccessPoint):
     def store_model_configuration(self, configuration, path=None):
         """Store a model configuration as a json"""
 
-        json_content = json.dumps(configuration.as_dict(), indent=2)
-
         if path is None:
             path = Path(self.get_recipes()["params"])
-        if path is None:
-            path = pathlib.Path("./config") / "parameters" / configuration.configuration_name
 
-        os.makedirs(os.path.dirname(str(path)), exist_ok=True)
+        path.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
-            f.write(json_content)
+            json.dump(configuration.as_dict(), f, indent=2)
 
     def get_model_configuration(self):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""

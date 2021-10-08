@@ -1,6 +1,6 @@
 import pytest
 
-from bluepyemodel.model_configurator.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
 
 @pytest.fixture
 def configuration():
@@ -38,7 +38,7 @@ def configuration_with_distribution(configuration):
 
     configuration.add_parameter(
         parameter_name="dist_param1",
-        locations='not_constant',
+        locations='distribution_not_constant',
         value=[3., 10.],
         mechanism=None,
         distribution_name=None,
@@ -53,15 +53,6 @@ def test_add_parameter_mechanism(configuration):
     assert len(configuration.mechanisms) == 1
     assert configuration.mechanisms[0].location == 'all'
     assert configuration.mechanisms[0].stochastic is False
-
-
-def test_raise_add_mechanism(configuration):
-    with pytest.raises(Exception):
-        configuration.add_mechanism(
-            mechanism_name='test_mechanism',
-            locations='all',
-            stochastic=True
-        )
 
 
 def test_raise_distribution(configuration):
@@ -84,11 +75,11 @@ def test_distribution(configuration_with_distribution):
     assert len(configuration_with_distribution.used_distribution_names) == 1
 
 
-def test_dicts(configuration_with_distribution):
+def test_legacy_dicts(configuration_with_distribution):
 
     expected_param_dict = {
         'all': [{'name': 'test_parameter', 'val': 5}],
-        'not_constant': [{'name': 'dist_param1', 'val': [3., 10.]}],
+        'distribution_not_constant': [{'name': 'dist_param1', 'val': [3., 10.]}],
         'soma': [{'name': 'test_parameter2', 'val': [1., 2.], 'dist': 'not_constant'}]
     }
 

@@ -10,10 +10,11 @@ from kgforge.specializations.resources import Dataset
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
-from bluepyemodel.model_configurator.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.emodel_pipeline.utils import yesno
+from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
-# pylint: disable=simplifiable-if-expression,too-many-arguments,undefined-variable
+# pylint: disable=simplifiable-if-expression,too-many-arguments,undefined-variable,unused-argument
 
 logger = logging.getLogger("__main__")
 
@@ -34,22 +35,6 @@ BPEM_NEXUS_SCHEMA = [
 
 class NexusAccessPointException(Exception):
     """For Exceptions related to the NexusAccessPoint"""
-
-
-def yesno(question):
-    """Ask a Yes/No question"""
-
-    prompt = f"{question} ? (y/n): "
-    ans = input(prompt).strip().lower()
-
-    if ans not in ["y", "n"]:
-        print(f"{ans} is invalid, please try again...")
-        return yesno(question)
-
-    if ans == "y":
-        return True
-
-    return False
 
 
 def format_dict_for_resource(d):
@@ -1526,28 +1511,34 @@ class NexusAccessPoint(DataAccessPoint):
 
         return names
 
-    def store_model_configuration(self, configuration):
+    def store_model_configuration(self, configuration, path=None):
         """Store a model configuration as a resource of type EModelConfiguration"""
 
         resource = {"type": ["EModelConfiguration"]}
 
         resource.update(configuration.as_dict())
 
-        self.access_point.register(resource)
+        self.access_point.register(
+            resource,
+            filters_existance={"type": "EModelConfiguration", "name": resource["name"]},
+            replace=True,
+        )
 
-    def get_model_configuration(self):
+    def get_model_configuration(self, configuration_name=None):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
-        resource = self.access_point.fetch_one(
-            filters={
-                "type": "EModelConfiguration",
-                "name": self.pipeline_settings.model_configuration_name,
-            }
-        )
+        if configuration_name is None:
+            configuration_name = self.pipeline_settings.model_configuration_name
 
-        model_configuration = NeuronModelConfiguration(
-            configuration_name=self.pipeline_settings.model_configuration_name
-        )
+        filters = {
+            "type": "EModelConfiguration",
+            "name": configuration_name,
+        }
+
+        _ = self.access_point.fetch(filters)
+        resource = self.access_point.fetch(filters)[0]
+
+        model_configuration = NeuronModelConfiguration(configuration_name=configuration_name)
 
         model_configuration.init_from_dict(self.access_point.forge.as_json(resource))
 

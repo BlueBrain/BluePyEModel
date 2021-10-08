@@ -3,9 +3,9 @@ import logging
 from collections import OrderedDict
 
 from bluepyemodel.evaluation.model import multi_locations
-from bluepyemodel.model_configurator.distribution_configuration import DistributionConfiguration
-from bluepyemodel.model_configurator.mechanism_configuration import MechanismConfiguration
-from bluepyemodel.model_configurator.parameter_configuration import ParameterConfiguration
+from bluepyemodel.model_configuration.distribution_configuration import DistributionConfiguration
+from bluepyemodel.model_configuration.mechanism_configuration import MechanismConfiguration
+from bluepyemodel.model_configuration.parameter_configuration import ParameterConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -185,7 +185,7 @@ class NeuronModelConfiguration:
                 distribution=distribution_name,
                 mechanism=mechanism,
             )
-            print(tmp_param.as_dict())
+
             if any(p == tmp_param for p in self.parameters):
                 raise Exception(f"Parameter {parameter_name} is already at location {loc} or 'all'")
 
@@ -223,7 +223,7 @@ class NeuronModelConfiguration:
             # Handle the case where the new mech is a value of the multilocation map
             else:
                 for m in self.mechanisms:
-                    if m.name == tmp_mechanism.name and m.location != loc:
+                    if m.name == tmp_mechanism.name:
                         if m.location in multiloc_map.keys() and loc in multiloc_map[m.location]:
                             break
                 else:
@@ -240,7 +240,7 @@ class NeuronModelConfiguration:
             self.parameters = [
                 p
                 for p in self.parameters
-                if p.name != parameter_name and p.location not in locations
+                if p.name != parameter_name or p.location not in locations
             ]
         else:
             self.parameters = [p for p in self.parameters if p.name != parameter_name]
@@ -254,12 +254,12 @@ class NeuronModelConfiguration:
             self.mechanisms = [
                 m
                 for m in self.mechanisms
-                if m.name != mechanism_name and m.location not in locations
+                if m.name != mechanism_name or m.location not in locations
             ]
             self.parameters = [
                 p
                 for p in self.parameters
-                if p.mechanism != mechanism_name and p.location not in locations
+                if p.mechanism != mechanism_name or p.location not in locations
             ]
         else:
             self.mechanisms = [m for m in self.mechanisms if m.name != mechanism_name]

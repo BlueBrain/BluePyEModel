@@ -10,7 +10,7 @@ import pathlib
 from bluepyemodel.access_point import get_db
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
-from bluepyemodel.model_configurator.model_configuration import configure_model
+from bluepyemodel.model_configuration.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.validation.validation import validate
