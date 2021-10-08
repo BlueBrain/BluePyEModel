@@ -322,6 +322,8 @@ def define_protocol(_cell, simulator, name, protocol_definition, stochasticity=T
     """Create the protocol.
 
     Args:
+        _cell (CellModel): cell model
+        simulator: NrnSimulator
         name (str): name of the protocol
         protocol_definition (dict): see docstring of function
             define_main_protocol
@@ -329,9 +331,6 @@ def define_protocol(_cell, simulator, name, protocol_definition, stochasticity=T
             deterministic
         threshold_based (bool): is the protocol being instantiated a threshold-based or a
             fix protocol.
-
-        cell_model
-
     Returns:
         Protocol
     """
@@ -339,37 +338,45 @@ def define_protocol(_cell, simulator, name, protocol_definition, stochasticity=T
     somav_recording = CompRecording(name=f"{name}.soma.v", location=soma_loc, variable="v")
     recordings = [somav_recording]
 
-    cell = deepcopy(_cell)
-    cell.params = None
-    cell.mechanisms = None
-    cell.instantiate(sim=simulator)
+    # ApicalStim_sec_name = seclist_to_sec.get(ApicalStim_sec_index, ApicalStim_sec_index)
 
-    if 'ApicalStim' in name:
-        # for recording_definition in protocol_definition["location"]:
-        # for key, val in protocol_definition.items():
-        #     print(key, val.items()) 
-        ApicalStim_sec_index = _get_apical_point(cell)
-        # ApicalStim_sec_name = seclist_to_sec.get(ApicalStim_sec_index, ApicalStim_sec_index)
+    if "seclist_name" in protocol_definition["stimuli"]:
+        if protocol_definition["stimuli"]["seclist_name"]=="apical":
+            cell = deepcopy(_cell)
+            cell.params = None
+            cell.mechanisms = None
+            cell.instantiate(sim=simulator)
+    
+            sec_index = _get_apical_point(cell)
+            stim_loc = NrnSecSomaDistanceCompLocation(
+                        name=f'{name}_{protocol_definition["stimuli"]["seclist_name"]}',
+                        soma_distance=protocol_definition["stimuli"]["somadistance"],
+                        sec_index=sec_index,
+                        sec_name=protocol_definition["stimuli"]["somadistance"],
+                        )
 
-        ApicalStim_loc = NrnSecSomaDistanceCompLocation(
-                    name=name,
-                    soma_distance=protocol_definition["stimuli"]["somadistance"],
-                    sec_index=ApicalStim_sec_index,
-                    sec_name=protocol_definition["stimuli"]["somadistance"],
-                )
+        elif protocol_definition["stimuli"]["seclist_name"]=="axonal":
+            stim_loc = NrnSomaDistanceCompLocation(
+                        name=f'{name}_{protocol_definition["stimuli"]["seclist_name"]}',
+                        soma_distance=protocol_definition["stimuli"]["somadistance"],
+                        seclist_name=protocol_definition["stimuli"]["seclist_name"],
+                        )
 
-        # ApicalStim_loc = NrnSomaDistanceCompLocation(
-        #                 name=str(name),
-        #                 soma_distance=protocol_definition["stimuli"]["somadistance"],
-        #                 seclist_name=protocol_definition["stimuli"]["seclist_name"],
-        #                 )
+        elif protocol_definition["stimuli"]["seclist_name"]=="basal":
+            stim_loc = NrnSomaDistanceCompLocation(
+                        name=f'{name}_{protocol_definition["stimuli"]["seclist_name"]}',
+                        soma_distance=protocol_definition["stimuli"]["somadistance"],
+                        seclist_name=protocol_definition["stimuli"]["seclist_name"],
+                        )    
+
         recording = CompRecording(
-                name=f"{name}.{protocol_definition['stimuli']['somadistance']}um.v",
-                location=ApicalStim_loc,
-                variable="v",
-            )
-
-        recordings.append(recording)
+                    name=f'{name}.{protocol_definition["stimuli"]["seclist_name"]}.{protocol_definition["stimuli"]["somadistance"]}um.v',
+                    location=stim_loc,
+                    variable="v",
+                    )
+    else:
+        stim_loc = soma_loc
+    recordings.append(recording)
 
     if "extra_recordings" in protocol_definition:
 
@@ -418,10 +425,7 @@ def define_protocol(_cell, simulator, name, protocol_definition, stochasticity=T
             else:
                 stim_def = {}
 
-            if 'ApicalStim' in name:
-                stimulus = ecode(location=ApicalStim_loc, **stim_def)
-            else:
-                stimulus = ecode(location=soma_loc, **stim_def)
+            stimulus = ecode(location=stim_loc, **stim_def)
 
             break
 
@@ -610,8 +614,8 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     the current threshold while the "other_protocols" do not.
 
     Args:
-        cell_model:cell_model
-        simulator:simulator
+        cell_model (CellModel): cell model
+        simulator: NrnSimulator
         protocols_definition (dict): in the following format. The "type" field
             of a protocol can be StepProtocol, StepThresholdProtocol, RMP,
             RinHoldCurrent. If protocols with type StepThresholdProtocol are
@@ -871,7 +875,7 @@ def create_evaluator(
         threshold_efeature_std=threshold_efeature_std,
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
-        threshold_based_evaluator=threshold_based_evaluator
+        threshold_based_evaluator=threshold_based_evaluator,
     )
 
     fitness_calculator = define_fitness_calculator(features)
