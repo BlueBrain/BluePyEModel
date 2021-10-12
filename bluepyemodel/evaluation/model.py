@@ -13,7 +13,7 @@ from .modifiers import replace_axon_with_taper
 logger = logging.getLogger(__name__)
 
 
-def multi_locations(section_name, definition):
+def multi_locations(section_name, additional_multiloc_map):
     """Define a list of locations from a section names.
 
     Args:
@@ -23,14 +23,16 @@ def multi_locations(section_name, definition):
         list: list of NrnSeclistLocation
 
     """
+
     multiloc_map = {
         "alldend": ["apical", "basal"],
         "somadend": ["apical", "basal", "somatic"],
         "somaxon": ["axonal", "somatic"],
         "allact": ["apical", "basal", "somatic", "axonal"],
     }
-    if "multiloc_map" in definition and definition["multiloc_map"] is not None:
-        multiloc_map.update(definition["multiloc_map"])
+
+    if additional_multiloc_map is not None:
+        multiloc_map.update(additional_multiloc_map)
 
     return [
         ephys.locations.NrnSeclistLocation(sec, seclist_name=sec)
@@ -38,157 +40,134 @@ def multi_locations(section_name, definition):
     ]
 
 
-def define_parameters(definitions):
-    """Define a list of NrnParameter from a definition dictionary
+def define_distributions(distributions_definition):
+    """Create a list of ParameterScaler from a the definition of channel distributions
 
     Args:
-        definitions (dict): definitions of the parameters and distributions
-        used by the model. Of the form:
-            definitions = {
-                'distributions':
-                    {'distrib_name': {
-                        'function': function,
-                        'parameters': ['param_name']}
-                     },
-                'parameters':
-                    {'sectionlist_name': [
-                            {'name': param_name1, 'val': [lbound1, ubound1]},
-                            {'name': param_name2, 'val': 3.234}
-                        ]
-                     }
-            }
-
-    Returns:
-        list: list of NrnParameter
+        distributions_definition (list): definitions of the distributions
     """
-    # set distributions
+
     distributions = collections.OrderedDict()
     distributions["uniform"] = ephys.parameterscalers.NrnSegmentLinearScaler()
 
-    distributions_definitions = definitions["distributions"]
-    for distribution, definition in distributions_definitions.items():
-        distributions[distribution] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
-            name=distribution,
-            distribution=definition["fun"],
-            dist_param_names=definition.get("parameters", None),
-            soma_ref_location=definition.get("soma_ref_location", 0.5),
+    for definition in distributions_definition:
+        distributions[definition.name] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
+            name=definition.name,
+            distribution=definition.function,
+            dist_param_names=definition.parameters,
+            soma_ref_location=definition.soma_ref_location,
         )
 
-    params_definitions = definitions["parameters"]
-    params_definitions.pop("__comment", None)
+    return distributions
+
+
+def define_parameters(parameters_definition, distributions, mapping_multilocation):
+    """Define a list of NrnParameter from a definition dictionary
+
+    Args:
+        parameters_definition (list): definitions of the parameters
+        distributions (list): list of distributions in the form of ParameterScaler
+        mapping_multilocation (dict): mapping from multi-locations names to list of locations
+    """
 
     parameters = []
-    for sectionlist, params in params_definitions.items():
-        dist = None
-        seclist_locs = None
-        if "distribution_" in sectionlist:
-            dist = distributions[sectionlist.split("distribution_")[1]]
+
+    for param_def in parameters_definition:
+
+        if isinstance(param_def.value, (list, tuple)):
+            is_frozen = False
+            value = None
+            bounds = param_def.value
         else:
-            seclist_locs = multi_locations(sectionlist, definitions)
+            is_frozen = True
+            value = param_def.value
+            bounds = None
 
-        for param_config in params:
-            param_name = param_config["name"]
+        if param_def.location == "global":
+            parameters.append(
+                ephys.parameters.NrnGlobalParameter(
+                    name=param_def.name,
+                    param_name=param_def.name,
+                    frozen=is_frozen,
+                    bounds=bounds,
+                    value=value,
+                )
+            )
+            continue
 
-            if isinstance(param_config["val"], (list, tuple)):
-                is_frozen = False
-                value = None
-                bounds = param_config["val"]
-            else:
-                is_frozen = True
-                value = param_config["val"]
-                bounds = None
+        dist = None
+        seclist_locations = None
+        if "distribution_" in param_def.location:
+            dist = distributions[param_def.location.split("distribution_")[1]]
+        else:
+            seclist_locations = multi_locations(param_def.location, mapping_multilocation)
 
-            if sectionlist == "global":
-                parameters.append(
-                    ephys.parameters.NrnGlobalParameter(
-                        name=param_name,
-                        param_name=param_name,
-                        frozen=is_frozen,
-                        bounds=bounds,
-                        value=value,
-                    )
+        if dist:
+            parameters.append(
+                ephys.parameters.MetaParameter(
+                    name=f"{param_def.name}.{param_def.location}",
+                    obj=dist,
+                    attr_name=param_def.name,
+                    frozen=is_frozen,
+                    bounds=bounds,
+                    value=value,
                 )
-            elif dist:
-                parameters.append(
-                    ephys.parameters.MetaParameter(
-                        name=f"{param_name}.{sectionlist}",
-                        obj=dist,
-                        attr_name=param_name,
-                        frozen=is_frozen,
-                        bounds=bounds,
-                        value=value,
-                    )
+            )
+        elif param_def.distribution != "uniform":
+            parameters.append(
+                ephys.parameters.NrnRangeParameter(
+                    name=f"{param_def.name}.{param_def.location}",
+                    param_name=param_def.name,
+                    value_scaler=distributions[param_def.distribution],
+                    value=value,
+                    bounds=bounds,
+                    frozen=is_frozen,
+                    locations=seclist_locations,
                 )
-
-            elif "dist" in param_config:
-                parameters.append(
-                    ephys.parameters.NrnRangeParameter(
-                        name=f"{param_name}.{sectionlist}",
-                        param_name=param_name,
-                        value_scaler=distributions[param_config["dist"]],
-                        value=value,
-                        bounds=bounds,
-                        frozen=is_frozen,
-                        locations=seclist_locs,
-                    )
+            )
+        else:
+            parameters.append(
+                ephys.parameters.NrnSectionParameter(
+                    name=f"{param_def.name}.{param_def.location}",
+                    param_name=param_def.name,
+                    value_scaler=distributions["uniform"],
+                    value=value,
+                    bounds=bounds,
+                    frozen=is_frozen,
+                    locations=seclist_locations,
                 )
-            else:
-                parameters.append(
-                    ephys.parameters.NrnSectionParameter(
-                        name=f"{param_name}.{sectionlist}",
-                        param_name=param_name,
-                        value_scaler=distributions["uniform"],
-                        value=value,
-                        bounds=bounds,
-                        frozen=is_frozen,
-                        locations=seclist_locs,
-                    )
-                )
+            )
 
     return parameters
 
 
-def define_mechanisms(mechanisms_definition):
+def define_mechanisms(mechanisms_definition, mapping_multilocation):
     """Define a list of NrnMODMechanism from a definition dictionary
 
     Args:
-        mechanisms_definition (dict): definition of the mechanisms.
-            Dictionary of the form:
-                mechanisms_definition = {
-                    section_name1: {
-                        "mech":[
-                            mech_name1,
-                            mech_name2
-                        ]
-                    },
-                    section_name2: {
-                        "mech": [
-                            mech_name3,
-                            mech_name4
-                        ]
-                    }
-                }
+        mechanisms_definition (list of MechanismConfiguration): definition of the mechanisms
+        mapping_multilocation (dict): mapping from multi-locations names to list of locations
 
     Returns:
         list: list of NrnMODMechanism
     """
-    multiloc_map = {"multiloc_map": mechanisms_definition.get("multiloc_map", None)}
-    mechanisms_definition.pop("multiloc_map", None)
 
     mechanisms = []
-    for sectionlist, channels in mechanisms_definition.items():
-        seclist_locs = multi_locations(sectionlist, multiloc_map)
-        for channel, stoch in zip(channels["mech"], channels["stoch"]):
-            mechanisms.append(
-                ephys.mechanisms.NrnMODMechanism(
-                    name="{channel}.{sectionlist}",
-                    mod_path=None,
-                    prefix=channel,
-                    locations=seclist_locs,
-                    preloaded=True,
-                    deterministic=not stoch,
-                )
+
+    for mech_def in mechanisms_definition:
+
+        seclist_locations = multi_locations(mech_def.location, mapping_multilocation)
+
+        mechanisms.append(
+            ephys.mechanisms.NrnMODMechanism(
+                name=f"{mech_def.name}.{mech_def.location}",
+                mod_path=None,
+                prefix=mech_def.name,
+                locations=seclist_locations,
+                preloaded=True,
+                deterministic=not mech_def.stochastic,
             )
+        )
 
     return mechanisms
 
@@ -247,8 +226,7 @@ def define_morphology(
 def create_cell_model(
     name,
     morphology,
-    mechanisms,
-    parameters,
+    model_configuration,
     morph_modifiers=None,
     morph_modifiers_hoc=None,
     seclist_names=None,
@@ -260,10 +238,8 @@ def create_cell_model(
     Args:
         name (str): name of the model
         morphology (dict): morphology from emodel api .get_morphologies()
-        mechanisms (dict): see docstring of function define_mechanisms for the
-            format
-        parameters (dict):  see docstring of function define_parameters for the
-            format
+        model_configuration (NeuronModelConfiguration): Configuration of the neuron model,
+            containing the parameters their locations and the associated mechanisms.
         morph_modifiers (list): list of functions to modify morphologies
         morph_modifiers_hoc (list): list of hoc functions to modify morphologies
 
@@ -284,11 +260,19 @@ def create_cell_model(
     if secarray_names is None:
         secarray_names = morphology.get("secarray_names", None)
 
+    mechanisms = define_mechanisms(
+        model_configuration.mechanisms, model_configuration.mapping_multilocation
+    )
+    distributions = define_distributions(model_configuration.distributions)
+    parameters = define_parameters(
+        model_configuration.parameters, distributions, model_configuration.mapping_multilocation
+    )
+
     return ephys.models.CellModel(
-        name=name,
+        name=name.replace(":", "_"),
         morph=morph,
-        mechs=define_mechanisms(mechanisms),
-        params=define_parameters(parameters),
+        mechs=mechanisms,
+        params=parameters,
         seclist_names=seclist_names,
         secarray_names=secarray_names,
     )

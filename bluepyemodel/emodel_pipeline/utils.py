@@ -35,3 +35,19 @@ def read_checkpoint(checkpoint_path):
             )
 
     return run
+
+
+def yesno(question):
+    """Ask a Yes/No question"""
+
+    prompt = f"{question} ? (y/n): "
+    ans = input(prompt).strip().lower()
+
+    if ans not in ["y", "n"]:
+        print(f"{ans} is invalid, please try again...")
+        return yesno(question)
+
+    if ans == "y":
+        return True
+
+    return False

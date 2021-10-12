@@ -82,12 +82,11 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
         morph_modifier_hoc = get_synth_axon_hoc(ais_models["mtype"]["all"]["AIS"]["popt"])
 
     emodel_db.emodel = "_".join(emodel.split("_")[:2])
-    parameters, mechanisms, _ = emodel_db.get_parameters()
+    model_configuration = emodel_db.get_model_configuration()
     cell_model = create_cell_model(
         emodel,
         emodel_db.get_morphologies(),
-        mechanisms,
-        parameters,
+        model_configuration=model_configuration,
         morph_modifiers=[lambda: None],
         morph_modifiers_hoc=[morph_modifier_hoc],
     )

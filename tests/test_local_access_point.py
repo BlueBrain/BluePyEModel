@@ -1,5 +1,6 @@
 import pytest
 from pathlib import Path
+from collections import OrderedDict
 import json
 
 from bluepyemodel.access_point import get_db
@@ -52,14 +53,28 @@ def test_get_recipes(db):
 
 
 def test_get_parameters(db):
-    parameters, mechanisms, mech_names = db.get_parameters()
+
+    configuration = db.get_model_configuration()
+    parameters, mechanisms, mech_names = configuration.as_legacy_dicts()
 
     expected_parameters = json.load(open(DATA / "test_parameters.json", "r"))
-    assert list(diff(parameters, expected_parameters)) == []
+    for loc in expected_parameters['parameters']:
+        for i, p in enumerate(expected_parameters['parameters'][loc]):
+            expected_parameters['parameters'][loc][i].pop('test', None)
+            expected_parameters['parameters'][loc][i].pop('__comment', None)
+    for distr in expected_parameters['distributions']:
+        expected_parameters['distributions'][distr].pop('__comment', None)
+    ordered_param_dict = OrderedDict()
+    for loc in sorted(list(expected_parameters["parameters"].keys())):
+        ordered_param_dict[loc] = sorted(
+            expected_parameters["parameters"][loc], key=lambda k: k["name"].lower()
+        )
+    expected_parameters["parameters"] = ordered_param_dict
 
     expected_mechanisms = json.load(open(DATA / "test_mechanisms.json", "r"))
-    assert list(diff(mechanisms, expected_mechanisms)) == []
 
+    assert list(diff(mechanisms, expected_mechanisms)) == []
+    assert list(diff(parameters, expected_parameters)) == []
     assert sorted(mech_names) == [
         "CaDynamics_DC0",
         "Ca_HVA2",
