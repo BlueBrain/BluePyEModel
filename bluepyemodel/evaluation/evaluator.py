@@ -340,8 +340,8 @@ def define_protocol(_cell, simulator, name, protocol_definition, stochasticity=T
 
     # ApicalStim_sec_name = seclist_to_sec.get(ApicalStim_sec_index, ApicalStim_sec_index)
 
-    if "seclist_name" in protocol_definition["stimuli"]:
-        if protocol_definition["stimuli"]["seclist_name"]=="apical":
+    if "stimulus_location" in protocol_definition["stimuli"]:
+        if protocol_definition["stimuli"]["stimulus_location"]=="apical":
             cell = deepcopy(_cell)
             cell.params = None
             cell.mechanisms = None
@@ -349,34 +349,37 @@ def define_protocol(_cell, simulator, name, protocol_definition, stochasticity=T
     
             sec_index = _get_apical_point(cell)
             stim_loc = NrnSecSomaDistanceCompLocation(
-                        name=f'{name}_{protocol_definition["stimuli"]["seclist_name"]}',
+                        name=f'{name}_{protocol_definition["stimuli"]["stimulus_location"]}',
                         soma_distance=protocol_definition["stimuli"]["somadistance"],
                         sec_index=sec_index,
                         sec_name=protocol_definition["stimuli"]["somadistance"],
                         )
 
-        elif protocol_definition["stimuli"]["seclist_name"]=="axonal":
+        elif protocol_definition["stimuli"]["stimulus_location"]=="axonal":
             stim_loc = NrnSomaDistanceCompLocation(
-                        name=f'{name}_{protocol_definition["stimuli"]["seclist_name"]}',
+                        name=f'{name}_{protocol_definition["stimuli"]["stimulus_location"]}',
                         soma_distance=protocol_definition["stimuli"]["somadistance"],
-                        seclist_name=protocol_definition["stimuli"]["seclist_name"],
+                        seclist_name=protocol_definition["stimuli"]["stimulus_location"],
                         )
 
-        elif protocol_definition["stimuli"]["seclist_name"]=="basal":
+        elif protocol_definition["stimuli"]["stimulus_location"]=="basal":
             stim_loc = NrnSomaDistanceCompLocation(
-                        name=f'{name}_{protocol_definition["stimuli"]["seclist_name"]}',
+                        name=f'{name}_{protocol_definition["stimuli"]["stimulus_location"]}',
                         soma_distance=protocol_definition["stimuli"]["somadistance"],
-                        seclist_name=protocol_definition["stimuli"]["seclist_name"],
-                        )    
+                        seclist_name=protocol_definition["stimuli"]["stimulus_location"],
+                        ) 
+
+        elif protocol_definition["stimuli"]["stimulus_location"]=="somatic":
+            stim_loc = soma_loc
 
         recording = CompRecording(
-                    name=f'{name}.{protocol_definition["stimuli"]["seclist_name"]}.{protocol_definition["stimuli"]["somadistance"]}um.v',
+                    name=f'{name}.{protocol_definition["stimuli"]["stimulus_location"]}.{protocol_definition["stimuli"]["somadistance"]}um.v',
                     location=stim_loc,
                     variable="v",
                     )
+        recordings.append(recording)
     else:
         stim_loc = soma_loc
-    recordings.append(recording)
 
     if "extra_recordings" in protocol_definition:
 
