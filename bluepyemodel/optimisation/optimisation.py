@@ -159,10 +159,19 @@ def store_best_model(
 
     best_model = run["halloffame"][0]
     feature_names = [obj.name for obj in cell_evaluator.fitness_calculator.objectives]
-    param_names = list(cell_evaluator.param_names)
+
+    if "param_names" in run:
+        if run["param_names"] != list(cell_evaluator.param_names):
+            raise Exception(
+                "The parameter names present in the checkpoint file are different from the"
+                f"ones of the evaluator: {run['param_names']} versus "
+                f"{list(cell_evaluator.param_names)}"
+            )
+        params = dict(zip(run["param_names"], best_model))
+    else:
+        params = dict(zip(list(cell_evaluator.param_names), best_model))
 
     scores = dict(zip(feature_names, best_model.fitness.values))
-    params = dict(zip(param_names, best_model))
 
     access_point.store_emodel(
         scores=scores,

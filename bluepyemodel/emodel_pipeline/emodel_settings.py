@@ -1,6 +1,6 @@
 """EModelPipelineSettings class"""
 
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments,too-many-locals
 
 
 class EModelPipelineSettings:
@@ -33,6 +33,8 @@ class EModelPipelineSettings:
         name_rmp_protocol=None,
         validation_protocols=None,
         additional_protocols=None,
+        name_gene_map=None,
+        model_configuration_name=None,
     ):
         """Init
 
@@ -67,6 +69,8 @@ class EModelPipelineSettings:
                 of the function. E.g: ["path_to_module", "name_of_function"]
             optimisation_batch_size (int): number of optimisation seeds to run in parallel.
             max_n_batch (int): maximum number of optimisation batches.
+            name_gene_map (str): name of the gene mapping csv file. Only required when using the
+                Nexus access_point.
             n_model (int): minimum number of models to pass validation
                 to consider the EModel building task done.
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
@@ -88,6 +92,8 @@ class EModelPipelineSettings:
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
             additional_protocols (dict): definition of supplementary protocols.
+            model_configuration_name (str): name of the model configuration used to instantiate
+                the model. Required for the Nexus access point only.
         """
 
         # Settings related to E-features extraction
@@ -102,6 +108,7 @@ class EModelPipelineSettings:
         self.name_rmp_protocol = name_rmp_protocol  # only when using local access point
 
         # Settings related to the optimisation
+        self.model_configuration_name = model_configuration_name
         self.threshold_based_evaluator = threshold_based_evaluator
         self.stochasticity = stochasticity
         self.morph_modifiers = morph_modifiers
@@ -127,3 +134,4 @@ class EModelPipelineSettings:
         self.n_model = n_model
         self.optimisation_batch_size = optimisation_batch_size
         self.max_n_batch = max_n_batch
+        self.name_gene_map = name_gene_map

@@ -1,9 +1,7 @@
 """Access point using Nexus Forge"""
-
 import logging
 import os
 import pathlib
-from collections import OrderedDict
 
 import numpy
 import pandas
@@ -12,9 +10,11 @@ from kgforge.specializations.resources import Dataset
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.emodel_pipeline.utils import yesno
+from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
-# pylint: disable=simplifiable-if-expression,too-many-arguments,undefined-variable
+# pylint: disable=simplifiable-if-expression,too-many-arguments,undefined-variable,unused-argument
 
 logger = logging.getLogger("__main__")
 
@@ -25,34 +25,16 @@ BPEM_NEXUS_SCHEMA = [
     "ElectrophysiologyFeatureExtractionTarget",
     "ElectrophysiologyFeatureOptimisationTarget",
     "ElectrophysiologyFeatureValidationTarget",
-    "ElectrophysiologyFeatureOptimisationParameter",
-    "ElectrophysiologyFeatureOptimisationChannelDistribution",
-    "SubCellularModel",
     "ElectrophysiologyFeature",
     "ElectrophysiologyFeatureExtractionProtocol",
     "EModel",
     "EModelPipelineSettings",
+    "EModelConfiguration",
 ]
 
 
 class NexusAccessPointException(Exception):
     """For Exceptions related to the NexusAccessPoint"""
-
-
-def yesno(question):
-    """Ask a Yes/No question"""
-
-    prompt = f"{question} ? (y/n): "
-    ans = input(prompt).strip().lower()
-
-    if ans not in ["y", "n"]:
-        print(f"{ans} is invalid, please try again...")
-        return yesno(question)
-
-    if ans == "y":
-        return True
-
-    return False
 
 
 def format_dict_for_resource(d):
@@ -247,6 +229,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "validation_function",
                 "plot_optimisation",
                 "n_model",
+                "name_gene_map",
                 "optimisation_batch_size",
                 "max_n_batch",
                 "path_extract_config",
@@ -256,6 +239,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "additional_protocols",
                 "compile_mechanisms",
                 "threshold_based_evaluator",
+                "model_configuration_name",
             ]:
                 if setting in resource_dict:
                     settings[setting] = resource_dict[setting]
@@ -303,76 +287,46 @@ class NexusAccessPoint(DataAccessPoint):
 
         return df, filepath
 
+    def load_ic_map(self):
+        """Get the ion channel/genes map from Nexus"""
+
+        resource_ic_map = self.access_point.fetch_one(
+            {"type": "IonChannelMapping", "name": "icmapping"}, use_version=False
+        )
+
+        return self.access_point.download(resource_ic_map.id)
+
     def get_t_types(self, table_name):
         """Get the list of t-types available for the present emodel"""
 
         df, _ = self.load_channel_gene_expression(table_name)
         return df.loc[self.emodel].index.get_level_values("t-type").unique().tolist()
 
-    def get_channel_gene_expression(self, table_name):
-        """Get the channel gene expression and gene distribution for a given emodel and t-type"""
-
-        df, _ = self.load_channel_gene_expression(table_name)
-
-        # TODO: improve for soma, axon, dendrites (data[1], data[2], data[3]),
-        # right now it uses only the somatic distribution
-        data = df.loc[self.emodel, self.ttype].to_dict(orient="records")
-        presence = data[0]
-        distrib = data[1]
-
-        gene_expression = {}
-        for gene in presence:
-            if int(presence[gene]):
-                gene_expression[gene] = distrib[gene]
-
-        return gene_expression
-
-    def fetch_mechanism(self, mechanism_name, mechanism_version=None):
-        """Retrieve a channel based on its name and return the most recent version"""
-        filters = {"type": "SubCellularModel", "name": mechanism_name}
-
-        if mechanism_version:
-            filters["version"] = mechanism_version
-
-        # TODO: change once instantaneous registering is operational
-        # self.access_point.fetch_one(filters, use_version=True)
-
-        return self.access_point.fetch(filters, use_version=True)[0]
-
-    def download_mechanisms(self):
+    def download_mechanisms(self, mechanisms):
         """Download the mod files if not already downloaded"""
 
-        resources_params = self.access_point.fetch(
-            filters={
-                "type": "ElectrophysiologyFeatureOptimisationParameter",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
-        )
+        for mechanism in mechanisms:
 
-        if resources_params is None:
-            return
+            resources = self.access_point.fetch(
+                {"type": "SubCellularModelScript", "name": mechanism}, use_version=False
+            )
 
-        for resource in resources_params:
-            if (
-                hasattr(resource, "subCellularMechanism")
-                and resource.subCellularMechanism is not None
-                and resource.subCellularMechanism != "pas"
-            ):
+            # Genetic channel can have several versions, we want the most recent one:
+            if len(resources) > 1 and all(hasattr(r, "version") for r in resources):
+                resource = sorted(resources, key=lambda x: x.version)[-1]
+            else:
+                resource = resources[0]
 
-                resource_mech = self.fetch_mechanism(resource.subCellularMechanism)
-                mode_file_name = f"{resource_mech.name}.mod"
+            mode_file_name = f"{mechanism}.mod"
+            if os.path.isfile(f"./mechanisms/{mode_file_name}"):
+                continue
 
-                if os.path.isfile(f"./mechanisms/{mode_file_name}"):
-                    continue
+            filepath = self.access_point.download(resource.id, "./mechanisms/")
 
-                filepath = self.access_point.download(resource_mech.modelScript.id, "./mechanisms/")
-
-                # Rename the file in case it's different from the name of the resource
-                filepath = pathlib.Path(filepath)
-                if filepath.stem != resource_mech.name:
-                    filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
+            # Rename the file in case it's different from the name of the resource
+            filepath = pathlib.Path(filepath)
+            if filepath.stem != mechanism:
+                filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
 
     def store_morphology(
         self,
@@ -697,150 +651,6 @@ class NexusAccessPoint(DataAccessPoint):
                 efel_settings=efel_settings,
             )
 
-    def store_optimisation_parameter(
-        self,
-        name,
-        value,
-        location,
-        mechanism_name=None,
-        distribution="constant",
-        auto_handle_mechanism=False,
-    ):
-        """Creates an ElectrophysiologyFeatureOptimisationParameter resource specifying a
-        parameter of the model.
-
-        Args:
-            name (str): name of the parameter.
-            value (list or float): value of the parameter. If value is a float, the parameter will
-                be fixed. If value is a list of two elements, the first will be used as a lower
-                bound and the second as an upper bound during the optimization.
-            location (str): locations at which the parameter is present. The element of location
-                have to be section list names.
-            mechanism_name (str): name of the mechanism associated to the parameter.
-            distribution (str): distribution of the parameters along the sections.
-            auto_handle_mechanism (bool): if True, looks for the matching SubCellularModel or create
-                it if it does not exist.
-        """
-
-        if isinstance(value, (list, tuple)):
-            min_value, max_value = value
-        else:
-            min_value, max_value = value, value
-
-        if auto_handle_mechanism and mechanism_name and mechanism_name != "pas":
-            self.store_mechanism(name=mechanism_name)
-
-        resource_description = {
-            "name": name,
-            "type": ["Entity", "Parameter", "ElectrophysiologyFeatureOptimisationParameter"],
-            "eModel": self.emodel,
-            "subject": self.get_subject(for_search=False),
-            "brainLocation": self.brain_region,
-            "parameter": {
-                "name": name,
-                "minValue": min_value,
-                "maxValue": max_value,
-                "unitCode": "",
-            },
-            "location": location,
-            "channelDistribution": distribution,
-        }
-
-        if mechanism_name:
-            resource_description["subCellularMechanism"] = mechanism_name
-
-        search_filters = resource_description.copy()
-        search_filters["subject"] = self.get_subject(for_search=True)
-        search_filters["type"] = "ElectrophysiologyFeatureOptimisationParameter"
-
-        self.access_point.register(resource_description, search_filters)
-
-    def store_channel_distribution(
-        self,
-        name,
-        function,
-        parameters,
-        soma_reference_location=0.5,
-    ):
-        """Creates an ElectrophysiologyFeatureOptimisationChannelDistribution defining a channel
-        distribution.
-
-        Args:
-            name (str): name of the distribution.
-            function (str): (only knows the python math library).
-            parameters (list): names of the parameters used by the distribution function.
-            soma_reference_location (float): The location (comp_x) along the soma used as a
-                starting point when computing distances.
-        """
-
-        if soma_reference_location < 0.0 or soma_reference_location > 1.0:
-            raise NexusAccessPointException("soma_reference_location should be between 0. and 1.")
-
-        self.access_point.register(
-            {
-                "type": ["Entity", "ElectrophysiologyFeatureOptimisationChannelDistribution"],
-                "channelDistribution": name,
-                "name": name,
-                "function": function,
-                "parameter": parameters,
-                "somaReferenceLocation": soma_reference_location,
-            },
-            {
-                "type": "ElectrophysiologyFeatureOptimisationChannelDistribution",
-                "channelDistribution": name,
-            },
-        )
-
-    def store_mechanism(self, name=None, id_=None, stochastic=None):
-        """Creates an SubCellularModel based on a SubCellularModelScript.
-
-        Args:
-            name (str): name of the mechanism.
-            id_ (str): Nexus id of the mechanism.
-            stochastic (bool): is the mechanism stochastic.
-        """
-
-        if id_:
-            resource = self.access_point.retrieve(id_)
-        elif name:
-            resources = self.access_point.fetch(
-                {"type": "SubCellularModelScript", "name": name}, use_version=False
-            )
-            # Genetic channel can have several versions, we want the most recent one:
-            if len(resources) > 1 and all(hasattr(r, "version") for r in resources):
-                resource = sorted(resources, key=lambda x: x.version)[-1]
-            else:
-                resource = resources[0]
-        #             resource = self.access_point.fetch_one(
-        #                 {"type": "SubCellularModelScript", "name": name}, use_version=False
-        #             )
-        else:
-            raise NexusAccessPointException("At least name or id_ should be informed.")
-
-        if not resource:
-            raise NexusAccessPointException(f"No matching resource for mechanism {id_} {name}")
-
-        if not name:
-            name = resource.name
-
-        if stochastic is None:
-            stochastic = True if "Stoch" in name else False
-
-        self.access_point.register(
-            {
-                "type": ["Entity", "SubCellularModel"],
-                "name": name,
-                "subCellularMechanism": name,
-                "modelScript": {"id": resource.id, "type": "SubCellularModelScript"},
-                "stochastic": stochastic,
-            },
-            {
-                "type": "SubCellularModel",
-                "name": name,
-                "subCellularMechanism": name,
-            },
-        )
-
     def store_pipeline_settings(
         self,
         extraction_threshold_value_save=1,
@@ -857,12 +667,14 @@ class NexusAccessPoint(DataAccessPoint):
         optimization_batch_size=5,
         max_n_batch=3,
         n_model=3,
+        name_gene_map=None,
         plot_extraction=True,
         plot_optimisation=True,
         additional_protocols=None,
         compile_mechanisms=False,
         name_Rin_protocol=None,
         name_rmp_protocol=None,
+        model_configuration_name=None,
     ):
         """Creates an EModelPipelineSettings resource.
 
@@ -923,6 +735,7 @@ class NexusAccessPoint(DataAccessPoint):
             "optimisation_batch_size": optimization_batch_size,
             "max_n_batch": max_n_batch,
             "n_model": n_model,
+            "name_gene_map": name_gene_map,
             "plot_extraction": plot_extraction,
             "plot_optimisation": plot_optimisation,
             "threshold_efeature_std": threshold_efeature_std,
@@ -931,6 +744,7 @@ class NexusAccessPoint(DataAccessPoint):
             "compile_mechanisms": compile_mechanisms,
             "name_Rin_protocol": name_Rin_protocol,
             "name_rmp_protocol": name_rmp_protocol,
+            "model_configuration_name": model_configuration_name,
         }
 
         resource_search = {
@@ -1377,196 +1191,6 @@ class NexusAccessPoint(DataAccessPoint):
 
         return models
 
-    def get_distributions(self, distributions):
-        """Fetch channel distribution from Nexus by names."""
-
-        distributions_definitions = {}
-
-        for dist in distributions:
-
-            resource = self.access_point.fetch_one(
-                filters={
-                    "type": "ElectrophysiologyFeatureOptimisationChannelDistribution",
-                    "channelDistribution": dist,
-                }
-            )
-
-            distributions_definitions[dist] = {
-                "fun": resource.function,
-                "soma_ref_point": resource.somaReferenceLocation,
-            }
-
-            if hasattr(resource, "parameter"):
-                if isinstance(resource.parameter, list):
-                    distributions_definitions[dist]["parameters"] = resource.parameter
-                else:
-                    distributions_definitions[dist]["parameters"] = [resource.parameter]
-
-        return distributions_definitions
-
-    def _get_user_defined_parameters(self):
-        """Get the definition of the parameters to optimize as well as the locations of the
-        mechanisms from Nexus"""
-
-        resources_params = self.access_point.fetch(
-            filters={
-                "type": "ElectrophysiologyFeatureOptimisationParameter",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
-        )
-
-        if resources_params is None:
-            raise NexusAccessPointException(
-                f"Could not get model parameters for emodel {self.emodel}"
-            )
-
-        params_definition = {"parameters": {}}
-        mech_definition = {}
-        mechanisms_names = []
-        distributions = []
-
-        for resource in resources_params:
-
-            param_def = {"name": resource.parameter.name}
-
-            if resource.parameter.minValue == resource.parameter.maxValue:
-                param_def["val"] = resource.parameter.minValue
-            else:
-                param_def["val"] = [resource.parameter.minValue, resource.parameter.maxValue]
-
-            if resource.channelDistribution != "constant":
-                param_def["dist"] = resource.channelDistribution
-                distributions.append(resource.channelDistribution)
-
-            if resource.location in params_definition["parameters"]:
-                params_definition["parameters"][resource.location].append(param_def)
-            else:
-                params_definition["parameters"][resource.location] = [param_def]
-
-            if (
-                hasattr(resource, "subCellularMechanism")
-                and resource.subCellularMechanism is not None
-            ):
-
-                mechanisms_names.append(resource.subCellularMechanism)
-
-                if resource.subCellularMechanism != "pas":
-                    resource_mech = self.fetch_mechanism(resource.subCellularMechanism)
-                    is_stochastic = resource_mech.stochastic
-                else:
-                    is_stochastic = False
-
-                if resource.location in mech_definition:
-                    if (
-                        resource.subCellularMechanism
-                        not in mech_definition[resource.location]["mech"]
-                    ):
-                        mech_definition[resource.location]["mech"].append(
-                            resource.subCellularMechanism
-                        )
-                        mech_definition[resource.location]["stoch"].append(is_stochastic)
-                else:
-                    mech_definition[resource.location] = {
-                        "mech": [resource.subCellularMechanism],
-                        "stoch": [is_stochastic],
-                    }
-
-        params_definition["distributions"] = self.get_distributions(set(distributions))
-
-        # Remove the parameters of the distributions that are not used
-        tmp_params = {}
-        for loc, params in params_definition["parameters"].items():
-            if "distribution_" in loc:
-                if loc.split("distribution_")[1] not in distributions:
-                    continue
-            tmp_params[loc] = params
-        params_definition["parameters"] = tmp_params
-
-        return params_definition, mech_definition, set(mechanisms_names)
-
-    def _get_IC_parameters(self):
-        """Place holder for when the IC selector will be available"""
-
-        # genes = self.get_channel_gene_expression(
-        #     table_name="Mouse_met_types_ion_channel_expression"
-        # )
-
-        # resource = self.access_point.fetch_one({"type": "IonChannelMapping", "name": "icmapping"})
-
-        # 2. Get the IC params and bounds
-        # import ICselector
-        # python icselection.py
-        # --ic_map <ic_mapping_file.json>
-        # --keys <gene_name_1> <gene_name_2>
-        # IC_parameters = ICSelector.get_params_and_mecha(genes)
-        # 3a. Register the mechanisms that do not exist yet
-        # 3b. Register the distribution that do not exist yet
-
-        return {}, {}, []
-
-    def get_parameters(self):
-        """Get the definition of the parameters and mechanisms from Nexus and gene expression
-        data and concatenate both. In case a mechanisms is specified both in the gene expression
-        data and Nexus, the value or bound for the Nexus one are taken into account.
-
-        Returns:
-            params_definition (dict): of the format:
-                definitions = {
-                        'distributions':
-                            {'distrib_name': {
-                                'function': function,
-                                'parameters': ['param_name']}
-                             },
-                        'parameters':
-                            {'sectionlist_name': [
-                                    {'name': param_name1, 'val': [lbound1, ubound1]},
-                                    {'name': param_name2, 'val': 3.234}
-                                ]
-                             }
-                    }
-            mech_definition (dict): of the format:
-                mechanisms_definition = {
-                    section_name1: {
-                        "mech":[
-                            mech_name1,
-                            mech_name2
-                        ]
-                    },
-                    section_name2: {
-                        "mech": [
-                            mech_name3,
-                            mech_name4
-                        ]
-                    }
-                }
-            mech_names (list): list of mechanisms names
-
-        """
-
-        # TODO: once IC selector is available:
-        # Get the parameter resources
-        # selector_params, selector_mechs = self._get_IC_parameters()
-        # user_params, user_mechs = self._get_user_defined_parameters()
-        params_definition, mech_definition, mechanisms_names = self._get_user_defined_parameters()
-        # 5. Concatenate both
-
-        # It is necessary to sort the parameters as it impacts the order of
-        # the parameters in the checkpoint.pkl
-        # TODO: Find a better solution. Right now, if a new parameter is added,
-        # it will break the order as it sorted alphabetically
-        ordered_params_definition = OrderedDict()
-
-        for loc in sorted(params_definition["parameters"].keys()):
-            ordered_params_definition[loc] = sorted(
-                params_definition["parameters"][loc], key=lambda k: k["name"].lower()
-            )
-
-        params_definition["parameters"] = ordered_params_definition
-
-        return params_definition, mech_definition, set(mechanisms_names)
-
     def get_opt_targets(self, include_validation):
         """Get the optimisation and validation targets from Nexus."""
 
@@ -1620,8 +1244,8 @@ class NexusAccessPoint(DataAccessPoint):
             }
         )
 
-        # This makes up for the fact that the sitmulus target (amplitude) cannot
-        # be used directly for the fetch as filters does not alllow to check
+        # This makes up for the fact that the stimulus target (amplitude) cannot
+        # be used directly for the fetch as filters does not allow to check
         # equality of lists.
         if resources_protocol:
             resources = []
@@ -1634,23 +1258,26 @@ class NexusAccessPoint(DataAccessPoint):
                 if tmp_amp == int(resource_target.stimulus.target):
                     resources.append(r)
 
-        if resources is None:
+        resources_protocol = resources
+
+        if resources_protocol is None:
             raise NexusAccessPointException(
                 f"Could not get protocol {resource_target.stimulus.stimulusType.label} "
                 f"{resource_target.stimulus.target}% for emodel {self.emodel}"
             )
 
-        if len(resources) > 1:
+        if len(resources_protocol) > 1:
             raise NexusAccessPointException(
                 f"More than one protocol {resource_target.stimulus.stimulusType.label} "
                 f"{resource_target.stimulus.target}% for emodel {self.emodel}"
             )
 
         protocol_name = (
-            f"{resources[0].stimulus.stimulusType.label}_{resources[0].stimulus.stimulusTarget[0]}"
+            f"{resources_protocol[0].stimulus.stimulusType.label}_"
+            f"{resources_protocol[0].stimulus.stimulusTarget[0]}"
         )
 
-        return resources[0], protocol_name
+        return resources_protocol[0], protocol_name
 
     def get_protocols(self, include_validation=False):
         """Get the protocol definitions used to instantiate the CellEvaluator.
@@ -1883,6 +1510,41 @@ class NexusAccessPoint(DataAccessPoint):
             names.append(protocol_name)
 
         return names
+
+    def store_model_configuration(self, configuration, path=None):
+        """Store a model configuration as a resource of type EModelConfiguration"""
+
+        resource = {"type": ["EModelConfiguration"]}
+
+        resource.update(configuration.as_dict())
+
+        self.access_point.register(
+            resource,
+            filters_existance={"type": "EModelConfiguration", "name": resource["name"]},
+            replace=True,
+        )
+
+    def get_model_configuration(self, configuration_name=None):
+        """Get the configuration of the model, including parameters, mechanisms and distributions"""
+
+        if configuration_name is None:
+            configuration_name = self.pipeline_settings.model_configuration_name
+
+        filters = {
+            "type": "EModelConfiguration",
+            "name": configuration_name,
+        }
+
+        _ = self.access_point.fetch(filters)
+        resource = self.access_point.fetch(filters)[0]
+
+        model_configuration = NeuronModelConfiguration(configuration_name=configuration_name)
+
+        model_configuration.init_from_dict(self.access_point.forge.as_json(resource))
+
+        self.download_mechanisms(model_configuration.mechanism_names)
+
+        return model_configuration
 
     def has_protocols_and_features(self):
         """Check if the efeatures and protocol exist."""

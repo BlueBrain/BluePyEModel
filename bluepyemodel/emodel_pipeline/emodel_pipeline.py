@@ -10,6 +10,7 @@ import pathlib
 from bluepyemodel.access_point import get_db
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
+from bluepyemodel.model_configuration.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.validation.validation import validate
@@ -67,6 +68,7 @@ class EModel_pipeline:
         """
 
         self.emodel = emodel
+        self.ttype = ttype
         self.species = species
         self.brain_region = brain_region
         self.githash = githash
@@ -85,8 +87,6 @@ class EModel_pipeline:
             ttype,
             nexus_iteration_tag,
         )
-
-        self.access_point.download_mechanisms()
 
     def init_access_point(
         self,
@@ -125,6 +125,13 @@ class EModel_pipeline:
             forge_path=forge_path,
             ttype=ttype,
             iteration_tag=nexus_iteration_tag,
+        )
+
+    def configure_model(self, use_gene_data=False):
+        """"""
+
+        return configure_model(
+            self.access_point, self.emodel, self.ttype, use_gene_data=use_gene_data
         )
 
     def extract_efeatures(self):
@@ -264,7 +271,7 @@ def get_parser():
         "--step",
         type=str,
         required=True,
-        choices=["extract", "optimize", "store", "plot", "validate"],
+        choices=["configure_model", "extract", "optimize", "store", "plot", "validate"],
         help="Stage of the E-Model building pipeline to execute",
     )
     parser.add_argument("--seed", type=int, default=1, help="Seed to use for optimization")
@@ -389,6 +396,8 @@ def main():
         use_ipyparallel=args.use_ipyparallel,
     )
 
+    if args.step == "configure_model":
+        pipeline.configure_model(use_gene_data=True)
     if args.step == "extract":
         pipeline.extract_efeatures()
     elif args.step == "optimize":

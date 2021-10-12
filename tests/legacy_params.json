@@ -1,0 +1,153 @@
+{
+    "mechanisms": {
+        "all":
+            {"mech":["pas"]},
+        "somadend":
+            {"mech":["HCN1", "HCN2", "HCN4"]},
+        "somatic":
+            {"mech":["bk", "NaTg2", "Nav1_1", "Nav1_2", "Nav1_3", "Nav1_4", "Nav1_5", "Nav1_6", "Nav1_7", "SK_E2", "CaDynamics_DC0", "Ca_HVA2", "Ca_LVAst", "Kv1_1", "Kv1_2", "Kv1_3", "Kv1_4", "Kv1_5", "Kv1_6", "Kv1_7", "Kv2_1", "Kv2_2", "Kv3_1", "Kv3_2", "Kv3_3", "Kv3_4", "Kv4_1", "Kv4_2", "Kv4_3", "Kv7_1", "Kv7_2", "Kv7_3", "Kv10_1", "Kv10_2", "Kv11_1", "Kv11_2", "Kv11_3", "Kv12_1", "Kv12_3"]},
+        "axonal":
+            {"mech":["bk", "NaTg2", "Nap_Et2", "HCN1", "HCN2", "HCN4", "Nav1_1", "Nav1_2", "Nav1_3", "Nav1_4", "Nav1_5", "Nav1_6", "Nav1_7", "SK_E2", "CaDynamics_DC0", "Ca_HVA2", "Ca_LVAst", "Kv1_1", "Kv1_2", "Kv1_3", "Kv1_4", "Kv1_5", "Kv1_6", "Kv1_7", "Kv2_1", "Kv2_2", "Kv3_1", "Kv3_2", "Kv3_3", "Kv3_4", "Kv4_1", "Kv4_2", "Kv4_3", "Kv7_1", "Kv7_2", "Kv7_3", "Kv10_1", "Kv10_2", "Kv11_1", "Kv11_2", "Kv11_3", "Kv12_1", "Kv12_3"]}
+    },
+    "distributions": {
+        "exp":
+            {"fun": "(-0.8696 + 2.087*math.exp(({distance})*0.0031))*{value}", "__comment": "distribution based on Kole et al. 2006"},
+        "decay":
+            {"fun": "math.exp({distance}*{constant})*{value}", "parameters": ["constant"]},
+        "rising":
+            {"fun": "(1-math.exp({distance}*{constant_rise}))*{value}", "parameters": ["constant_rise"]},
+        "bimodal":
+            {"fun": "({distance}<=10)*(1-math.exp({distance}*{constant_bimod1}))*{value} + ({distance}>10)*(math.exp({distance}*{constant_bimod2})*{value})", "parameters": ["constant_bimod1","constant_bimod2"]},
+        "guassian_nav12":
+            {"fun": "(0.258 + 0.43*math.exp(-0.5*(({distance}-11.605)/6.964)*(({distance}-11.605)/6.964)))*{value}","soma_ref_point":1.0, "__comment": "Guassian based on decrease of Nav1.2 in AIS, Hu et al., 2009"},
+        "sigrise_nav16":
+            {"fun": "0.686*(1 / (1 + math.exp((9.222-{distance})/ 4.82)))*{value}","soma_ref_point":1.0, "__comment": "sigmoidal rise based on decrease of Nav1.2 in AIS, Hu et al., 2009"}
+    },
+    "parameters": {
+        "__comment": "define constants as single values and params to optimize as tuples of bounds: [lower, upper]",
+        "global":   [
+            {"name":"v_init",                 "val":-80},
+            {"name":"celsius",                "val":34}
+        ],
+        "distribution_decay": [
+            {"name":"constant",               "val":[-0.1, 0.0]}
+        ],
+        "distribution_rising": [
+            {"name":"constant_rise",               "val":[-0.0275, 0.0]}
+        ],
+        "distribution_bimodal": [
+            {"name":"constant_bimod1",               "val":[-0.0275, 0.0]},
+            {"name":"constant_bimod2",               "val":[-0.1, 0.0]}
+        ],
+        "myelinated": [
+            {"name":"cm",                     "val":0.02}
+        ],
+        "all": [
+            {"name":"Ra",                     "val":100},
+            {"name":"g_pas",                  "val":[1e-5, 6e-5],   "test":5.3926647384073322e-05},
+            {"name":"e_pas",                  "val":[-95, -60],     "test":-75.862421167964129}
+        ],
+        "axonal": [
+            {"name":"cm",                     "val":1},
+            {"name":"ena",                    "val":50},
+            {"name":"ek",                     "val":-90},
+            {"name":"decay_CaDynamics_DC0",   "val":[20, 300]},      
+            {"name":"gamma_CaDynamics_DC0",   "val":[0.005, 0.05]}, 
+            {"name":"gCa_HVAbar_Ca_HVA2",      "val":[0, 1]},    
+            {"name":"gCa_LVAstbar_Ca_LVAst",  "val":[0, 1]},     
+            {"name":"gSK_E2bar_SK_E2",        "val":[0, 0.075]},  
+            {"name":"gnabar_Nav1_1",          "val":[0, 107.15]},
+            {"name":"gnabar_Nav1_2",          "val":[0, 18.75]},
+            {"name":"gnabar_Nav1_3",          "val":[0, 150]},
+            {"name":"gnabar_Nav1_4",          "val":0},
+            {"name":"gnabar_Nav1_5",          "val":0},
+            {"name":"gnabar_Nav1_6",          "val":[0, 22.5]},
+            {"name":"gnabar_Nav1_7",          "val":0},
+            {"name":"gKv1_1bar_Kv1_1", "val":[0, 1]},
+            {"name":"gKv1_2bar_Kv1_2", "val":[0, 1]},
+            {"name":"gKv1_3bar_Kv1_3", "val":0},
+            {"name":"gKv1_4bar_Kv1_4", "val":[0, 1]},
+            {"name":"gKv1_5bar_Kv1_5", "val":0},
+            {"name":"gKv1_6bar_Kv1_6", "val":[0, 1]},
+            {"name":"gKv1_7bar_Kv1_7", "val":0},
+            {"name":"gKv2_1bar_Kv2_1", "val":[0, 1]},
+            {"name":"gKv2_2bar_Kv2_2", "val":[0, 1]},
+            {"name":"gKv3_1bar_Kv3_1", "val":[0, 1]},
+            {"name":"gKv3_2bar_Kv3_2", "val":0},
+            {"name":"gKv3_3bar_Kv3_3", "val":[0, 1]},
+            {"name":"gKv3_4bar_Kv3_4", "val":[0, 1]},
+            {"name":"gKv4_1bar_Kv4_1", "val":0},
+            {"name":"gKv4_2bar_Kv4_2", "val":[0, 1]},
+            {"name":"gKv4_3bar_Kv4_3", "val":[0, 1]},
+            {"name":"gKv7_1bar_Kv7_1", "val":[0, 1]},
+            {"name":"gKv7_2bar_Kv7_2", "val":[0, 1]},
+            {"name":"gKv7_3bar_Kv7_3", "val":[0, 1]},
+            {"name":"gKv10_1bar_Kv10_1", "val":[0, 1]},
+            {"name":"gKv10_2bar_Kv10_2", "val":[0, 1]},
+            {"name":"gKv11_1bar_Kv11_1", "val":0},
+            {"name":"gKv11_2bar_Kv11_2", "val":[0, 1]},
+            {"name":"gKv11_3bar_Kv11_3", "val":[0, 1]},
+            {"name":"gKv12_1bar_Kv12_1", "val":0},
+            {"name":"gKv12_3bar_Kv12_3", "val":0},
+            {"name":"gNaTgbar_NaTg2",          "val":[0, 5]},
+            {"name":"gNap_Et2bar_Nap_Et2",    "val":[0, 5]},
+            {"name":"gIhbar_HCN1", "val":[0, 2e-4]},
+            {"name":"gIhbar_HCN2", "val":[0, 2e-4]},
+            {"name":"gIhbar_HCN4", "val":0},
+            {"name":"gbar_bk", "val":[0, 5]}
+        ],
+        "somatic": [  
+            {"name":"cm",                     "val":1},
+            {"name":"ena",                    "val":50},
+            {"name":"ek",                     "val":-90},
+            {"name":"decay_CaDynamics_DC0",   "val":[20, 300]},      
+            {"name":"gamma_CaDynamics_DC0",   "val":[0.005, 0.05]}, 
+            {"name":"gCa_HVAbar_Ca_HVA2",      "val":[0, 1]},    
+            {"name":"gCa_LVAstbar_Ca_LVAst",  "val":[0, 1]},     
+            {"name":"gSK_E2bar_SK_E2",        "val":[0, 1]},  
+            {"name":"gnabar_Nav1_1",          "val":[0, 107.15]},
+            {"name":"gnabar_Nav1_2",          "val":[0, 18.75]},
+            {"name":"gnabar_Nav1_3",          "val":[0, 150]},
+            {"name":"gnabar_Nav1_4",          "val":0},
+            {"name":"gnabar_Nav1_5",          "val":0},
+            {"name":"gnabar_Nav1_6",          "val":[0, 22.5]},
+            {"name":"gnabar_Nav1_7",          "val":0},
+            {"name":"gKv1_1bar_Kv1_1", "val":[0, 1]},
+            {"name":"gKv1_2bar_Kv1_2", "val":[0, 1]},
+            {"name":"gKv1_3bar_Kv1_3", "val":0},
+            {"name":"gKv1_4bar_Kv1_4", "val":[0, 1]},
+            {"name":"gKv1_5bar_Kv1_5", "val":0},
+            {"name":"gKv1_6bar_Kv1_6", "val":[0, 1]},
+            {"name":"gKv1_7bar_Kv1_7", "val":0},
+            {"name":"gKv2_1bar_Kv2_1", "val":[0, 1]},
+            {"name":"gKv2_2bar_Kv2_2", "val":[0, 1]},
+            {"name":"gKv3_1bar_Kv3_1", "val":[0, 1]},
+            {"name":"gKv3_2bar_Kv3_2", "val":0},
+            {"name":"gKv3_3bar_Kv3_3", "val":[0, 1]},
+            {"name":"gKv3_4bar_Kv3_4", "val":[0, 1]},
+            {"name":"gKv4_1bar_Kv4_1", "val":0},
+            {"name":"gKv4_2bar_Kv4_2", "val":[0, 1]},
+            {"name":"gKv4_3bar_Kv4_3", "val":[0, 1]},
+            {"name":"gKv7_1bar_Kv7_1", "val":[0, 1]},
+            {"name":"gKv7_2bar_Kv7_2", "val":[0, 1]},
+            {"name":"gKv7_3bar_Kv7_3", "val":[0, 1]},
+            {"name":"gKv10_1bar_Kv10_1", "val":[0, 1]},
+            {"name":"gKv10_2bar_Kv10_2", "val":[0, 1]},
+            {"name":"gKv11_1bar_Kv11_1", "val":0},
+            {"name":"gKv11_2bar_Kv11_2", "val":[0, 1]},
+            {"name":"gKv11_3bar_Kv11_3", "val":[0, 1]},
+            {"name":"gKv12_1bar_Kv12_1", "val":0},
+            {"name":"gKv12_3bar_Kv12_3", "val":0},
+            {"name":"gNaTgbar_NaTg2",          "val":[0, 5]},
+            {"name":"gbar_bk", "val":[0, 1]}
+        ],
+        "somadend": [
+            {"name":"gIhbar_HCN1", "val":[0, 9.9e-4], "dist":"exp", "__comment": "distribution starts in soma (uniform) and spreads exponentially to dendrites"},
+            {"name":"gIhbar_HCN2", "val":[0, 9.9e-4], "dist":"exp", "__comment": "distribution starts in soma (uniform) and spreads exponentially to dendrites"},
+            {"name":"gIhbar_HCN4", "val":0}
+        ],
+        "alldend": [   
+            {"name":"cm",                     "val":2}
+        ]
+    }
+}

@@ -10,6 +10,7 @@ from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
 logger = logging.getLogger(__name__)
@@ -360,38 +361,36 @@ class LocalAccessPoint(DataAccessPoint):
                 if name not in self.unfrozen_params and isinstance(param["val"], list):
                     param["val"] = emodel_params[name]
 
-    def get_parameters(self):
-        """Get the definition of the parameters that have to be optimized as well as the
-         locations of the mechanisms. Also returns the name of the mechanisms.
+    def store_model_configuration(self, configuration, path=None):
+        """Store a model configuration as a json"""
 
-        Returns:
-            params_definition (dict)
-            mech_definition (dict)
-            mech_names (list)
-        """
+        if path is None:
+            path = Path(self.get_recipes()["params"])
+
+        path.mkdir(parents=True, exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(configuration.as_dict(), f, indent=2)
+
+    def get_model_configuration(self):
+        """Get the configuration of the model, including parameters, mechanisms and distributions"""
+
+        configuration = NeuronModelConfiguration(configuration_name=None)
 
         parameters = self._get_json("params")
 
-        params_definition = {
-            "distributions": parameters.get("distributions", {}),
-            "parameters": parameters["parameters"],
-        }
+        parameters["parameters"].pop("__comment", None)
 
-        params_definition["parameters"].pop("__comment", None)
         if self.unfrozen_params is not None:
-            self._freeze_params(params_definition["parameters"])
+            self._freeze_params(parameters["parameters"])
 
-        mech_definition = parameters["mechanisms"]
-        mech_names = []
+        if isinstance(parameters["mechanisms"], dict):
+            configuration.init_from_legacy_dict(parameters)
+        else:
+            configuration.init_from_dict(parameters)
 
-        for mechanisms in mech_definition.values():
-            if "mech" in mechanisms:
-                mech_names += mechanisms["mech"]
-                mechanisms["stoch"] = ["Stoch" in mech_name for mech_name in mechanisms["mech"]]
+        configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
 
-        params_definition["multiloc_map"] = self.get_recipes().get("multiloc_map", None)
-        mech_definition["multiloc_map"] = self.get_recipes().get("multiloc_map", None)
-        return params_definition, mech_definition, list(set(mech_names))
+        return configuration
 
     def _read_protocol(self, protocol):
         stimulus_def = protocol["step"]
@@ -636,7 +635,6 @@ class LocalAccessPoint(DataAccessPoint):
     def has_protocols_and_features(self):
         """Check if the efeatures and protocol exist."""
 
-        # TODO: Re-write this to use recipes instead of hardcoded path
         features_exists = (
             Path(self.emodel_dir, "config", "features", self.emodel).with_suffix(".json").is_file()
         )

@@ -1,5 +1,5 @@
 /*
-Created by BluePyOpt(1.9.185) at 2021-07-05 14:45:31.118930
+Created by BluePyOpt(1.9.189) at 2021-10-08 16:39:05.484206
 */
 {load_file("stdrun.hoc")}
 {load_file("import3d.hoc")}
@@ -186,31 +186,16 @@ proc insertChannel() {
     insert pas
   }
   forsec this.apical {
+    insert Ih
+    insert NaTg
+    insert SKv3_1
     insert CaDynamics_DC0
     insert Ca_HVA2
     insert Ca_LVAst
-    insert NaTg
-    insert SKv3_1
-    insert Ih
   }
   forsec this.axonal {
-    insert CaDynamics_DC0
-    insert Ca_HVA2
-    insert Ca_LVAst
-    insert SKv3_1
-    insert SK_E2
-    insert K_Pst
-    insert K_Tst
     insert NaTg
     insert Nap_Et2
-  }
-  forsec this.basal {
-    insert CaDynamics_DC0
-    insert Ca_HVA2
-    insert Ca_LVAst
-    insert Ih
-  }
-  forsec this.somatic {
     insert CaDynamics_DC0
     insert Ca_HVA2
     insert Ca_LVAst
@@ -218,8 +203,23 @@ proc insertChannel() {
     insert SK_E2
     insert K_Pst
     insert K_Tst
-    insert NaTg
+  }
+  forsec this.basal {
     insert Ih
+    insert CaDynamics_DC0
+    insert Ca_HVA2
+    insert Ca_LVAst
+  }
+  forsec this.somatic {
+    insert Ih
+    insert NaTg
+    insert CaDynamics_DC0
+    insert Ca_HVA2
+    insert Ca_LVAst
+    insert SKv3_1
+    insert SK_E2
+    insert K_Pst
+    insert K_Tst
   }
   forsec this.myelinated {
   }
