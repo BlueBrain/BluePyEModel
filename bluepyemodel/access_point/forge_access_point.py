@@ -3,6 +3,7 @@
 import getpass
 import logging
 import pathlib
+import time
 
 import jwt
 from entity_management.state import refresh_token
@@ -150,8 +151,8 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch(self, filters, use_version=True):
-        """Fetch resources based on filters.
+    def fetch(self, filters, use_version=True, retries=5):
+        """Fetch resources based on filters. Retry the search if it fails to find any resources.
 
         Args:
             filters (dict): keys and values used for the "WHERE". Should include "type" or "id".
@@ -169,12 +170,17 @@ class NexusForgeAccessPoint:
             filters["iteration"] = self.iteration_tag
 
         logger.debug("Searching: %s", filters)
-        resources = self.forge.search(
-            filters, cross_bucket=self.cross_bucket, limit=self.limit, debug=self.debug
-        )
 
-        if resources:
-            return resources
+        for _ in range(retries):
+
+            resources = self.forge.search(
+                filters, cross_bucket=self.cross_bucket, limit=self.limit, debug=self.debug
+            )
+
+            if resources:
+                return resources
+
+            time.sleep(0.1)
 
         logger.debug("No resources for filters: %s", filters)
 

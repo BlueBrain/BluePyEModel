@@ -867,14 +867,14 @@ class NexusAccessPoint(DataAccessPoint):
         targets = {}
         protocols_threshold = []
 
-        filters = {
-            "type": "ElectrophysiologyFeatureExtractionTarget",
-            "eModel": self.emodel,
-            "subject": self.get_subject(for_search=True),
-            "brainLocation": self.brain_region,
-        }
-        _ = self.access_point.fetch(filters)
-        resources = self.access_point.fetch(filters)
+        resources = self.access_point.fetch(
+            {
+                "type": "ElectrophysiologyFeatureExtractionTarget",
+                "eModel": self.emodel,
+                "subject": self.get_subject(for_search=True),
+                "brainLocation": self.brain_region,
+            }
+        )
 
         if resources is None:
             logger.warning(
@@ -1090,7 +1090,12 @@ class NexusAccessPoint(DataAccessPoint):
         if self.ttype:
             resource_description["ttype"] = self.ttype
 
-        self.access_point.register(resource_description, search, replace=True)
+        self.access_point.register(
+            resource_description=resource_description,
+            filters_existance=search,
+            replace=True,
+            tag=True,
+        )
 
     def _build_pdf_dependencies(self, seed, githash):
         """Find all the pdfs associated to an emodel"""
@@ -1530,13 +1535,12 @@ class NexusAccessPoint(DataAccessPoint):
         if configuration_name is None:
             configuration_name = self.pipeline_settings.model_configuration_name
 
-        filters = {
-            "type": "EModelConfiguration",
-            "name": configuration_name,
-        }
-
-        _ = self.access_point.fetch(filters)
-        resource = self.access_point.fetch(filters)[0]
+        resource = self.access_point.fetch_one(
+            {
+                "type": "EModelConfiguration",
+                "name": configuration_name,
+            }
+        )
 
         model_configuration = NeuronModelConfiguration(configuration_name=configuration_name)
 
