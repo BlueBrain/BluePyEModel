@@ -21,9 +21,9 @@ from bluepyemodel.tools.mechanisms import compile_mechs
 class EfeaturesProtocolsTarget(WorkflowTarget):
     """Target to check if efeatures and protocols are present in the database."""
 
-    def __init__(self, emodel):
+    def __init__(self, emodel, ttype):
         """Constructor."""
-        super().__init__(emodel=emodel)
+        super().__init__(emodel=emodel, ttype=ttype)
 
     def exists(self):
         """Check if the features and protocols have been created."""
@@ -37,6 +37,7 @@ class ExtractEFeatures(WorkflowTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
+        ttype (str): name of the t-type.
     """
 
     def run(self):
@@ -49,7 +50,7 @@ class ExtractEFeatures(WorkflowTask):
 
     def output(self):
         """ """
-        return EfeaturesProtocolsTarget(emodel=self.emodel)
+        return EfeaturesProtocolsTarget(emodel=self.emodel, ttype=self.ttype)
 
 
 class CompileMechanisms(WorkflowTask):
@@ -58,6 +59,7 @@ class CompileMechanisms(WorkflowTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
+        ttype (str): name of the t-type.
         species (str): name of the species.
         brain_region (str): name of the brain_region.
     """
@@ -79,17 +81,13 @@ class CompileMechanisms(WorkflowTask):
 class OptimisationTarget(WorkflowTarget):
     """Target to check if an optimisation is present in the database."""
 
-    def __init__(
-        self,
-        emodel,
-        seed=1,
-    ):
+    def __init__(self, emodel, ttype, seed=1):
         """Constructor.
 
         Args:
            seed (int): seed used in the optimisation.
         """
-        super().__init__(emodel=emodel)
+        super().__init__(emodel=emodel, ttype=ttype)
 
         self.seed = seed
 
@@ -107,6 +105,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
+        ttype (str): name of the t-type.
         species (str): name of the species.
         brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
@@ -126,12 +125,13 @@ class Optimize(WorkflowTask, IPyParallelTask):
         """ """
         compile_mechanisms = self.access_point.pipeline_settings.compile_mechanisms
 
-        targets = [ExtractEFeatures(emodel=self.emodel)]
+        targets = [ExtractEFeatures(emodel=self.emodel, ttype=self.ttype)]
 
         if compile_mechanisms:
             targets.append(
                 CompileMechanisms(
                     emodel=self.emodel,
+                    ttype=self.ttype,
                     species=self.species,
                     brain_region=self.brain_region,
                 )
@@ -206,27 +206,23 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
     def output(self):
         """ """
-        return OptimisationTarget(seed=self.seed, emodel=self.emodel)
+        return OptimisationTarget(seed=self.seed, ttype=self.ttype, emodel=self.emodel)
 
 
 class BestModelTarget(WorkflowTarget):
     """Check if the best model from optimisation is present in the database."""
 
-    def __init__(
-        self,
-        emodel,
-        seed=1,
-    ):
+    def __init__(self, emodel, ttype, seed=1):
         """Constructor.
 
         Args:
-           emodel (str): name of the emodel. Has to match the name of the emodel
-               under which the configuration data are stored.
-           seed (int): seed used in the optimisation.
+            emodel (str): name of the emodel. Has to match the name of the emodel
+                under which the configuration data are stored.
+            ttype (str): name of the ttype
+            seed (int): seed used in the optimisation.
         """
-        super().__init__(emodel=emodel)
+        super().__init__(emodel=emodel, ttype=ttype)
 
-        # self.emodel = emodel
         self.seed = seed
 
     def exists(self):
@@ -240,6 +236,7 @@ class StoreBestModels(WorkflowTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
+        ttype (str): name of the t-type.
         species (str): name of the species.
         brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
@@ -259,6 +256,7 @@ class StoreBestModels(WorkflowTask):
             to_run.append(
                 Optimize(
                     emodel=self.emodel,
+                    ttype=self.ttype,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=seed,
@@ -268,13 +266,14 @@ class StoreBestModels(WorkflowTask):
             to_run.append(
                 PlotOptimisation(
                     emodel=self.emodel,
+                    ttype=self.ttype,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=seed,
                 )
             )
 
-        to_run.append(ExtractEFeatures(emodel=self.emodel))
+        to_run.append(ExtractEFeatures(emodel=self.emodel, ttype=self.ttype))
 
         return to_run
 
@@ -285,6 +284,7 @@ class StoreBestModels(WorkflowTask):
             # can have unfulfilled dependecies if slurm has send signal near time limit.
             if OptimisationTarget(
                 emodel=self.emodel,
+                ttype=self.ttype,
                 seed=seed,
             ).exists():
                 store_best_model(
@@ -299,7 +299,7 @@ class StoreBestModels(WorkflowTask):
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
         targets = []
         for seed in range(self.seed, self.seed + batch_size):
-            targets.append(BestModelTarget(emodel=self.emodel, seed=seed))
+            targets.append(BestModelTarget(emodel=self.emodel, ttype=self.ttype, seed=seed))
         return targets
 
 
@@ -310,15 +310,16 @@ class ValidationTarget(WorkflowTarget):
         even if the model is not validated.
     """
 
-    def __init__(self, emodel, seed):
+    def __init__(self, emodel, ttype, seed):
         """Constructor.
 
         Args:
-           emodel (str): name of the emodel. Has to match the name of the emodel
+            emodel (str): name of the emodel. Has to match the name of the emodel
                 under which the configuration data are stored.
+            ttype (str): name of the ttype.
             seed (int): seed used in the optimisation.
         """
-        super().__init__(emodel=emodel)
+        super().__init__(emodel=emodel, ttype=ttype)
 
         self.seed = seed
 
@@ -338,6 +339,7 @@ class Validation(WorkflowTask, IPyParallelTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
+        ttype (str): name of the t-type.
         species (str): name of the species.
         brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
@@ -360,6 +362,7 @@ class Validation(WorkflowTask, IPyParallelTask):
         to_run = [
             StoreBestModels(
                 emodel=self.emodel,
+                ttype=self.ttype,
                 species=self.species,
                 brain_region=self.brain_region,
                 seed=self.seed,
@@ -369,6 +372,7 @@ class Validation(WorkflowTask, IPyParallelTask):
             to_run.append(
                 CompileMechanisms(
                     emodel=self.emodel,
+                    ttype=self.ttype,
                     species=self.species,
                     brain_region=self.brain_region,
                 )
@@ -378,13 +382,14 @@ class Validation(WorkflowTask, IPyParallelTask):
             to_run.append(
                 PlotModels(
                     emodel=self.emodel,
+                    ttype=self.ttype,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=self.seed,
                 )
             )
 
-        to_run.append(ExtractEFeatures(emodel=self.emodel))
+        to_run.append(ExtractEFeatures(emodel=self.emodel, ttype=self.ttype))
 
         return to_run
 
@@ -439,20 +444,21 @@ class Validation(WorkflowTask, IPyParallelTask):
 
     def output(self):
         """ """
-        return ValidationTarget(emodel=self.emodel, seed=self.seed)
+        return ValidationTarget(emodel=self.emodel, ttype=self.ttype, seed=self.seed)
 
 
 class EModelCreationTarget(WorkflowTarget):
     """Check if the the model is validated for any seed."""
 
-    def __init__(self, emodel):
+    def __init__(self, emodel, ttype):
         """Constructor.
 
         Args:
-           emodel (str): name of the emodel. Has to match the name of the emodel
-               under which the configuration data are stored.
+            emodel (str): name of the emodel. Has to match the name of the emodel
+                under which the configuration data are stored.
+            ttype (str): name of the ttype.
         """
-        super().__init__(emodel=emodel)
+        super().__init__(emodel=emodel, ttype=ttype)
 
     def exists(self):
         """Check if the model is completed."""
@@ -466,6 +472,7 @@ class EModelCreation(WorkflowTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
+        ttype (str): name of the t-type.
         species (str): name of the species.
         brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
@@ -494,6 +501,7 @@ class EModelCreation(WorkflowTask):
             yield (
                 Validation(
                     emodel=self.emodel,
+                    ttype=self.ttype,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=seed,
@@ -505,17 +513,18 @@ class EModelCreation(WorkflowTask):
 
     def output(self):
         """ """
-        return EModelCreationTarget(emodel=self.emodel)
+        return EModelCreationTarget(emodel=self.emodel, ttype=self.ttype)
 
 
 class EModelCreationWrapper(WorkflowWrapperTask):
     """Luigi wrapper for launching EModel Creation pipeline.
 
-    For now, launches only one EModel Creation pipleine. Could be changed later.
+    For now, launches only one EModel Creation pipeline. Could be changed later.
 
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
+        ttype (str): name of the t-type.
         species (str): name of the species.
         brain_region (str): name of the brain region.
     """
@@ -526,7 +535,12 @@ class EModelCreationWrapper(WorkflowWrapperTask):
     def requires(self):
         """ """
         to_run = [
-            EModelCreation(emodel=self.emodel, species=self.species, brain_region=self.brain_region)
+            EModelCreation(
+                emodel=self.emodel,
+                ttype=self.ttype,
+                species=self.species,
+                brain_region=self.brain_region,
+            )
         ]
 
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
@@ -534,7 +548,10 @@ class EModelCreationWrapper(WorkflowWrapperTask):
         if plot_optimisation:
             to_run.append(
                 PlotValidatedDistributions(
-                    emodel=self.emodel, species=self.species, brain_region=self.brain_region
+                    emodel=self.emodel,
+                    ttype=self.ttype,
+                    species=self.species,
+                    brain_region=self.brain_region,
                 )
             )
 
@@ -547,6 +564,7 @@ class OptimizeWrapper(WorkflowWrapperTask):
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
+        ttype (str): name of the t-type.
         species (str): name of the species.
         brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
@@ -592,7 +610,11 @@ class PlotOptimisation(WorkflowTask):
     def requires(self):
         """ """
         return Optimize(
-            emodel=self.emodel, species=self.species, brain_region=self.brain_region, seed=self.seed
+            emodel=self.emodel,
+            ttype=self.ttype,
+            species=self.species,
+            brain_region=self.brain_region,
+            seed=self.seed,
         )
 
     def run(self):
@@ -627,9 +649,10 @@ class PlotModels(WorkflowTask):
     def requires(self):
         """ """
         requires = [
-            ExtractEFeatures(emodel=self.emodel),
+            ExtractEFeatures(emodel=self.emodel, ttype=self.ttype),
             StoreBestModels(
                 emodel=self.emodel,
+                ttype=self.ttype,
                 species=self.species,
                 brain_region=self.brain_region,
                 seed=self.seed,
@@ -702,7 +725,10 @@ class PlotValidatedDistributions(WorkflowTask):
     def requires(self):
         """ """
         return EModelCreation(
-            emodel=self.emodel, species=self.species, brain_region=self.brain_region
+            emodel=self.emodel,
+            ttype=self.ttype,
+            species=self.species,
+            brain_region=self.brain_region,
         )
 
     def run(self):

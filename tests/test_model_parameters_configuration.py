@@ -55,6 +55,49 @@ def test_add_parameter_mechanism(configuration):
     assert configuration.mechanisms[0].stochastic is False
 
 
+def test_remove_parameter(configuration):
+
+    configuration.add_parameter(
+        parameter_name="test_parameter2",
+        locations='axonal',
+        value=[1., 2.],
+        mechanism='test_mechanism2',
+        stochastic=None
+    )
+
+    configuration.remove_parameter("test_parameter2", ['somatic'])
+    assert len(configuration.parameters) == 2
+
+    configuration.remove_parameter("test_parameter2")
+    assert len(configuration.parameters) == 1
+
+
+def test_remove_mechanisms(configuration):
+
+    configuration.add_parameter(
+        parameter_name="test_parameter2",
+        locations='somatic',
+        value=[1., 2.],
+        mechanism='test_mechanism2',
+        stochastic=None
+    )
+
+    configuration.add_parameter(
+        parameter_name="test_parameter3",
+        locations='all',
+        value=[1., 2.],
+        mechanism='test_mechanism3',
+        stochastic=None
+    )
+
+    configuration.remove_mechanism("test_parameter2", "all")
+    assert len(configuration.parameters) == 3
+    assert len(configuration.mechanisms) == 3
+    configuration.remove_mechanism("test_mechanism2")
+    assert len(configuration.parameters) == 2
+    assert len(configuration.mechanisms) == 2
+
+
 def test_raise_distribution(configuration):
     with pytest.raises(Exception):
         configuration.add_parameter(
