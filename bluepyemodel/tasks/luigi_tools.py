@@ -30,13 +30,17 @@ class WorkflowTask(luigi.Task):
 
     backend = luigi.Parameter(default=None, config_path=dict(section="parallel", name="backend"))
     emodel = luigi.Parameter()
+    ttype = luigi.Parameter(default="")
 
     def __init__(self, *args, **kwargs):
         """ """
         super().__init__(*args, **kwargs)
 
         self.access_point = access_point.get_db(
-            EmodelAPIConfig().api, self.emodel, **EmodelAPIConfig().api_args
+            EmodelAPIConfig().api,
+            emodel=self.emodel,
+            ttype=self.ttype,
+            **EmodelAPIConfig().api_args
         )
 
     def get_mapper(self):
@@ -51,14 +55,18 @@ class WorkflowTask(luigi.Task):
 class WorkflowTarget(luigi.Target, ABC):
     """Workflow target with loaded access_point."""
 
-    def __init__(self, emodel, *args, **kwargs):
+    def __init__(self, emodel, ttype, *args, **kwargs):
         """ """
         super().__init__(*args, **kwargs)
 
         self.emodel = emodel
+        self.ttype = ttype
 
         self.access_point = access_point.get_db(
-            EmodelAPIConfig().api, self.emodel, **EmodelAPIConfig().api_args
+            EmodelAPIConfig().api,
+            emodel=self.emodel,
+            ttype=self.ttype,
+            **EmodelAPIConfig().api_args
         )
 
 
