@@ -307,6 +307,9 @@ class NexusAccessPoint(DataAccessPoint):
 
         for mechanism in mechanisms:
 
+            if mechanism == "pas":
+                continue
+
             resources = self.access_point.fetch(
                 {"type": "SubCellularModelScript", "name": mechanism}, use_version=False
             )
@@ -1529,6 +1532,13 @@ class NexusAccessPoint(DataAccessPoint):
             replace=True,
         )
 
+    def get_available_mechanisms(self):
+        """Get the list of names of the available mechanisms"""
+
+        resources = self.access_point.fetch({"type": "SubCellularModelScript"}, use_version=False)
+
+        return {r.name for r in resources}
+
     def get_model_configuration(self, configuration_name=None):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
@@ -1542,7 +1552,10 @@ class NexusAccessPoint(DataAccessPoint):
             }
         )
 
-        model_configuration = NeuronModelConfiguration(configuration_name=configuration_name)
+        model_configuration = NeuronModelConfiguration(
+            configuration_name=configuration_name,
+            available_mechanisms=self.get_available_mechanisms(),
+        )
 
         model_configuration.init_from_dict(self.access_point.forge.as_json(resource))
 

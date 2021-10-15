@@ -19,7 +19,7 @@ multiloc_map = {
 
 
 class NeuronModelConfiguration:
-    def __init__(self, configuration_name):
+    def __init__(self, configuration_name, available_mechanisms=None):
 
         self.configuration_name = configuration_name
 
@@ -29,6 +29,10 @@ class NeuronModelConfiguration:
 
         # TODO: actually use this:
         self.mapping_multilocation = None
+
+        self.available_mechanisms = available_mechanisms
+        if self.available_mechanisms is not None:
+            self.available_mechanisms = set(available_mechanisms).union("pas")
 
     @property
     def mechanism_names(self):
@@ -202,6 +206,15 @@ class NeuronModelConfiguration:
         locations = self._format_locations(locations)
 
         for loc in locations:
+
+            if (
+                self.available_mechanisms is not None
+                and mechanism_name not in self.available_mechanisms
+            ):
+                raise Exception(
+                    "You are trying to add mechanism {} but it is not available"
+                    " on Nexus or local."
+                )
 
             tmp_mechanism = MechanismConfiguration(
                 name=mechanism_name, location=loc, stochastic=stochastic
