@@ -44,7 +44,7 @@ class NexusForgeAccessPoint:
         self.access_token = access_token
         if not self.access_token:
             self.access_token = self.get_access_token()
-
+        
         bucket = organisation + "/" + project
         self.forge = self.connect_forge(bucket, endpoint, self.access_token, forge_path)
 
