@@ -1552,12 +1552,18 @@ class NexusAccessPoint(DataAccessPoint):
             }
         )
 
+        config_dict = self.access_point.forge.as_json(resource)
+        for entry in ["distributions", "parameters", "mechanisms"]:
+            if entry in config_dict:
+                if isinstance(config_dict[entry], dict):
+                    config_dict[entry] = [config_dict[entry]]
+
         model_configuration = NeuronModelConfiguration(
             configuration_name=configuration_name,
             available_mechanisms=self.get_available_mechanisms(),
         )
 
-        model_configuration.init_from_dict(self.access_point.forge.as_json(resource))
+        model_configuration.init_from_dict(config_dict)
 
         self.download_mechanisms(model_configuration.mechanism_names)
 
