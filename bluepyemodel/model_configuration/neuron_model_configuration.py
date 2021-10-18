@@ -32,7 +32,7 @@ class NeuronModelConfiguration:
 
         self.available_mechanisms = available_mechanisms
         if self.available_mechanisms is not None:
-            self.available_mechanisms = set(available_mechanisms).union("pas")
+            self.available_mechanisms = set(available_mechanisms).add(["pas"])
 
     @property
     def mechanism_names(self):
