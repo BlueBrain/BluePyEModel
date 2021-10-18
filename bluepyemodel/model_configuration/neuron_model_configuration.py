@@ -212,7 +212,7 @@ class NeuronModelConfiguration:
                 and mechanism_name not in self.available_mechanisms
             ):
                 raise Exception(
-                    "You are trying to add mechanism {} but it is not available"
+                    f"You are trying to add mechanism {mechanism_name} but it is not available"
                     " on Nexus or local."
                 )
 
