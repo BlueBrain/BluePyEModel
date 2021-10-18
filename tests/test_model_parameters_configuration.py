@@ -4,7 +4,10 @@ from bluepyemodel.model_configuration.neuron_model_configuration import NeuronMo
 
 @pytest.fixture
 def configuration():
-    config = NeuronModelConfiguration(configuration_name="Test")
+    available_mechs = ["test_mechanism", "test_mechanism2", "test_mechanism3"]
+    config = NeuronModelConfiguration(
+        configuration_name="Test", available_mechanisms=available_mechs
+    )
 
     config.add_parameter(
         parameter_name="test_parameter",

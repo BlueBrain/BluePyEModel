@@ -1,5 +1,6 @@
 """Access point to get data from Singlecell-like repositories"""
 
+import glob
 import json
 import logging
 from collections import defaultdict
@@ -371,10 +372,30 @@ class LocalAccessPoint(DataAccessPoint):
         with open(path, "w") as f:
             json.dump(configuration.as_dict(), f, indent=2)
 
+    def get_available_mechanisms(self):
+        """Get the list of names of the available mechanisms"""
+
+        mechs = []
+
+        if self.emodel_dir:
+            mech_dir = self.emodel_dir / "mechanisms" / "*.mod"
+        else:
+            mech_dir = Path("./") / "mechanisms" / "*.mod"
+
+        if not mech_dir.is_dir():
+            return None
+
+        for mech_file in glob.glob(str(mech_dir / "mechanisms" / "*.mod")):
+            mechs.append(Path(mech_file).stem)
+
+        return set(mechs)
+
     def get_model_configuration(self):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
-        configuration = NeuronModelConfiguration(configuration_name=None)
+        configuration = NeuronModelConfiguration(
+            configuration_name=None, available_mechanisms=self.get_available_mechanisms()
+        )
 
         parameters = self._get_json("params")
 

@@ -27,7 +27,10 @@ class ModelConfigurator:
         if use_gene_data:
             self.get_gene_based_configuration(configuration_name=configuration_name)
         else:
-            self.configuration = NeuronModelConfiguration(configuration_name=configuration_name)
+            self.configuration = NeuronModelConfiguration(
+                configuration_name=configuration_name,
+                available_mechanisms=self.access_point.get_available_mechanisms(),
+            )
 
     def load_configuration(self, name):
         """Load a previously registered configuration"""
@@ -79,7 +82,10 @@ class ModelConfigurator:
 
     def get_gene_based_configuration(self, configuration_name):
 
-        self.configuration = NeuronModelConfiguration(configuration_name=configuration_name)
+        self.configuration = NeuronModelConfiguration(
+            configuration_name=configuration_name,
+            available_mechanisms=self.access_point.get_available_mechanisms(),
+        )
 
         selector_params, selector_mechs, selector_distrs = self.get_gene_based_parameters()
 
