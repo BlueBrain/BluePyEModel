@@ -318,10 +318,12 @@ def define_feature(
     )
 
 
-def define_protocol(name, protocol_definition, stochasticity=True, threshold_based=False):
+def define_protocol(_cell, simulator, name, protocol_definition, stochasticity=True, threshold_based=False):
     """Create the protocol.
 
     Args:
+        _cell (CellModel): cell model
+        simulator: NrnSimulator
         name (str): name of the protocol
         protocol_definition (dict): see docstring of function
             define_main_protocol
@@ -329,13 +331,55 @@ def define_protocol(name, protocol_definition, stochasticity=True, threshold_bas
             deterministic
         threshold_based (bool): is the protocol being instantiated a threshold-based or a
             fix protocol.
-
     Returns:
         Protocol
     """
     # By default include somatic recording
     somav_recording = CompRecording(name=f"{name}.soma.v", location=soma_loc, variable="v")
     recordings = [somav_recording]
+
+    # ApicalStim_sec_name = seclist_to_sec.get(ApicalStim_sec_index, ApicalStim_sec_index)
+
+    if "stimulus_location" in protocol_definition["stimuli"]:
+        if protocol_definition["stimuli"]["stimulus_location"]=="apical":
+            cell = deepcopy(_cell)
+            cell.params = None
+            cell.mechanisms = None
+            cell.instantiate(sim=simulator)
+    
+            sec_index = _get_apical_point(cell)
+            stim_loc = NrnSecSomaDistanceCompLocation(
+                        name=f'{name}_{protocol_definition["stimuli"]["stimulus_location"]}',
+                        soma_distance=protocol_definition["stimuli"]["somadistance"],
+                        sec_index=sec_index,
+                        sec_name=protocol_definition["stimuli"]["somadistance"],
+                        )
+
+        elif protocol_definition["stimuli"]["stimulus_location"]=="axonal":
+            stim_loc = NrnSomaDistanceCompLocation(
+                        name=f'{name}_{protocol_definition["stimuli"]["stimulus_location"]}',
+                        soma_distance=protocol_definition["stimuli"]["somadistance"],
+                        seclist_name=protocol_definition["stimuli"]["stimulus_location"],
+                        )
+
+        elif protocol_definition["stimuli"]["stimulus_location"]=="basal":
+            stim_loc = NrnSomaDistanceCompLocation(
+                        name=f'{name}_{protocol_definition["stimuli"]["stimulus_location"]}',
+                        soma_distance=protocol_definition["stimuli"]["somadistance"],
+                        seclist_name=protocol_definition["stimuli"]["stimulus_location"],
+                        ) 
+
+        elif protocol_definition["stimuli"]["stimulus_location"]=="somatic":
+            stim_loc = soma_loc
+
+        recording = CompRecording(
+                    name=f'{name}.{protocol_definition["stimuli"]["stimulus_location"]}.{protocol_definition["stimuli"]["somadistance"]}um.v',
+                    location=stim_loc,
+                    variable="v",
+                    )
+        recordings.append(recording)
+    else:
+        stim_loc = soma_loc
 
     if "extra_recordings" in protocol_definition:
 
@@ -384,7 +428,7 @@ def define_protocol(name, protocol_definition, stochasticity=True, threshold_bas
             else:
                 stim_def = {}
 
-            stimulus = ecode(location=soma_loc, **stim_def)
+            stimulus = ecode(location=stim_loc, **stim_def)
 
             break
 
@@ -555,6 +599,8 @@ def define_threshold_protocol(
 
 
 def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
+    cell_model,
+    simulator,
     protocols_definition,
     features_definition,
     stochasticity=True,
@@ -571,6 +617,8 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     the current threshold while the "other_protocols" do not.
 
     Args:
+        cell_model (CellModel): cell model
+        simulator: NrnSimulator
         protocols_definition (dict): in the following format. The "type" field
             of a protocol can be StepProtocol, StepThresholdProtocol, RMP,
             RinHoldCurrent. If protocols with type StepThresholdProtocol are
@@ -583,7 +631,6 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
         threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
             by the holding and threshold current of the model.
-
     Returns:
     """
 
@@ -622,7 +669,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
 
     for name, definition in protocols_definition.items():
 
-        protocol = define_protocol(name, definition, stochasticity, threshold_based_evaluator)
+        protocol = define_protocol(cell_model, simulator, name, definition, stochasticity, threshold_based_evaluator)
 
         if threshold_based_evaluator:
             threshold_protocols[name] = protocol
@@ -822,6 +869,8 @@ def create_evaluator(
     )
 
     main_protocol, features = define_main_protocol(
+        cell_model,
+        simulator,
         protocols_definition,
         features_definition,
         stochasticity,

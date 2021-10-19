@@ -685,3 +685,4 @@ class MainProtocol(ephys.protocols.Protocol):
 
         cell_model.unfreeze(param_values.keys())
         return responses
+        
