@@ -202,6 +202,7 @@ class SearchHoldingCurrent:
         stimulus_duration=500.0,
         upper_bound=0.2,
         lower_bound=-0.5,
+        strict_bounds=True,
     ):
         """Constructor
 
@@ -215,6 +216,7 @@ class SearchHoldingCurrent:
             stimulus_duration (float): length of the protocol
             upper_bound (float): upper bound for the holding current, in pA
             lower_bound (float): lower bound for the holding current, in pA
+            strict_bounds (bool): to adaptively enlarge bounds is current is outside
         """
         self.name = name
         self.location = location
@@ -226,6 +228,7 @@ class SearchHoldingCurrent:
         self.stimulus_duration = stimulus_duration
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
+        self.strict_bounds = strict_bounds
 
         self.target_voltage.stim_start = self.stimulus_duration - 100.0
         self.target_voltage.stim_end = self.stimulus_duration
@@ -271,33 +274,35 @@ class SearchHoldingCurrent:
         timeout=None,
     ):
         """Run protocol"""
+        if not self.strict_bounds:
+            # first readjust the bounds if needed
+            voltage_min = 1e10
+            while voltage_min > self.target_voltage.exp_mean:
+                voltage_min = self.get_voltage_base(
+                    holding_current=self.lower_bound,
+                    cell_model=cell_model,
+                    param_values=param_values,
+                    sim=sim,
+                    isolate=isolate,
+                    timeout=timeout,
+                )
+                if voltage_min > self.target_voltage.exp_mean:
+                    self.lower_bound -= 0.2
+                    self.max_depth += 1
 
-        # first readjust the bounds if needed
-        voltage_min = 1e10
-        while voltage_min > self.target_voltage.exp_mean:
-            voltage_min = self.get_voltage_base(
-                holding_current=self.lower_bound,
-                cell_model=cell_model,
-                param_values=param_values,
-                sim=sim,
-                isolate=isolate,
-                timeout=timeout,
-            )
-            if voltage_min > self.target_voltage.exp_mean:
-                self.lower_bound *= 0.5
-
-        voltage_max = -1e10
-        while voltage_max < self.target_voltage.exp_mean:
-            voltage_max = self.get_voltage_base(
-                holding_current=self.upper_bound,
-                cell_model=cell_model,
-                param_values=param_values,
-                sim=sim,
-                isolate=isolate,
-                timeout=timeout,
-            )
-            if voltage_max < self.target_voltage.exp_mean:
-                self.upper_bound *= 2.0
+            voltage_max = -1e10
+            while voltage_max < self.target_voltage.exp_mean:
+                voltage_max = self.get_voltage_base(
+                    holding_current=self.upper_bound,
+                    cell_model=cell_model,
+                    param_values=param_values,
+                    sim=sim,
+                    isolate=isolate,
+                    timeout=timeout,
+                )
+                if voltage_max < self.target_voltage.exp_mean:
+                    self.upper_bound += 0.2
+                    self.max_depth += 1
 
         return {
             "bpo_holding_current": self.bisection_search(
