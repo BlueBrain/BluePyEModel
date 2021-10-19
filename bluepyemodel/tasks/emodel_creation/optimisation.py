@@ -75,7 +75,15 @@ class CompileMechanisms(WorkflowTask):
 
     def output(self):
         """ """
-        return luigi.LocalTarget(Path("x86_64") / "special")
+
+        config = self.access_point.get_model_configuration()
+
+        targets = []
+        for mech in config.mechanism_names:
+            if mech != "pas":
+                targets.append(luigi.LocalTarget(Path("x86_64") / f"{mech}.c"))
+
+        return targets
 
 
 class OptimisationTarget(WorkflowTarget):
