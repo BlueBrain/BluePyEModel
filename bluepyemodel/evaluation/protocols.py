@@ -272,6 +272,33 @@ class SearchHoldingCurrent:
     ):
         """Run protocol"""
 
+        # first readjust the bounds if needed
+        voltage_min = 1e10
+        while voltage_min > self.target_voltage.exp_mean:
+            voltage_min = self.get_voltage_base(
+                holding_current=self.lower_bound,
+                cell_model=cell_model,
+                param_values=param_values,
+                sim=sim,
+                isolate=isolate,
+                timeout=timeout,
+            )
+            if voltage_min > self.target_voltage.exp_mean:
+                self.lower_bound *= 0.5
+
+        voltage_max = -1e10
+        while voltage_max < self.target_voltage.exp_mean:
+            voltage_max = self.get_voltage_base(
+                holding_current=self.upper_bound,
+                cell_model=cell_model,
+                param_values=param_values,
+                sim=sim,
+                isolate=isolate,
+                timeout=timeout,
+            )
+            if voltage_max < self.target_voltage.exp_mean:
+                self.upper_bound *= 2.0
+
         return {
             "bpo_holding_current": self.bisection_search(
                 cell_model,
@@ -301,6 +328,7 @@ class SearchHoldingCurrent:
             depth,
             self.max_depth,
         )
+
         mid_bound = (upper_bound + lower_bound) * 0.5
         if depth >= self.max_depth:
             return mid_bound
