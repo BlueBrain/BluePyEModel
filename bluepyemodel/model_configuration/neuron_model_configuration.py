@@ -32,7 +32,8 @@ class NeuronModelConfiguration:
 
         self.available_mechanisms = available_mechanisms
         if self.available_mechanisms is not None:
-            self.available_mechanisms = set(available_mechanisms).union("pas")
+            self.available_mechanisms = set(self.available_mechanisms)
+            self.available_mechanisms.add("pas")
 
     @property
     def mechanism_names(self):
@@ -212,7 +213,7 @@ class NeuronModelConfiguration:
                 and mechanism_name not in self.available_mechanisms
             ):
                 raise Exception(
-                    "You are trying to add mechanism {} but it is not available"
+                    f"You are trying to add mechanism {mechanism_name} but it is not available"
                     " on Nexus or local."
                 )
 
