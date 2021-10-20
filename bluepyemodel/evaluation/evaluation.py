@@ -126,10 +126,6 @@ def get_evaluator_from_db(
     if not configuration:
         raise Exception(f"No configuration for emodel {emodel}")
 
-    morphologies = access_point.get_morphologies()
-    if not morphologies:
-        raise Exception(f"No morphologies for emodel {emodel}")
-
     features = access_point.get_features(include_validation_protocols)
     if not features:
         raise Exception(f"No efeatures for emodel {emodel}")
@@ -142,7 +138,6 @@ def get_evaluator_from_db(
 
     cell_model = model.create_cell_model(
         name=emodel,
-        morphology=morphologies,
         model_configuration=configuration,
         morph_modifiers=access_point.pipeline_settings.morph_modifiers,
         nseg_frequency=nseg_frequency,

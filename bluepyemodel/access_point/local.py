@@ -378,23 +378,43 @@ class LocalAccessPoint(DataAccessPoint):
         mechs = []
 
         if self.emodel_dir:
-            mech_dir = self.emodel_dir / "mechanisms" / "*.mod"
+            mech_dir = self.emodel_dir / "mechanisms"
         else:
-            mech_dir = Path("./") / "mechanisms" / "*.mod"
+            mech_dir = Path("./") / "mechanisms"
 
         if not mech_dir.is_dir():
             return None
 
-        for mech_file in glob.glob(str(mech_dir / "mechanisms" / "*.mod")):
+        for mech_file in glob.glob(str(mech_dir / "*.mod")):
             mechs.append(Path(mech_file).stem)
 
         return set(mechs)
+
+    def get_available_morphologies(self):
+        """Get the list of names of available morphologies"""
+
+        names = []
+
+        if self.emodel_dir:
+            morph_dir = self.emodel_dir / "morphology"
+        else:
+            morph_dir = Path("./") / "morphology"
+
+        if not morph_dir.is_dir():
+            return None
+
+        for morph_file in glob.glob(str(morph_dir / "*.asc")) + glob.glob(str(morph_dir / "*.swc")):
+            names.append(Path(morph_file).stem)
+
+        return set(names)
 
     def get_model_configuration(self):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
         configuration = NeuronModelConfiguration(
-            configuration_name=None, available_mechanisms=self.get_available_mechanisms()
+            configuration_name=None,
+            available_mechanisms=self.get_available_mechanisms(),
+            available_morphologies=self.get_available_morphologies(),
         )
 
         parameters = self._get_json("params")
@@ -410,6 +430,7 @@ class LocalAccessPoint(DataAccessPoint):
             configuration.init_from_dict(parameters)
 
         configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
+        configuration.init_morphology_from_dict(self.get_morphologies())
 
         return configuration
 
@@ -557,8 +578,6 @@ class LocalAccessPoint(DataAccessPoint):
 
         recipes = self.get_recipes()
 
-        morphology_definition = []
-
         morph_def = recipes["morphology"][0]
 
         if self.morph_path is None:
@@ -568,12 +587,16 @@ class LocalAccessPoint(DataAccessPoint):
         else:
             self.morph_path = Path(self.morph_path)
 
-        morphology_definition = {"name": self.morph_path.stem, "path": str(self.morph_path)}
+        morphology_definition = {
+            "name": self.morph_path.stem,
+            "path": str(self.morph_path),
+        }
         if "seclist_names" in recipes:
             morphology_definition["seclist_names"] = recipes["seclist_names"]
 
         if "secarray_names" in recipes:
             morphology_definition["secarray_names"] = recipes["secarray_names"]
+
         return morphology_definition
 
     def format_emodel_data(self, model_data):

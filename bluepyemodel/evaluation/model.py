@@ -173,7 +173,7 @@ def define_mechanisms(mechanisms_definition, mapping_multilocation):
 
 
 def define_morphology(
-    morphology_path,
+    model_configuration,
     do_set_nseg=True,
     nseg_frequency=40,
     morph_modifiers=None,
@@ -182,7 +182,7 @@ def define_morphology(
     """Define a morphology object from a morphology file
 
     Args:
-        morphology_path (str): path to a morphology file
+        model_configuration (NeuronModelConfiguration): configuration of the model
         do_set_nseg (float): set the length for the discretization
             of the segments
         nseg_frequency (float): frequency of nseg
@@ -214,7 +214,7 @@ def define_morphology(
                 raise Exception("A morph modifier is not callable nor a list of two str")
 
     return NrnFileMorphology(
-        morphology_path,
+        morphology_path=model_configuration.morphology_path,
         do_replace_axon=False,
         do_set_nseg=do_set_nseg,
         nseg_frequency=nseg_frequency,
@@ -225,7 +225,6 @@ def define_morphology(
 
 def create_cell_model(
     name,
-    morphology,
     model_configuration,
     morph_modifiers=None,
     morph_modifiers_hoc=None,
@@ -248,7 +247,7 @@ def create_cell_model(
     """
 
     morph = define_morphology(
-        morphology["path"],
+        model_configuration,
         do_set_nseg=True,
         nseg_frequency=nseg_frequency,
         morph_modifiers=morph_modifiers,
@@ -256,9 +255,9 @@ def create_cell_model(
     )
 
     if seclist_names is None:
-        seclist_names = morphology.get("seclist_names", None)
+        seclist_names = model_configuration.seclist_names
     if secarray_names is None:
-        secarray_names = morphology.get("secarray_names", None)
+        secarray_names = model_configuration.secarray_names
 
     mechanisms = define_mechanisms(
         model_configuration.mechanisms, model_configuration.mapping_multilocation

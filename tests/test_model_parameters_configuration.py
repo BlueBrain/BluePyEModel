@@ -5,8 +5,11 @@ from bluepyemodel.model_configuration.neuron_model_configuration import NeuronMo
 @pytest.fixture
 def configuration():
     available_mechs = ["test_mechanism", "test_mechanism2", "test_mechanism3"]
+    available_morphologies = ["C060114A5"]
     config = NeuronModelConfiguration(
-        configuration_name="Test", available_mechanisms=available_mechs
+        configuration_name="Test",
+        available_mechanisms=available_mechs,
+        available_morphologies=available_morphologies
     )
 
     config.add_parameter(
@@ -113,6 +116,21 @@ def test_raise_distribution(configuration):
         )
 
 
+def test_raise_morphology(configuration):
+    with pytest.raises(Exception):
+        configuration.select_morphology(
+            morphology_name="test",
+        )
+
+def test_select_morphology(configuration):
+    configuration.select_morphology(
+        morphology_name="C060114A5",
+    )
+    morpho_dict = configuration.as_dict()['morphology']
+    assert configuration.morphology_name == "C060114A5"
+    assert morpho_dict["name"] == "C060114A5"
+
+
 def test_distribution(configuration_with_distribution):
     assert len(configuration_with_distribution.parameters) == 3
     assert len(configuration_with_distribution.mechanisms) == 2
@@ -120,33 +138,3 @@ def test_distribution(configuration_with_distribution):
     assert len(configuration_with_distribution.distribution_names) == 1
     assert len(configuration_with_distribution.used_distribution_names) == 1
 
-
-def test_legacy_dicts(configuration_with_distribution):
-
-    expected_param_dict = {
-        'all': [{'name': 'test_parameter', 'val': 5}],
-        'distribution_not_constant': [{'name': 'dist_param1', 'val': [3., 10.]}],
-        'soma': [{'name': 'test_parameter2', 'val': [1., 2.], 'dist': 'not_constant'}]
-    }
-
-    expected_dist_dict = {
-        'not_constant': {'fun': '{value} * 2 * {dist_param1}', 'parameters': ['dist_param1']}
-    }
-
-    expected_mech_dict = {
-        'all': {'mech': ['test_mechanism'], 'stoch': [False]},
-        'soma': {'mech': ['test_mechanism2'], 'stoch': [False]}
-    }
-
-    expected_mech_names = {'test_mechanism', 'test_mechanism2'}
-
-    param_distr, mechanisms_dict, mechanism_names = configuration_with_distribution.as_legacy_dicts()
-
-    for loc in expected_param_dict:
-        for param in expected_param_dict[loc]:
-            assert param == param_distr["parameters"][loc][0]
-    assert expected_dist_dict['not_constant'] == param_distr['distributions']['not_constant']
-    for loc in expected_mech_dict:
-        assert expected_mech_dict[loc]['mech'] == mechanisms_dict[loc]['mech']
-        assert expected_mech_dict[loc]['stoch'] == mechanisms_dict[loc]['stoch']
-    assert expected_mech_names == mechanism_names

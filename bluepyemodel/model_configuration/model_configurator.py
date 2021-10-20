@@ -30,6 +30,7 @@ class ModelConfigurator:
             self.configuration = NeuronModelConfiguration(
                 configuration_name=configuration_name,
                 available_mechanisms=self.access_point.get_available_mechanisms(),
+                available_morphologies=self.access_point.get_available_morphologies(),
             )
 
     def load_configuration(self, name):
@@ -74,9 +75,9 @@ class ModelConfigurator:
         ic_map_path = self.access_point.load_ic_map()
 
         selector = icselector.ICSelector(ic_map_path, gene_map_path)
-        mechanisms = selector.get_nexus_resources([self.access_point.ttype])
-        suffix = {m["name"]: m["name"] for m in mechanisms}
-        parameters, mechanisms, distributions = selector.get_cell_config(suffix)
+        parameters, mechanisms, distributions, _ = selector.get_cell_config_from_ttype(
+            self.access_point.ttype
+        )
 
         return parameters, mechanisms, distributions
 
@@ -85,6 +86,7 @@ class ModelConfigurator:
         self.configuration = NeuronModelConfiguration(
             configuration_name=configuration_name,
             available_mechanisms=self.access_point.get_available_mechanisms(),
+            available_morphologies=self.access_point.get_available_morphologies(),
         )
 
         selector_params, selector_mechs, selector_distrs = self.get_gene_based_parameters()
@@ -92,8 +94,9 @@ class ModelConfigurator:
         for d in selector_distrs:
             if d["name"] in ["uniform", "constant"]:
                 continue
+            function = d["function"] if "function" in d else d["fun"]
             self.configuration.add_distribution(
-                d["name"], d["function"], d.get("parameters", None), d.get("soma_ref_location", 0.5)
+                d["name"], function, d.get("parameters", None), d.get("soma_ref_location", 0.5)
             )
 
         for p in selector_params:
@@ -110,3 +113,5 @@ class ModelConfigurator:
                 locations=m["location"],
                 stochastic=m.get("stochastic", None),
             )
+
+        print(self.configuration)

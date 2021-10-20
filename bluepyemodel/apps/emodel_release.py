@@ -85,7 +85,6 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
     model_configuration = emodel_db.get_model_configuration()
     cell_model = create_cell_model(
         emodel,
-        emodel_db.get_morphologies(),
         model_configuration=model_configuration,
         morph_modifiers=[lambda: None],
         morph_modifiers_hoc=[morph_modifier_hoc],

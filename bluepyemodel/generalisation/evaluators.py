@@ -140,14 +140,12 @@ def get_emodel_data(emodel_db, combo, morphology_path, morph_modifiers):
 
     protocols = emodel_db.get_protocols()
     features = emodel_db.get_features()
-    morphologies = emodel_db.get_morphologies()
 
     emodel_db.emodel = combo["emodel"]  # to get the hash from the final
     emodel_params = emodel_db.get_emodel()["parameters"]
 
     cell = create_cell_model(
         "cell",
-        morphologies,
         model_configuration=model_configuration,
         morph_modifiers=_get_synth_modifiers(combo, morph_modifiers=morph_modifiers),
     )

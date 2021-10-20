@@ -20,7 +20,6 @@ logger = logging.getLogger("__main__")
 
 
 BPEM_NEXUS_SCHEMA = [
-    "ElectrophysiologyFeatureOptimisationNeuronMorphology",
     "ElectrophysiologyFeatureExtractionTrace",
     "ElectrophysiologyFeatureExtractionTarget",
     "ElectrophysiologyFeatureOptimisationTarget",
@@ -331,63 +330,14 @@ class NexusAccessPoint(DataAccessPoint):
             if filepath.stem != mechanism:
                 filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
 
-    def store_morphology(
-        self,
-        name=None,
-        id_=None,
-        seclist_names=None,
-        secarray_names=None,
-        section_index=None,
-    ):
-        """Creates an ElectrophysiologyFeatureOptimisationNeuronMorphology resource based on a
-        NeuronMorphology.
+    def download_morphology(self, name):
+        """Download a morphology by name if not already downloaded"""
 
-        Args:
-            name (str): name of the morphology.
-            id_ (str): nexus id of the NeuronMorphology.
-            seclist_names (list): Names of the lists of sections (ex: 'somatic')
-            secarray_names (list): names of the sections (ex: 'soma')
-            section_index (int): index to a specific section, used for non-somatic recordings.
-        """
-
-        if id_:
-            resource = self.access_point.retrieve(id_)
-        elif name:
-            resource = self.access_point.fetch_one(
-                {"type": "NeuronMorphology", "name": name}, use_version=False
-            )
-        else:
-            raise NexusAccessPointException("At least id_ or name should be informed.")
-
-        if not resource:
-            raise NexusAccessPointException(f"No matching resource for morphology {id_} {name}")
-
-        if not name:
-            name = resource.name
-
-        self.access_point.register(
-            {
-                "type": [
-                    "Entity",
-                    "ElectrophysiologyFeatureOptimisationNeuronMorphology",
-                ],
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=False),
-                "brainLocation": self.brain_region,
-                "name": name,
-                "morphology": {"id": resource.id},
-                "sectionListNames": seclist_names,
-                "sectionArrayNames": secarray_names,
-                "sectionIndex": section_index,
-            },
-            {
-                "type": "ElectrophysiologyFeatureOptimisationNeuronMorphology",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-                "name": name,
-            },
+        resource = self.access_point.fetch_one(
+            {"type": "NeuronMorphology", "name": name}, use_version=False
         )
+
+        return self.access_point.download(resource.id, "./morphology/")
 
     def store_trace_metadata(
         self,
@@ -1464,29 +1414,6 @@ class NexusAccessPoint(DataAccessPoint):
 
         return efeatures_out
 
-    def get_morphologies(self):
-        """Get the name and path (or data) to the morphologies used for optimisation.
-
-        Returns:
-            morphology_definition (list): [{'name': morph_name, 'path': 'morph_path'}]
-        """
-
-        resource_morphology = self.access_point.fetch_one(
-            filters={
-                "type": "ElectrophysiologyFeatureOptimisationNeuronMorphology",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
-        )
-
-        filepath = self.access_point.download(resource_morphology.morphology.id)
-
-        return {
-            "name": resource_morphology.name,
-            "path": str(filepath),
-        }
-
     def get_name_validation_protocols(self):
         """Get the names of the protocols used for validation"""
 
@@ -1539,6 +1466,13 @@ class NexusAccessPoint(DataAccessPoint):
 
         return {r.name for r in resources}
 
+    def get_available_morphologies(self):
+        """Get the list of names of the available morphologies"""
+
+        resources = self.access_point.fetch({"type": "NeuronMorphology"}, use_version=False)
+
+        return {r.name for r in resources}
+
     def get_model_configuration(self, configuration_name=None):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
@@ -1561,11 +1495,14 @@ class NexusAccessPoint(DataAccessPoint):
         model_configuration = NeuronModelConfiguration(
             configuration_name=configuration_name,
             available_mechanisms=self.get_available_mechanisms(),
+            available_morphologies=self.get_available_morphologies(),
         )
 
-        model_configuration.init_from_dict(config_dict)
-
         self.download_mechanisms(model_configuration.mechanism_names)
+        morph_path = self.download_morphology(config_dict["morphology"]["name"])
+        config_dict["morphology"]["path"] = morph_path
+
+        model_configuration.init_from_dict(config_dict)
 
         return model_configuration
 

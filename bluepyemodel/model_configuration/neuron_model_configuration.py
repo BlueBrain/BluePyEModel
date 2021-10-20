@@ -19,7 +19,7 @@ multiloc_map = {
 
 
 class NeuronModelConfiguration:
-    def __init__(self, configuration_name, available_mechanisms=None):
+    def __init__(self, configuration_name, available_mechanisms=None, available_morphologies=None):
 
         self.configuration_name = configuration_name
 
@@ -34,6 +34,13 @@ class NeuronModelConfiguration:
         if self.available_mechanisms is not None:
             self.available_mechanisms = set(self.available_mechanisms)
             self.available_mechanisms.add("pas")
+        self.available_morphologies = available_morphologies
+
+        self.morphology_name = None
+        self.morphology_path = None
+        self.seclist_names = None
+        self.secarray_names = None
+        self.section_index = None
 
     @property
     def mechanism_names(self):
@@ -93,6 +100,16 @@ class NeuronModelConfiguration:
                 self.add_mechanism(
                     mechanism["name"], mechanism["location"], mechanism.get("stochastic", None)
                 )
+
+        self.init_morphology_from_dict(configuration_dict["morphology"])
+
+    def init_morphology_from_dict(self, morpho_dict):
+        """"""
+        self.morphology_name = morpho_dict["name"]
+        self.morphology_path = morpho_dict["path"]
+        for k in ["seclist_names", "secarray_names", "section_index"]:
+            if k in morpho_dict:
+                setattr(self, k, morpho_dict[k])
 
     def init_from_legacy_dict(self, parameters):
         """"""
@@ -243,6 +260,33 @@ class NeuronModelConfiguration:
                 else:
                     self.mechanisms.append(tmp_mechanism)
 
+    def select_morphology(
+        self,
+        morphology_name=None,
+        seclist_names=None,
+        secarray_names=None,
+        section_index=None,
+    ):
+        """Select the morphology on which the neuron model will be based.
+
+        Args:
+            morphology_name (str): name of the morphology.
+            seclist_names (list): Names of the lists of sections (['somatic', ...])
+            secarray_names (list): names of the sections (['soma', ...])
+            section_index (int): index to a specific section, used for non-somatic recordings.
+        """
+
+        if morphology_name not in self.available_morphologies:
+            raise Exception(
+                "The morphology you want to use is not available in Nexus or in your "
+                "morphology directory"
+            )
+
+        self.morphology_name = morphology_name
+        self.seclist_names = seclist_names
+        self.secarray_names = secarray_names
+        self.section_index = section_index
+
     def remove_parameter(self, parameter_name, locations=None):
         """Remove a parameter from the configuration. If locations is None or [], the whole
         parameter will be removed. WARNING: that does not remove automatically the mechanism
@@ -279,6 +323,15 @@ class NeuronModelConfiguration:
             self.mechanisms = [m for m in self.mechanisms if m.name != mechanism_name]
             self.parameters = [p for p in self.parameters if p.mechanism != mechanism_name]
 
+    def morphology_as_dict(self):
+
+        return {
+            "name": self.morphology_name,
+            "seclist_names": self.seclist_names,
+            "secarray_names": self.secarray_names,
+            "section_index": self.section_index,
+        }
+
     def as_dict(self):
         """Returns the configuration as dict of parameters, mechanisms and
         a list of mechanism names"""
@@ -288,79 +341,8 @@ class NeuronModelConfiguration:
             "mechanisms": [m.as_dict() for m in self.mechanisms],
             "distributions": [d.as_dict() for d in self.distributions],
             "parameters": [p.as_dict() for p in self.parameters],
+            "morphology": self.morphology_as_dict(),
         }
-
-    def distributions_legacy_dict(self):
-        """Channel distributions as a dict"""
-
-        distr_dict = {}
-
-        for distribution in self.distributions:
-            if distribution.name in self.used_distribution_names:
-                distr_dict[distribution.name] = distribution.as_legacy_dict()
-
-        return distr_dict
-
-    def parameters_legacy_dict(self):
-        """Parameters, their locations and channel distributions as a dict"""
-
-        param_dict = {}
-
-        for p in self.parameters:
-            if p.location not in param_dict:
-                param_dict[p.location] = []
-            param_dict[p.location].append(p.as_legacy_dict())
-
-        ordered_param_dict = OrderedDict()
-        for loc in sorted(list(param_dict.keys())):
-            ordered_param_dict[loc] = sorted(param_dict[loc], key=lambda k: k["name"].lower())
-
-        return ordered_param_dict
-
-    def mechanisms_legacy_dict(self):
-        """Mechanisms and their locations as a dict"""
-
-        mechs_dict = {"multiloc_map": self.mapping_multilocation}
-
-        for m in self.mechanisms:
-
-            if m.location not in mechs_dict:
-                mechs_dict[m.location] = {"mech": [], "stoch": []}
-
-            mechs_dict[m.location]["mech"].append(m.name)
-            mechs_dict[m.location]["stoch"].append(m.stochastic)
-
-        return mechs_dict
-
-    def as_legacy_dicts(self):
-        """Returns the configuration as dicts, following the format of proj 38"""
-
-        param_distr = {
-            "parameters": self.parameters_legacy_dict(),
-            "distributions": self.distributions_legacy_dict(),
-            "multiloc_map": self.mapping_multilocation,
-        }
-
-        # Make sure that all distributions have their parameters in the dict of parameters
-        for dist_name, dist in param_distr["distributions"].items():
-            if "parameters" in dist:
-                distribution_location = f"distribution_{dist_name}"
-                if distribution_location not in param_distr["parameters"]:
-                    raise Exception(
-                        "A distribution has parameters but the parameter dict "
-                        "does not have an entry for it"
-                    )
-                for dist_param in dist["parameters"]:
-                    if not any(
-                        dist_param == p["name"]
-                        for p in param_distr["parameters"][distribution_location]
-                    ):
-                        raise Exception(
-                            f"A distribution has a parameter {dist_param} but the "
-                            "parameter dict does not have an entry for it"
-                        )
-
-        return param_distr, self.mechanisms_legacy_dict(), self.mechanism_names
 
     def __str__(self):
         """String representation"""

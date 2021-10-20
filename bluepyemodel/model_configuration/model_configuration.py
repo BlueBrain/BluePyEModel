@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 def configure_model(
     access_point,
+    morphology_name,
     emodel=None,
     ttype=None,
     use_gene_data=True,
@@ -30,6 +31,10 @@ def configure_model(
     configurator.new_configuration(
         configuration_name=configuration_name, use_gene_data=use_gene_data
     )
+
+    if morphology_name:
+        configurator.configuration.select_morphology(morphology_name)
+
     configurator.save_configuration()
 
     return configurator.configuration
