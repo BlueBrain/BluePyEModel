@@ -7,7 +7,7 @@ from importlib.machinery import SourceFileLoader
 import numpy
 
 from bluepyemodel.evaluation.evaluation import compute_responses
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.validation import validation_functions
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,6 @@ def define_validation_function(access_point):
 
 def validate(
     access_point,
-    emodel,
     mapper,
 ):
     """Compute the scores and traces for the optimisation and validation
@@ -56,8 +55,6 @@ def validate(
 
     Args:
         access_point (DataAccessPoint): data access point.
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
         mapper (map): used to parallelize the evaluation of the
             individual in the population.
 
@@ -65,24 +62,25 @@ def validate(
         emodels (list): list of emodels.
     """
 
-    cell_evaluator = get_evaluator_from_db(
-        emodel,
+    cell_evaluator = get_evaluator_from_access_point(
         access_point,
         include_validation_protocols=True,
         additional_protocols={},
     )
 
     emodels = compute_responses(
-        access_point, emodel, cell_evaluator, mapper, preselect_for_validation=True
+        access_point,
+        cell_evaluator=cell_evaluator,
+        map_function=mapper,
+        preselect_for_validation=True,
     )
 
     if not emodels:
-        logger.warning("In compute_scores, no emodels for %s", emodel)
+        logger.warning("In compute_scores, no emodels for %s", access_point.emodel)
         return []
 
     validation_function = define_validation_function(access_point)
 
-    access_point.set_emodel(emodel)
     name_validation_protocols = access_point.get_name_validation_protocols()
 
     logger.info("In validate, %s emodels found to validate.", len(emodels))
@@ -119,7 +117,6 @@ def validate(
             params=emodels[i]["parameters"],
             optimizer_name=emodels[i]["optimizer"],
             seed=emodels[i]["seed"],
-            githash=emodels[i]["githash"],
             validated=emodels[i]["validated"],
             scores_validation=emodels[i]["scores_validation"],
             features=emodels[i]["features"],

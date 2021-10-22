@@ -2,6 +2,8 @@
 
 
 class DistributionConfiguration:
+    """"""
+
     def __init__(self, name, function=None, parameters=None, soma_ref_location=0.5):
 
         self.name = name

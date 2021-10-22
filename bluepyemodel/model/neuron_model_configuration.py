@@ -1,11 +1,9 @@
 """Neuron Model Configuration"""
 import logging
-from collections import OrderedDict
 
-from bluepyemodel.evaluation.model import multi_locations
-from bluepyemodel.model_configuration.distribution_configuration import DistributionConfiguration
-from bluepyemodel.model_configuration.mechanism_configuration import MechanismConfiguration
-from bluepyemodel.model_configuration.parameter_configuration import ParameterConfiguration
+from bluepyemodel.model.distribution_configuration import DistributionConfiguration
+from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
+from bluepyemodel.model.parameter_configuration import ParameterConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +17,8 @@ multiloc_map = {
 
 
 class NeuronModelConfiguration:
+    """"""
+
     def __init__(self, configuration_name, available_mechanisms=None, available_morphologies=None):
 
         self.configuration_name = configuration_name
@@ -46,19 +46,19 @@ class NeuronModelConfiguration:
     def mechanism_names(self):
         """Returns the names of all the mechanisms used in the model"""
 
-        return set([m.name for m in self.mechanisms])
+        return {m.name for m in self.mechanisms}
 
     @property
     def distribution_names(self):
         """Returns the names of all the distributions registered"""
 
-        return set([d.name for d in self.distributions])
+        return {d.name for d in self.distributions}
 
     @property
     def used_distribution_names(self):
         """Returns the names of all the distributions used in the model"""
 
-        return set([p.distribution for p in self.parameters if p.distribution != "uniform"])
+        return {p.distribution for p in self.parameters if p.distribution != "uniform"}
 
     @staticmethod
     def _format_locations(locations):
@@ -66,7 +66,7 @@ class NeuronModelConfiguration:
 
         if locations is None:
             return []
-        elif isinstance(locations, str):
+        if isinstance(locations, str):
             return [locations]
 
         return locations
@@ -185,7 +185,7 @@ class NeuronModelConfiguration:
 
         if not locations:
             raise Exception(
-                f"Cannot add a parameter without specifying a location. If "
+                "Cannot add a parameter without specifying a location. If "
                 "global parameter, put 'global'."
             )
 
@@ -216,6 +216,17 @@ class NeuronModelConfiguration:
             if mechanism:
                 self.add_mechanism(mechanism, loc, stochastic=stochastic)
 
+    def is_mechanism_available(self, mechanism_name):
+        """"""
+
+        if self.available_mechanisms is not None:
+            for mech in self.available_mechanisms:
+                if mechanism_name in mech:
+                    return True
+            return False
+
+        return True
+
     def add_mechanism(self, mechanism_name, locations, stochastic=None):
         """Add a mechanism to the configuration. (This function should rarely be called directly as
         mechanisms are added automatically when using add_parameters. But it might be needed if a
@@ -225,10 +236,7 @@ class NeuronModelConfiguration:
 
         for loc in locations:
 
-            if (
-                self.available_mechanisms is not None
-                and mechanism_name not in self.available_mechanisms
-            ):
+            if not self.is_mechanism_available(mechanism_name):
                 raise Exception(
                     f"You are trying to add mechanism {mechanism_name} but it is not available"
                     " on Nexus or local."
@@ -244,7 +252,7 @@ class NeuronModelConfiguration:
                     return
 
             # Handle the case where the new mech is a key of the multilocation map
-            if loc in multiloc_map.keys():
+            if loc in multiloc_map:
                 tmp_mechanisms = []
                 for m in self.mechanisms:
                     if not (m.name == mechanism_name and m.location in multiloc_map[loc]):
@@ -255,7 +263,7 @@ class NeuronModelConfiguration:
             else:
                 for m in self.mechanisms:
                     if m.name == tmp_mechanism.name:
-                        if m.location in multiloc_map.keys() and loc in multiloc_map[m.location]:
+                        if m.location in multiloc_map and loc in multiloc_map[m.location]:
                             break
                 else:
                     self.mechanisms.append(tmp_mechanism)
@@ -347,18 +355,18 @@ class NeuronModelConfiguration:
     def __str__(self):
         """String representation"""
 
-        str_form = "Model Configuration - {}:\n\n".format(self.configuration_name)
+        str_form = f"Model Configuration - {self.configuration_name}:\n\n"
 
         str_form += "Mechanisms:\n"
         for m in self.mechanisms:
-            str_form += "   {}\n".format(m.as_dict())
+            str_form += f"   {m.as_dict()}\n"
 
         str_form += "Distributions:\n"
         for d in self.distributions:
-            str_form += "   {}\n".format(d.as_dict())
+            str_form += f"   {d.as_dict()}\n"
 
         str_form += "Parameters:\n"
         for p in self.parameters:
-            str_form += "   {}\n".format(p.as_dict())
+            str_form += f"   {p.as_dict()}\n"
 
         return str_form

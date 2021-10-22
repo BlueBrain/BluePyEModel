@@ -2,6 +2,8 @@
 
 
 class ParameterConfiguration:
+    """"""
+
     def __init__(self, name, location, value, distribution="uniform", mechanism=None):
 
         self.name = name
@@ -44,9 +46,6 @@ class ParameterConfiguration:
 
     def __eq__(self, other):
 
-        if self.name == other.name and (
+        return self.name == other.name and (
             self.name == "all" or other.location == "all" or self.location == other.location
-        ):
-            return True
-        else:
-            return False
+        )

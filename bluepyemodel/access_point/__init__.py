@@ -1,13 +1,18 @@
 """E-model access_point module"""
 
 
-def get_db(access_point, emodel, **kwargs):
+def get_access_point(access_point, emodel, **kwargs):
     """Returns a DataAccessPoint object.
 
     Args:
         access_point (str): name of the access_point to use, can be 'nexus' or 'local'.
         emodel (str): name of the emodel.
         kwargs (dict): extra arguments to pass to access_point constructors, see below.
+
+    Optional:
+        ttype (str): name of the t-type.
+        iteration_tag (str): tag associated to the current run. Used to tag the
+            Resources generated during the different run.
 
     For local:
         emodel_dir (str): path of the directory containing the parameters,
@@ -24,9 +29,6 @@ def get_db(access_point, emodel, **kwargs):
         organisation (str): name of the Nexus organization to which the project belong.
         endpoint (str): Nexus endpoint.
         forge_path (str): path to a .yml used as configuration by nexus-forge.
-        ttype (str): name of the t-type.
-        iteration_tag (str): tag associated to the current run. Used to tag the
-            Resources generated during the different run.
 
     Returns:
         DataAccessPoint
@@ -57,6 +59,8 @@ def get_db(access_point, emodel, **kwargs):
             final_path=kwargs.get("final_path", None),
             legacy_dir_structure=kwargs.get("legacy_dir_structure", False),
             with_seeds=kwargs.get("with_seeds", False),
+            ttype=kwargs.get("ttype", None),
+            iteration_tag=kwargs.get("iteration_tag", None),
         )
 
     raise Exception(f"Unknown access point: {access_point}")

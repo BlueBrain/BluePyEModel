@@ -10,7 +10,7 @@ from bluepyemodel.tasks.generalisation.config import EmodelAPIConfig
 
 
 class EmodelAwareTask:
-    """Task with loaded emodel_db."""
+    """Task with loaded access_point."""
 
     def get_database(self):
         """Fetch emodel AP."""

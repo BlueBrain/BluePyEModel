@@ -1,7 +1,7 @@
 """Model configuration related functions"""
 import logging
 
-from bluepyemodel.model_configuration.model_configurator import ModelConfigurator
+from bluepyemodel.model.model_configurator import ModelConfigurator
 
 logger = logging.getLogger(__name__)
 

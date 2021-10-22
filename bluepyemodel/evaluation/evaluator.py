@@ -621,7 +621,6 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     other_protocols = {}
 
     for name, definition in protocols_definition.items():
-
         protocol = define_protocol(name, definition, stochasticity, threshold_based_evaluator)
 
         if threshold_based_evaluator:
@@ -632,7 +631,6 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
         # Define the efeatures associated to the protocol
         if name in features_definition:
             for recording_name, feature_configs in features_definition[name].items():
-
                 for feature_config in feature_configs:
 
                     stim_amp = protocol.amplitude

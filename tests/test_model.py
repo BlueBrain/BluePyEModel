@@ -1,9 +1,8 @@
-import pytest
 import bluepyopt.ephys as ephys
 
-from bluepyemodel.evaluation import model
-from bluepyemodel.model_configuration.parameter_configuration import ParameterConfiguration
-from bluepyemodel.model_configuration.distribution_configuration import DistributionConfiguration
+from bluepyemodel.model import model
+from bluepyemodel.model.parameter_configuration import ParameterConfiguration
+from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 
 def test_multi_locations():
 

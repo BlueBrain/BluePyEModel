@@ -13,11 +13,11 @@ from bluepyparallel import evaluate
 from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.evaluation.evaluator import define_main_protocol
 from bluepyemodel.evaluation.evaluator import get_simulator
-from bluepyemodel.evaluation.model import create_cell_model
 from bluepyemodel.evaluation.modifiers import isolate_axon
 from bluepyemodel.evaluation.modifiers import remove_axon
 from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
 from bluepyemodel.evaluation.modifiers import synth_axon
+from bluepyemodel.model.model import create_cell_model
 
 logger = logging.getLogger(__name__)
 

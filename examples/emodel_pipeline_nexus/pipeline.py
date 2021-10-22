@@ -394,7 +394,7 @@ if __name__ == "__main__":
         nexus_organisation=nexus_organisation,
         nexus_project=nexus_project,
         nexus_endpoint=nexus_endpoint,
-        nexus_iteration_tag=iteration_tag,
+        iteration_tag=iteration_tag,
     )
 
     if args.step == "upload_data":

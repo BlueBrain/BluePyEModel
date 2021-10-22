@@ -1,6 +1,6 @@
 import pytest
 
-from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 
 @pytest.fixture
 def configuration():

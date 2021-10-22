@@ -2,13 +2,15 @@
 
 
 class MechanismConfiguration:
+    """"""
+
     def __init__(self, name, location, stochastic=None):
 
         self.name = name
         self.location = location
         self.stochastic = stochastic
         if self.stochastic is None:
-            self.stochastic = True if "Stoch" in self.name else False
+            self.stochastic = "Stoch" in self.name
 
     def as_dict(self):
 

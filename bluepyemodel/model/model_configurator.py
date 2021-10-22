@@ -5,7 +5,7 @@ import icselector
 
 from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.emodel_pipeline.utils import yesno
-from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class ModelConfigurator:
                 "No gene mapping name informed. Only parameters registered by the user"
                 " will be used."
             )
-            return
+            return [], [], []
 
         _, gene_map_path = self.access_point.load_channel_gene_expression(
             self.access_point.pipeline_settings.name_gene_map

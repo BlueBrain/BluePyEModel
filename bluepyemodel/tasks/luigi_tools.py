@@ -30,16 +30,18 @@ class WorkflowTask(luigi.Task):
 
     backend = luigi.Parameter(default=None, config_path=dict(section="parallel", name="backend"))
     emodel = luigi.Parameter()
-    ttype = luigi.Parameter(default="")
+    ttype = luigi.Parameter(default=None)
+    iteration_tag = luigi.Parameter(default=None)
 
     def __init__(self, *args, **kwargs):
         """ """
         super().__init__(*args, **kwargs)
 
-        self.access_point = access_point.get_db(
+        self.access_point = access_point.get_access_point(
             EmodelAPIConfig().api,
             emodel=self.emodel,
             ttype=self.ttype,
+            iteration_tag=self.iteration_tag,
             **EmodelAPIConfig().api_args
         )
 
@@ -55,17 +57,19 @@ class WorkflowTask(luigi.Task):
 class WorkflowTarget(luigi.Target, ABC):
     """Workflow target with loaded access_point."""
 
-    def __init__(self, emodel, ttype, *args, **kwargs):
+    def __init__(self, emodel, ttype, iteration_tag, *args, **kwargs):
         """ """
         super().__init__(*args, **kwargs)
 
         self.emodel = emodel
         self.ttype = ttype
+        self.iteration_tag = iteration_tag
 
-        self.access_point = access_point.get_db(
+        self.access_point = access_point.get_access_point(
             EmodelAPIConfig().api,
             emodel=self.emodel,
             ttype=self.ttype,
+            iteration_tag=self.iteration_tag,
             **EmodelAPIConfig().api_args
         )
 
