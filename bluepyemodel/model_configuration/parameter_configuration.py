@@ -7,6 +7,8 @@ class ParameterConfiguration:
         self.name = name
         self.location = location
         self.value = value
+        if isinstance(self.value, tuple):
+            self.value = list(self.value)
         self.mechanism = mechanism
 
         self.distribution = distribution

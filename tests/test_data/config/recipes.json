@@ -1,6 +1,6 @@
 {
     "cADpyr_L5TPC": {
-        "morph_path": "./config/",
+        "morph_path": "./morphology/",
         "morphology": [
             [
                 "L5TPCa",

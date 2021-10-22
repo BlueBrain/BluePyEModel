@@ -127,11 +127,11 @@ class EModel_pipeline:
             iteration_tag=nexus_iteration_tag,
         )
 
-    def configure_model(self, use_gene_data=False):
+    def configure_model(self, morphology_name, use_gene_data=False):
         """"""
 
         return configure_model(
-            self.access_point, self.emodel, self.ttype, use_gene_data=use_gene_data
+            self.access_point, morphology_name, self.emodel, self.ttype, use_gene_data=use_gene_data
         )
 
     def extract_efeatures(self):
@@ -229,6 +229,13 @@ def get_parser():
     parser.add_argument("--emodel", type=str, help="Name of the e-model")
     parser.add_argument("--species", type=str, help="Name of the species")
     parser.add_argument("--brain_region", type=str, help="Name of the brain region")
+
+    parser.add_argument(
+        "--morphology_name",
+        type=str,
+        default=None,
+        help="Name of the morphology used as a based for the neuron model",
+    )
 
     # Arguments used in the instantiation of the data access point:
     parser.add_argument(
@@ -397,7 +404,7 @@ def main():
     )
 
     if args.step == "configure_model":
-        pipeline.configure_model(use_gene_data=True)
+        pipeline.configure_model(morphology_name=args.morphology_name, use_gene_data=True)
     if args.step == "extract":
         pipeline.extract_efeatures()
     elif args.step == "optimize":

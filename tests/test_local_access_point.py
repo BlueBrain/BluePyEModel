@@ -31,6 +31,12 @@ def test_get_morphologies(db):
     assert Path(morphology["path"]).name == "C060114A5.asc"
 
 
+def test_get_available_morphologies(db):
+    names = db.get_available_morphologies()
+    assert len(names) == 1
+    assert list(names)[0] == "C060114A5"
+
+
 def test_get_features(db):
     features = db.get_features()
     # json.dump(features, open(DATA / "test_features.json", "w"))
@@ -52,30 +58,22 @@ def test_get_recipes(db):
     assert list(diff(recipes, expected_recipes)) == []
 
 
-def test_get_parameters(db):
+def test_get_model_configuration(db):
 
     configuration = db.get_model_configuration()
-    parameters, mechanisms, mech_names = configuration.as_legacy_dicts()
 
     expected_parameters = json.load(open(DATA / "test_parameters.json", "r"))
-    for loc in expected_parameters['parameters']:
-        for i, p in enumerate(expected_parameters['parameters'][loc]):
-            expected_parameters['parameters'][loc][i].pop('test', None)
-            expected_parameters['parameters'][loc][i].pop('__comment', None)
-    for distr in expected_parameters['distributions']:
-        expected_parameters['distributions'][distr].pop('__comment', None)
-    ordered_param_dict = OrderedDict()
-    for loc in sorted(list(expected_parameters["parameters"].keys())):
-        ordered_param_dict[loc] = sorted(
-            expected_parameters["parameters"][loc], key=lambda k: k["name"].lower()
-        )
-    expected_parameters["parameters"] = ordered_param_dict
-
     expected_mechanisms = json.load(open(DATA / "test_mechanisms.json", "r"))
 
-    assert list(diff(mechanisms, expected_mechanisms)) == []
-    assert list(diff(parameters, expected_parameters)) == []
-    assert sorted(mech_names) == [
+    for p in configuration.parameters:
+        assert p.location in expected_parameters['parameters']
+        for ep in expected_parameters['parameters'][p.location]:
+            if ep['name'] == p.name and ep['val'] == p.value:
+                break
+        else:
+            raise Exception("missing parameter")
+
+    assert sorted(list(configuration.mechanism_names)) == [
         "CaDynamics_DC0",
         "Ca_HVA2",
         "Ca_LVAst",
