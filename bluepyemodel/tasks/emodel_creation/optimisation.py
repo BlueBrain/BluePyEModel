@@ -7,6 +7,7 @@ import luigi
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline.plotting import optimization
 from bluepyemodel.emodel_pipeline.plotting import plot_models
+from bluepyemodel.emodel_pipeline.utils import run_metadata_as_string
 from bluepyemodel.optimisation import get_checkpoint_path
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tasks.luigi_tools import IPyParallelTask
@@ -21,9 +22,9 @@ from bluepyemodel.tools.mechanisms import compile_mechs
 class EfeaturesProtocolsTarget(WorkflowTarget):
     """Target to check if efeatures and protocols are present in the database."""
 
-    def __init__(self, emodel, ttype):
+    def __init__(self, emodel, ttype, iteration_tag):
         """Constructor."""
-        super().__init__(emodel=emodel, ttype=ttype)
+        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
 
     def exists(self):
         """Check if the features and protocols have been created."""
@@ -38,6 +39,7 @@ class ExtractEFeatures(WorkflowTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         ttype (str): name of the t-type.
+        iteration_tag (str): tag of the current iteration
     """
 
     def run(self):
@@ -50,7 +52,9 @@ class ExtractEFeatures(WorkflowTask):
 
     def output(self):
         """ """
-        return EfeaturesProtocolsTarget(emodel=self.emodel, ttype=self.ttype)
+        return EfeaturesProtocolsTarget(
+            emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag
+        )
 
 
 class CompileMechanisms(WorkflowTask):
@@ -60,6 +64,7 @@ class CompileMechanisms(WorkflowTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         ttype (str): name of the t-type.
+        iteration_tag (str): tag of the current iteration
         species (str): name of the species.
         brain_region (str): name of the brain_region.
     """
@@ -75,36 +80,25 @@ class CompileMechanisms(WorkflowTask):
 
     def output(self):
         """ """
-
-        config = self.access_point.get_model_configuration()
-
-        targets = []
-        for mech in config.mechanism_names:
-            if mech != "pas":
-                targets.append(luigi.LocalTarget(Path("x86_64") / f"{mech}.c"))
-
-        return targets
+        return luigi.LocalTarget(Path("x86_64") / "special")
 
 
 class OptimisationTarget(WorkflowTarget):
     """Target to check if an optimisation is present in the database."""
 
-    def __init__(self, emodel, ttype, seed=1):
+    def __init__(self, emodel, ttype, iteration_tag=None, seed=1):
         """Constructor.
 
         Args:
            seed (int): seed used in the optimisation.
         """
-        super().__init__(emodel=emodel, ttype=ttype)
+        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
 
         self.seed = seed
 
     def exists(self):
         """Check if the model is completed."""
-        return self.access_point.optimisation_state(
-            seed=self.seed,
-            githash="",
-        )
+        return self.access_point.optimisation_state(seed=self.seed)
 
 
 class Optimize(WorkflowTask, IPyParallelTask):
@@ -114,6 +108,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         ttype (str): name of the t-type.
+        iteration_tag (str): tag of the current iteration
         species (str): name of the species.
         brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
@@ -133,13 +128,16 @@ class Optimize(WorkflowTask, IPyParallelTask):
         """ """
         compile_mechanisms = self.access_point.pipeline_settings.compile_mechanisms
 
-        targets = [ExtractEFeatures(emodel=self.emodel, ttype=self.ttype)]
+        targets = [
+            ExtractEFeatures(emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag)
+        ]
 
         if compile_mechanisms:
             targets.append(
                 CompileMechanisms(
                     emodel=self.emodel,
                     ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
                     species=self.species,
                     brain_region=self.brain_region,
                 )
@@ -201,26 +199,22 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
         # -- run optimisation -- #
         mapper = get_mapper(args.backend)
-        access_pt = access_point.get_db(
+        access_pt = access_point.get_access_point(
             args.api_from_config, args.emodel, **args.api_args_from_config
         )
-        setup_and_run_optimisation(
-            access_pt,
-            args.emodel,
-            args.seed,
-            mapper=mapper,
-            githash="",
-        )
+        setup_and_run_optimisation(access_pt, args.seed, mapper=mapper)
 
     def output(self):
         """ """
-        return OptimisationTarget(seed=self.seed, ttype=self.ttype, emodel=self.emodel)
+        return OptimisationTarget(
+            seed=self.seed, ttype=self.ttype, emodel=self.emodel, iteration_tag=self.iteration_tag
+        )
 
 
 class BestModelTarget(WorkflowTarget):
     """Check if the best model from optimisation is present in the database."""
 
-    def __init__(self, emodel, ttype, seed=1):
+    def __init__(self, emodel, ttype, iteration_tag=None, seed=1):
         """Constructor.
 
         Args:
@@ -229,13 +223,13 @@ class BestModelTarget(WorkflowTarget):
             ttype (str): name of the ttype
             seed (int): seed used in the optimisation.
         """
-        super().__init__(emodel=emodel, ttype=ttype)
+        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
 
         self.seed = seed
 
     def exists(self):
         """Check if the best model is stored."""
-        return self.access_point.has_best_model(seed=self.seed, githash="")
+        return self.access_point.has_best_model(seed=self.seed)
 
 
 class StoreBestModels(WorkflowTask):
@@ -265,6 +259,7 @@ class StoreBestModels(WorkflowTask):
                 Optimize(
                     emodel=self.emodel,
                     ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=seed,
@@ -275,13 +270,16 @@ class StoreBestModels(WorkflowTask):
                 PlotOptimisation(
                     emodel=self.emodel,
                     ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=seed,
                 )
             )
 
-        to_run.append(ExtractEFeatures(emodel=self.emodel, ttype=self.ttype))
+        to_run.append(
+            ExtractEFeatures(emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag)
+        )
 
         return to_run
 
@@ -293,21 +291,24 @@ class StoreBestModels(WorkflowTask):
             if OptimisationTarget(
                 emodel=self.emodel,
                 ttype=self.ttype,
+                iteration_tag=self.iteration_tag,
                 seed=seed,
             ).exists():
-                store_best_model(
-                    self.access_point,
-                    self.emodel,
-                    seed,
-                    githash="",
-                )
+                store_best_model(self.access_point, self.emodel, seed)
 
     def output(self):
         """ """
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
         targets = []
         for seed in range(self.seed, self.seed + batch_size):
-            targets.append(BestModelTarget(emodel=self.emodel, ttype=self.ttype, seed=seed))
+            targets.append(
+                BestModelTarget(
+                    emodel=self.emodel,
+                    ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
+                    seed=seed,
+                )
+            )
         return targets
 
 
@@ -318,7 +319,7 @@ class ValidationTarget(WorkflowTarget):
         even if the model is not validated.
     """
 
-    def __init__(self, emodel, ttype, seed):
+    def __init__(self, emodel, ttype, iteration_tag, seed):
         """Constructor.
 
         Args:
@@ -327,7 +328,7 @@ class ValidationTarget(WorkflowTarget):
             ttype (str): name of the ttype.
             seed (int): seed used in the optimisation.
         """
-        super().__init__(emodel=emodel, ttype=ttype)
+        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
 
         self.seed = seed
 
@@ -335,7 +336,7 @@ class ValidationTarget(WorkflowTarget):
         """Check if the model is completed for all given seeds."""
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
         checked_for_all_seeds = [
-            self.access_point.is_checked_by_validation(seed=seed, githash="")
+            self.access_point.is_checked_by_validation(seed=seed)
             for seed in range(self.seed, self.seed + batch_size)
         ]
         return all(checked_for_all_seeds)
@@ -371,6 +372,7 @@ class Validation(WorkflowTask, IPyParallelTask):
             StoreBestModels(
                 emodel=self.emodel,
                 ttype=self.ttype,
+                iteration_tag=self.iteration_tag,
                 species=self.species,
                 brain_region=self.brain_region,
                 seed=self.seed,
@@ -381,6 +383,7 @@ class Validation(WorkflowTask, IPyParallelTask):
                 CompileMechanisms(
                     emodel=self.emodel,
                     ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
                     species=self.species,
                     brain_region=self.brain_region,
                 )
@@ -391,13 +394,16 @@ class Validation(WorkflowTask, IPyParallelTask):
                 PlotModels(
                     emodel=self.emodel,
                     ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=self.seed,
                 )
             )
 
-        to_run.append(ExtractEFeatures(emodel=self.emodel, ttype=self.ttype))
+        to_run.append(
+            ExtractEFeatures(emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag)
+        )
 
         return to_run
 
@@ -444,21 +450,23 @@ class Validation(WorkflowTask, IPyParallelTask):
 
         # -- run validation -- #
         mapper = get_mapper(args.backend)
-        access_pt = access_point.get_db(
+        access_pt = access_point.get_access_point(
             args.api_from_config, args.emodel, **args.api_args_from_config
         )
 
-        validate(access_pt, args.emodel, mapper)
+        validate(access_pt, mapper)
 
     def output(self):
         """ """
-        return ValidationTarget(emodel=self.emodel, ttype=self.ttype, seed=self.seed)
+        return ValidationTarget(
+            emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag, seed=self.seed
+        )
 
 
 class EModelCreationTarget(WorkflowTarget):
     """Check if the the model is validated for any seed."""
 
-    def __init__(self, emodel, ttype):
+    def __init__(self, emodel, ttype, iteration_tag):
         """Constructor.
 
         Args:
@@ -466,12 +474,12 @@ class EModelCreationTarget(WorkflowTarget):
                 under which the configuration data are stored.
             ttype (str): name of the ttype.
         """
-        super().__init__(emodel=emodel, ttype=ttype)
+        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
 
     def exists(self):
         """Check if the model is completed."""
 
-        return self.access_point.is_validated(githash="")
+        return self.access_point.is_validated()
 
 
 class EModelCreation(WorkflowTask):
@@ -510,6 +518,7 @@ class EModelCreation(WorkflowTask):
                 Validation(
                     emodel=self.emodel,
                     ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=seed,
@@ -521,7 +530,9 @@ class EModelCreation(WorkflowTask):
 
     def output(self):
         """ """
-        return EModelCreationTarget(emodel=self.emodel, ttype=self.ttype)
+        return EModelCreationTarget(
+            emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag
+        )
 
 
 class EModelCreationWrapper(WorkflowWrapperTask):
@@ -546,6 +557,7 @@ class EModelCreationWrapper(WorkflowWrapperTask):
             EModelCreation(
                 emodel=self.emodel,
                 ttype=self.ttype,
+                iteration_tag=self.iteration_tag,
                 species=self.species,
                 brain_region=self.brain_region,
             )
@@ -558,6 +570,7 @@ class EModelCreationWrapper(WorkflowWrapperTask):
                 PlotValidatedDistributions(
                     emodel=self.emodel,
                     ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
                     species=self.species,
                     brain_region=self.brain_region,
                 )
@@ -620,6 +633,7 @@ class PlotOptimisation(WorkflowTask):
         return Optimize(
             emodel=self.emodel,
             ttype=self.ttype,
+            iteration_tag=self.iteration_tag,
             species=self.species,
             brain_region=self.brain_region,
             seed=self.seed,
@@ -627,8 +641,14 @@ class PlotOptimisation(WorkflowTask):
 
     def run(self):
         """ """
-        githash = ""
-        checkpoint_path = get_checkpoint_path(self.emodel, self.seed, githash)
+
+        checkpoint_path = get_checkpoint_path(
+            self.emodel,
+            seed=self.seed,
+            iteration_tag=self.iteration_tag,
+            ttype=self.ttype,
+        )
+
         optimization(
             checkpoint_path=checkpoint_path,
             figures_dir=Path("./figures") / self.emodel / "optimisation",
@@ -636,8 +656,12 @@ class PlotOptimisation(WorkflowTask):
 
     def output(self):
         """ """
-        githash = ""
-        fname = f"{get_checkpoint_path(self.emodel, self.seed, githash).stem}.pdf"
+
+        chkpt_name = get_checkpoint_path(
+            self.emodel, self.seed, iteration_tag=self.iteration_tag, ttype=self.ttype
+        )
+
+        fname = f"{chkpt_name.stem}.pdf"
         return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
@@ -657,10 +681,13 @@ class PlotModels(WorkflowTask):
     def requires(self):
         """ """
         requires = [
-            ExtractEFeatures(emodel=self.emodel, ttype=self.ttype),
+            ExtractEFeatures(
+                emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag
+            ),
             StoreBestModels(
                 emodel=self.emodel,
                 ttype=self.ttype,
+                iteration_tag=self.iteration_tag,
                 species=self.species,
                 brain_region=self.brain_region,
                 seed=self.seed,
@@ -682,7 +709,6 @@ class PlotModels(WorkflowTask):
             emodel=self.emodel,
             mapper=mapper,
             seeds=range(self.seed, self.seed + batch_size),
-            githashs="",
             figures_dir=Path("./figures") / self.emodel,
             additional_protocols=additional_protocols,
             plot_distributions=plot_optimisation,
@@ -699,20 +725,37 @@ class PlotModels(WorkflowTask):
         outputs = []
         if plot_optimisation:
             # distribution
-            fname = f"{self.emodel}_parameters_distribution.pdf"
+            fname = run_metadata_as_string(
+                self.emodel,
+                seed="",
+                ttype=self.ttype,
+                iteration_tag=self.iteration_tag,
+            )
+            fname += "__parameters_distribution.pdf"
             fpath = Path("./figures") / self.emodel / "distributions" / "all" / fname
             outputs.append(luigi.LocalTarget(fpath))
 
             # scores
             for seed in range(self.seed, self.seed + batch_size):
-                # change fname if githash is implemented
-                fname = f"{self.emodel}_{seed}_scores.pdf"
+                fname = run_metadata_as_string(
+                    self.emodel,
+                    seed,
+                    ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
+                )
+                fname += "__scores.pdf"
                 fpath = Path("./figures") / self.emodel / "scores" / "all" / fname
                 outputs.append(luigi.LocalTarget(fpath))
 
             # traces
             for seed in range(self.seed, self.seed + batch_size):
-                fname = f"{self.emodel}__{seed}_traces.pdf"
+                fname = run_metadata_as_string(
+                    self.emodel,
+                    seed,
+                    ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
+                )
+                fname += "__traces.pdf"
                 fpath = Path("./figures") / self.emodel / "traces" / "all" / fname
                 outputs.append(luigi.LocalTarget(fpath))
 
@@ -735,6 +778,7 @@ class PlotValidatedDistributions(WorkflowTask):
         return EModelCreation(
             emodel=self.emodel,
             ttype=self.ttype,
+            iteration_tag=self.iteration_tag,
             species=self.species,
             brain_region=self.brain_region,
         )

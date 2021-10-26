@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 import logging
 
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
-from bluepyemodel.access_point import get_db
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.access_point import get_access_point
 from bluepyemodel.validation.validation import validate, define_validation_function
 
 TEST_ROOT = Path(__file__).parent
@@ -23,7 +23,7 @@ def api_config():
 
 @pytest.fixture
 def db(api_config):
-    return get_db("local", **api_config)
+    return get_access_point("local", **api_config)
 
 
 def always_true_validation(model, threshold=5.0, validation_protocols_only=False):
@@ -59,7 +59,6 @@ def test_validation(db):
 
     emodels = validate(
         access_point=db,
-        emodel="cADpyr_L5TPC",
         mapper=map,
     )
 

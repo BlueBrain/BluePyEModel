@@ -11,7 +11,7 @@ from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.utils import yesno
-from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
 # pylint: disable=simplifiable-if-expression,too-many-arguments,undefined-variable,unused-argument
@@ -84,11 +84,10 @@ class NexusAccessPoint(DataAccessPoint):
                 Resources generated during the different run.
         """
 
-        super().__init__(emodel)
+        super().__init__(emodel, ttype, iteration_tag)
 
         self.species = species
         self.brain_region = self.get_brain_region(brain_region)
-        self.ttype = ttype
 
         self.access_point = NexusForgeAccessPoint(
             project=project,
@@ -154,7 +153,7 @@ class NexusAccessPoint(DataAccessPoint):
             },
         }
 
-    def fetch_emodel(self, seed=None, githash=None, use_version=True):
+    def fetch_emodel(self, seed=None, use_version=True):
         """Fetch an emodel"""
 
         filters = {
@@ -166,9 +165,6 @@ class NexusAccessPoint(DataAccessPoint):
 
         if seed:
             filters["seed"] = seed
-
-        if githash:
-            filters["githash"] = githash
 
         resources = self.access_point.fetch(filters, use_version=use_version)
 
@@ -981,7 +977,6 @@ class NexusAccessPoint(DataAccessPoint):
         params,
         optimizer_name,
         seed,
-        githash="",
         validated=None,
         scores_validation=None,
         features=None,
@@ -993,7 +988,6 @@ class NexusAccessPoint(DataAccessPoint):
             params (dict): values of the parameters. Of the format {"param_name": param_value}.
             optimizer_name (str): name of the optimizer (IBEA, CMA, ...).
             seed (int): seed used by the optimizer.
-            githash (string): githash associated with the configuration files.
             validated (bool): None indicate that the model did not go through validation.\
                 False indicates that it failed validation. True indicates that it
                 passed validation.
@@ -1007,7 +1001,7 @@ class NexusAccessPoint(DataAccessPoint):
         features_resource = format_dict_for_resource(features)
         parameters_resource = format_dict_for_resource(params)
 
-        pdf_dependencies = self._build_pdf_dependencies(seed, githash)
+        pdf_dependencies = self._build_pdf_dependencies(seed)
 
         pip_freeze = os.popen("pip freeze").read()
 
@@ -1036,10 +1030,6 @@ class NexusAccessPoint(DataAccessPoint):
             "seed": seed,
         }
 
-        if githash:
-            resource_description["githash"] = githash
-            search["githash"] = githash
-
         if self.ttype:
             resource_description["ttype"] = self.ttype
 
@@ -1050,21 +1040,23 @@ class NexusAccessPoint(DataAccessPoint):
             tag=True,
         )
 
-    def _build_pdf_dependencies(self, seed, githash):
+    def _build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
 
         pdfs = {"optimisation": [], "traces": [], "scores": [], "parameters": []}
 
-        opt_pdf = search_pdfs.search_figure_emodel_optimisation(self.emodel, seed, githash)
+        opt_pdf = search_pdfs.search_figure_emodel_optimisation(
+            self.emodel, seed, self.iteration_tag
+        )
         if opt_pdf:
             pdfs["optimisation"].append(self.access_point.forge.attach(opt_pdf))
 
-        traces_pdf = search_pdfs.search_figure_emodel_traces(self.emodel, seed, githash)
+        traces_pdf = search_pdfs.search_figure_emodel_traces(self.emodel, seed, self.iteration_tag)
         for pdf_path in traces_pdf:
             if pdf_path:
                 pdfs["traces"].append(self.access_point.forge.attach(pdf_path))
 
-        scores_pdf = search_pdfs.search_figure_emodel_score(self.emodel, seed, githash)
+        scores_pdf = search_pdfs.search_figure_emodel_score(self.emodel, seed, self.iteration_tag)
         for pdf_path in scores_pdf:
             if pdf_path:
                 pdfs["scores"].append(self.access_point.forge.attach(pdf_path))
@@ -1124,10 +1116,10 @@ class NexusAccessPoint(DataAccessPoint):
             if hasattr(resource, "passedValidation"):
                 passed_validation = resource.passedValidation
 
-            if hasattr(resource, "githash"):
-                githash = resource.githash
+            if hasattr(resource, "iteration"):
+                iteration_tag = resource.iteration_tag
             else:
-                githash = ""
+                iteration_tag = ""
 
             # WARNING: should be self.brain_region.brainRegion.label in the future
 
@@ -1142,7 +1134,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "validated": passed_validation,
                 "optimizer": resource.optimizer,
                 "seed": resource.seed,
-                "githash": githash,
+                "iteration_tag": iteration_tag,
             }
 
             models.append(model)
@@ -1230,10 +1222,9 @@ class NexusAccessPoint(DataAccessPoint):
                 f"{resource_target.stimulus.target}% for emodel {self.emodel}"
             )
 
-        protocol_name = (
-            f"{resources_protocol[0].stimulus.stimulusType.label}_"
-            f"{resources_protocol[0].stimulus.stimulusTarget[0]}"
-        )
+        ecode = resources_protocol[0].stimulus.stimulusType.label
+        amp = str(int(resources_protocol[0].stimulus.stimulusTarget[0]))
+        protocol_name = f"{ecode}_{amp}"
 
         return resources_protocol[0], protocol_name
 
@@ -1264,6 +1255,10 @@ class NexusAccessPoint(DataAccessPoint):
             resource_protocol, protocol_name = self.fetch_extraction_protocol(resource_target)
 
             stimulus = self.access_point.forge.as_json(resource_protocol.protocolDefinition.step)
+
+            stimulus["totduration"] = stimulus.pop("totalDuration")
+            stimulus["amp"] = stimulus.pop("amplitude")
+            stimulus["thresh_perc"] = stimulus.pop("thresholdPercentage")
             stimulus["holding_current"] = resource_protocol.protocolDefinition.holding.amplitude
 
             if hasattr(resource_target, "extraRecordings"):
@@ -1323,7 +1318,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         if len(resources) > 1:
             raise NexusAccessPointException(
-                "More than one feature {name} for {stimulus} {amplitude}% for "
+                f"More than one feature {name} for {stimulus} {amplitude}% for "
                 f"emodel {self.emodel}"
             )
 
@@ -1366,10 +1361,9 @@ class NexusAccessPoint(DataAccessPoint):
                     resource_target.stimulus.target,
                 )
 
-                protocol_name = (
-                    f"{resource_target.stimulus.stimulusType.label}_"
-                    f"{resource_target.stimulus.target}"
-                )
+                ecode = resource_target.stimulus.stimulusType.label
+                amp = str(int(resource_target.stimulus.target))
+                protocol_name = f"{ecode}_{amp}"
 
                 if protocol_name not in efeatures_out:
                     efeatures_out[protocol_name] = {"soma.v": []}
@@ -1492,17 +1486,17 @@ class NexusAccessPoint(DataAccessPoint):
                 if isinstance(config_dict[entry], dict):
                     config_dict[entry] = [config_dict[entry]]
 
+        morph_path = self.download_morphology(config_dict["morphology"]["name"])
+        config_dict["morphology"]["path"] = morph_path
+
         model_configuration = NeuronModelConfiguration(
             configuration_name=configuration_name,
             available_mechanisms=self.get_available_mechanisms(),
             available_morphologies=self.get_available_morphologies(),
         )
 
-        self.download_mechanisms(model_configuration.mechanism_names)
-        morph_path = self.download_morphology(config_dict["morphology"]["name"])
-        config_dict["morphology"]["path"] = morph_path
-
         model_configuration.init_from_dict(config_dict)
+        self.download_mechanisms(model_configuration.mechanism_names)
 
         return model_configuration
 
@@ -1525,15 +1519,15 @@ class NexusAccessPoint(DataAccessPoint):
 
         return True
 
-    def has_best_model(self, seed, githash):
+    def has_best_model(self, seed):
         """Check if the best model has been stored."""
 
-        if self.fetch_emodel(seed=seed, githash=githash):
+        if self.fetch_emodel(seed=seed):
             return True
 
         return False
 
-    def is_checked_by_validation(self, seed, githash):
+    def is_checked_by_validation(self, seed):
         """Check if the emodel with a given seed has been checked by Validation task.
 
         Reminder: the logic of validation is as follows:
@@ -1542,14 +1536,15 @@ class NexusAccessPoint(DataAccessPoint):
             if True: passed validation
         """
 
-        resources = self.fetch_emodel(seed=seed, githash=githash)
+        resources = self.fetch_emodel(seed=seed)
 
         if resources is None:
             return False
 
         if len(resources) > 1:
             raise NexusAccessPointException(
-                "More than one model for emodel " f"{self.emodel}, seed {seed}, githash {githash}"
+                f"More than one model for emodel {self.emodel}, seed {seed}, "
+                f"iteration_tag {self.iteration_tag}"
             )
 
         if hasattr(resources[0], "passedValidation") and resources[0].passedValidation is not None:
@@ -1557,7 +1552,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         return False
 
-    def is_validated(self, githash):
+    def is_validated(self):
         """Check if enough models have been validated.
 
         Reminder: the logic of validation is as follows:
@@ -1566,7 +1561,7 @@ class NexusAccessPoint(DataAccessPoint):
             if True: passed validation
         """
 
-        resources = self.fetch_emodel(githash=githash)
+        resources = self.fetch_emodel()
 
         if resources is None:
             return False

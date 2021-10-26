@@ -1,7 +1,6 @@
 """Utils"""
 
 import logging
-import pickle
 from pathlib import Path
 
 logger = logging.getLogger("__main__")
@@ -13,28 +12,6 @@ def make_dir(path_dir):
     if not (p.is_dir()):
         logger.info("Creating directory %s.", p)
         p.mkdir(parents=True, exist_ok=True)
-
-
-def read_checkpoint(checkpoint_path):
-    """Reads a BluePyOpt checkpoint file"""
-
-    p = Path(checkpoint_path)
-    p_tmp = p.with_suffix(p.suffix + ".tmp")
-
-    try:
-        with open(str(p), "rb") as checkpoint_file:
-            run = pickle.load(checkpoint_file)
-    except EOFError:
-        try:
-            with open(str(p_tmp), "rb") as checkpoint_tmp_file:
-                run = pickle.load(checkpoint_tmp_file)
-        except EOFError:
-            logger.error(
-                "Cannot store model. Checkpoint file %s does not exist or is corrupted.",
-                checkpoint_path,
-            )
-
-    return run
 
 
 def yesno(question):
@@ -51,3 +28,16 @@ def yesno(question):
         return True
 
     return False
+
+
+def run_metadata_as_string(emodel, seed, ttype=None, iteration_tag=None):
+    """"""
+
+    s = f"emodel={emodel}__seed={seed}"
+
+    if iteration_tag:
+        s += f"__iteration_tag={iteration_tag}"
+    if ttype:
+        s += f"__ttype={ttype}"
+
+    return s

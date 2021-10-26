@@ -8,8 +8,8 @@ import pandas as pd
 from numpy.testing import assert_allclose
 from pandas.testing import assert_frame_equal
 
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
-from bluepyemodel.access_point import get_db
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.access_point import get_access_point
 
 TEST_ROOT = Path(__file__).parent
 DATA = TEST_ROOT / "test_data"
@@ -26,7 +26,7 @@ def api_config():
 
 @pytest.fixture
 def db(api_config):
-    return get_db("local", **api_config)
+    return get_access_point("local", **api_config)
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ def evaluator(db):
         os.popen("rm -rf x86_64").read()
     os.popen(f"nrnivmodl {DATA}/mechanisms").read()
 
-    return get_evaluator_from_db(emodel=db.emodel, access_point=db)
+    return get_evaluator_from_access_point(access_point=db)
 
 
 def test_protocols(db, evaluator):

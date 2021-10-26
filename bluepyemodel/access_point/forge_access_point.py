@@ -180,7 +180,7 @@ class NexusForgeAccessPoint:
             if resources:
                 return resources
 
-            time.sleep(0.1)
+            time.sleep(0.5)
 
         logger.debug("No resources for filters: %s", filters)
 

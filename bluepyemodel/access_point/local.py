@@ -11,7 +11,7 @@ from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
-from bluepyemodel.model_configuration.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,8 @@ class LocalAccessPoint(DataAccessPoint):
         self,
         emodel,
         emodel_dir,
+        ttype=None,
+        iteration_tag=None,
         final_path=None,
         recipes_path=None,
         legacy_dir_structure=False,
@@ -41,6 +43,8 @@ class LocalAccessPoint(DataAccessPoint):
         Args:
             emodel (str): name of the emodel.
             emodel_dir (str): path to the working directory.
+            ttype (str): name of the t-type
+            iteration_tag (str): iteration tag
             final_path (str): path to final.json which will contain the optimized models.
             recipes_path (str): path to the json file which should contain the path to the
                 configuration files used for each etype. The content of this file should follow the
@@ -65,7 +69,7 @@ class LocalAccessPoint(DataAccessPoint):
         self.emodel = emodel
         self.with_seeds = with_seeds
 
-        super().__init__(emodel)
+        super().__init__(emodel, ttype, iteration_tag)
 
         self.morph_path = None
 
@@ -251,15 +255,16 @@ class LocalAccessPoint(DataAccessPoint):
         with open(str(protocols_path), "w") as f:
             f.write(json.dumps(stimuli, indent=2, cls=NumpyEncoder))
 
-    def get_model_name_for_final(self, githash, seed):
+    def get_model_name_for_final(self, seed):
         """Return model name used as key in final.json."""
 
-        if githash:
-            return f"{self.emodel}__{githash}__{seed}"
+        if self.iteration_tag:
+            return f"{self.emodel}__{self.iteration_tag}__{seed}"
 
         logger.warning(
-            "Githash is %s. It is strongly advised to use githash in the future.",
-            githash,
+            "The iteration_tag is %s. It is strongly advised to use "
+            "an iteration tag in the future.",
+            self.iteration_tag,
         )
 
         return f"{self.emodel}__{seed}"
@@ -270,20 +275,18 @@ class LocalAccessPoint(DataAccessPoint):
         params,
         optimizer_name,
         seed,
-        githash="",
         validated=None,
         scores_validation=None,
         features=None,
     ):
         """Store an emodel obtained from BluePyOpt in the final.json. Note that if a model in the
-        final.json has the same key (emodel__githash__seed), it will be overwritten.
+        final.json has the same key (emodel__iteration_tag__seed), it will be overwritten.
 
         Args:
             scores (dict): scores of the efeatures. Of the format {"objective_name": score}.
             params (dict): values of the parameters. Of the format {"param_name": param_value}.
             optimizer_name (str): name of the optimizer (IBEA, CMA, ...).
             seed (int): seed used by the optimizer.
-            githash (str): githash associated with the configuration files.
             validated (bool): None indicate that the model did not go through validation.
                 False indicates that it failed validation. True indicates that it
                 passed validation.
@@ -302,14 +305,14 @@ class LocalAccessPoint(DataAccessPoint):
             with self.rw_lock_final_tmp.write_lock():
 
                 final = self.get_final(lock_file=False)
-                model_name = self.get_model_name_for_final(githash, seed)
+                model_name = self.get_model_name_for_final(seed)
 
                 if model_name in final:
                     logger.warning(
                         "Entry %s was already in the final.json and will be overwritten", model_name
                     )
 
-                pdf_dependencies = self._build_pdf_dependencies(int(seed), str(githash))
+                pdf_dependencies = self._build_pdf_dependencies(int(seed))
 
                 if self.new_final_path is None:
                     final_path = self.final_path
@@ -329,21 +332,25 @@ class LocalAccessPoint(DataAccessPoint):
                     "validated": validated,
                     "optimizer": str(optimizer_name),
                     "seed": int(seed),
-                    "githash": str(githash),
+                    "iteration_tag": str(self.iteration_tag),
                     "pdfs": pdf_dependencies,
                 }
                 self.save_final(final, Path(final_path), lock_file=False)
 
-    def _build_pdf_dependencies(self, seed, githash):
+    def _build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
 
         pdfs = {}
 
         pdfs["optimisation"] = search_pdfs.search_figure_emodel_optimisation(
-            self.emodel, seed, githash
+            self.emodel, seed, self.iteration_tag
         )
-        pdfs["traces"] = search_pdfs.search_figure_emodel_traces(self.emodel, seed, githash)
-        pdfs["scores"] = search_pdfs.search_figure_emodel_score(self.emodel, seed, githash)
+        pdfs["traces"] = search_pdfs.search_figure_emodel_traces(
+            self.emodel, seed, self.iteration_tag
+        )
+        pdfs["scores"] = search_pdfs.search_figure_emodel_score(
+            self.emodel, seed, self.iteration_tag
+        )
         pdfs["parameters"] = search_pdfs.search_figure_emodel_parameters(self.emodel)
 
         return pdfs
@@ -610,7 +617,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         for key in [
             "seed",
-            "githash",
+            "iteration_tag",
             "branch",
             "rank",
             "optimizer",
@@ -688,21 +695,21 @@ class LocalAccessPoint(DataAccessPoint):
 
         return features_exists and protocols_exists
 
-    def has_best_model(self, seed, githash):
+    def has_best_model(self, seed):
         """Check if the best model has been stored."""
 
         final = self.get_final()
 
-        model_name = self.get_model_name_for_final(githash, seed)
+        model_name = self.get_model_name_for_final(seed)
 
         return model_name in final
 
-    def is_checked_by_validation(self, seed, githash):
+    def is_checked_by_validation(self, seed):
         """Check if the emodel with a given seed has been checked by Validation task."""
 
         final = self.get_final()
 
-        model_name = self.get_model_name_for_final(githash, seed)
+        model_name = self.get_model_name_for_final(seed)
 
         model = final.get(model_name, {})
         if "validated" in model and model["validated"] is not None:
@@ -710,7 +717,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         return False
 
-    def is_validated(self, githash, n_models_to_pass_validation):
+    def is_validated(self, n_models_to_pass_validation):
         """Check if enough models have been validated."""
 
         n_validated = 0
@@ -719,7 +726,7 @@ class LocalAccessPoint(DataAccessPoint):
         for _, entry in final.items():
 
             if (
-                entry["githash"] == githash
+                entry["iteration_tag"] == self.iteration_tag
                 and entry["emodel"] == self.emodel
                 and entry["validated"]
             ):

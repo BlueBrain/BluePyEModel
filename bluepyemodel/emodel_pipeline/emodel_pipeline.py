@@ -7,10 +7,10 @@ import logging
 import os
 import pathlib
 
-from bluepyemodel.access_point import get_db
+from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
-from bluepyemodel.model_configuration.model_configuration import configure_model
+from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.validation.validation import validate
@@ -30,12 +30,11 @@ class EModel_pipeline:
         data_access_point,
         recipes_path=None,
         forge_path=None,
-        githash=None,
         nexus_organisation=None,
         nexus_project=None,
         nexus_endpoint="staging",
         ttype=None,
-        nexus_iteration_tag=None,
+        iteration_tag=None,
         use_ipyparallel=None,
     ):
         """Initialize the emodel_pipeline.
@@ -54,24 +53,23 @@ class EModel_pipeline:
                 "local".
             forge_path (str): path to the .yml used to connect to Nexus Forge, only needed if
                 db_api="nexus".
-            githash (str): if provided, the pipeline will work in the directory
-                working_dir/run/githash. Needed when continuing work or resuming optimisations.
             nexus_organisation (str): name of the Nexus organisation in which the project is
                 located.
             nexus_project (str): name of the Nexus project to which the forge will connect to
                 retrieve the data
             nexus_endpoint (str): Nexus endpoint ("prod" or "staging")
             ttype (str): name of the t-type. Required if using the gene expression or IC selector.
-            nexus_iteration_tag (str): tag associated to the current run. Used to tag the
-                Resources generated during the different run
-            : should the parallelization map be base on ipyparallel.
+            iteration_tag (str): tag associated to the current run. If used with the local access
+                point,the pipeline will work in the directory working_dir/run/iteration_tag.
+                If used with the Nexus access point, it will be used to tag the resources
+                generated during the run.
+            use_ipyparallel (bool): should the parallelization map be base on ipyparallel.
         """
 
         self.emodel = emodel
         self.ttype = ttype
         self.species = species
         self.brain_region = brain_region
-        self.githash = githash
 
         self.mapper = instantiate_map_function(
             use_ipyparallel=use_ipyparallel, ipython_profil="IPYTHON_PROFILE"
@@ -85,7 +83,7 @@ class EModel_pipeline:
             nexus_endpoint,
             nexus_project,
             ttype,
-            nexus_iteration_tag,
+            iteration_tag,
         )
 
     def init_access_point(
@@ -97,7 +95,7 @@ class EModel_pipeline:
         nexus_endpoint,
         nexus_project,
         ttype,
-        nexus_iteration_tag,
+        iteration_tag,
     ):
         """Instantiate a data access point, either to Nexus or GPFS"""
 
@@ -108,10 +106,10 @@ class EModel_pipeline:
             endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
 
         emodel_dir = "./"
-        if self.githash:
-            emodel_dir = str(pathlib.Path("./") / "run" / self.githash)
+        if iteration_tag and data_access_point == "local":
+            emodel_dir = str(pathlib.Path("./") / "run" / iteration_tag)
 
-        return get_db(
+        return get_access_point(
             access_point=data_access_point,
             emodel=self.emodel,
             emodel_dir=emodel_dir,
@@ -124,7 +122,7 @@ class EModel_pipeline:
             endpoint=endpoint,
             forge_path=forge_path,
             ttype=ttype,
-            iteration_tag=nexus_iteration_tag,
+            iteration_tag=iteration_tag,
         )
 
     def configure_model(self, morphology_name, use_gene_data=False):
@@ -146,11 +144,9 @@ class EModel_pipeline:
 
         setup_and_run_optimisation(
             self.access_point,
-            emodel=self.emodel,
             seed=seed,
             mapper=self.mapper,
             continue_opt=continue_opt,
-            githash=self.githash,
             terminator=None,
         )
 
@@ -162,7 +158,7 @@ class EModel_pipeline:
             if self.emodel not in chkp_path:
                 continue
 
-            if self.githash and self.githash not in chkp_path:
+            if self.access_point.iteration_tag and self.access_point.iteration_tag not in chkp_path:
                 continue
 
             splitted_path = pathlib.Path(chkp_path).stem.split("__")
@@ -170,10 +166,8 @@ class EModel_pipeline:
 
             store_best_model(
                 access_point=self.access_point,
-                emodel=self.emodel,
                 seed=seed,
                 checkpoint_path=chkp_path,
-                githash=self.githash,
             )
 
     def validation(self):
@@ -181,7 +175,6 @@ class EModel_pipeline:
 
         validate(
             access_point=self.access_point,
-            emodel=self.emodel,
             mapper=self.mapper,
         )
 
@@ -192,7 +185,7 @@ class EModel_pipeline:
             if self.emodel not in chkp_path:
                 continue
 
-            if self.githash and self.githash not in chkp_path:
+            if self.access_point.iteration_tag and self.access_point.iteration_tag not in chkp_path:
                 continue
 
             plotting.optimization(
@@ -200,16 +193,11 @@ class EModel_pipeline:
                 figures_dir=pathlib.Path("./figures") / self.emodel / "optimisation",
             )
 
-        githashs = None
-        if self.githash:
-            githashs = [self.githash]
-
         return plotting.plot_models(
             self.access_point,
             self.emodel,
             mapper=self.mapper,
             seeds=None,
-            githashs=githashs,
             figures_dir=pathlib.Path("./figures") / self.emodel,
             plot_distributions=True,
             plot_scores=True,
@@ -259,13 +247,6 @@ def get_parser():
         help="Name of the Nexus endpoint.",
     )
     parser.add_argument(
-        "--nexus_iteration_tag",
-        type=str,
-        default=None,
-        help="Tag associated to the current run, used to tag the Resources "
-        "generated during the different run",
-    )
-    parser.add_argument(
         "--forge_path",
         type=str,
         default=None,
@@ -283,11 +264,11 @@ def get_parser():
     )
     parser.add_argument("--seed", type=int, default=1, help="Seed to use for optimization")
     parser.add_argument(
-        "--githash",
+        "--iteration_tag",
         type=str,
         required=False,
         default=None,
-        help="Githash associated to the current E-Model " "building iteration.",
+        help="Tag associated to the current E-Model building iteration.",
     )
     parser.add_argument(
         "--use_ipyparallel", action="store_true", default=False, help="Use ipyparallel"
@@ -319,7 +300,7 @@ def get_arguments():
             "nexus_organisation",
             "nexus_project",
             "nexus_endpoint",
-            "nexus_iteration_tag",
+            "iteration_tag",
         ]
 
     for arg in required_args:
@@ -394,12 +375,11 @@ def main():
         data_access_point=args.data_access_point,
         recipes_path=args.recipes_path,
         forge_path=args.forge_path,
-        githash=args.githash,
         nexus_organisation=args.nexus_organisation,
         nexus_project=args.nexus_project,
         nexus_endpoint=args.nexus_endpoint,
         ttype=args.ttype,
-        nexus_iteration_tag=args.nexus_iteration_tag,
+        iteration_tag=args.iteration_tag,
         use_ipyparallel=args.use_ipyparallel,
     )
 

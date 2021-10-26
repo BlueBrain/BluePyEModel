@@ -1,19 +1,65 @@
 """Optimisation function"""
 import logging
 import os
+import pickle
 from pathlib import Path
 
 import bluepyopt
 
-from bluepyemodel.emodel_pipeline.utils import read_checkpoint
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
+from bluepyemodel.emodel_pipeline.utils import logger
+from bluepyemodel.emodel_pipeline.utils import run_metadata_as_string
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 
 logger = logging.getLogger(__name__)
 
 
-def get_checkpoint_path(emodel, seed, githash=""):
+def get_checkpoint_path(emodel, seed, ttype=None, iteration_tag=None):
     """"""
-    return Path("./checkpoints") / f"checkpoint__{emodel}__{githash}__{seed}.pkl"
+
+    filename = run_metadata_as_string(emodel, seed, ttype=ttype, iteration_tag=iteration_tag)
+    filename += ".pkl"
+
+    return Path("./checkpoints") / filename
+
+
+def parse_checkpoint_path(path):
+    """"""
+
+    filename = Path(path).stem.split("__")
+
+    checkpoint_metadata = {}
+
+    for field in ["emodel", "seed", "iteration_tag", "ttype"]:
+        search_str = f"{field}="
+        checkpoint_metadata[field] = next(
+            [e.replace(search_str) for e in filename if search_str in e], None
+        )
+
+    return checkpoint_metadata
+
+
+def read_checkpoint(checkpoint_path):
+    """Reads a BluePyOpt checkpoint file"""
+
+    p = Path(checkpoint_path)
+    p_tmp = p.with_suffix(p.suffix + ".tmp")
+
+    try:
+        with open(str(p), "rb") as checkpoint_file:
+            run = pickle.load(checkpoint_file)
+            run_metadata = parse_checkpoint_path(checkpoint_file)
+    except EOFError:
+        try:
+            with open(str(p_tmp), "rb") as checkpoint_tmp_file:
+                run = pickle.load(checkpoint_tmp_file)
+                run_metadata = parse_checkpoint_path(checkpoint_tmp_file[:-4])
+        except EOFError:
+            logger.error(
+                "Cannot store model. Checkpoint file %s does not exist or is corrupted.",
+                checkpoint_path,
+            )
+
+    return run, run_metadata
 
 
 def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
@@ -65,6 +111,7 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
     Returns:
         None
     """
+
     checkpoint_path.parents[0].mkdir(parents=True, exist_ok=True)
 
     if continue_opt and not os.path.isfile(checkpoint_path):
@@ -84,16 +131,14 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
 
 def setup_and_run_optimisation(
     access_point,
-    emodel,
     seed,
     mapper=None,
     continue_opt=False,
-    githash="",
     terminator=None,
 ):
 
-    cell_evaluator = get_evaluator_from_db(
-        emodel=emodel, access_point=access_point, include_validation_protocols=False
+    cell_evaluator = get_evaluator_from_access_point(
+        access_point=access_point, include_validation_protocols=False
     )
 
     opt_params = access_point.pipeline_settings.optimisation_params
@@ -113,7 +158,12 @@ def setup_and_run_optimisation(
         optimizer=access_point.pipeline_settings.optimizer,
     )
 
-    checkpoint_path = get_checkpoint_path(emodel, seed, githash)
+    checkpoint_path = get_checkpoint_path(
+        access_point.emodel,
+        seed,
+        ttype=access_point.ttype,
+        iteration_tag=access_point.iteration_tag,
+    )
 
     run_optimization(
         optimizer=opt,
@@ -126,36 +176,33 @@ def setup_and_run_optimisation(
 
 def store_best_model(
     access_point,
-    emodel,
     seed,
     checkpoint_path=None,
-    githash="",
 ):
     """Store the best model from an optimization. Reads a checkpoint file generated
         by BluePyOpt and store the best individual of the hall of fame.
 
     Args:
         access_point (DataAccessPoint): data access point.
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
         seed (int): seed used in the optimisation.
             and validation efeatures be added to the evaluator.
         checkpoint_path (str): path to the checkpoint file. If None, checkpoint_dir will be used.
-        githash (str): if provided, the pipeline will work in the directory
-                working_dir/run/githash. Needed when continuing work or resuming
-                optimisations.
     """
 
-    cell_evaluator = get_evaluator_from_db(
-        emodel=emodel,
+    cell_evaluator = get_evaluator_from_access_point(
         access_point=access_point,
         include_validation_protocols=False,
     )
 
     if checkpoint_path is None:
-        checkpoint_path = get_checkpoint_path(emodel, seed, githash)
+        checkpoint_path = get_checkpoint_path(
+            access_point.emodel,
+            seed=seed,
+            ttype=access_point.ttype,
+            iteration_tag=access_point.iteration_tag,
+        )
 
-    run = read_checkpoint(checkpoint_path)
+    run, _ = read_checkpoint(checkpoint_path)
 
     best_model = run["halloffame"][0]
     feature_names = [obj.name for obj in cell_evaluator.fitness_calculator.objectives]
@@ -178,5 +225,4 @@ def store_best_model(
         params=params,
         optimizer_name=access_point.pipeline_settings.optimizer,
         seed=seed,
-        githash=githash,
     )

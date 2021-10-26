@@ -20,8 +20,8 @@ from morphio.mut import Morphology
 from tqdm import tqdm
 from voxcell import CellCollection
 
-from bluepyemodel.access_point import get_db
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_db
+from bluepyemodel.access_point import get_access_point
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.modifiers import synth_axon
 from bluepyemodel.generalisation.ais_model import taper_function
 
@@ -39,7 +39,7 @@ def cli(verbose):
 
 def _get_database(api, emodel_path, final_path=None, legacy_dir_structure=True):
     if api == "local":
-        return get_db(
+        return get_access_point(
             api,
             "cADpyr_L5TPC",  # assumes it exists to be able to load recipe
             emodel_dir=emodel_path,
@@ -70,7 +70,7 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
         template_path (str): path to jinja2 template file
         ais_models (dict): contains information about the AIS shape and eletrical properties
     """
-    from bluepyemodel.evaluation.model import create_cell_model
+    from bluepyemodel.model.model import create_cell_model
 
     if ais_models is None:
         from bluepyemodel.evaluation.modifiers import replace_axon_hoc as morph_modifier_hoc
@@ -567,7 +567,7 @@ def _single_evaluation(
     trace_data_path=None,
 ):
     """Evaluating single protocol and save traces."""
-    emodel_db = get_db(
+    emodel_db = get_access_point(
         emodel_api,
         combo["emodel"],
         emodel_dir=emodel_path,
@@ -582,8 +582,9 @@ def _single_evaluation(
         emodel_db.pipeline_settings.morph_modifiers = [
             partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
         ]
-    evaluator = get_evaluator_from_db(
-        combo["emodel"],
+
+    emodel_db.emodel = combo["emodel"]
+    evaluator = get_evaluator_from_access_point(
         emodel_db,
         stochasticity=stochasticity,
         timeout=timeout,
@@ -629,7 +630,7 @@ def _evaluate_exemplars(
 ):
     """Evaluate exemplars."""
     emodel_path = Path(emodel_path)
-    emodel_db = get_db(
+    emodel_db = get_access_point(
         emodel_api,
         "cADpyr_L5TPC",  # assumes it exists to be able to load recipe
         emodel_dir=emodel_path,

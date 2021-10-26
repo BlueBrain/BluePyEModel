@@ -2,8 +2,8 @@
 import copy
 import logging
 
-from bluepyemodel.evaluation import model
 from bluepyemodel.evaluation.evaluator import create_evaluator
+from bluepyemodel.model import model
 
 logger = logging.getLogger(__name__)
 
@@ -28,37 +28,36 @@ def get_responses(to_run):
 
 
 def compute_responses(
-    emodel_db,
-    emodel,
+    access_point,
     cell_evaluator,
     map_function,
     seeds=None,
-    githashs=None,
     preselect_for_validation=False,
 ):
     """Compute the responses of the emodel to the optimisation and validation protocols.
 
     Args:
-        emodel_db (DataAccessPoint): API used to access the database.
+        access_point (DataAccessPoint): API used to access the data.
         emodel (str): name of the emodel. Has to match the name of the emodel
             under which the configuration data are stored.
         cell_evaluator (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
         map_function (map): used to parallelize the evaluation of the
             individual in the population.
         seeds (list): if not None, filter emodels to keep only the ones with these seeds.
-        githashs (list): if not None, filter emodels to keep only the ones with these githashs.
         preselect_for_validation (bool): if True,
             only select models that have not been through validation yet.
     Returns:
         emodels (list): list of emodels.
     """
 
-    emodels = emodel_db.get_emodels([emodel])
+    emodels = access_point.get_emodels()
 
     if seeds:
         emodels = [model for model in emodels if model["seed"] in seeds]
-    if githashs:
-        emodels = [model for model in emodels if model["githash"] in githashs]
+    if access_point.iteration_tag:
+        emodels = [
+            model for model in emodels if model["iteration_tag"] in access_point.iteration_tag
+        ]
     if preselect_for_validation:
         emodels = [model for model in emodels if model["validated"] is None]
 
@@ -82,13 +81,12 @@ def compute_responses(
             mo["evaluator"] = r.pop("evaluator")
 
     else:
-        logger.warning("In compute_responses, no emodel for %s", emodel)
+        logger.warning("In compute_responses, no emodel for %s", access_point.emodel)
 
     return emodels
 
 
-def get_evaluator_from_db(
-    emodel,
+def get_evaluator_from_access_point(
     access_point,
     stochasticity=False,
     include_validation_protocols=False,
@@ -102,8 +100,6 @@ def get_evaluator_from_db(
     """Create an evaluator for the emodel.
 
     Args:
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
         access_point (DataAccessPoint): API used to access the database
         stochasticity (bool): should channels behave stochastically if they can.
         include_validation_protocols (bool): should the validation protocols
@@ -120,24 +116,22 @@ def get_evaluator_from_db(
         bluepyopt.ephys.evaluators.CellEvaluator
     """
 
-    access_point.set_emodel(emodel)
-
     configuration = access_point.get_model_configuration()
     if not configuration:
-        raise Exception(f"No configuration for emodel {emodel}")
+        raise Exception(f"No configuration for emodel {access_point.emodel}")
 
     features = access_point.get_features(include_validation_protocols)
     if not features:
-        raise Exception(f"No efeatures for emodel {emodel}")
+        raise Exception(f"No efeatures for emodel {access_point.emodel}")
 
     protocols = access_point.get_protocols(include_validation_protocols)
     if not protocols:
-        raise Exception(f"No protocols for emodel {emodel}")
+        raise Exception(f"No protocols for emodel {access_point.emodel}")
     if additional_protocols:
         protocols.update(additional_protocols)
 
     cell_model = model.create_cell_model(
-        name=emodel,
+        name=access_point.emodel,
         model_configuration=configuration,
         morph_modifiers=access_point.pipeline_settings.morph_modifiers,
         nseg_frequency=nseg_frequency,

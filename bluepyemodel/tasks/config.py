@@ -21,7 +21,6 @@ class EmodelAPIConfig(luigi.Config):
     nexus_poject = luigi.Parameter(default="emodel_pipeline")
     nexus_organisation = luigi.Parameter(default="demo")
     nexus_endpoint = luigi.Parameter(default="https://bbp.epfl.ch/nexus/v1")
-    nexus_iteration_tag = luigi.Parameter(default=None)
 
     def __init__(self, *args, **kwargs):
         """Init."""
@@ -44,5 +43,4 @@ class EmodelAPIConfig(luigi.Config):
                 "project": self.nexus_poject,
                 "organisation": self.nexus_organisation,
                 "endpoint": self.nexus_endpoint,
-                "iteration_tag": self.nexus_iteration_tag,
             }

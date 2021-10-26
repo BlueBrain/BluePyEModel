@@ -3,7 +3,7 @@ from pathlib import Path
 from collections import OrderedDict
 import json
 
-from bluepyemodel.access_point import get_db
+from bluepyemodel.access_point import get_access_point
 from dictdiffer import diff
 
 
@@ -22,7 +22,7 @@ def api_config():
 
 @pytest.fixture
 def db(api_config):
-    return get_db("local", **api_config)
+    return get_access_point("local", **api_config)
 
 
 def test_get_morphologies(db):
@@ -115,6 +115,9 @@ def test_get_extraction_metadata(db):
 
 
 def test_get_model_name_for_final(db):
-    assert db.get_model_name_for_final(seed=42, githash="") == "cADpyr_L5TPC__42"
-    assert db.get_model_name_for_final(seed=42, githash=None) == "cADpyr_L5TPC__42"
-    assert db.get_model_name_for_final(seed=42, githash="hash") == "cADpyr_L5TPC__hash__42"
+    db.iteration_tag = ""
+    assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
+    db.iteration_tag = None
+    assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
+    db.iteration_tag = "hash"
+    assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__hash__42"

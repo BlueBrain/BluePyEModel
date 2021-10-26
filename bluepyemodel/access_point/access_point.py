@@ -11,10 +11,12 @@ logger = logging.getLogger(__name__)
 class DataAccessPoint:
     """Data access point"""
 
-    def __init__(self, emodel):
+    def __init__(self, emodel, ttype=None, iteration_tag=None):
         """Init"""
 
         self.emodel = emodel
+        self.ttype = ttype
+        self.iteration_tag = iteration_tag
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel."""
@@ -40,7 +42,6 @@ class DataAccessPoint:
         params,
         optimizer_name,
         seed,
-        githash="",
         validated=None,
         scores_validation=None,
     ):
@@ -108,16 +109,18 @@ class DataAccessPoint:
             dict: keys are emodel names with seed, values are names without seed.
         """
 
-    def optimisation_state(self, seed=1, githash=""):
+    def optimisation_state(self, seed=None):
         """Return the state of the optimisation.
 
         TODO: - should return three states: completed, in progress, empty
               - better management of checkpoints
         """
 
-        checkpoint_path = get_checkpoint_path(self.emodel, seed, githash)
+        checkpoint_path = get_checkpoint_path(
+            emodel=self.emodel, seed=seed, iteration_tag=self.iteration_tag, ttype=self.ttype
+        )
 
         return checkpoint_path.is_file()
 
-    def _build_pdf_dependencies(self, seed, githash):
+    def _build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
