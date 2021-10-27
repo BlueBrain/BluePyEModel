@@ -1,3 +1,4 @@
+import pytest
 import bluepyopt.ephys as ephys
 
 from bluepyemodel.model import model
