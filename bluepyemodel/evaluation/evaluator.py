@@ -477,7 +477,9 @@ def define_Rin_protocol(
     return None, []
 
 
-def define_holding_protocol(features_definition, efel_settings=None, threshold_efeature_std=None):
+def define_holding_protocol(
+    features_definition, efel_settings=None, threshold_efeature_std=None, strict_bounds=False
+):
     """Define the search holdinf current protocol"""
     def_holding_voltage = get_features_by_name(
         features_definition["SearchHoldingCurrent"]["soma.v"], "steady_state_voltage_stimend"
@@ -508,6 +510,7 @@ def define_holding_protocol(features_definition, efel_settings=None, threshold_e
             location=soma_loc,
             target_voltage=target_holding_voltage,
             target_holding=target_holding_current,
+            strict_bounds=strict_bounds,
         )
 
         return protocol, [target_holding_current]
@@ -564,6 +567,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     score_threshold=12.0,
     max_threshold_voltage=-30,
     threshold_based_evaluator=True,
+    strict_holding_bounds=True,
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
 
@@ -583,6 +587,7 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
         threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
             by the holding and threshold current of the model.
+        strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
 
     Returns:
     """
@@ -598,7 +603,10 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     )
 
     search_holding_protocol, hold_features = define_holding_protocol(
-        features_definition, efel_settings, threshold_efeature_std
+        features_definition,
+        efel_settings,
+        threshold_efeature_std,
+        strict_bounds=strict_holding_bounds,
     )
     search_threshold_protocol, thres_features = define_threshold_protocol(
         features_definition, efel_settings, threshold_efeature_std, max_threshold_voltage
@@ -787,6 +795,7 @@ def create_evaluator(
     max_threshold_voltage=-30,
     dt=None,
     threshold_based_evaluator=True,
+    strict_holding_bounds=True,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -809,6 +818,7 @@ def create_evaluator(
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
         threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
             by the holding and threshold current of the model.
+        strict_holding_bounds (bool): to adaptively enlarge bounds is current is outside
 
     Returns:
         CellEvaluator
@@ -828,6 +838,7 @@ def create_evaluator(
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
         threshold_based_evaluator=threshold_based_evaluator,
+        strict_holding_bounds=strict_holding_bounds,
     )
 
     fitness_calculator = define_fitness_calculator(features)
