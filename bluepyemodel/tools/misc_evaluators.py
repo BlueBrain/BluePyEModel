@@ -42,6 +42,8 @@ def single_feature_evaluation(
         max_threshold_voltage=max_threshold_voltage,
         nseg_frequency=nseg_frequency,
         dt=dt,
+        strict_holding_bounds=False
+
     )
     params = emodel_db.get_emodel()["parameters"]
     if "new_parameters" in combo:
