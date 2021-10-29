@@ -17,13 +17,41 @@ def get_checkpoint_path(emodel, seed, ttype=None, iteration_tag=None):
     """"""
 
     filename = run_metadata_as_string(emodel, seed, ttype=ttype, iteration_tag=iteration_tag)
-    filename += ".pkl"
 
-    return Path("./checkpoints") / filename
+    return f"./checkpoints/{filename}.pkl"
+
+
+def parse_legacy_checkpoint_path(path):
+    """"""
+
+    filename = Path(path).stem.split("__")
+
+    if len(filename) == 4:
+        checkpoint_metadata = {
+            "emodel": filename[1],
+            "seed": filename[3],
+            "iteration_tag": filename[2],
+            "ttype": None,
+        }
+    elif len(filename) == 3:
+        checkpoint_metadata = {
+            "emodel": filename[1],
+            "seed": filename[2],
+            "iteration_tag": None,
+            "ttype": None,
+        }
+
+    return checkpoint_metadata
 
 
 def parse_checkpoint_path(path):
     """"""
+
+    if "emodel" not in path and "checkpoint" in path:
+        return parse_legacy_checkpoint_path(path)
+
+    if path.endswith(".tmp"):
+        path = path.replace(".tmp", "")
 
     filename = Path(path).stem.split("__")
 
@@ -32,7 +60,7 @@ def parse_checkpoint_path(path):
     for field in ["emodel", "seed", "iteration_tag", "ttype"]:
         search_str = f"{field}="
         checkpoint_metadata[field] = next(
-            [e.replace(search_str) for e in filename if search_str in e], None
+            (e.replace(search_str, "") for e in filename if search_str in e), None
         )
 
     return checkpoint_metadata
@@ -47,12 +75,12 @@ def read_checkpoint(checkpoint_path):
     try:
         with open(str(p), "rb") as checkpoint_file:
             run = pickle.load(checkpoint_file)
-            run_metadata = parse_checkpoint_path(checkpoint_file)
+            run_metadata = parse_checkpoint_path(str(p))
     except EOFError:
         try:
             with open(str(p_tmp), "rb") as checkpoint_tmp_file:
                 run = pickle.load(checkpoint_tmp_file)
-                run_metadata = parse_checkpoint_path(checkpoint_tmp_file[:-4])
+                run_metadata = parse_checkpoint_path(str(p_tmp))
         except EOFError:
             logger.error(
                 "Cannot store model. Checkpoint file %s does not exist or is corrupted.",
@@ -102,7 +130,7 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
 
     Args:
         optimizer (DEAPOptimisation): optimiser used for the run.
-        checkpoint_dir (Path): path to which the checkpoint will be saved.
+        checkpoint_path (str): path to which the checkpoint will be saved.
         max_ngen (int): maximum number of generation for which the
             evolutionary strategy will run.
         terminator (multiprocessing.Event): end optimisation when is set.
@@ -112,7 +140,7 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
         None
     """
 
-    checkpoint_path.parents[0].mkdir(parents=True, exist_ok=True)
+    Path(checkpoint_path).parents[0].mkdir(parents=True, exist_ok=True)
 
     if continue_opt and not os.path.isfile(checkpoint_path):
         raise Exception(f"continue_opt is True but the checkpoint {checkpoint_path} does not exist")
@@ -176,7 +204,7 @@ def setup_and_run_optimisation(
 
 def store_best_model(
     access_point,
-    seed,
+    seed=None,
     checkpoint_path=None,
 ):
     """Store the best model from an optimization. Reads a checkpoint file generated
@@ -184,8 +212,6 @@ def store_best_model(
 
     Args:
         access_point (DataAccessPoint): data access point.
-        seed (int): seed used in the optimisation.
-            and validation efeatures be added to the evaluator.
         checkpoint_path (str): path to the checkpoint file. If None, checkpoint_dir will be used.
     """
 
@@ -195,6 +221,10 @@ def store_best_model(
     )
 
     if checkpoint_path is None:
+
+        if seed is None:
+            raise Exception("Please specify either the seed or the checkpoint_path")
+
         checkpoint_path = get_checkpoint_path(
             access_point.emodel,
             seed=seed,
@@ -202,7 +232,7 @@ def store_best_model(
             iteration_tag=access_point.iteration_tag,
         )
 
-    run, _ = read_checkpoint(checkpoint_path)
+    run, run_metadata = read_checkpoint(checkpoint_path)
 
     best_model = run["halloffame"][0]
     feature_names = [obj.name for obj in cell_evaluator.fitness_calculator.objectives]
@@ -224,5 +254,5 @@ def store_best_model(
         scores=scores,
         params=params,
         optimizer_name=access_point.pipeline_settings.optimizer,
-        seed=seed,
+        seed=run_metadata.get("seed", None),
     )

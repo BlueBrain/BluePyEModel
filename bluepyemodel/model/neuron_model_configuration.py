@@ -1,5 +1,6 @@
 """Neuron Model Configuration"""
 import logging
+import pathlib
 
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
@@ -92,7 +93,7 @@ class NeuronModelConfiguration:
                     param["location"],
                     param["value"],
                     param.get("mechanism", None),
-                    param.get("distribution", None),
+                    param.get("dist", None),
                 )
 
         if "mechanisms" in configuration_dict:
@@ -105,8 +106,18 @@ class NeuronModelConfiguration:
 
     def init_morphology_from_dict(self, morpho_dict):
         """"""
+
+        suffix = pathlib.Path(morpho_dict["path"]).suffix[1:].lower()
+        if "format" in morpho_dict and morpho_dict["format"] and morpho_dict["format"] != suffix:
+            raise Exception(
+                f"You asked for a morphology in format {morpho_dict['format']}"
+                f" but the local file is of format {suffix}"
+            )
+
         self.morphology_name = morpho_dict["name"]
         self.morphology_path = morpho_dict["path"]
+        self.morphology_format = pathlib.Path(morpho_dict["path"]).suffix[1:]
+
         for k in ["seclist_names", "secarray_names", "section_index"]:
             if k in morpho_dict:
                 setattr(self, k, morpho_dict[k])
@@ -274,6 +285,7 @@ class NeuronModelConfiguration:
         seclist_names=None,
         secarray_names=None,
         section_index=None,
+        morphology_format=None,
     ):
         """Select the morphology on which the neuron model will be based.
 
@@ -290,7 +302,12 @@ class NeuronModelConfiguration:
                 "morphology directory"
             )
 
+        if morphology_format and morphology_format.lower() not in ["asc", "swc"]:
+            raise Exception("The format of the morphology has to be 'asc' or 'swc'.")
+
         self.morphology_name = morphology_name
+        self.morphology_format = morphology_format
+
         self.seclist_names = seclist_names
         self.secarray_names = secarray_names
         self.section_index = section_index
@@ -335,6 +352,7 @@ class NeuronModelConfiguration:
 
         return {
             "name": self.morphology_name,
+            "format": self.morphology_format,
             "seclist_names": self.seclist_names,
             "secarray_names": self.secarray_names,
             "section_index": self.section_index,

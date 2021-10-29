@@ -125,11 +125,16 @@ class EModel_pipeline:
             iteration_tag=iteration_tag,
         )
 
-    def configure_model(self, morphology_name, use_gene_data=False):
+    def configure_model(self, morphology_name, morphology_format=None, use_gene_data=False):
         """"""
 
         return configure_model(
-            self.access_point, morphology_name, self.emodel, self.ttype, use_gene_data=use_gene_data
+            self.access_point,
+            morphology_name,
+            self.emodel,
+            self.ttype,
+            morphology_format=morphology_format,
+            use_gene_data=use_gene_data,
         )
 
     def extract_efeatures(self):
@@ -150,7 +155,7 @@ class EModel_pipeline:
             terminator=None,
         )
 
-    def store_optimisation_results(self):
+    def store_optimisation_results(self, seed=None):
         """"""
 
         for chkp_path in glob.glob("./checkpoints/*.pkl"):
@@ -161,8 +166,8 @@ class EModel_pipeline:
             if self.access_point.iteration_tag and self.access_point.iteration_tag not in chkp_path:
                 continue
 
-            splitted_path = pathlib.Path(chkp_path).stem.split("__")
-            seed = int(splitted_path[-1])
+            if seed and str(seed) not in chkp_path:
+                continue
 
             store_best_model(
                 access_point=self.access_point,
@@ -194,8 +199,8 @@ class EModel_pipeline:
             )
 
         return plotting.plot_models(
-            self.access_point,
-            self.emodel,
+            access_point=self.access_point,
+            emodel=self.emodel,
             mapper=self.mapper,
             seeds=None,
             figures_dir=pathlib.Path("./figures") / self.emodel,

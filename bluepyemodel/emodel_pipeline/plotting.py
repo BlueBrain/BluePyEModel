@@ -281,14 +281,13 @@ def plot_models(
         additional_protocols = {}
 
     cell_evaluator = get_evaluator_from_access_point(
-        emodel,
         access_point,
         include_validation_protocols=True,
         additional_protocols=additional_protocols,
     )
 
     if plot_traces:
-        emodels = compute_responses(access_point, emodel, cell_evaluator, mapper, seeds)
+        emodels = compute_responses(access_point, cell_evaluator, mapper, seeds)
     else:
         emodels = access_point.get_emodels([emodel])
         if seeds:

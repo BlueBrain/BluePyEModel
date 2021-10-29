@@ -11,14 +11,17 @@ def configure_model(
     morphology_name,
     emodel=None,
     ttype=None,
+    morphology_format=None,
     use_gene_data=True,
 ):
     """Creates a model configuration: parameters, distributions, mechanisms, ...
 
     Args:
         access_point (DataAccessPoint): object which contains API to access emodel data
+        morphology_name (str): name of the morphology on which to build the neuron model.
         emodel (str): name of the emodel.
         ttype (str): name of the transcriptomic type.
+        morphology_format (str): format of the morphology, can be 'asc' or 'swc'.
         use_gene_data (bool): should the configuration be initialized using gene data
     """
 
@@ -33,7 +36,9 @@ def configure_model(
     )
 
     if morphology_name:
-        configurator.configuration.select_morphology(morphology_name)
+        configurator.configuration.select_morphology(
+            morphology_name, morphology_format=morphology_format
+        )
 
     configurator.save_configuration()
 

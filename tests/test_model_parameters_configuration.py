@@ -122,6 +122,7 @@ def test_raise_morphology(configuration):
             morphology_name="test",
         )
 
+
 def test_select_morphology(configuration):
     configuration.select_morphology(
         morphology_name="C060114A5",
@@ -130,7 +131,25 @@ def test_select_morphology(configuration):
     assert configuration.morphology_name == "C060114A5"
     assert morpho_dict["name"] == "C060114A5"
 
+    
+def test_init_morphology_from_dict(configuration):
+    with pytest.raises(Exception):
+        morph_dict = {
+            "path": "./C060114A5.asc",
+            "format": "swc",
+            "name": "C060114A5"
+        }
+        configuration.init_morphology_from_dict(morph_dict)
+    
+    morph_dict = {
+        "path": "./C060114A5.asc",
+        "format": "asc",
+        "name": "C060114A5"
+    }
+    configuration.init_morphology_from_dict(morph_dict)
+    assert configuration.morphology_format == "asc"
 
+    
 def test_distribution(configuration_with_distribution):
     assert len(configuration_with_distribution.parameters) == 3
     assert len(configuration_with_distribution.mechanisms) == 2

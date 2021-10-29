@@ -626,6 +626,11 @@ class LocalAccessPoint(DataAccessPoint):
             if key in model_data:
                 out_data[key] = model_data[key]
 
+        if "githash" in model_data:
+            out_data["iteration_tag"] = model_data["githash"]
+        if "iteration_tag" not in out_data:
+            out_data["iteration_tag"] = None
+
         if "validated" not in out_data:
             out_data["validated"] = None
         if "validation_fitness" in model_data:

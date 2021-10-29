@@ -56,7 +56,7 @@ def compute_responses(
         emodels = [model for model in emodels if model["seed"] in seeds]
     if access_point.iteration_tag:
         emodels = [
-            model for model in emodels if model["iteration_tag"] in access_point.iteration_tag
+            model for model in emodels if model["iteration_tag"] == access_point.iteration_tag
         ]
     if preselect_for_validation:
         emodels = [model for model in emodels if model["validated"] is None]
