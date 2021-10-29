@@ -464,7 +464,7 @@ def get_me_combos_currents(
     combos_df["emodel"] = combos_df["model_template"].apply(lambda temp: temp[4:])
     if morphology_path is None:
         morphology_path = Path(input_sonata_path).parent
-    combos_df["morphology_path"] = [str(morphology_path) + "/" + m + ".asc" for m in combos_df["morphology"]]
+    combos_df["morphology_path"] = [f"{morphology_path}/{m}.asc" for m in combos_df["morphology"]]
     if "@dynamics:AIS_scaler" in combos_df.columns:
         combos_df["AIS_scaler"] = combos_df["@dynamics:AIS_scaler"]
     else:
