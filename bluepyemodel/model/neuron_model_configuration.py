@@ -4,6 +4,7 @@ import pathlib
 
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
+from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 from bluepyemodel.model.parameter_configuration import ParameterConfiguration
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class NeuronModelConfiguration:
         self.parameters = []
         self.mechanisms = []
         self.distributions = []
+        self.morphology = []
 
         # TODO: actually use this:
         self.mapping_multilocation = None
@@ -35,13 +37,8 @@ class NeuronModelConfiguration:
         if self.available_mechanisms is not None:
             self.available_mechanisms = set(self.available_mechanisms)
             self.available_mechanisms.add("pas")
-        self.available_morphologies = available_morphologies
 
-        self.morphology_name = None
-        self.morphology_path = None
-        self.seclist_names = None
-        self.secarray_names = None
-        self.section_index = None
+        self.available_morphologies = available_morphologies
 
     @property
     def mechanism_names(self):
@@ -102,27 +99,9 @@ class NeuronModelConfiguration:
                     mechanism["name"], mechanism["location"], mechanism.get("stochastic", None)
                 )
 
-        self.init_morphology_from_dict(configuration_dict["morphology"])
+        self.morphology = MorphologyConfiguration(**configuration_dict["morphology"])
 
-    def init_morphology_from_dict(self, morpho_dict):
-        """"""
-
-        suffix = pathlib.Path(morpho_dict["path"]).suffix[1:].lower()
-        if "format" in morpho_dict and morpho_dict["format"] and morpho_dict["format"] != suffix:
-            raise Exception(
-                f"You asked for a morphology in format {morpho_dict['format']}"
-                f" but the local file is of format {suffix}"
-            )
-
-        self.morphology_name = morpho_dict["name"]
-        self.morphology_path = morpho_dict["path"]
-        self.morphology_format = pathlib.Path(morpho_dict["path"]).suffix[1:]
-
-        for k in ["seclist_names", "secarray_names", "section_index"]:
-            if k in morpho_dict:
-                setattr(self, k, morpho_dict[k])
-
-    def init_from_legacy_dict(self, parameters):
+    def init_from_legacy_dict(self, parameters, morphology):
         """"""
 
         ignore = ["v_init", "celsius", "cm", "Ra", "ena", "ek"]
@@ -167,6 +146,8 @@ class NeuronModelConfiguration:
         for location in parameters["mechanisms"]:
             for mech in parameters["mechanisms"][location]["mech"]:
                 self.add_mechanism(mech, location)
+
+        self.morphology = MorphologyConfiguration(**morphology)
 
     def add_distribution(self, distribution_name, function, parameters=None, soma_ref_location=0.5):
         """Add a channel distribution to the configuration"""
@@ -282,15 +263,18 @@ class NeuronModelConfiguration:
     def select_morphology(
         self,
         morphology_name=None,
+        morphology_path=None,
+        morphology_format=None,
         seclist_names=None,
         secarray_names=None,
         section_index=None,
-        morphology_format=None,
     ):
         """Select the morphology on which the neuron model will be based.
 
         Args:
             morphology_name (str): name of the morphology.
+            morphology_path (str): path to the morphology file
+            morphology_format (str): format of the morphology (asc or swc).
             seclist_names (list): Names of the lists of sections (['somatic', ...])
             secarray_names (list): names of the sections (['soma', ...])
             section_index (int): index to a specific section, used for non-somatic recordings.
@@ -302,15 +286,14 @@ class NeuronModelConfiguration:
                 "morphology directory"
             )
 
-        if morphology_format and morphology_format.lower() not in ["asc", "swc"]:
-            raise Exception("The format of the morphology has to be 'asc' or 'swc'.")
-
-        self.morphology_name = morphology_name
-        self.morphology_format = morphology_format
-
-        self.seclist_names = seclist_names
-        self.secarray_names = secarray_names
-        self.section_index = section_index
+        self.morphology = MorphologyConfiguration(
+            name=morphology_name,
+            path=morphology_path,
+            format=morphology_format,
+            seclist_names=seclist_names,
+            secarray_names=secarray_names,
+            section_index=section_index,
+        )
 
     def remove_parameter(self, parameter_name, locations=None):
         """Remove a parameter from the configuration. If locations is None or [], the whole
@@ -348,16 +331,6 @@ class NeuronModelConfiguration:
             self.mechanisms = [m for m in self.mechanisms if m.name != mechanism_name]
             self.parameters = [p for p in self.parameters if p.mechanism != mechanism_name]
 
-    def morphology_as_dict(self):
-
-        return {
-            "name": self.morphology_name,
-            "format": self.morphology_format,
-            "seclist_names": self.seclist_names,
-            "secarray_names": self.secarray_names,
-            "section_index": self.section_index,
-        }
-
     def as_dict(self):
         """Returns the configuration as dict of parameters, mechanisms and
         a list of mechanism names"""
@@ -367,7 +340,7 @@ class NeuronModelConfiguration:
             "mechanisms": [m.as_dict() for m in self.mechanisms],
             "distributions": [d.as_dict() for d in self.distributions],
             "parameters": [p.as_dict() for p in self.parameters],
-            "morphology": self.morphology_as_dict(),
+            "morphology": self.morphology.as_dict(),
         }
 
     def __str__(self):
@@ -386,5 +359,8 @@ class NeuronModelConfiguration:
         str_form += "Parameters:\n"
         for p in self.parameters:
             str_form += f"   {p.as_dict()}\n"
+
+        str_form += "Morphology:\n"
+        str_form += f"   {self.morphology.as_dict()}\n"
 
         return str_form

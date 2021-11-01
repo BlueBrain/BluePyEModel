@@ -1,5 +1,4 @@
 """Utils"""
-
 import logging
 from pathlib import Path
 
@@ -38,6 +37,7 @@ def run_metadata_as_string(emodel, seed, ttype=None, iteration_tag=None):
     if iteration_tag:
         s += f"__iteration_tag={iteration_tag}"
     if ttype:
-        s += f"__ttype={ttype}"
+        ttype_formatted = ttype.replace("/", "")
+        s += f"__ttype={ttype_formatted}"
 
     return s

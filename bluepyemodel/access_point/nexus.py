@@ -1068,7 +1068,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         return pdfs
 
-    def get_emodels(self, emodels):
+    def get_emodels(self, emodels=None):
         """Get the list of emodels.
 
         Returns:
@@ -1087,6 +1087,9 @@ class NexusAccessPoint(DataAccessPoint):
                 }
             ]
         """
+
+        if emodels is None:
+            emodels = [self.emodel]
 
         models = []
 
@@ -1117,7 +1120,7 @@ class NexusAccessPoint(DataAccessPoint):
                 passed_validation = resource.passedValidation
 
             if hasattr(resource, "iteration"):
-                iteration_tag = resource.iteration_tag
+                iteration_tag = resource.iteration
             else:
                 iteration_tag = ""
 
@@ -1448,9 +1451,7 @@ class NexusAccessPoint(DataAccessPoint):
         resource.update(configuration.as_dict())
 
         self.access_point.register(
-            resource,
-            filters_existance={"type": "EModelConfiguration", "name": resource["name"]},
-            replace=True,
+            resource, filters_existance={"type": "EModelConfiguration", "name": resource["name"]}
         )
 
     def get_available_mechanisms(self):

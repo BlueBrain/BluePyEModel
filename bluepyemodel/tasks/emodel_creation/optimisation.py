@@ -16,7 +16,7 @@ from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
 from bluepyemodel.tools.mechanisms import compile_mechs
 
-# pylint: disable=W0235
+# pylint: disable=W0235,W0621,W0404,W0611
 
 
 class EfeaturesProtocolsTarget(WorkflowTarget):
@@ -86,7 +86,7 @@ class CompileMechanisms(WorkflowTask):
 class OptimisationTarget(WorkflowTarget):
     """Target to check if an optimisation is present in the database."""
 
-    def __init__(self, emodel, ttype, iteration_tag=None, seed=1):
+    def __init__(self, emodel, ttype, iteration_tag, seed=1):
         """Constructor.
 
         Args:
@@ -146,13 +146,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
-        attrs = [
-            "backend",
-            "emodel",
-            "seed",
-            "species",
-            "brain_region",
-        ]
+        attrs = ["backend", "emodel", "seed", "species", "brain_region", "ttype", "iteration_tag"]
         self.prepare_args_for_remote_script(attrs)
 
         super().run()
@@ -171,7 +165,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
 
         from bluepyemodel import access_point
         from bluepyemodel.optimisation import setup_and_run_optimisation
-        from bluepyemodel.tasks.utils import get_mapper
+        from bluepyemodel.tools.multiprocessing import get_mapper
 
         # -- parsing -- #
         parser = argparse.ArgumentParser()
@@ -192,6 +186,8 @@ class Optimize(WorkflowTask, IPyParallelTask):
         )
         parser.add_argument("--emodel", default=None, type=str)
         parser.add_argument("--seed", default=1, type=int)
+        parser.add_argument("--ttype", default=None, type=str)
+        parser.add_argument("--iteration_tag", default=None, type=str)
         parser.add_argument("--species", default=None, type=str)
         parser.add_argument("--brain_region", default="", type=str)
 
@@ -200,7 +196,11 @@ class Optimize(WorkflowTask, IPyParallelTask):
         # -- run optimisation -- #
         mapper = get_mapper(args.backend)
         access_pt = access_point.get_access_point(
-            args.api_from_config, args.emodel, **args.api_args_from_config
+            access_point=args.api_from_config,
+            emodel=args.emodel,
+            ttype=args.ttype,
+            iteration_tag=args.iteration_tag,
+            **args.api_args_from_config,
         )
         setup_and_run_optimisation(access_pt, args.seed, mapper=mapper)
 
@@ -214,7 +214,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
 class BestModelTarget(WorkflowTarget):
     """Check if the best model from optimisation is present in the database."""
 
-    def __init__(self, emodel, ttype, iteration_tag=None, seed=1):
+    def __init__(self, emodel, ttype, iteration_tag, seed=1):
         """Constructor.
 
         Args:
@@ -294,7 +294,7 @@ class StoreBestModels(WorkflowTask):
                 iteration_tag=self.iteration_tag,
                 seed=seed,
             ).exists():
-                store_best_model(self.access_point, self.emodel, seed)
+                store_best_model(self.access_point, seed)
 
     def output(self):
         """ """
@@ -409,10 +409,7 @@ class Validation(WorkflowTask, IPyParallelTask):
 
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
-        attrs = [
-            "backend",
-            "emodel",
-        ]
+        attrs = ["backend", "species", "emodel", "brain_region", "ttype", "iteration_tag"]
         self.prepare_args_for_remote_script(attrs)
 
         super().run()
@@ -424,7 +421,7 @@ class Validation(WorkflowTask, IPyParallelTask):
         import json
 
         from bluepyemodel import access_point
-        from bluepyemodel.tasks.utils import get_mapper
+        from bluepyemodel.tools.multiprocessing import get_mapper
         from bluepyemodel.validation.validation import validate
 
         # -- parsing -- #
@@ -445,13 +442,20 @@ class Validation(WorkflowTask, IPyParallelTask):
             type=json.loads,
         )
         parser.add_argument("--emodel", default=None, type=str)
-
+        parser.add_argument("--species", default=None, type=str)
+        parser.add_argument("--brain_region", default=None, type=str)
+        parser.add_argument("--ttype", default=None, type=str)
+        parser.add_argument("--iteration_tag", default=None, type=str)
         args = parser.parse_args()
 
         # -- run validation -- #
         mapper = get_mapper(args.backend)
         access_pt = access_point.get_access_point(
-            args.api_from_config, args.emodel, **args.api_args_from_config
+            access_point=args.api_from_config,
+            emodel=args.emodel,
+            ttype=args.ttype,
+            iteration_tag=args.iteration_tag,
+            **args.api_args_from_config,
         )
 
         validate(access_pt, mapper)
@@ -606,6 +610,8 @@ class OptimizeWrapper(WorkflowWrapperTask):
             to_run.append(
                 Optimize(
                     emodel=self.emodel,
+                    ttype=self.ttype,
+                    iteration_tag=self.iteration_tag,
                     species=self.species,
                     brain_region=self.brain_region,
                     seed=seed,
@@ -646,7 +652,7 @@ class PlotOptimisation(WorkflowTask):
             self.emodel,
             seed=self.seed,
             iteration_tag=self.iteration_tag,
-            ttype=self.ttype,
+            ttype=str(self.ttype).replace("__", " "),
         )
 
         optimization(
@@ -658,7 +664,10 @@ class PlotOptimisation(WorkflowTask):
         """ """
 
         chkpt_name = get_checkpoint_path(
-            self.emodel, self.seed, iteration_tag=self.iteration_tag, ttype=self.ttype
+            self.emodel,
+            self.seed,
+            iteration_tag=self.iteration_tag,
+            ttype=str(self.ttype).replace("__", " "),
         )
 
         fname = f"{Path(chkpt_name).stem}.pdf"
@@ -728,7 +737,7 @@ class PlotModels(WorkflowTask):
             fname = run_metadata_as_string(
                 self.emodel,
                 seed="",
-                ttype=self.ttype,
+                ttype=str(self.ttype).replace("__", " "),
                 iteration_tag=self.iteration_tag,
             )
             fname += "__parameters_distribution.pdf"
@@ -740,7 +749,7 @@ class PlotModels(WorkflowTask):
                 fname = run_metadata_as_string(
                     self.emodel,
                     seed,
-                    ttype=self.ttype,
+                    ttype=str(self.ttype).replace("__", " "),
                     iteration_tag=self.iteration_tag,
                 )
                 fname += "__scores.pdf"
@@ -752,7 +761,7 @@ class PlotModels(WorkflowTask):
                 fname = run_metadata_as_string(
                     self.emodel,
                     seed,
-                    ttype=self.ttype,
+                    ttype=str(self.ttype).replace("__", " "),
                     iteration_tag=self.iteration_tag,
                 )
                 fname += "__traces.pdf"

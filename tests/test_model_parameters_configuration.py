@@ -1,6 +1,8 @@
 import pytest
 
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
+
 
 @pytest.fixture
 def configuration():
@@ -123,37 +125,36 @@ def test_raise_morphology(configuration):
         )
 
 
-def test_select_morphology(configuration):
-    configuration.select_morphology(
-        morphology_name="C060114A5",
-    )
-    morpho_dict = configuration.as_dict()['morphology']
-    assert configuration.morphology_name == "C060114A5"
-    assert morpho_dict["name"] == "C060114A5"
-
-    
-def test_init_morphology_from_dict(configuration):
+def test_morphology_configuration():
     with pytest.raises(Exception):
         morph_dict = {
             "path": "./C060114A5.asc",
             "format": "swc",
             "name": "C060114A5"
         }
-        configuration.init_morphology_from_dict(morph_dict)
-    
+        _ = MorphologyConfiguration(**morph_dict)
+
     morph_dict = {
         "path": "./C060114A5.asc",
         "format": "asc",
         "name": "C060114A5"
     }
-    configuration.init_morphology_from_dict(morph_dict)
-    assert configuration.morphology_format == "asc"
+    morph = MorphologyConfiguration(**morph_dict)
+    assert morph.format == "asc"
 
-    
+
+def test_select_morphology(configuration):
+    configuration.select_morphology(
+        morphology_name="C060114A5",
+    )
+    morpho_dict = configuration.morphology.as_dict()
+    assert configuration.morphology.name == "C060114A5"
+    assert morpho_dict["name"] == "C060114A5"
+
+
 def test_distribution(configuration_with_distribution):
     assert len(configuration_with_distribution.parameters) == 3
     assert len(configuration_with_distribution.mechanisms) == 2
     assert len(configuration_with_distribution.distributions) == 1
     assert len(configuration_with_distribution.distribution_names) == 1
     assert len(configuration_with_distribution.used_distribution_names) == 1
-
