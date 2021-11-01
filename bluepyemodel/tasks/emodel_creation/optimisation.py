@@ -661,7 +661,7 @@ class PlotOptimisation(WorkflowTask):
             self.emodel, self.seed, iteration_tag=self.iteration_tag, ttype=self.ttype
         )
 
-        fname = f"{chkpt_name.stem}.pdf"
+        fname = f"{Path(chkpt_name).stem}.pdf"
         return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
