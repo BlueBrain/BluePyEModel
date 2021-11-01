@@ -104,16 +104,6 @@ def json_load(obj, name):
     return var
 
 
-def get_checkpoint_path(seed, path):
-    """Returns the checkpoint path with the seed number in it."""
-    path = Path(path)
-    if "{}" in path.stem:
-        return path.with_name(path.stem.format(seed)).with_suffix(path.suffix)
-    if f"_{seed}" in path.stem:
-        return path
-    return path.with_name(path.stem + f"_{seed}").with_suffix(path.suffix)
-
-
 def update_gitignore():
     """
     Adds the following lines to .gitignore: 'run/', 'checkpoints/', 'figures/',

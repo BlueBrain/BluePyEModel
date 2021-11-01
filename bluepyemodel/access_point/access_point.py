@@ -1,6 +1,6 @@
 """Abstract data access point class."""
-
 import logging
+import pathlib
 
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.optimisation import get_checkpoint_path
@@ -120,7 +120,7 @@ class DataAccessPoint:
             emodel=self.emodel, seed=seed, iteration_tag=self.iteration_tag, ttype=self.ttype
         )
 
-        return checkpoint_path.is_file()
+        return pathlib.Path(checkpoint_path).is_file()
 
     def _build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
