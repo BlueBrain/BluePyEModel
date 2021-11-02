@@ -159,12 +159,13 @@ class NexusAccessPoint(DataAccessPoint):
         filters = {
             "type": "EModel",
             "eModel": self.emodel,
+            "ttype": self.ttype,
             "subject": self.get_subject(for_search=True),
             "brainLocation": self.brain_region,
         }
 
         if seed:
-            filters["seed"] = seed
+            filters["seed"] = int(seed)
 
         resources = self.access_point.fetch(filters, use_version=use_version)
 
@@ -1018,7 +1019,7 @@ class NexusAccessPoint(DataAccessPoint):
             "scoreValidation": scores_validation_resource,
             "passedValidation": validated,
             "optimizer": str(optimizer_name),
-            "seed": seed,
+            "seed": int(seed),
             "pip_freeze": pip_freeze,
             "pdfs": pdf_dependencies,
         }
@@ -1027,11 +1028,12 @@ class NexusAccessPoint(DataAccessPoint):
             "type": "EModel",
             "subject": self.get_subject(for_search=True),
             "brainLocation": self.brain_region,
-            "seed": seed,
+            "seed": int(seed),
         }
 
         if self.ttype:
             resource_description["ttype"] = self.ttype
+            search["ttype"] = self.ttype
 
         self.access_point.register(
             resource_description=resource_description,
@@ -1124,10 +1126,16 @@ class NexusAccessPoint(DataAccessPoint):
             else:
                 iteration_tag = ""
 
+            if hasattr(resource, "ttype"):
+                ttype = resource.ttype
+            else:
+                ttype = None
+
             # WARNING: should be self.brain_region.brainRegion.label in the future
 
             model = {
                 "emodel": self.emodel,
+                "ttype": ttype,
                 "species": self.species,
                 "brain_region": self.brain_region["brainRegion"]["label"],
                 "fitness": resource.fitness,
@@ -1136,7 +1144,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "scores_validation": scores_validation,
                 "validated": passed_validation,
                 "optimizer": resource.optimizer,
-                "seed": resource.seed,
+                "seed": int(resource.seed),
                 "iteration_tag": iteration_tag,
             }
 
