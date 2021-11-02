@@ -34,6 +34,10 @@ def get_access_point(access_point, emodel, **kwargs):
         DataAccessPoint
     """
 
+    ttype = kwargs.get("ttype", None)
+    if ttype:
+        ttype = ttype.replace("__", " ")
+
     if access_point == "nexus":
         from bluepyemodel.access_point.nexus import NexusAccessPoint
 
@@ -45,7 +49,7 @@ def get_access_point(access_point, emodel, **kwargs):
             organisation=kwargs.get("organisation", "demo"),
             endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
             forge_path=kwargs.get("forge_path", None),
-            ttype=kwargs.get("ttype", None),
+            ttype=ttype,
             iteration_tag=kwargs.get("iteration_tag", None),
         )
 
@@ -59,7 +63,7 @@ def get_access_point(access_point, emodel, **kwargs):
             final_path=kwargs.get("final_path", None),
             legacy_dir_structure=kwargs.get("legacy_dir_structure", False),
             with_seeds=kwargs.get("with_seeds", False),
-            ttype=kwargs.get("ttype", None),
+            ttype=ttype,
             iteration_tag=kwargs.get("iteration_tag", None),
         )
 

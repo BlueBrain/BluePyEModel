@@ -432,12 +432,11 @@ class LocalAccessPoint(DataAccessPoint):
             self._freeze_params(parameters["parameters"])
 
         if isinstance(parameters["mechanisms"], dict):
-            configuration.init_from_legacy_dict(parameters)
+            configuration.init_from_legacy_dict(parameters, self.get_morphologies())
         else:
             configuration.init_from_dict(parameters)
 
         configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
-        configuration.init_morphology_from_dict(self.get_morphologies())
 
         return configuration
 

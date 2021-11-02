@@ -214,7 +214,7 @@ def define_morphology(
                 raise Exception("A morph modifier is not callable nor a list of two str")
 
     return NrnFileMorphology(
-        morphology_path=model_configuration.morphology_path,
+        morphology_path=model_configuration.morphology.path,
         do_replace_axon=False,
         do_set_nseg=do_set_nseg,
         nseg_frequency=nseg_frequency,
@@ -255,9 +255,9 @@ def create_cell_model(
     )
 
     if seclist_names is None:
-        seclist_names = model_configuration.seclist_names
+        seclist_names = model_configuration.morphology.seclist_names
     if secarray_names is None:
-        secarray_names = model_configuration.secarray_names
+        secarray_names = model_configuration.morphology.secarray_names
 
     mechanisms = define_mechanisms(
         model_configuration.mechanisms, model_configuration.mapping_multilocation

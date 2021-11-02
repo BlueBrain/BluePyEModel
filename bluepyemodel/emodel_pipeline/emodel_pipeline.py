@@ -1,10 +1,7 @@
 """Allows to execute the steps of the e-model building pipeline using python or CLI"""
 
-import argparse
-import datetime
 import glob
 import logging
-import os
 import pathlib
 
 from bluepyemodel.access_point import get_access_point
@@ -13,6 +10,7 @@ from bluepyemodel.emodel_pipeline import plotting
 from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
+from bluepyemodel.tools.multiprocessing import ipyparallel_map_function
 from bluepyemodel.validation.validation import validate
 
 logger = logging.getLogger()
@@ -71,9 +69,10 @@ class EModel_pipeline:
         self.species = species
         self.brain_region = brain_region
 
-        self.mapper = instantiate_map_function(
-            use_ipyparallel=use_ipyparallel, ipython_profil="IPYTHON_PROFILE"
-        )
+        if use_ipyparallel:
+            self.mapper = ipyparallel_map_function()
+        else:
+            self.mapper = map
 
         self.access_point = self.init_access_point(
             data_access_point,
@@ -125,7 +124,9 @@ class EModel_pipeline:
             iteration_tag=iteration_tag,
         )
 
-    def configure_model(self, morphology_name, morphology_format=None, use_gene_data=False):
+    def configure_model(
+        self, morphology_name, morphology_path=None, morphology_format=None, use_gene_data=False
+    ):
         """"""
 
         return configure_model(
@@ -133,6 +134,7 @@ class EModel_pipeline:
             morphology_name,
             self.emodel,
             self.ttype,
+            morphology_path=morphology_path,
             morphology_format=morphology_format,
             use_gene_data=use_gene_data,
         )
@@ -211,134 +213,6 @@ class EModel_pipeline:
         )
 
 
-def get_parser():
-    """Instantiate a parser that can configure the steps of the E-Model pipeline"""
-
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter, description="E-Model pipeline"
-    )
-
-    # Arguments that define the E-Model:
-    parser.add_argument("--emodel", type=str, help="Name of the e-model")
-    parser.add_argument("--species", type=str, help="Name of the species")
-    parser.add_argument("--brain_region", type=str, help="Name of the brain region")
-
-    parser.add_argument(
-        "--morphology_name",
-        type=str,
-        default=None,
-        help="Name of the morphology used as a based for the neuron model",
-    )
-
-    # Arguments used in the instantiation of the data access point:
-    parser.add_argument(
-        "--data_access_point",
-        type=str,
-        required=True,
-        choices=["local", "nexus"],
-        help="Which data access point to use.",
-    )
-    parser.add_argument("--recipes_path", type=str, help="Relative path to the recipes.json.")
-    parser.add_argument(
-        "--nexus_organisation",
-        type=str,
-        help="Name of the organisation to which the Nexus project belong.",
-    )
-    parser.add_argument("--nexus_project", type=str, help="Name of the Nexus project.")
-    parser.add_argument(
-        "--nexus_endpoint",
-        type=str,
-        choices=["prod", "staging"],
-        help="Name of the Nexus endpoint.",
-    )
-    parser.add_argument(
-        "--forge_path",
-        type=str,
-        default=None,
-        help="Path to the .yml used to configure Nexus Forge.",
-    )
-    parser.add_argument("--ttype", type=str, help="Name of the t-type.")
-
-    # Argument used for the steps of the pipeline:
-    parser.add_argument(
-        "--step",
-        type=str,
-        required=True,
-        choices=["configure_model", "extract", "optimize", "store", "plot", "validate"],
-        help="Stage of the E-Model building pipeline to execute",
-    )
-    parser.add_argument("--seed", type=int, default=1, help="Seed to use for optimization")
-    parser.add_argument(
-        "--iteration_tag",
-        type=str,
-        required=False,
-        default=None,
-        help="Tag associated to the current E-Model building iteration.",
-    )
-    parser.add_argument(
-        "--use_ipyparallel", action="store_true", default=False, help="Use ipyparallel"
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        dest="verbosity",
-        default=0,
-        help="-v for INFO, -vv for DEBUG",
-    )
-
-    return parser
-
-
-def get_arguments():
-    """Get the arguments and check their validity"""
-
-    args = get_parser().parse_args()
-
-    if args.verbosity > 2:
-        raise Exception("Verbosity cannot be more verbose than -vv")
-
-    if args.data_access_point == "local":
-        required_args = ["recipes_path"]
-    elif args.data_access_point == "nexus":
-        required_args = [
-            "nexus_organisation",
-            "nexus_project",
-            "nexus_endpoint",
-            "iteration_tag",
-        ]
-
-    for arg in required_args:
-        if getattr(args, arg) is None:
-            raise Exception(
-                f"When using {args.data_access_point} as a data access point. The argument "
-                "{arg} has to be informed."
-            )
-
-    return args
-
-
-def instantiate_map_function(use_ipyparallel=False, ipython_profil="IPYTHON_PROFILE"):
-    """Instantiate a map function"""
-
-    if use_ipyparallel:
-        from ipyparallel import Client
-
-        rc = Client(profile=os.getenv(ipython_profil))
-        lview = rc.load_balanced_view()
-
-        def mapper(func, it):
-            start_time = datetime.datetime.now()
-            ret = lview.map_sync(func, it)
-            logger.debug("Took %s", datetime.datetime.now() - start_time)
-            return ret
-
-    else:
-        mapper = map
-
-    return mapper
-
-
 def sanitize_gitignore():
     """In order to avoid git issue when archiving the current working directory,
     adds the following lines to .gitignore: 'run/', 'checkpoints/', 'figures/',
@@ -360,47 +234,3 @@ def sanitize_gitignore():
         for a in to_add:
             if a not in lines:
                 f.write(f"{a}\n")
-
-
-def main():
-    """This function can be used to run the different steps of an e-model building pipeline.
-    It can also be used as an starting point to build your own."""
-
-    args = get_arguments()
-
-    logging.basicConfig(
-        level=(logging.WARNING, logging.INFO, logging.DEBUG)[args.verbosity],
-        handlers=[logging.StreamHandler()],
-    )
-
-    pipeline = EModel_pipeline(
-        emodel=args.emodel,
-        species=args.species,
-        brain_region=args.brain_region,
-        data_access_point=args.data_access_point,
-        recipes_path=args.recipes_path,
-        forge_path=args.forge_path,
-        nexus_organisation=args.nexus_organisation,
-        nexus_project=args.nexus_project,
-        nexus_endpoint=args.nexus_endpoint,
-        ttype=args.ttype,
-        iteration_tag=args.iteration_tag,
-        use_ipyparallel=args.use_ipyparallel,
-    )
-
-    if args.step == "configure_model":
-        pipeline.configure_model(morphology_name=args.morphology_name, use_gene_data=True)
-    if args.step == "extract":
-        pipeline.extract_efeatures()
-    elif args.step == "optimize":
-        pipeline.optimize(seed=args.seed)
-    elif args.step == "store":
-        pipeline.store_optimisation_results()
-    elif args.step == "validate":
-        pipeline.validation()
-    elif args.step == "plot":
-        pipeline.plot()
-
-
-if __name__ == "__main__":
-    main()
