@@ -28,7 +28,7 @@ class NeuronModelConfiguration:
         self.parameters = []
         self.mechanisms = []
         self.distributions = []
-        self.morphology = []
+        self.morphology = None
 
         # TODO: actually use this:
         self.mapping_multilocation = None

@@ -37,10 +37,9 @@ def configure_model(
         configuration_name=configuration_name, use_gene_data=use_gene_data
     )
 
-    if morphology_name:
-        configurator.configuration.select_morphology(
-            morphology_name, morphology_path=morphology_path, morphology_format=morphology_format
-        )
+    configurator.configuration.select_morphology(
+        morphology_name, morphology_path=morphology_path, morphology_format=morphology_format
+    )
 
     configurator.save_configuration()
 
