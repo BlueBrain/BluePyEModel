@@ -1,4 +1,5 @@
 """Luigi tasks for emodel optimisation."""
+import glob
 import multiprocessing
 from pathlib import Path
 
@@ -80,7 +81,10 @@ class CompileMechanisms(WorkflowTask):
 
     def output(self):
         """ """
-        return luigi.LocalTarget(Path("x86_64") / "special")
+        targets = []
+        for filepath in glob.glob("./mechanisms/*.mod"):
+            targets.append(luigi.LocalTarget(f"./x86_64/{Path(filepath).stem}.c"))
+        return targets
 
 
 class OptimisationTarget(WorkflowTarget):
@@ -142,6 +146,7 @@ class Optimize(WorkflowTask, IPyParallelTask):
                     brain_region=self.brain_region,
                 )
             )
+
         return targets
 
     def run(self):

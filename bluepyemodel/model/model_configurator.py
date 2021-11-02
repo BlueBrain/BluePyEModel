@@ -113,5 +113,3 @@ class ModelConfigurator:
                 locations=m["location"],
                 stochastic=m.get("stochastic", None),
             )
-
-        print(self.configuration)

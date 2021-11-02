@@ -46,7 +46,7 @@ def format_dict_for_resource(d):
 
     for k, v in d.items():
 
-        if numpy.isnan(v):
+        if v is None or numpy.isnan(v):
             v = None
 
         out.append({"name": k, "value": v, "unitCode": ""})
