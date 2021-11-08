@@ -73,27 +73,11 @@ class DataAccessPoint:
     def get_model_configuration(self):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
-    def get_protocols(self, include_validation=False):
-        """Get the protocols from the database and put in a format that fits
-         the MainProtocol needs.
+    def store_fitness_calculator_configuration(self, configuration):
+        """Store a fitness calculator configuration"""
 
-        Args:
-            include_validation (bool):should the validation protocols be added to the evaluator.
-
-        Returns:
-            protocols_out (dict): protocols definitions
-        """
-
-    def get_features(self, include_validation=False):
-        """Get the efeatures from the database and put in a format that fits
-         the MainProtocol needs.
-
-        Args:
-            include_validation (bool): should the validation efeatures be added to the evaluator.
-
-        Returns:
-            efeatures_out (dict): efeatures definitions
-        """
+    def get_fitness_calculator_configuration(self):
+        """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
     def get_morphologies(self):
         """Get the name and path to the morphologies.
@@ -101,7 +85,6 @@ class DataAccessPoint:
         Returns:
             morphology_definition (dict): [{'name': morph_name,
                                             'path': 'morph_path'}
-
         """
 
     def download_mechanisms(self):

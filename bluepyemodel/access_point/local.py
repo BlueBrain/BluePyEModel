@@ -3,7 +3,6 @@
 import glob
 import json
 import logging
-from collections import defaultdict
 from pathlib import Path
 
 import fasteners
@@ -11,6 +10,7 @@ from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
@@ -228,33 +228,6 @@ class LocalAccessPoint(DataAccessPoint):
 
         return files_metadata, targets, protocols_threshold
 
-    def store_efeatures(self, efeatures):
-        """Save the efeatures obtained from BluePyEfe.
-
-        Args:
-            efeatures (dict): efeatures means and standard deviations. Format as returned by
-                BluePyEfe 2.
-        """
-
-        features_path = Path(self.get_recipes()["features"])
-        features_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(str(features_path), "w") as f:
-            f.write(json.dumps(efeatures, indent=2, cls=NumpyEncoder))
-
-    def store_protocols(self, stimuli):
-        """Save the protocols obtained from BluePyEfe.
-
-        Args:
-            stimuli (dict): protocols definition in the format returned by BluePyEfe 2.
-        """
-
-        protocols_path = Path(self.get_recipes()["protocol"])
-        protocols_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(str(protocols_path), "w") as f:
-            f.write(json.dumps(stimuli, indent=2, cls=NumpyEncoder))
-
     def get_model_name_for_final(self, seed):
         """Return model name used as key in final.json."""
 
@@ -441,138 +414,47 @@ class LocalAccessPoint(DataAccessPoint):
 
         return configuration
 
-    def _read_protocol(self, protocol):
-        stimulus_def = protocol["step"]
-        stimulus_def["holding_current"] = protocol["holding"]["amp"]
+    def store_fitness_calculator_configuration(self, configuration):
+        """Store a fitness calculator configuration"""
 
-        protocol_definition = {"stimuli": stimulus_def}
+        config_path = self.emodel_dir / self.get_recipes()["features"]
+        config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if "extra_recordings" in protocol:
-            protocol_definition["extra_recordings"] = protocol["extra_recordings"]
+        with open(str(config_path), "w") as f:
+            f.write(json.dumps(configuration.as_dict(), indent=2, cls=NumpyEncoder))
 
-        return protocol_definition
+    def get_fitness_calculator_configuration(self):
+        """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
-    def _read_legacy_protocol(self, protocol, protocol_name):
-        if protocol_name in ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]:
-            return None
+        config_path = self.emodel_dir / self.get_recipes()["features"]
 
-        if protocol["type"] not in ["StepThresholdProtocol", "StepProtocol"]:
-            return None
+        with open(str(config_path), "r") as fp:
+            config_dict = json.load(fp)
 
-        stimulus_def = protocol["stimuli"]["step"]
-        if "holding" in protocol["stimuli"]:
-            stimulus_def["holding_current"] = protocol["stimuli"]["holding"]["amp"]
+        legacy = "efeatures" not in config_dict and "protocols" not in config_dict
+
+        if legacy:
+            efeatures = self._get_json("features")
+            protocols = self._get_json("protocol")
+            configuration = FitnessCalculatorConfiguration(
+                name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
+                name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
+                threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
+                validation_protocols=self.pipeline_settings.validation_protocols,
+            )
+            configuration.init_from_legacy_dict(efeatures, protocols)
+
         else:
-            stimulus_def["holding_current"] = None
+            configuration = FitnessCalculatorConfiguration(
+                efeatures=config_dict["efeatures"],
+                protocols=config_dict["protocols"],
+                name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
+                name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
+                threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
+                validation_protocols=self.pipeline_settings.validation_protocols,
+            )
 
-        protocol_definition = {"stimuli": stimulus_def}
-        if "extra_recordings" in protocol:
-            protocol_definition["extra_recordings"] = protocol["extra_recordings"]
-
-        return protocol_definition
-
-    def get_protocols(self, include_validation=False):
-        """Get the protocols from the configuration file and put them in the format required by
-        MainProtocol.
-
-        Args:
-            include_validation (bool): if True, returns the protocols for validation as well as
-                the ones for optimisation.
-
-        Returns:
-            protocols_out (dict): protocols definitions
-        """
-        protocols = self._get_json("protocol")
-
-        protocols_out = {}
-        for protocol_name, protocol in protocols.items():
-
-            if "validation" in protocol:
-                if not include_validation and protocol["validation"]:
-                    continue
-                protocol_definition = self._read_protocol(protocol)
-            else:
-                protocol_definition = self._read_legacy_protocol(protocol, protocol_name)
-
-            if protocol_definition:
-                protocols_out[protocol_name] = protocol_definition
-
-        return protocols_out
-
-    def get_name_validation_protocols(self):
-        """Get the names of the protocols used for validation"""
-
-        protocols = self._get_json("protocol")
-
-        names = []
-        for prot_name, prot in protocols.items():
-
-            if "validation" in prot and prot["validation"]:
-                names.append(prot_name)
-
-        return names
-
-    def get_features(self, include_validation=False):
-        """Get the features from the configuration files and put then in the format required by
-        MainProtocol.
-
-        Args:
-            include_validation (bool): should the features for validation be returned as well as
-                the ones for optimisation.
-
-        Returns:
-            features_out (dict): features definitions
-        """
-
-        features = self._get_json("features")
-
-        features_out = {
-            "RMPProtocol": {"soma.v": []},
-            "RinProtocol": {"soma.v": []},
-            "SearchHoldingCurrent": {"soma.v": []},
-            "SearchThresholdCurrent": {"soma.v": []},
-        }
-        # pylint: disable=too-many-nested-blocks
-
-        for prot_name in features:
-
-            if (
-                "validation" in features[prot_name]
-                and features[prot_name]["validation"]
-                and not include_validation
-            ):
-                continue
-
-            for loc in features[prot_name]:
-
-                if loc == "validation":
-                    continue
-
-                for feat in features[prot_name][loc]:
-
-                    if prot_name == "Rin" and feat["feature"] == "ohmic_input_resistance_vb_ssse":
-                        features_out["RinProtocol"]["soma.v"].append(feat)
-
-                    elif prot_name == "RMP" and feat["feature"] == "voltage_base":
-                        feat["feature"] = "steady_state_voltage_stimend"
-                        features_out["RMPProtocol"]["soma.v"].append(feat)
-
-                    elif prot_name == "RinHoldCurrent" and feat["feature"] == "bpo_holding_current":
-                        features_out["SearchHoldingCurrent"]["soma.v"].append(feat)
-
-                    elif prot_name == "Rin" and feat["feature"] == "voltage_base":
-                        feat["feature"] = "steady_state_voltage_stimend"
-                        features_out["SearchHoldingCurrent"]["soma.v"].append(feat)
-
-                    elif prot_name == "Threshold" and feat["feature"] == "bpo_threshold_current":
-                        features_out["SearchThresholdCurrent"]["soma.v"].append(feat)
-
-                    else:
-                        if prot_name not in features_out:
-                            features_out[prot_name] = defaultdict(list)
-                        features_out[prot_name][loc].append(feat)
-
-        return features_out
+        return configuration
 
     def get_morphologies(self):
         """Get the name and path to the morphologies from the recipes.
@@ -674,6 +556,13 @@ class LocalAccessPoint(DataAccessPoint):
 
         return models
 
+    def has_fitness_calculator_configuration(self):
+        """Check if the fitness calculator configuration exists"""
+
+        return (
+            Path(self.emodel_dir, "config", "features", self.emodel).with_suffix(".json").is_file()
+        )
+
     def get_emodel_etype_map(self):
         final = self.get_final()
         return {emodel: emodel.split("_")[0] for emodel in final}
@@ -688,18 +577,6 @@ class LocalAccessPoint(DataAccessPoint):
         final = self.get_final()
 
         return {mod_name: mod.get("emodel", mod_name) for mod_name, mod in final.items()}
-
-    def has_protocols_and_features(self):
-        """Check if the efeatures and protocol exist."""
-
-        features_exists = (
-            Path(self.emodel_dir, "config", "features", self.emodel).with_suffix(".json").is_file()
-        )
-        protocols_exists = (
-            Path(self.emodel_dir, "config", "protocols", self.emodel).with_suffix(".json").is_file()
-        )
-
-        return features_exists and protocols_exists
 
     def has_best_model(self, seed):
         """Check if the best model has been stored."""

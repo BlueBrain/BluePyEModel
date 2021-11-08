@@ -5,8 +5,7 @@ import json
 from bluepyemodel.access_point import get_access_point
 from dictdiffer import diff
 
-
-TEST_ROOT = Path(__file__).parent
+TEST_ROOT = Path(__file__).parents[1]
 DATA = TEST_ROOT / "test_data"
 
 
@@ -34,20 +33,6 @@ def test_get_available_morphologies(db):
     names = db.get_available_morphologies()
     assert len(names) == 1
     assert list(names)[0] == "C060114A5"
-
-
-def test_get_features(db):
-    features = db.get_features()
-    # json.dump(features, open(DATA / "test_features.json", "w"))
-    expected_features = json.load(open(DATA / "test_features.json", "r"))
-    assert list(diff(features, expected_features)) == []
-
-
-def test_get_protocols(db):
-    protocols = db.get_protocols()
-    # json.dump(protocols, open(DATA / "test_protocols.json", "w"))
-    expected_protocols = json.load(open(DATA / "test_protocols.json", "r"))
-    assert list(diff(protocols, expected_protocols)) == []
 
 
 def test_get_recipes(db):

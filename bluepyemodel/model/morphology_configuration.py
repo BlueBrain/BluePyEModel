@@ -44,7 +44,7 @@ class MorphologyConfiguration:
         if format:
             if self.path:
                 if format.lower() != path[-3:].lower():
-                    raise Exception(f"format does not match the morphology file")
+                    raise Exception("The format does not match the morphology file")
             self.format = format
         elif self.path:
             self.format = path[-3:]
