@@ -20,6 +20,15 @@ from bluepyemodel.tools.mechanisms import compile_mechs
 # pylint: disable=W0235,W0621,W0404,W0611
 
 
+def _reformat_ttype(ttype):
+    """ """
+
+    if isinstance(ttype, str):
+        return ttype.replace("__", " ")
+
+    return None
+
+
 class EfeaturesProtocolsTarget(WorkflowTarget):
     """Target to check if efeatures and protocols are present in the database."""
 
@@ -657,7 +666,7 @@ class PlotOptimisation(WorkflowTask):
             self.emodel,
             seed=self.seed,
             iteration_tag=self.iteration_tag,
-            ttype=str(self.ttype).replace("__", " "),
+            ttype=_reformat_ttype(self.ttype),
         )
 
         optimization(
@@ -672,7 +681,7 @@ class PlotOptimisation(WorkflowTask):
             self.emodel,
             self.seed,
             iteration_tag=self.iteration_tag,
-            ttype=str(self.ttype).replace("__", " "),
+            ttype=_reformat_ttype(self.ttype),
         )
 
         fname = f"{Path(chkpt_name).stem}.pdf"
@@ -742,7 +751,7 @@ class PlotModels(WorkflowTask):
             fname = run_metadata_as_string(
                 self.emodel,
                 seed="",
-                ttype=str(self.ttype).replace("__", " "),
+                ttype=_reformat_ttype(self.ttype),
                 iteration_tag=self.iteration_tag,
             )
             fname += "__parameters_distribution.pdf"
@@ -754,7 +763,7 @@ class PlotModels(WorkflowTask):
                 fname = run_metadata_as_string(
                     self.emodel,
                     seed,
-                    ttype=str(self.ttype).replace("__", " "),
+                    ttype=_reformat_ttype(self.ttype),
                     iteration_tag=self.iteration_tag,
                 )
                 fname += "__scores.pdf"
@@ -766,7 +775,7 @@ class PlotModels(WorkflowTask):
                 fname = run_metadata_as_string(
                     self.emodel,
                     seed,
-                    ttype=str(self.ttype).replace("__", " "),
+                    ttype=_reformat_ttype(self.ttype),
                     iteration_tag=self.iteration_tag,
                 )
                 fname += "__traces.pdf"

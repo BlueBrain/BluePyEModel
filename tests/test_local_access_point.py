@@ -1,6 +1,5 @@
 import pytest
 from pathlib import Path
-from collections import OrderedDict
 import json
 
 from bluepyemodel.access_point import get_access_point

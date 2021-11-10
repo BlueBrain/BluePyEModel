@@ -19,3 +19,19 @@ include:
   variables: 
     EXTRA_MODULES: 
       unstable:neurodamus-neocortex
+  before_script:
+    - if [[ -z $TOXENV ]]; then echo 'Please set the $TOXENV variable'; exit 1; fi
+    - !reference [.define-functions]
+    - !reference [.bb5, clean-env]
+    - !reference [.bb5, load-python-36]
+    - !reference [.bb5, load-python-37]
+    - !reference [.bb5, load-python-38]
+    - !reference [.bb5, load-extra-modules]
+    - !reference [.run-pre-build-command]
+    - !reference [.setup-venv]
+    - echo Using ${PWD} as a working directory
+    - export XDG_CONFIG_HOME=${PWD}/local_config
+    - mkdir -p "${XDG_CONFIG_HOME}/git"
+    - echo -e "[url \"https://gitlab-ci-token:${CI_JOB_TOKEN}@bbpgitlab.epfl.ch\"]\n insteadOf = https://bbpgitlab.epfl.ch" > "${XDG_CONFIG_HOME}/git/config"
+    - cat "${XDG_CONFIG_HOME}/git/config"
+  

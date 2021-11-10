@@ -2,9 +2,21 @@
 
 
 class ParameterConfiguration:
-    """"""
+    """Contains all the information related to the definition and configuration of a parameter"""
 
     def __init__(self, name, location, value, distribution="uniform", mechanism=None):
+        """Init
+
+        Args:
+            name (str): name of the parameter. If related to a mechanisms, has to match
+                the name of the parameter in the mod file.
+            location (str): section of the neuron on which the parameter will be instantiated.
+            value (float or list of two floats): if float, set the value of the parameter. If list
+                of two floats, sets the upper and lower bound between which the parameter will
+                be optimized.
+            distribution (str): name of the distribution followed by the parameter (optional).
+            mechanism (name): name of the mechanism to which the parameter relates (optional).
+        """
 
         self.name = name
         self.location = location
