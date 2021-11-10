@@ -332,6 +332,7 @@ class LocalAccessPoint(DataAccessPoint):
                     "validated": validated,
                     "optimizer": str(optimizer_name),
                     "seed": int(seed),
+                    "ttype": self.ttype,
                     "iteration_tag": str(self.iteration_tag),
                     "pdfs": pdf_dependencies,
                 }
@@ -617,6 +618,7 @@ class LocalAccessPoint(DataAccessPoint):
         for key in [
             "seed",
             "iteration_tag",
+            "ttype",
             "branch",
             "rank",
             "optimizer",

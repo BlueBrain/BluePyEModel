@@ -11,12 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 class ModelConfigurator:
-    """Handles the loading and saving and modification of configurations"""
+    """Handles the loading, saving and modification of a model configuration"""
 
     def __init__(self, access_point, configuration=None):
+        """Creates a model configuration, which includes the model parameters, distributions,
+        mechanisms and a morphology.
 
-        self.configuration = configuration
+        Args:
+            access_point (DataAccessPoint): access point to the emodel data.
+            configuration (NeuronModelConfiguration): a pre-existing configuration.
+        """
+
         self.access_point = access_point
+        self.configuration = configuration
 
     def new_configuration(self, configuration_name, use_gene_data=False):
         """Create a new configuration"""
@@ -42,13 +49,14 @@ class ModelConfigurator:
         self.access_point.get_model_configuration(name)
 
     def save_configuration(self, path=None):
-        """Save the created configuration"""
+        """Save the configuration. The saving medium depends of the access point."""
 
         if self.configuration:
             self.access_point.store_model_configuration(self.configuration, path)
 
     def delete_configuration(self):
-        """Delete the current configuration"""
+        """Delete the current configuration. Warning: it does not delete the file or resource of
+        the configuration."""
 
         if self.configuration:
 
@@ -82,6 +90,8 @@ class ModelConfigurator:
         return parameters, mechanisms, distributions
 
     def get_gene_based_configuration(self, configuration_name):
+        """Overwrite the currently loaded configuration with a new configuration initiated from
+        gene data."""
 
         self.configuration = NeuronModelConfiguration(
             configuration_name=configuration_name,

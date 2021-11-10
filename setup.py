@@ -15,16 +15,38 @@ with open("README.md", encoding="utf-8") as f:
     README = f.read()
 
 
-EXTRA_LUIGI = ["luigi>=3.0", "luigi-tools>=0.0.12", "bbp-workflow>=2.1.19", "bbp-workflow-cli"]
-EXTRA_NEXUS = ["nexusforge>=0.6", "entity_management>=1.2", "pyJWT>=2.1.0"]
-EXTRA_GENERALISATION = ["bluepyparallel>=0.0.3", 'bglibpy>4.4', 'seaborn>=0.11']
-EXTRA_TEST = ["pytest>=6.2", "dictdiffer>=0.8"]
+EXTRA_LUIGI = [
+    "luigi>=3.0",
+    "luigi-tools>=0.0.12",
+    "bbp-workflow>=2.1.19",
+    "bbp-workflow-cli",
+]
+
+EXTRA_NEXUS = [
+    "icselector @ git+https://bbpgitlab.epfl.ch/msg/icselector.git",
+    "nexusforge>=0.6",
+    "entity_management>=1.2",
+    "pyJWT>=2.1.0"
+]
+
+EXTRA_GENERALISATION = [
+    "bluepyparallel>=0.0.3",
+    "bglibpy>4.4",
+    "seaborn>=0.11"
+]
+
+EXTRA_TEST = [
+    "pytest>=6.2",
+    "dictdiffer>=0.8"
+]
+
 EXTRA_DOC = [
     "graphviz",
     "sphinx",
     "sphinx-autoapi",
     "sphinx-bluebrain-theme",
 ]
+
 EXTRA_CMA = ["bluepyopt @ git+http://github.com/BlueBrain/BluePyOpt@CMA_clean#egg=bluepyopt"]
 
 

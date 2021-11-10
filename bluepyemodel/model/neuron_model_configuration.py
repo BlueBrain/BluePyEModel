@@ -19,9 +19,22 @@ multiloc_map = {
 
 
 class NeuronModelConfiguration:
-    """"""
+    """A neuron model configuration, which includes the model's parameters, distributions,
+    mechanisms and a morphology."""
 
     def __init__(self, configuration_name, available_mechanisms=None, available_morphologies=None):
+        """Creates a model configuration, which includes the model parameters, distributions,
+        mechanisms and a morphology.
+
+        Args:
+            configuration_name (str): name of the configuration, can be any string.
+            available_mechanisms (list of str): list of the names of the available mechanisms in
+                the "./mechanisms" directory for the local access point or on Nexus for the
+                Nexus access point.
+            available_morphologies (list of str): list of the names of the available morphology in
+                the "./morphology" directory for the local access point or on Nexus for the
+                Nexus access point.
+        """
 
         self.configuration_name = configuration_name
 
@@ -70,7 +83,7 @@ class NeuronModelConfiguration:
         return locations
 
     def init_from_dict(self, configuration_dict):
-        """"""
+        """Instantiate the object from its dictionary form"""
 
         self.configuration_name = configuration_dict["name"]
 
@@ -102,7 +115,7 @@ class NeuronModelConfiguration:
         self.morphology = MorphologyConfiguration(**configuration_dict["morphology"])
 
     def init_from_legacy_dict(self, parameters, morphology):
-        """"""
+        """Instantiate the object from its legacy dictionary form"""
 
         ignore = ["v_init", "celsius", "cm", "Ra", "ena", "ek"]
 
@@ -150,7 +163,18 @@ class NeuronModelConfiguration:
         self.morphology = MorphologyConfiguration(**morphology)
 
     def add_distribution(self, distribution_name, function, parameters=None, soma_ref_location=0.5):
-        """Add a channel distribution to the configuration"""
+        """Add a channel distribution to the configuration
+
+        Args:
+            distribution_name (str): name of the distribution.
+            function (str): python function of the distribution as a string. Will be executed
+                using the python "eval" method.
+            parameters (list of str): names of the parameters that parametrize the above function
+                (no need to include the parameter "distance"). (Optional).
+            soma_ref_location (float): location along the soma used as origin
+                from which to compute the distances. Expressed as a fraction
+                (between 0.0 and 1.0). (Optional).
+        """
 
         tmp_distribution = DistributionConfiguration(
             name=distribution_name,
@@ -173,7 +197,22 @@ class NeuronModelConfiguration:
         distribution_name=None,
         stochastic=None,
     ):
-        """Add a parameter to the configuration"""
+        """Add a parameter to the configuration
+
+        Args:
+            parameter_name (str): name of the parameter. If related to a mechanisms, has to match
+                the name of the parameter in the mod file.
+            locations (str or list of str): sections of the neuron on which these parameters
+                will be instantiated.
+            value (float or list of two floats): if float, set the value of the parameter. If list
+                of two floats, sets the upper and lower bound between which the parameter will
+                be optimized.
+            mechanism (name): name of the mechanism to which the parameter relates (optional).
+            distribution_name (str): name of the distribution followed by the parameter (optional).
+                Distributions have to be added before adding the parameters that uses them.
+            stochastic (bool): Can the mechanisms to which the parameter relates behave
+             stochastically (optional).
+        """
 
         if not locations:
             raise Exception(
@@ -209,7 +248,7 @@ class NeuronModelConfiguration:
                 self.add_mechanism(mechanism, loc, stochastic=stochastic)
 
     def is_mechanism_available(self, mechanism_name):
-        """"""
+        """Is the mechanism part of the mechanisms available"""
 
         if self.available_mechanisms is not None:
             for mech in self.available_mechanisms:
@@ -220,9 +259,16 @@ class NeuronModelConfiguration:
         return True
 
     def add_mechanism(self, mechanism_name, locations, stochastic=None):
-        """Add a mechanism to the configuration. (This function should rarely be called directly as
-        mechanisms are added automatically when using add_parameters. But it might be needed if a
-        mechanism is not associated to any parameters.)"""
+        """Add a mechanism to the configuration. This function should rarely be called directly as
+         mechanisms are added automatically when using add_parameters. But it might be needed if a
+         mechanism is not associated to any parameters.
+
+        Args:
+             mechanism_name (str): name of the mechanism.
+             locations (str or list of str): sections of the neuron on which this mechanism
+                 will be instantiated.
+             stochastic (bool): Can the mechanisms behave stochastically (optional).
+        """
 
         locations = self._format_locations(locations)
 
@@ -269,15 +315,19 @@ class NeuronModelConfiguration:
         secarray_names=None,
         section_index=None,
     ):
-        """Select the morphology on which the neuron model will be based.
+        """Select the morphology on which the neuron model will be based. Its name has to be part
+        of the availabel morphologies.
 
         Args:
-            morphology_name (str): name of the morphology.
-            morphology_path (str): path to the morphology file
-            morphology_format (str): format of the morphology (asc or swc).
-            seclist_names (list): Names of the lists of sections (['somatic', ...])
-            secarray_names (list): names of the sections (['soma', ...])
-            section_index (int): index to a specific section, used for non-somatic recordings.
+            morphology_name (str): name of the morphology. Optional if morphology_path is informed.
+            morphology_path (str): path to the morphology file. If morphology_name is informed, has
+                to match the stem of the morphology_path. Optional if morphology_name is informed.
+            morphology_format (str): format of the morphology (asc or swc). If morphology_path is
+                informed, has to match its suffix. Optional if morphology_format is informed.
+            seclist_names (list): Names of the lists of sections (['somatic', ...]) (optional).
+            secarray_names (list): names of the sections (['soma', ...]) (optional).
+            section_index (int): index to a specific section, used for non-somatic
+                recordings (optional).
         """
 
         if morphology_name not in self.available_morphologies:
