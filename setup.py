@@ -23,7 +23,7 @@ EXTRA_LUIGI = [
 ]
 
 EXTRA_NEXUS = [
-    "icselector @ git+https://gitlab-ci-token:${CI_JOB_TOKEN}@bbpgitlab.epfl.ch/msg/icselector.git",
+    "icselector @ git+https://bbpgitlab.epfl.ch/msg/icselector.git",
     "nexusforge>=0.6",
     "entity_management>=1.2",
     "pyJWT>=2.1.0"
