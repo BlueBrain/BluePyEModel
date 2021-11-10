@@ -24,6 +24,8 @@ def pipeline():
         data_access_point='local',
         recipes_path=DATA / "config/recipes.json",
         ttype="test",
+        species='mouse',
+        brain_region='SSCX'
     )
 
     pipe.access_point.emodel_dir = DATA
