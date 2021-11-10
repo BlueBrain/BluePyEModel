@@ -16,12 +16,12 @@ include:
         - /ci/jobs/auto-release.yml
 
 .tox-template: 
-  variables:
+  variables: 
     EXTRA_MODULES: 
       unstable:neurodamus-neocortex
   before_script:
-   - export XDG_CONFIG_HOME=${PWD}/local_config
-   - mkdir -p "${XDG_CONFIG_HOME}/git"
-   - echo -e "[url \"//gitlab-ci-token:${CI_JOB_TOKEN}@bbpgitlab.epfl.ch\"]\n insteadOf = //bbpgitlab.epfl.ch" > "${XDG_CONFIG_HOME}/git/config"
-   - cat "${XDG_CONFIG_HOME}/git/config"
+    - export XDG_CONFIG_HOME=${PWD}/local_config
+    - mkdir -p "${XDG_CONFIG_HOME}/git"
+    - echo -e "[url \"//gitlab-ci-token:${CI_JOB_TOKEN}@bbpgitlab.epfl.ch\"]\n insteadOf = //bbpgitlab.epfl.ch" > "${XDG_CONFIG_HOME}/git/config"
+    - cat "${XDG_CONFIG_HOME}/git/config"
   
