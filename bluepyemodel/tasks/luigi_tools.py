@@ -41,6 +41,17 @@ class WorkflowTask(luigi.Task):
         return get_mapper(self.backend)
 
 
+class WorkflowTaskRequiringMechanisms(WorkflowTask):
+    """Workflow task with data access point and download of missing mechanisms"""
+
+    def __init__(self, *args, **kwargs):
+        """ """
+
+        super().__init__(*args, **kwargs)
+
+        self.access_point.get_model_configuration()
+
+
 class WorkflowTarget(luigi.Target, ABC):
     """Workflow target with loaded access_point."""
 

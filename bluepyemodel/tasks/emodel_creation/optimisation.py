@@ -14,6 +14,7 @@ from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tasks.luigi_tools import IPyParallelTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
+from bluepyemodel.tasks.luigi_tools import WorkflowTaskRequiringMechanisms
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
 from bluepyemodel.tools.mechanisms import compile_mechs
 
@@ -67,7 +68,7 @@ class ExtractEFeatures(WorkflowTask):
         )
 
 
-class CompileMechanisms(WorkflowTask):
+class CompileMechanisms(WorkflowTaskRequiringMechanisms):
     """Luigi wrapper for optimisation.compile_mechs
 
     Parameters:
@@ -84,8 +85,6 @@ class CompileMechanisms(WorkflowTask):
 
     def run(self):
         """ """
-        self.access_point.get_model_configuration()
-
         compile_mechs("./mechanisms")
 
     def output(self):
@@ -114,7 +113,7 @@ class OptimisationTarget(WorkflowTarget):
         return self.access_point.optimisation_state(seed=self.seed)
 
 
-class Optimize(WorkflowTask, IPyParallelTask):
+class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     """Luigi wrapper for emodel_pipeline.emodel_creation.optimize
 
     Parameters:
@@ -246,7 +245,7 @@ class BestModelTarget(WorkflowTarget):
         return self.access_point.has_best_model(seed=self.seed)
 
 
-class StoreBestModels(WorkflowTask):
+class StoreBestModels(WorkflowTaskRequiringMechanisms):
     """Luigi wrapper for store_best_model.
 
     Parameters:
@@ -356,7 +355,7 @@ class ValidationTarget(WorkflowTarget):
         return all(checked_for_all_seeds)
 
 
-class Validation(WorkflowTask, IPyParallelTask):
+class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     """Luigi wrapper for validation.
 
     Parameters:
@@ -688,7 +687,7 @@ class PlotOptimisation(WorkflowTask):
         return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
-class PlotModels(WorkflowTask):
+class PlotModels(WorkflowTaskRequiringMechanisms):
     """Luigi wrapper for plotting the optimisation outputs.
 
     Parameters:
@@ -714,6 +713,13 @@ class PlotModels(WorkflowTask):
                 species=self.species,
                 brain_region=self.brain_region,
                 seed=self.seed,
+            ),
+            CompileMechanisms(
+                emodel=self.emodel,
+                ttype=self.ttype,
+                iteration_tag=self.iteration_tag,
+                species=self.species,
+                brain_region=self.brain_region,
             ),
         ]
 
@@ -785,7 +791,7 @@ class PlotModels(WorkflowTask):
         return outputs
 
 
-class PlotValidatedDistributions(WorkflowTask):
+class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
     """Luigi wrapper for plotting the optimisation outputs.
 
     Parameters:
@@ -798,13 +804,23 @@ class PlotValidatedDistributions(WorkflowTask):
 
     def requires(self):
         """ """
-        return EModelCreation(
-            emodel=self.emodel,
-            ttype=self.ttype,
-            iteration_tag=self.iteration_tag,
-            species=self.species,
-            brain_region=self.brain_region,
-        )
+
+        return [
+            EModelCreation(
+                emodel=self.emodel,
+                ttype=self.ttype,
+                iteration_tag=self.iteration_tag,
+                species=self.species,
+                brain_region=self.brain_region,
+            ),
+            CompileMechanisms(
+                emodel=self.emodel,
+                ttype=self.ttype,
+                iteration_tag=self.iteration_tag,
+                species=self.species,
+                brain_region=self.brain_region,
+            ),
+        ]
 
     def run(self):
         """ """
