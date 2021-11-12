@@ -68,6 +68,7 @@ class NexusAccessPoint(DataAccessPoint):
         forge_path=None,
         ttype=None,
         iteration_tag=None,
+        access_token=None,
     ):
         """Init
 
@@ -82,6 +83,7 @@ class NexusAccessPoint(DataAccessPoint):
             ttype (str): name of the t-type. Required if using the gene expression or IC selector.
             iteration_tag (str): tag associated to the current run. Used to tag the
                 Resources generated during the different run.
+            access_token (str): Nexus connection token.
         """
 
         super().__init__(emodel, ttype, iteration_tag)
@@ -95,6 +97,7 @@ class NexusAccessPoint(DataAccessPoint):
             endpoint=endpoint,
             forge_path=forge_path,
             iteration_tag=iteration_tag,
+            access_token=access_token,
         )
 
         self.pipeline_settings = self.load_pipeline_settings(strict=False)
