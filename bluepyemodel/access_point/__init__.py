@@ -11,6 +11,7 @@ def get_access_point(access_point, emodel, **kwargs):
 
     Optional:
         ttype (str): name of the t-type.
+        brain_region (str): name of the brain region.
         iteration_tag (str): tag associated to the current run. Used to tag the
             Resources generated during the different run.
 
@@ -29,6 +30,7 @@ def get_access_point(access_point, emodel, **kwargs):
         organisation (str): name of the Nexus organization to which the project belong.
         endpoint (str): Nexus endpoint.
         forge_path (str): path to a .yml used as configuration by nexus-forge.
+        access_token (str, optional): Nexus connection token.
 
     Returns:
         DataAccessPoint
@@ -51,6 +53,7 @@ def get_access_point(access_point, emodel, **kwargs):
             forge_path=kwargs.get("forge_path", None),
             ttype=ttype,
             iteration_tag=kwargs.get("iteration_tag", None),
+            access_token=kwargs.get("access_token", None),
         )
 
     if access_point == "local":
