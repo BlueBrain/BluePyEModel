@@ -1,5 +1,6 @@
 """Nexus Forge access point used by the Nexus access point"""
 
+import os
 import getpass
 import logging
 import pathlib
@@ -12,6 +13,7 @@ from kgforge.core import Resource
 from kgforge.specializations.resources import Dataset
 
 logger = logging.getLogger("__main__")
+WEB_MODE = os.getenv('WEB_MODE', '')
 
 
 # pylint: disable=bare-except
@@ -64,8 +66,11 @@ class NexusForgeAccessPoint:
         try:
             access_token = refresh_token()
         except:  # noqa
-            logger.info("Please get your Nexus access token from https://bbp.epfl.ch/nexus/web/.")
-            access_token = getpass.getpass()
+            if WEB_MODE:
+                raise
+            else:
+                logger.info("Please get your Nexus access token from https://bbp.epfl.ch/nexus/web/.")
+                access_token = getpass.getpass()
 
         return access_token
 

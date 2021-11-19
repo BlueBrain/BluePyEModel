@@ -41,17 +41,15 @@ class NeuronModelConfiguration:
         self.parameters = []
         self.mechanisms = []
         self.distributions = []
-        self.morphology = None
+        self.morphology = {}
 
         # TODO: actually use this:
         self.mapping_multilocation = None
 
-        self.available_mechanisms = available_mechanisms
-        if self.available_mechanisms is not None:
-            self.available_mechanisms = set(self.available_mechanisms)
-            self.available_mechanisms.add("pas")
+        self.available_mechanisms = set(available_mechanisms or [])
+        self.available_mechanisms.add("pas")
 
-        self.available_morphologies = available_morphologies
+        self.available_morphologies = available_morphologies or []
 
     @property
     def mechanism_names(self):
@@ -112,7 +110,9 @@ class NeuronModelConfiguration:
                     mechanism["name"], mechanism["location"], mechanism.get("stochastic", None)
                 )
 
-        self.morphology = MorphologyConfiguration(**configuration_dict["morphology"])
+        morphology_configuration = configuration_dict["morphology"]
+        if morphology_configuration:
+            self.morphology = MorphologyConfiguration(**configuration_dict["morphology"])
 
     def init_from_legacy_dict(self, parameters, morphology):
         """Instantiate the object from its legacy dictionary form"""
@@ -381,6 +381,10 @@ class NeuronModelConfiguration:
             self.mechanisms = [m for m in self.mechanisms if m.name != mechanism_name]
             self.parameters = [p for p in self.parameters if p.mechanism != mechanism_name]
 
+    @property
+    def morphology_dict(self):
+        return self.morphology and self.morphology.as_dict()
+
     def as_dict(self):
         """Returns the configuration as dict of parameters, mechanisms and
         a list of mechanism names"""
@@ -390,7 +394,7 @@ class NeuronModelConfiguration:
             "mechanisms": [m.as_dict() for m in self.mechanisms],
             "distributions": [d.as_dict() for d in self.distributions],
             "parameters": [p.as_dict() for p in self.parameters],
-            "morphology": self.morphology.as_dict(),
+            "morphology": self.morphology_dict,
         }
 
     def __str__(self):
@@ -411,6 +415,6 @@ class NeuronModelConfiguration:
             str_form += f"   {p.as_dict()}\n"
 
         str_form += "Morphology:\n"
-        str_form += f"   {self.morphology.as_dict()}\n"
+        str_form += f"   {self.morphology_dict}\n"
 
         return str_form
