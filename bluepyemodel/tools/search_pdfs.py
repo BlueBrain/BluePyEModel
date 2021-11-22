@@ -22,7 +22,7 @@ def search_figure_path(pathname):
     if len(matches) > 1:
         raise Exception(f"More than one pdf for pathname {pathname}")
 
-    return matches[0]
+    return str(Path(matches[0]).resolve())
 
 
 def search_figure_efeatures(emodel, protocol_name, efeature):
