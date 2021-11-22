@@ -1503,7 +1503,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         if morphology:
             morph_path = self.download_morphology(morphology["name"])
-            config_dict["morphology"]["path"] = morph_path           
+            config_dict["morphology"]["path"] = morph_path
 
         model_configuration = NeuronModelConfiguration(
             configuration_name=configuration_name,
