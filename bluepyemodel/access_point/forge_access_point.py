@@ -97,7 +97,14 @@ class NexusForgeAccessPoint:
 
         return resource
 
-    def register(self, resource_description, filters_existance=None, replace=False, tag=True):
+    def register(
+        self,
+        resource_description,
+        filters_existance=None,
+        replace=False,
+        tag=True,
+        distributions=None,
+    ):
         """Register a resource from its dictionary description."""
 
         if "type" not in resource_description:
@@ -136,6 +143,11 @@ class NexusForgeAccessPoint:
 
         resource = self.forge.from_json(resource_description)
         resource = self.add_contribution(resource)
+
+        if distributions:
+            resource = Dataset.from_resource(self.forge, resource)
+            for path in distributions:
+                resource.add_distribution(path)
 
         self.forge.register(resource)
 

@@ -886,15 +886,11 @@ class NexusAccessPoint(DataAccessPoint):
             resource_description["stimulus"]["stimulusTarget"] = float(protocol_amplitude)
             resource_description["name"] += f"_{protocol_amplitude}"
 
+        distributions = None
         if pdfs:
-            attachement = {}
-            if "amp" in pdfs:
-                attachement["amp"] = self.access_point.forge.attach(pdfs["amp"])
-            if "amp_rel" in pdfs:
-                attachement["amp_rel"] = self.access_point.forge.attach(pdfs["amp_rel"])
-            resource_description["pdfs"] = attachement
+            distributions = list(pdfs.values())
 
-        self.access_point.register(resource_description)
+        self.access_point.register(resource_description, distributions=distributions)
 
     def store_efeatures(self, efeatures):
         """Store the efeatures and currents obtained from BluePyEfe in ElectrophysiologyFeature
@@ -1006,7 +1002,6 @@ class NexusAccessPoint(DataAccessPoint):
         parameters_resource = format_dict_for_resource(params)
 
         pdf_dependencies = self._build_pdf_dependencies(seed)
-
         pip_freeze = os.popen("pip freeze").read()
 
         resource_description = {
@@ -1024,7 +1019,6 @@ class NexusAccessPoint(DataAccessPoint):
             "optimizer": str(optimizer_name),
             "seed": int(seed),
             "pip_freeze": pip_freeze,
-            "pdfs": pdf_dependencies,
         }
 
         search = {
@@ -1043,33 +1037,37 @@ class NexusAccessPoint(DataAccessPoint):
             filters_existance=search,
             replace=True,
             tag=True,
+            distributions=pdf_dependencies,
         )
 
     def _build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
 
-        pdfs = {"optimisation": [], "traces": [], "scores": [], "parameters": []}
+        pdfs = []
 
         opt_pdf = search_pdfs.search_figure_emodel_optimisation(
-            self.emodel, seed, self.iteration_tag
+            self.emodel, seed, self.ttype, self.iteration_tag
         )
         if opt_pdf:
-            pdfs["optimisation"].append(self.access_point.forge.attach(opt_pdf))
+            pdfs.append(opt_pdfs)
 
-        traces_pdf = search_pdfs.search_figure_emodel_traces(self.emodel, seed, self.iteration_tag)
-        for pdf_path in traces_pdf:
-            if pdf_path:
-                pdfs["traces"].append(self.access_point.forge.attach(pdf_path))
+        traces_pdf = search_pdfs.search_figure_emodel_traces(
+            self.emodel, seed, self.ttype, self.iteration_tag
+        )
+        if traces_pdf:
+            pdfs += [p for p in traces_pdf if p]
 
-        scores_pdf = search_pdfs.search_figure_emodel_score(self.emodel, seed, self.iteration_tag)
-        for pdf_path in scores_pdf:
-            if pdf_path:
-                pdfs["scores"].append(self.access_point.forge.attach(pdf_path))
+        scores_pdf = search_pdfs.search_figure_emodel_score(
+            self.emodel, seed, self.ttype, self.iteration_tag
+        )
+        if scores_pdf:
+            pdfs += [p for p in scores_pdf if p]
 
-        parameters_pdf = search_pdfs.search_figure_emodel_parameters(self.emodel)
-        for pdf_path in parameters_pdf:
-            if pdf_path:
-                pdfs["parameters"].append(self.access_point.forge.attach(pdf_path))
+        parameters_pdf = search_pdfs.search_figure_emodel_parameters(
+            self.emodel, self.ttype, self.iteration_tag
+        )
+        if parameters_pdf:
+            pdfs += [p for p in parameters_pdf if p]
 
         return pdfs
 
