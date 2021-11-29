@@ -1452,7 +1452,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         return names
 
-    def store_model_configuration(self, configuration, path=None):
+    def store_model_configuration(self, configuration, path=None, replace=True):
         """Store a model configuration as a resource of type EModelConfiguration"""
 
         resource = {"type": ["EModelConfiguration"]}
@@ -1460,7 +1460,8 @@ class NexusAccessPoint(DataAccessPoint):
         resource.update(configuration.as_dict())
 
         self.access_point.register(
-            resource, filters_existance={"type": "EModelConfiguration", "name": resource["name"]}
+            resource, filters_existance={"type": "EModelConfiguration", "name": resource["name"]},
+            replace=replace
         )
 
     def get_available_mechanisms(self):
@@ -1496,8 +1497,11 @@ class NexusAccessPoint(DataAccessPoint):
                 if isinstance(config_dict[entry], dict):
                     config_dict[entry] = [config_dict[entry]]
 
-        morph_path = self.download_morphology(config_dict["morphology"]["name"])
-        config_dict["morphology"]["path"] = morph_path
+        morphology = config_dict["morphology"]
+
+        if morphology:
+            morph_path = self.download_morphology(morphology["name"])
+            config_dict["morphology"]["path"] = morph_path
 
         model_configuration = NeuronModelConfiguration(
             configuration_name=configuration_name,
