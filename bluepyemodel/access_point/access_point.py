@@ -1,8 +1,11 @@
 """Abstract data access point class."""
 import logging
 import pathlib
+import pickle
 
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyopt.deapext.algorithms import _check_stopping_criteria
+from bluepyopt.deapext.stoppingCriteria import MaxNGen
 from bluepyemodel.optimisation import get_checkpoint_path
 
 logger = logging.getLogger(__name__)
@@ -114,13 +117,55 @@ class DataAccessPoint:
 
         TODO: - should return three states: completed, in progress, empty
               - better management of checkpoints
+
+        Raises:
+            Exception if optimizer in pipeline settings in neither
+                "SO-CMA", "MO-CMA" or "IBEA"
+
+        Returns:
+            bool: True if completed, False if in progress or empty
         """
 
         checkpoint_path = get_checkpoint_path(
-            emodel=self.emodel, seed=seed, iteration_tag=self.iteration_tag, ttype=self.ttype
+            emodel=self.emodel,
+            seed=seed,
+            iteration_tag=self.iteration_tag,
+            ttype=self.ttype,
         )
 
-        return pathlib.Path(checkpoint_path).is_file()
+        # no file -> target not complete
+        if not pathlib.Path(checkpoint_path).is_file():
+            return False
+
+        optimizer = self.pipeline_settings.optimizer
+        ngen = self.pipeline_settings.max_ngen
+
+        with open(str(checkpoint_path), "rb") as checkpoint_file:
+            cp = pickle.load(checkpoint_file)
+
+        # CMA
+        if optimizer in ["SO-CMA", "MO-CMA"]:
+            gen = cp["generation"]
+            CMA_es = cp["CMA_es"]
+            CMA_es.check_termination(gen)
+            # no termination met -> still active -> target not complete
+            if CMA_es.active:
+                return False
+            return True
+
+        # IBEA
+        elif optimizer == "IBEA":
+            gen = cp["generation"]
+            stopping_criteria = [MaxNGen(ngen)]
+            # to check if next gen is over max generation
+            stopping_params = {"gen": gen + 1}
+            run_complete = _check_stopping_criteria(stopping_criteria, stopping_params)
+            if run_complete:
+                return True
+            return False
+
+        else:
+            raise Exception(f"Unknown optimizer: {optimizer}")
 
     def _build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
