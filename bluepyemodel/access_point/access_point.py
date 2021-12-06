@@ -3,9 +3,10 @@ import logging
 import pathlib
 import pickle
 
-from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyopt.deapext.algorithms import _check_stopping_criteria
 from bluepyopt.deapext.stoppingCriteria import MaxNGen
+
+from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.optimisation import get_checkpoint_path
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class DataAccessPoint:
         self.emodel = emodel
         self.ttype = ttype
         self.iteration_tag = iteration_tag
+        self.pipeline_settings = None
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel."""
@@ -154,7 +156,7 @@ class DataAccessPoint:
             return True
 
         # IBEA
-        elif optimizer == "IBEA":
+        if optimizer == "IBEA":
             gen = cp["generation"]
             stopping_criteria = [MaxNGen(ngen)]
             # to check if next gen is over max generation
@@ -164,8 +166,7 @@ class DataAccessPoint:
                 return True
             return False
 
-        else:
-            raise Exception(f"Unknown optimizer: {optimizer}")
+        raise Exception(f"Unknown optimizer: {optimizer}")
 
     def _build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""

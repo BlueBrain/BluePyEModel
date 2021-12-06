@@ -146,14 +146,13 @@ class EModel_pipeline:
             emodel=self.emodel, access_point=self.access_point, mapper=self.mapper
         )
 
-    def optimize(self, seed=1, continue_opt=False):
+    def optimize(self, seed=1):
         """"""
 
         setup_and_run_optimisation(
             self.access_point,
             seed=seed,
             mapper=self.mapper,
-            continue_opt=continue_opt,
             terminator=None,
         )
 
