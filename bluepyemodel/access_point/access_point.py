@@ -122,7 +122,7 @@ class DataAccessPoint:
 
         Args:
             seed (int): seed used in the optimisation.
-            continue_opt (bool): whether to continue optimisation or not 
+            continue_opt (bool): whether to continue optimisation or not
                 when the optimisation is not complete
 
         Raises:
