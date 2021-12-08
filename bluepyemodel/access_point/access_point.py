@@ -114,11 +114,16 @@ class DataAccessPoint:
             dict: keys are emodel names with seed, values are names without seed.
         """
 
-    def optimisation_state(self, seed=None):
+    def optimisation_state(self, seed=None, continue_opt=False):
         """Return the state of the optimisation.
 
         TODO: - should return three states: completed, in progress, empty
               - better management of checkpoints
+
+        Args:
+            seed (int): seed used in the optimisation.
+            continue_opt (bool): whether to continue optimisation or not 
+                when the optimisation is not complete
 
         Raises:
             Exception if optimizer in pipeline settings in neither
@@ -139,6 +144,11 @@ class DataAccessPoint:
         if not pathlib.Path(checkpoint_path).is_file():
             return False
 
+        # there is a file & continue opt is False -> target considered complete
+        if not continue_opt:
+            return True
+
+        # there is a file & we want to continue optimisation -> check if optimisation if finished
         optimizer = self.pipeline_settings.optimizer
         ngen = self.pipeline_settings.max_ngen
 

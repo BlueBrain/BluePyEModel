@@ -17,7 +17,8 @@
             "optimisation_params": {
                 "offspring_size": 4
             },
-            "validation_threshold": 5.
+            "validation_threshold": 5,
+            "optimisation_batch_size": 5
         }
     }
 }
