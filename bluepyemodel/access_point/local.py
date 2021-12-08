@@ -426,10 +426,7 @@ class LocalAccessPoint(DataAccessPoint):
     def get_fitness_calculator_configuration(self):
         """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
-        config_path = self.emodel_dir / self.get_recipes()["features"]
-
-        with open(str(config_path), "r") as fp:
-            config_dict = json.load(fp)
+        config_dict = self._get_json('features')
 
         legacy = "efeatures" not in config_dict and "protocols" not in config_dict
 
