@@ -201,6 +201,9 @@ def define_morphology(
         morph_modifiers = [replace_axon_with_taper]
         morph_modifiers_hoc = [replace_axon_hoc]  # TODO: check the hoc is correct
         logger.debug("No morphology modifiers provided, replace_axon_with_taper will be used.")
+    elif morph_modifiers == "no_modifiers":
+        morph_modifiers = []
+        morph_modifiers_hoc = []
     else:
         for i, morph_modifier in enumerate(morph_modifiers):
             if isinstance(morph_modifier, list):
