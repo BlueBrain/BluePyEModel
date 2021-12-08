@@ -1,7 +1,12 @@
 {
     "L5PC": {
         "morph_path": "./morphologies/",
-        "morphology": [["L5TPCa","C060114A5.asc"]],
+        "morphology": [
+            [
+                "L5TPCa",
+                "C060114A5.asc"
+            ]
+        ],
         "params": "config/pyr.json",
         "protocol": "config/protocols/L5PC.json",
         "features": "config/features/L5PC.json",
@@ -12,7 +17,8 @@
             "optimisation_params": {
                 "offspring_size": 4
             },
-            "validation_threshold": 5.
+            "validation_threshold": 5,
+            "optimisation_batch_size": 5
         }
     }
 }

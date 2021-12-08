@@ -1,6 +1,10 @@
 """Abstract data access point class."""
 import logging
 import pathlib
+import pickle
+
+from bluepyopt.deapext.algorithms import _check_stopping_criteria
+from bluepyopt.deapext.stoppingCriteria import MaxNGen
 
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.optimisation import get_checkpoint_path
@@ -17,6 +21,7 @@ class DataAccessPoint:
         self.emodel = emodel
         self.ttype = ttype
         self.iteration_tag = iteration_tag
+        self.pipeline_settings = None
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel."""
@@ -109,18 +114,69 @@ class DataAccessPoint:
             dict: keys are emodel names with seed, values are names without seed.
         """
 
-    def optimisation_state(self, seed=None):
+    def optimisation_state(self, seed=None, continue_opt=False):
         """Return the state of the optimisation.
 
         TODO: - should return three states: completed, in progress, empty
               - better management of checkpoints
+
+        Args:
+            seed (int): seed used in the optimisation.
+            continue_opt (bool): whether to continue optimisation or not
+                when the optimisation is not complete
+
+        Raises:
+            Exception if optimizer in pipeline settings in neither
+                "SO-CMA", "MO-CMA" or "IBEA"
+
+        Returns:
+            bool: True if completed, False if in progress or empty
         """
 
         checkpoint_path = get_checkpoint_path(
-            emodel=self.emodel, seed=seed, iteration_tag=self.iteration_tag, ttype=self.ttype
+            emodel=self.emodel,
+            seed=seed,
+            iteration_tag=self.iteration_tag,
+            ttype=self.ttype,
         )
 
-        return pathlib.Path(checkpoint_path).is_file()
+        # no file -> target not complete
+        if not pathlib.Path(checkpoint_path).is_file():
+            return False
+
+        # there is a file & continue opt is False -> target considered complete
+        if not continue_opt:
+            return True
+
+        # there is a file & we want to continue optimisation -> check if optimisation if finished
+        optimizer = self.pipeline_settings.optimizer
+        ngen = self.pipeline_settings.max_ngen
+
+        with open(str(checkpoint_path), "rb") as checkpoint_file:
+            cp = pickle.load(checkpoint_file)
+
+        # CMA
+        if optimizer in ["SO-CMA", "MO-CMA"]:
+            gen = cp["generation"]
+            CMA_es = cp["CMA_es"]
+            CMA_es.check_termination(gen)
+            # no termination met -> still active -> target not complete
+            if CMA_es.active:
+                return False
+            return True
+
+        # IBEA
+        if optimizer == "IBEA":
+            gen = cp["generation"]
+            stopping_criteria = [MaxNGen(ngen)]
+            # to check if next gen is over max generation
+            stopping_params = {"gen": gen + 1}
+            run_complete = _check_stopping_criteria(stopping_criteria, stopping_params)
+            if run_complete:
+                return True
+            return False
+
+        raise Exception(f"Unknown optimizer: {optimizer}")
 
     def _build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
