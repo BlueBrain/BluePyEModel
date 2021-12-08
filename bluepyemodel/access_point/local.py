@@ -426,7 +426,7 @@ class LocalAccessPoint(DataAccessPoint):
     def get_fitness_calculator_configuration(self):
         """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
-        config_dict = self._get_json('features')
+        config_dict = self._get_json("features")
 
         legacy = "efeatures" not in config_dict and "protocols" not in config_dict
 
