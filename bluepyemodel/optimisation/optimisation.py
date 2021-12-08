@@ -125,7 +125,7 @@ def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
     raise Exception(f"Unknown optimizer: {optimizer}")
 
 
-def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, terminator=None):
+def run_optimization(optimizer, checkpoint_path, max_ngen, terminator=None):
     """Run the optimisation.
 
     Args:
@@ -142,8 +142,15 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, continue_opt, termina
 
     Path(checkpoint_path).parents[0].mkdir(parents=True, exist_ok=True)
 
-    if continue_opt and not os.path.isfile(checkpoint_path):
-        raise Exception(f"continue_opt is True but the checkpoint {checkpoint_path} does not exist")
+    if os.path.isfile(checkpoint_path):
+        logger.info(
+            "Checkopint already exists."
+            "Will continue optimisation from last generation in checkpoint"
+        )
+        continue_opt = True
+    else:
+        logger.info("No checkpoint found. Will start optimisation from scratch.")
+        continue_opt = False
 
     logger.info("Running optimisation ...")
     pop, hof, log, history = optimizer.run(
@@ -161,7 +168,6 @@ def setup_and_run_optimisation(
     access_point,
     seed,
     mapper=None,
-    continue_opt=False,
     terminator=None,
 ):
 
@@ -197,7 +203,6 @@ def setup_and_run_optimisation(
         optimizer=opt,
         checkpoint_path=checkpoint_path,
         max_ngen=access_point.pipeline_settings.max_ngen,
-        continue_opt=continue_opt,
         terminator=terminator,
     )
 

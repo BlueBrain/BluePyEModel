@@ -98,19 +98,22 @@ class CompileMechanisms(WorkflowTaskRequiringMechanisms):
 class OptimisationTarget(WorkflowTarget):
     """Target to check if an optimisation is present in the database."""
 
-    def __init__(self, emodel, ttype, iteration_tag, seed=1):
+    def __init__(self, emodel, ttype, iteration_tag, seed=1, continue_opt=False):
         """Constructor.
 
         Args:
            seed (int): seed used in the optimisation.
+           continue_opt (bool): whether to continue optimisation or not
+                when the optimisation is not complete.
         """
         super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
 
         self.seed = seed
+        self.continue_opt = continue_opt
 
     def exists(self):
         """Check if the model is completed."""
-        return self.access_point.optimisation_state(seed=self.seed)
+        return self.access_point.optimisation_state(seed=self.seed, continue_opt=self.continue_opt)
 
 
 class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
@@ -124,6 +127,8 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         species (str): name of the species.
         brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
+        continue_unfinished_optimisation (bool): whether to continue optimisation or not
+                when the optimisation is not complete.
         graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
             Has to use multiprocessing event for communicating between processes
             when there is more than 1 luigi worker.
@@ -134,6 +139,7 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     species = luigi.Parameter(default=None)
     brain_region = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
+    continue_unfinished_optimisation = luigi.BoolParameter(default=False)
     graceful_killer = multiprocessing.Event()
 
     def requires(self):
@@ -159,7 +165,15 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
-        attrs = ["backend", "emodel", "seed", "species", "brain_region", "ttype", "iteration_tag"]
+        attrs = [
+            "backend",
+            "emodel",
+            "seed",
+            "species",
+            "brain_region",
+            "ttype",
+            "iteration_tag",
+        ]
         self.prepare_args_for_remote_script(attrs)
 
         super().run()
@@ -220,7 +234,11 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     def output(self):
         """ """
         return OptimisationTarget(
-            seed=self.seed, ttype=self.ttype, emodel=self.emodel, iteration_tag=self.iteration_tag
+            seed=self.seed,
+            ttype=self.ttype,
+            emodel=self.emodel,
+            iteration_tag=self.iteration_tag,
+            continue_opt=self.continue_unfinished_optimisation,
         )
 
 
@@ -422,7 +440,14 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
-        attrs = ["backend", "species", "emodel", "brain_region", "ttype", "iteration_tag"]
+        attrs = [
+            "backend",
+            "species",
+            "emodel",
+            "brain_region",
+            "ttype",
+            "iteration_tag",
+        ]
         self.prepare_args_for_remote_script(attrs)
 
         super().run()
@@ -476,7 +501,10 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     def output(self):
         """ """
         return ValidationTarget(
-            emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag, seed=self.seed
+            emodel=self.emodel,
+            ttype=self.ttype,
+            iteration_tag=self.iteration_tag,
+            seed=self.seed,
         )
 
 

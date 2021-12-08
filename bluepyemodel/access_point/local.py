@@ -723,7 +723,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         return False
 
-    def is_validated(self, n_models_to_pass_validation):
+    def is_validated(self):
         """Check if enough models have been validated."""
 
         n_validated = 0
@@ -738,4 +738,4 @@ class LocalAccessPoint(DataAccessPoint):
             ):
                 n_validated += 1
 
-        return n_validated >= n_models_to_pass_validation
+        return n_validated >= self.pipeline_settings.n_model
