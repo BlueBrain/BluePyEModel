@@ -32,7 +32,6 @@ class EModelPipelineSettings:
         name_Rin_protocol=None,
         name_rmp_protocol=None,
         validation_protocols=None,
-        additional_protocols=None,
         name_gene_map=None,
         model_configuration_name=None,
     ):
@@ -91,7 +90,9 @@ class EModelPipelineSettings:
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
-            additional_protocols (dict): definition of supplementary protocols.
+            validation_protocols (dict): names and targets of the protocol that will be used for
+                validation only. This settings has to be set before efeature extraction if you
+                wish to run validation.
             model_configuration_name (str): name of the model configuration used to instantiate
                 the model. Required for the Nexus access point only.
         """
@@ -125,10 +126,9 @@ class EModelPipelineSettings:
         # Settings related to the validation
         self.validation_threshold = validation_threshold
         self.validation_function = validation_function
-        self.validation_protocols = validation_protocols  # only when using local access point
+        self.validation_protocols = validation_protocols
         if self.validation_protocols is None:
             self.validation_protocols = []
-        self.additional_protocols = additional_protocols  # for plotting
 
         # Settings specific to the Luigi pipeline
         self.n_model = n_model

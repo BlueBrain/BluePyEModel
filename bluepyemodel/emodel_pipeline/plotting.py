@@ -248,7 +248,6 @@ def plot_models(
     mapper,
     seeds=None,
     figures_dir="./figures",
-    additional_protocols=None,
     plot_distributions=True,
     plot_scores=True,
     plot_traces=True,
@@ -265,8 +264,6 @@ def plot_models(
             individual in the population.
         seeds (list): if not None, filter emodels to keep only the ones with these seeds.
         figures_dir (str): path of the directory in which the figures should be saved.
-        additional_protocols (dict): definition of supplementary protocols. See
-            examples/optimisation for usage.
         plot_distributions (bool): True to plot the parameters distributions
         plot_scores (bool): True to plot the scores
         plot_traces (bool): True to plot the traces
@@ -277,13 +274,10 @@ def plot_models(
     """
 
     figures_dir = Path(figures_dir)
-    if additional_protocols is None:
-        additional_protocols = {}
 
     cell_evaluator = get_evaluator_from_access_point(
         access_point,
         include_validation_protocols=True,
-        additional_protocols=additional_protocols,
     )
 
     if plot_traces:

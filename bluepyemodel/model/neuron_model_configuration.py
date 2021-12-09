@@ -1,6 +1,5 @@
 """Neuron Model Configuration"""
 import logging
-import pathlib
 
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration

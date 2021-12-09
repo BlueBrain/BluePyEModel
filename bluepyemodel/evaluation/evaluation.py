@@ -90,7 +90,6 @@ def get_evaluator_from_access_point(
     access_point,
     stochasticity=False,
     include_validation_protocols=False,
-    additional_protocols=None,
     timeout=600.0,
     score_threshold=12.0,
     max_threshold_voltage=-30,
@@ -105,7 +104,6 @@ def get_evaluator_from_access_point(
         stochasticity (bool): should channels behave stochastically if they can.
         include_validation_protocols (bool): should the validation protocols
             and validation efeatures be added to the evaluator.
-        additional_protocols (dict): definition of supplementary protocols.
         timeout (float): duration (in second) after which the evaluation of a
             protocol will be interrupted.
         score_threshold (float): threshold for score of protocols to stop evaluations
@@ -118,23 +116,12 @@ def get_evaluator_from_access_point(
         bluepyopt.ephys.evaluators.CellEvaluator
     """
 
-    configuration = access_point.get_model_configuration()
-    if not configuration:
-        raise Exception(f"No configuration for emodel {access_point.emodel}")
-
-    features = access_point.get_features(include_validation_protocols)
-    if not features:
-        raise Exception(f"No efeatures for emodel {access_point.emodel}")
-
-    protocols = access_point.get_protocols(include_validation_protocols)
-    if not protocols:
-        raise Exception(f"No protocols for emodel {access_point.emodel}")
-    if additional_protocols:
-        protocols.update(additional_protocols)
+    model_configuration = access_point.get_model_configuration()
+    fitness_calculator_configuration = access_point.get_fitness_calculator_configuration()
 
     cell_model = model.create_cell_model(
         name=access_point.emodel,
-        model_configuration=configuration,
+        model_configuration=model_configuration,
         morph_modifiers=access_point.pipeline_settings.morph_modifiers,
         nseg_frequency=nseg_frequency,
     )
@@ -144,12 +131,11 @@ def get_evaluator_from_access_point(
 
     return create_evaluator(
         cell_model=cell_model,
-        protocols_definition=protocols,
-        features_definition=features,
+        fitness_calculator_configuration=fitness_calculator_configuration,
+        include_validation_protocols=include_validation_protocols,
         stochasticity=stochasticity,
         timeout=timeout,
         efel_settings=access_point.pipeline_settings.efel_settings,
-        threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std,
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
         dt=dt,

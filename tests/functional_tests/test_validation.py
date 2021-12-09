@@ -8,7 +8,7 @@ from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.validation.validation import validate, define_validation_function
 
-TEST_ROOT = Path(__file__).parent
+TEST_ROOT = Path(__file__).parents[1]
 DATA = TEST_ROOT / "test_data"
 
 

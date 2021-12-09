@@ -8,9 +8,11 @@ import pandas
 from kgforge.specializations.resources import Dataset
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
+from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.utils import yesno
+from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
@@ -23,12 +25,10 @@ BPEM_NEXUS_SCHEMA = [
     "ElectrophysiologyFeatureExtractionTrace",
     "ElectrophysiologyFeatureExtractionTarget",
     "ElectrophysiologyFeatureOptimisationTarget",
-    "ElectrophysiologyFeatureValidationTarget",
-    "ElectrophysiologyFeature",
-    "ElectrophysiologyFeatureExtractionProtocol",
     "EModel",
     "EModelPipelineSettings",
     "EModelConfiguration",
+    "FitnessCalculatorConfiguration",
 ]
 
 
@@ -534,8 +534,7 @@ class NexusAccessPoint(DataAccessPoint):
         extraction_tolerance,
         protocol_type,
         used_for_extraction_rheobase=False,
-        used_for_optimization=False,
-        used_for_validation=False,
+        used_for_optimization=True,
         extra_recordings=None,
         efel_settings=None,
     ):
@@ -555,8 +554,6 @@ class NexusAccessPoint(DataAccessPoint):
         used_for_extraction_rheobase (bool): should the ecode be used to compute the rheobase
             of the cells during extraction.
         used_for_optimization (bool): should the ecode be used as a target during optimisation.
-        used_for_validation (bool): should the ecode be used as a target during validation.
-            Both used_for_optimization and used_for_validation cannot be True.
         extra_recordings (list): definitions of additional recordings to use for this protocol.
         efel_settings (dict): eFEL settings.
         """
@@ -566,12 +563,6 @@ class NexusAccessPoint(DataAccessPoint):
 
         if extra_recordings is None:
             extra_recordings = []
-
-        if used_for_optimization and used_for_validation:
-            raise NexusAccessPointException(
-                "Both used_for_optimization and used_for_validation cannot be True for the"
-                " same Ecode."
-            )
 
         self.store_extraction_target(
             ecode=ecode,
@@ -585,17 +576,6 @@ class NexusAccessPoint(DataAccessPoint):
         if used_for_optimization:
             self.store_opt_validation_target(
                 "ElectrophysiologyFeatureOptimisationTarget",
-                ecode=ecode,
-                protocol_type=protocol_type,
-                target_amplitude=amplitude,
-                efeatures=efeatures,
-                extra_recordings=extra_recordings,
-                efel_settings=efel_settings,
-            )
-
-        elif used_for_validation:
-            self.store_opt_validation_target(
-                "ElectrophysiologyFeatureValidationTarget",
                 ecode=ecode,
                 protocol_type=protocol_type,
                 target_amplitude=amplitude,
@@ -845,131 +825,67 @@ class NexusAccessPoint(DataAccessPoint):
 
         return traces_metadata, targets, protocols_threshold
 
-    def register_efeature(self, name, val, protocol_name=None, protocol_amplitude=None, pdfs=None):
-        """Register an ElectrophysiologyFeature resource"""
+    def store_fitness_calculator_configuration(self, configuration):
+        """Store a fitness calculator configuration as a resource of type
+        FitnessCalculatorConfiguration"""
 
-        resource_description = {
-            "type": ["Entity", "ElectrophysiologyFeature"],
-            "eModel": self.emodel,
-            "name": name,
-            "subject": self.get_subject(for_search=False),
-            "brainLocation": self.brain_region,
-            "feature": {
-                "name": name,
-                "value": [],
-                "series": [
-                    {
-                        "statistic": "mean",
-                        "unitCode": "dimensionless",
-                        "value": val[0],
-                    },
-                    {
-                        "statistic": "standard deviation",
-                        "unitCode": "dimensionless",
-                        "value": val[1],
-                    },
-                ],
-            },
+        resource = {
+            "type": ["FitnessCalculatorConfiguration"],
+            "emodel": self.emodel,
+            "ttype": self.ttype,
         }
 
-        resource_description["stimulus"] = {
-            "stimulusType": {
-                "id": f"http://bbp.epfl.ch/neurosciencegraph/ontologies/stimulustypes/"
-                f"{protocol_name}",
-                "label": protocol_name,
+        resource.update(configuration.as_dict())
+
+        self.access_point.register(
+            resource,
+            filters_existance={
+                "type": "FitnessCalculatorConfiguration",
+                "emodel": self.emodel,
+                "ttype": self.ttype,
             },
-            "recordingLocation": "soma",
-        }
-        resource_description["name"] = f"{name}_{protocol_name}"
+        )
 
-        if protocol_amplitude:
-            resource_description["stimulus"]["stimulusTarget"] = float(protocol_amplitude)
-            resource_description["name"] += f"_{protocol_amplitude}"
+    def get_fitness_calculator_configuration(self):
+        """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
-        distributions = None
-        if pdfs:
-            distributions = list(pdfs.values())
+        resource = self.access_point.fetch_one(
+            {
+                "type": "FitnessCalculatorConfiguration",
+                "emodel": self.emodel,
+                "ttype": self.ttype,
+            }
+        )
 
-        self.access_point.register(resource_description, distributions=distributions)
+        config_dict = self.access_point.forge.as_json(resource)
 
-    def store_efeatures(self, efeatures):
-        """Store the efeatures and currents obtained from BluePyEfe in ElectrophysiologyFeature
-        resources.
+        configuration = FitnessCalculatorConfiguration(
+            efeatures=config_dict["efeatures"],
+            protocols=config_dict["protocols"],
+            name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
+            name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
+            threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
+            validation_protocols=self.pipeline_settings.validation_protocols,
+        )
 
-        Args:
-            efeatures (dict):  efeatures means and standard deviations. Format as returned by
-                BluePyEfe 2.
-        """
+        return configuration
 
-        for protocol in efeatures:
+    def has_fitness_calculator_configuration(self):
+        """Check if the fitness calculator configuration exists"""
 
-            for feature in efeatures[protocol]["soma.v"]:
-
-                if protocol in [
-                    "SearchHoldingCurrent",
-                    "SearchThresholdCurrent",
-                    "RinProtocol",
-                    "RMPProtocol",
-                ]:
-                    protocol_name = protocol
-                    prot_amplitude = None
-                else:
-                    protocol_name = "_".join(protocol.split("_")[:-1])
-                    prot_amplitude = protocol.split("_")[-1]
-
-                self.register_efeature(
-                    name=feature["feature"],
-                    val=feature["val"],
-                    protocol_name=protocol_name,
-                    protocol_amplitude=prot_amplitude,
-                    pdfs=feature.get("pdfs", None),
-                )
-
-    def store_protocols(self, stimuli):
-        """Store the protocols obtained from BluePyEfe in
-            ElectrophysiologyFeatureExtractionProtocol resources.
-
-        Args:
-            stimuli (dict): protocols definition in the format returned by BluePyEfe 2.
-        """
-
-        for protocol_name, protocol in stimuli.items():
-
-            prot_name = "_".join(protocol_name.split("_")[:-1])
-            prot_amplitude = protocol_name.split("_")[-1]
-
-            self.access_point.register(
+        is_present = True
+        try:
+            self.access_point.fetch_one(
                 {
-                    "type": ["Entity", "ElectrophysiologyFeatureExtractionProtocol"],
-                    "eModel": self.emodel,
-                    "subject": self.get_subject(for_search=False),
-                    "brainLocation": self.brain_region,
-                    "stimulus": {
-                        "stimulusType": {
-                            "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies/stimulustypes"
-                            f"/{prot_name}",
-                            "label": prot_name,
-                        },
-                        "stimulusTarget": float(prot_amplitude),
-                    },
-                    "path": "",
-                    "protocolDefinition": {
-                        "step": {
-                            "delay": protocol["step"]["delay"],
-                            "amplitude": protocol["step"]["amp"],
-                            "thresholdPercentage": protocol["step"]["thresh_perc"],
-                            "duration": protocol["step"]["duration"],
-                            "totalDuration": protocol["step"]["totduration"],
-                        },
-                        "holding": {
-                            "delay": protocol["holding"]["delay"],
-                            "amplitude": protocol["holding"]["amp"],
-                            "duration": protocol["holding"]["duration"],
-                            "totalDuration": protocol["holding"]["totduration"],
-                        },
-                    },
-                },
+                    "type": "FitnessCalculatorConfiguration",
+                    "emodel": self.emodel,
+                    "ttype": self.ttype,
+                }
             )
+        except AccessPointException:
+            is_present = False
+
+        return is_present
 
     def store_emodel(
         self,
@@ -1049,7 +965,7 @@ class NexusAccessPoint(DataAccessPoint):
             self.emodel, seed, self.ttype, self.iteration_tag
         )
         if opt_pdf:
-            pdfs.append(opt_pdfs)
+            pdfs.append(opt_pdf)
 
         traces_pdf = search_pdfs.search_figure_emodel_traces(
             self.emodel, seed, self.ttype, self.iteration_tag
@@ -1153,309 +1069,10 @@ class NexusAccessPoint(DataAccessPoint):
 
         return models
 
-    def get_opt_targets(self, include_validation):
-        """Get the optimisation and validation targets from Nexus."""
-
-        resources_opt_target = self.access_point.fetch(
-            filters={
-                "type": "ElectrophysiologyFeatureOptimisationTarget",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
-        )
-
-        if resources_opt_target is None:
-            logger.warning(
-                "NexusForge warning: could not get optimisation targets for emodel %s", self.emodel
-            )
-
-        if include_validation:
-            resources_val_target = self.access_point.fetch(
-                filters={
-                    "type": "ElectrophysiologyFeatureValidationTarget",
-                    "eModel": self.emodel,
-                    "subject": self.get_subject(for_search=True),
-                    "brainLocation": self.brain_region,
-                }
-            )
-
-            if resources_val_target is None:
-                logger.warning(
-                    "NexusForge warning: could not get validation targets for emodel %s",
-                    self.emodel,
-                )
-                resources_val_target = []
-
-            return resources_opt_target + resources_val_target
-
-        return resources_opt_target
-
-    def fetch_extraction_protocol(self, resource_target):
-        """Fetch a singular extraction protocol resource based on an ecode name and amplitude"""
-
-        resources_protocol = self.access_point.fetch(
-            filters={
-                "type": "ElectrophysiologyFeatureExtractionProtocol",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-                "stimulus": {
-                    "stimulusType": {"label": resource_target.stimulus.stimulusType.label},
-                },
-            }
-        )
-
-        # This makes up for the fact that the stimulus target (amplitude) cannot
-        # be used directly for the fetch as filters does not allow to check
-        # equality of lists.
-        if resources_protocol:
-            resources = []
-            for r in resources_protocol:
-                tmp_amp = None
-                if isinstance(r.stimulus.stimulusTarget, list):
-                    tmp_amp = int(r.stimulus.stimulusTarget[0])
-                else:
-                    tmp_amp = int(r.stimulus.stimulusTarget)
-                if tmp_amp == int(resource_target.stimulus.target):
-                    resources.append(r)
-
-        resources_protocol = resources
-
-        if resources_protocol is None:
-            raise NexusAccessPointException(
-                f"Could not get protocol {resource_target.stimulus.stimulusType.label} "
-                f"{resource_target.stimulus.target}% for emodel {self.emodel}"
-            )
-
-        if len(resources_protocol) > 1:
-            raise NexusAccessPointException(
-                f"More than one protocol {resource_target.stimulus.stimulusType.label} "
-                f"{resource_target.stimulus.target}% for emodel {self.emodel}"
-            )
-
-        ecode = resources_protocol[0].stimulus.stimulusType.label
-        amp = str(int(resources_protocol[0].stimulus.stimulusTarget[0]))
-        protocol_name = f"{ecode}_{amp}"
-
-        return resources_protocol[0], protocol_name
-
-    def get_protocols(self, include_validation=False):
-        """Get the protocol definitions used to instantiate the CellEvaluator.
-
-        Args:
-            include_validation (bool): if True, returns the protocols for validation as well
-
-        Returns:
-            protocols_out (dict): protocols definitions. Of the format:
-                {
-                     protocolname: {
-                         "type": "StepProtocol" or "StepThresholdProtocol",
-                         "stimuli": {...}
-                         "extra_recordings": ...
-                     }
-                }
-        """
-
-        protocols_out = {}
-
-        for resource_target in self.get_opt_targets(include_validation):
-
-            if resource_target.protocolType not in ["StepProtocol", "StepThresholdProtocol"]:
-                continue
-
-            resource_protocol, protocol_name = self.fetch_extraction_protocol(resource_target)
-
-            stimulus = self.access_point.forge.as_json(resource_protocol.protocolDefinition.step)
-
-            stimulus["totduration"] = stimulus.pop("totalDuration")
-            stimulus["amp"] = stimulus.pop("amplitude")
-            stimulus["thresh_perc"] = stimulus.pop("thresholdPercentage")
-            stimulus["holding_current"] = resource_protocol.protocolDefinition.holding.amplitude
-
-            if hasattr(resource_target, "extraRecordings"):
-                extra_recordings = resource_target.extraRecordings
-            else:
-                extra_recordings = []
-
-            protocols_out[protocol_name] = {
-                "type": resource_target.protocolType,
-                "stimuli": stimulus,
-                "extra_recordings": extra_recordings,
-            }
-
-        return protocols_out
-
-    def fetch_extraction_efeature(self, name, stimulus, amplitude=None):
-        """Fetch a singular extraction protocol resource based on an ecode name and amplitude"""
-
-        resources_feature = self.access_point.fetch(
-            filters={
-                "type": "ElectrophysiologyFeature",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-                "feature": {"name": name},
-                "stimulus": {"stimulusType": {"label": stimulus}},
-            }
-        )
-
-        if amplitude:
-
-            # This makes up for the fact that the stimulus target (amplitude) cannot be used
-            # directly for the fetch as filters does not alllow to check equality of lists.
-            resources = None
-            if resources_feature:
-                resources = []
-                for r in resources_feature:
-
-                    tmp_amp = None
-
-                    if isinstance(r.stimulus.stimulusTarget, list):
-                        tmp_amp = float(r.stimulus.stimulusTarget[0])
-                    else:
-                        tmp_amp = float(r.stimulus.stimulusTarget)
-
-                    if tmp_amp == float(amplitude):
-                        resources.append(r)
-
-        else:
-            resources = resources_feature
-
-        if resources is None:
-            raise NexusAccessPointException(
-                f"Could not get feature {name} for {stimulus} {amplitude}% for "
-                f"emodel {self.emodel}"
-            )
-
-        if len(resources) > 1:
-            raise NexusAccessPointException(
-                f"More than one feature {name} for {stimulus} {amplitude}% for "
-                f"emodel {self.emodel}"
-            )
-
-        feature_mean = next(s.value for s in resources[0].feature.series if s.statistic == "mean")
-
-        feature_std = next(
-            s.value for s in resources[0].feature.series if s.statistic == "standard deviation"
-        )
-
-        return resources[0], feature_mean, feature_std
-
-    def get_features(self, include_validation=False):
-        """Get the e-features used as targets in the CellEvaluator.
-
-        Args:
-            include_validation (bool): should the features for validation be returned as well
-
-        Returns:
-            efeatures_out (dict): efeatures definitions. Of the format:
-                {
-                    "protocol_name": {"soma.v":
-                        [{"feature": feature_name, val:[mean, std]}]
-                    }
-                }
-        """
-
-        efeatures_out = {}
-
-        for resource_target in self.get_opt_targets(include_validation):
-
-            # RMP, Rin, Threshold and holding current are handeld below
-            if resource_target.protocolType not in ["StepProtocol", "StepThresholdProtocol"]:
-                continue
-
-            for feature in resource_target.feature:
-
-                _, feature_mean, feature_std = self.fetch_extraction_efeature(
-                    feature.name,
-                    resource_target.stimulus.stimulusType.label,
-                    resource_target.stimulus.target,
-                )
-
-                ecode = resource_target.stimulus.stimulusType.label
-                amp = str(int(resource_target.stimulus.target))
-                protocol_name = f"{ecode}_{amp}"
-
-                if protocol_name not in efeatures_out:
-                    efeatures_out[protocol_name] = {"soma.v": []}
-
-                efeatures_out[protocol_name]["soma.v"].append(
-                    {
-                        "feature": feature.name,
-                        "val": [feature_mean, feature_std],
-                        "strict_stim": True,
-                    }
-                )
-
-                if hasattr(feature.onsetTime, "value") and feature.onsetTime.value is not None:
-                    efeatures_out[protocol_name]["soma.v"][-1][
-                        "stim_start"
-                    ] = feature.onsetTime.value
-                if hasattr(feature.offsetTime, "value") and feature.offsetTime.value is not None:
-                    efeatures_out[protocol_name]["soma.v"][-1][
-                        "stim_end"
-                    ] = feature.offsetTime.value
-
-        # Add holding current, threshold current, Rin and RMP
-        special_efeatures = {
-            "SearchHoldingCurrent": ["bpo_holding_current", "steady_state_voltage_stimend"],
-            "SearchThresholdCurrent": ["bpo_threshold_current"],
-            "RinProtocol": ["ohmic_input_resistance_vb_ssse"],
-            "RMPProtocol": ["steady_state_voltage_stimend"],
-        }
-
-        for pre_protocol, efeatures in special_efeatures.items():
-            for efeature in efeatures:
-
-                _, feature_mean, feature_std = self.fetch_extraction_efeature(
-                    efeature, pre_protocol
-                )
-
-                if pre_protocol not in efeatures_out:
-                    efeatures_out[pre_protocol] = {"soma.v": []}
-                efeatures_out[pre_protocol]["soma.v"].append(
-                    {"feature": efeature, "val": [feature_mean, feature_std]}
-                )
-
-        return efeatures_out
-
-    def get_name_validation_protocols(self):
-        """Get the names of the protocols used for validation"""
-
-        names = []
-
-        resources_val_target = self.access_point.fetch(
-            filters={
-                "type": "ElectrophysiologyFeatureValidationTarget",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-            }
-        )
-
-        if resources_val_target is None:
-            logger.warning(
-                "NexusForge warning: could not get validation targets for emodel %s",
-                self.emodel,
-            )
-            return names
-
-        for resource_target in resources_val_target:
-
-            if resource_target.protocolType not in ["StepProtocol", "StepThresholdProtocol"]:
-                continue
-
-            _, protocol_name = self.fetch_extraction_protocol(resource_target)
-
-            names.append(protocol_name)
-
-        return names
-
     def store_model_configuration(self, configuration, path=None):
         """Store a model configuration as a resource of type EModelConfiguration"""
 
-        resource = {"type": ["EModelConfiguration"]}
+        resource = {"type": ["EModelConfiguration"], "emodel": self.emodel, "ttype": self.ttype}
 
         resource.update(configuration.as_dict())
 
@@ -1509,25 +1126,6 @@ class NexusAccessPoint(DataAccessPoint):
         self.download_mechanisms(model_configuration.mechanism_names)
 
         return model_configuration
-
-    def has_protocols_and_features(self):
-        """Check if the efeatures and protocol exist."""
-
-        try:
-            self.get_features()
-        except NexusAccessPointException as e:
-            if "Could not get " in str(e):
-                return False
-            raise e
-
-        try:
-            self.get_protocols()
-        except NexusAccessPointException as e:
-            if "Could not get protocol" in str(e):
-                return False
-            raise e
-
-        return True
 
     def has_best_model(self, seed):
         """Check if the best model has been stored."""

@@ -11,7 +11,7 @@ from pandas.testing import assert_frame_equal
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.access_point import get_access_point
 
-TEST_ROOT = Path(__file__).parent
+TEST_ROOT = Path(__file__).parents[1]
 DATA = TEST_ROOT / "test_data"
 
 
@@ -44,14 +44,15 @@ def test_protocols(db, evaluator):
     logging.getLogger().setLevel(logging.DEBUG)
 
     params = db.get_emodel()["parameters"]
+    
     responses = evaluator.run_protocols(
         protocols=evaluator.fitness_protocols.values(), param_values=params
     )
 
-    assert_allclose(responses["bpo_rin"], 37.372735)
-    assert_allclose(responses["bpo_rmp"], -77.23215465876982)
-    assert_allclose(responses["bpo_holding_current"], -0.14453125)
-    assert_allclose(responses["bpo_threshold_current"], 0.482622125935)
+    assert_allclose(responses["bpo_rin"], 37.372735, rtol=1e-06)
+    assert_allclose(responses["bpo_rmp"], -77.232155, rtol=1e-06)
+    assert_allclose(responses["bpo_holding_current"], -0.14453125, rtol=1e-06)
+    assert_allclose(responses["bpo_threshold_current"], 0.482622, rtol=1e-06)
 
     for prot_name in [
         "RMPProtocol.soma.v",
@@ -69,7 +70,7 @@ def test_protocols(db, evaluator):
         "IV_-100.soma.v",
         "SpikeRec_600.soma.v",
     ]:
-        # responses[prot_name].response.to_csv(f"{DATA}/test_{prot_name}.csv", index=False)
+        #responses[prot_name].response.to_csv(f"{DATA}/test_{prot_name}.csv", index=False)
         expected_df = pd.read_csv(f"{DATA}/test_{prot_name}.csv")
         response = responses[prot_name].response
         assert_frame_equal(response, expected_df)
