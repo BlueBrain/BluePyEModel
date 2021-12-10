@@ -1,10 +1,6 @@
 """Evaluator module."""
 import logging
-import math
-from copy import deepcopy
 
-import numpy
-from bluepyopt.ephys.efeatures import eFELFeature
 from bluepyopt.ephys.evaluators import CellEvaluator
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
 from bluepyopt.ephys.locations import NrnSecSomaDistanceCompLocation
@@ -15,6 +11,7 @@ from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.simulators import NrnSimulator
 
 from ..ecode import eCodes
+from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEM_Protocol
 from .protocols import MainProtocol
 from .protocols import RinProtocol
@@ -25,8 +22,10 @@ from .protocols import SearchThresholdCurrent
 logger = logging.getLogger(__name__)
 
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
-# this location can be used to record at ais, using the option ais_recording below
 ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
+
+PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
+
 seclist_to_sec = {
     "somatic": "soma",
     "apical": "apic",
@@ -35,296 +34,46 @@ seclist_to_sec = {
 }
 
 
-class eFELFeatureBPEM(eFELFeature):
+def define_location(definition):
 
-    """eFEL feature extra"""
+    if definition["type"] == "CompRecording":
+        if definition["location"] == "soma":
+            return soma_loc
+        if definition["location"] == "ais":
+            return ais_loc
+        raise Exception("Only soma and ais are implemented for CompRecording")
 
-    SERIALIZED_FIELDS = (
-        "name",
-        "efel_feature_name",
-        "recording_names",
-        "stim_start",
-        "stim_end",
-        "exp_mean",
-        "exp_std",
-        "threshold",
-        "comment",
-    )
-
-    def __init__(
-        self,
-        name,
-        efel_feature_name=None,
-        recording_names=None,
-        stim_start=None,
-        stim_end=None,
-        exp_mean=None,
-        exp_std=None,
-        threshold=None,
-        stimulus_current=None,
-        comment="",
-        interp_step=None,
-        double_settings=None,
-        int_settings=None,
-        efel_settings=None,
-    ):
-        """Constructor
-
-        Args:
-            name (str): name of the eFELFeature object
-            efel_feature_name (str): name of the eFeature in the eFEL library
-                (ex: 'AP1_peak')
-            recording_names (dict): eFEL features can accept several recordings
-                as input
-            stim_start (float): stimulation start time (ms)
-            stim_end (float): stimulation end time (ms)
-            exp_mean (float): experimental mean of this eFeature
-            exp_std(float): experimental standard deviation of this eFeature
-            threshold(float): spike detection threshold (mV)
-            comment (str): comment
-        """
-
-        super().__init__(
-            name,
-            efel_feature_name,
-            recording_names,
-            stim_start,
-            stim_end,
-            exp_mean,
-            exp_std,
-            threshold,
-            stimulus_current,
-            comment,
-            interp_step,
-            double_settings,
-            int_settings,
-            max_score=250.0,
+    if definition["type"] == "somadistance":
+        return NrnSomaDistanceCompLocation(
+            name=definition["name"],
+            soma_distance=definition["somadistance"],
+            seclist_name=definition["seclist_name"],
         )
-        self.efel_settings = efel_settings
 
-    def calculate_bpo_feature(self, responses):
-        """Return internal feature which is directly passed as a response"""
-
-        if self.efel_feature_name not in responses:
-            return None
-
-        return responses[self.efel_feature_name]
-
-    def calculate_bpo_score(self, responses):
-        """Return score for bpo feature"""
-
-        feature_value = self.calculate_bpo_feature(responses)
-
-        if feature_value is None:
-            return self.max_score
-
-        return abs(feature_value - self.exp_mean) / self.exp_std
-
-    def _construct_efel_trace(self, responses):
-        """Construct trace that can be passed to eFEL"""
-
-        trace = {}
-        if "" not in self.recording_names:
-            raise Exception("eFELFeature: '' needs to be in recording_names")
-        for location_name, recording_name in self.recording_names.items():
-            if location_name == "":
-                postfix = ""
-            else:
-                postfix = f";{location_name}"
-
-            if recording_name not in responses:
-                logger.debug(
-                    "Recording named %s not found in responses %s", recording_name, str(responses)
-                )
-                return None
-
-            if responses[self.recording_names[""]] is None or responses[recording_name] is None:
-                return None
-            trace[f"T{postfix}"] = responses[self.recording_names[""]]["time"]
-            trace[f"V{postfix}"] = responses[recording_name]["voltage"]
-
-            if callable(self.stim_start):
-                trace[f"stim_start{postfix}"] = [self.stim_start()]
-            else:
-                trace[f"stim_start{postfix}"] = [self.stim_start]
-
-            if callable(self.stim_end):
-                trace[f"stim_end{postfix}"] = [self.stim_end()]
-            else:
-                trace[f"stim_end{postfix}"] = [self.stim_end]
-
-        return trace
-
-    def _setup_efel(self):
-        """Set up efel before extracting the feature"""
-
-        import efel
-
-        efel.reset()
-
-        if self.threshold is not None:
-            efel.setThreshold(self.threshold)
-
-        if self.stimulus_current is not None:
-            if callable(self.stimulus_current):
-                efel.setDoubleSetting("stimulus_current", self.stimulus_current())
-            else:
-                efel.setDoubleSetting("stimulus_current", self.stimulus_current)
-
-        if self.interp_step is not None:
-            efel.setDoubleSetting("interp_step", self.interp_step)
-
-        if self.double_settings is not None:
-            for setting_name, setting_value in self.double_settings.items():
-                efel.setDoubleSetting(setting_name, setting_value)
-
-        if self.int_settings is not None:
-            for setting_name, setting_value in self.int_settings.items():
-                efel.setIntSetting(setting_name, setting_value)
-
-        if self.string_settings is not None:
-            for setting_name, setting_value in self.string_settings.items():
-                efel.setStrSetting(setting_name, setting_value)
-
-    def calculate_feature(self, responses, raise_warnings=False):
-        """Calculate feature value"""
-        if self.efel_feature_name.startswith("bpo_"):
-            feature_values = numpy.array([self.calculate_bpo_feature(responses)])
-
-        else:
-            efel_trace = self._construct_efel_trace(responses)
-
-            if efel_trace is None:
-                feature_values = None
-            else:
-
-                self._setup_efel()
-                logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
-                import efel
-
-                values = efel.getFeatureValues(
-                    [efel_trace], [self.efel_feature_name], raise_warnings=raise_warnings
-                )
-
-                feature_values = values[0][self.efel_feature_name]
-
-                efel.reset()
-
-        logger.debug("Calculated values for %s: %s", self.name, str(feature_values))
-        return feature_values
-
-    def calculate_score(self, responses, trace_check=False):
-        """Calculate the score"""
-
-        if self.efel_feature_name.startswith("bpo_"):
-            score = self.calculate_bpo_score(responses)
-
-        elif self.exp_mean is None:
-            score = 0
-
-        else:
-
-            feature_values = self.calculate_feature(responses)
-            if (feature_values is None) or (len(feature_values) == 0):
-                score = self.max_score
-            else:
-                score = (
-                    numpy.sum(numpy.fabs(feature_values - self.exp_mean))
-                    / self.exp_std
-                    / len(feature_values)
-                )
-                logger.debug("Calculated score for %s: %f", self.name, score)
-
-            score = numpy.min([score, self.max_score])
-
-        if score is None or math.isnan(score):
-            return self.max_score
-
-        return score
-
-
-def define_feature(
-    feature_definition,
-    stim_start=None,
-    stim_end=None,
-    stim_amp=None,
-    protocol_name=None,
-    recording_name=None,
-    global_efel_settings=None,
-    threshold_efeature_std=None,
-):
-    """Create a feature.
-
-    Args:
-        feature_definition (dict): see docstring of function
-            define_main_protocol.
-        stim_start (float): start of the time window on which this efeature
-            will be computed.
-        stim_end (float): end of the time window on which this efeature
-            will be computed.
-        stim_amp (float or None): current amplitude of the step.
-        protocol_name (str): name of the protocol associated to this efeature.
-        recording_name (str): name of the voltage recording (e.g.: "soma.v")
-        global_efel_settings (dict): efel settings in the form
-            {setting_name: setting_value}. If settings are also informed
-            in the targets per efeature, the latter will have priority.
-        threshold_efeature_std (float): if informed, compute the std as
-            threshold_efeature_std * mean if std is < threshold_efeature_std * min.
-
-    Returns:
-        eFELFeatureExtra
-    """
-
-    if global_efel_settings is None:
-        global_efel_settings = {}
-
-    efel_feature_name = feature_definition["feature"]
-    meanstd = feature_definition["val"]
-
-    feature_name = f"{protocol_name}.{recording_name}.{efel_feature_name}"
-    std = meanstd[1]
-    if threshold_efeature_std and std < abs(threshold_efeature_std * meanstd[0]):
-        std = abs(threshold_efeature_std * meanstd[0])
-
-    if not std:
-        logger.warning(
-            "Std of efeature %s is 0 and will be set to " "threshold_efeature_std (%s)",
-            efel_feature_name,
-            threshold_efeature_std,
+    if definition["type"] == "somadistanceapic":
+        return NrnSecSomaDistanceCompLocation(
+            name=definition["name"],
+            soma_distance=definition["somadistance"],
+            sec_index=definition["sec_index"],
+            sec_name=definition["seclist_name"],
         )
-        std = threshold_efeature_std
 
-    if protocol_name:
-        recording_names = {"": f"{protocol_name}.{recording_name}"}
-    else:
-        recording_names = {"": recording_name}
+    if definition["type"] == "nrnseclistcomp":
+        return NrnSeclistCompLocation(
+            name=definition["name"],
+            comp_x=definition["comp_x"],
+            sec_index=definition["sec_index"],
+            seclist_name=definition["seclist_name"],
+        )
 
-    efel_settings = {**global_efel_settings, **feature_definition.get("efel_settings", {})}
-    efel_settings["stimulus_current"] = stim_amp
-
-    if "strict_stim" in feature_definition:
-        efel_settings["strict_stiminterval"] = feature_definition["strict_stim"]
-
-    return eFELFeatureBPEM(
-        feature_name,
-        efel_feature_name=efel_feature_name,
-        recording_names=recording_names,
-        stim_start=stim_start,
-        stim_end=stim_end,
-        exp_mean=meanstd[0],
-        exp_std=std,
-        stimulus_current=stim_amp,
-        efel_settings=efel_settings,
-    )
+    raise Exception(f"Unknown recording type {definition['type']}")
 
 
-def define_protocol(name, protocol_definition, stochasticity=True, threshold_based=False):
+def define_protocol(protocol_configuration, stochasticity=False, threshold_based=False):
     """Create the protocol.
 
     Args:
-        name (str): name of the protocol
-        protocol_definition (dict): see docstring of function
-            define_main_protocol
+        protocol_configuration (ProtocolConfiguration): configuration of the protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
         threshold_based (bool): is the protocol being instantiated a threshold-based or a
@@ -333,70 +82,41 @@ def define_protocol(name, protocol_definition, stochasticity=True, threshold_bas
     Returns:
         Protocol
     """
-    # By default include somatic recording
-    somav_recording = CompRecording(name=f"{name}.soma.v", location=soma_loc, variable="v")
-    recordings = [somav_recording]
 
-    if "extra_recordings" in protocol_definition:
+    recordings = []
+    for rec_def in protocol_configuration.recordings:
 
-        for recording_definition in protocol_definition["extra_recordings"]:
+        location = define_location(rec_def)
 
-            if recording_definition["type"] == "somadistance":
-                location = NrnSomaDistanceCompLocation(
-                    name=recording_definition["name"],
-                    soma_distance=recording_definition["somadistance"],
-                    seclist_name=recording_definition["seclist_name"],
-                )
+        if "variable" in rec_def:
+            variable = rec_def["variable"]
+        else:
+            variable = rec_def["var"]
 
-            elif recording_definition["type"] == "somadistanceapic":
-                location = NrnSecSomaDistanceCompLocation(
-                    name=recording_definition["name"],
-                    soma_distance=recording_definition["somadistance"],
-                    sec_index=recording_definition["sec_index"],
-                    sec_name=recording_definition["sec_name"],
-                )
+        recording = CompRecording(
+            name=rec_def["name"],
+            location=location,
+            variable=variable,
+        )
 
-            elif recording_definition["type"] == "nrnseclistcomp":
-                location = NrnSeclistCompLocation(
-                    name=recording_definition["name"],
-                    comp_x=recording_definition["comp_x"],
-                    sec_index=recording_definition["sec_index"],
-                    seclist_name=recording_definition["seclist_name"],
-                )
+        recordings.append(recording)
 
-            else:
-                raise Exception(f"Recording type {recording_definition['type']}")
-
-            var = recording_definition["var"]
-            recording = CompRecording(
-                name=f"{name}.{location.name}.{var}",
-                location=location,
-                variable=recording_definition["var"],
-            )
-
-            recordings.append(recording)
+    if len(protocol_configuration.stimuli) != 1:
+        raise Exception("Only protocols with a single stimulus implemented")
 
     for k, ecode in eCodes.items():
-        if k in name.lower():
-
-            if "stimuli" in protocol_definition:
-                stim_def = protocol_definition["stimuli"]
-            else:
-                stim_def = {}
-
-            stimulus = ecode(location=soma_loc, **stim_def)
-
+        if k in protocol_configuration.name.lower():
+            stimulus = ecode(location=soma_loc, **protocol_configuration.stimuli[0])
             break
-
     else:
         raise KeyError(
-            f"There is no eCode linked to the stimulus name {name.lower()}. "
+            f"There is no eCode linked to the stimulus name {protocol_configuration.lower()}. "
             "See ecode/__init__.py for the available stimuli "
             "names"
         )
 
     return BPEM_Protocol(
-        name=name,
+        name=protocol_configuration.name,
         stimulus=stimulus,
         recordings=recordings,
         stochasticity=stochasticity,
@@ -404,166 +124,150 @@ def define_protocol(name, protocol_definition, stochasticity=True, threshold_bas
     )
 
 
-def get_features_by_name(list_features, name):
-    """Get a feature from its name"""
+def define_efeature(feature_config, protocol=None, global_efel_settings=None):
+    """Define an efeature"""
 
-    for feature in list_features:
-        if feature["feature"] == name:
-            return feature
+    if global_efel_settings is None:
+        global_efel_settings = {}
 
-    return None
+    efel_settings = {**global_efel_settings, **feature_config.efel_settings}
+
+    stim_amp = None
+    stim_start = None
+    stim_end = None
+
+    if protocol:
+        stim_amp = protocol.amplitude
+
+    if feature_config.efel_settings.get("stim_start", None) is not None:
+        stim_start = feature_config.efel_settings["stim_start"]
+    elif protocol:
+        stim_start = protocol.stim_start
+
+    if feature_config.efel_settings.get("stim_end", None) is not None:
+        stim_end = feature_config.efel_settings["stim_end"]
+    elif protocol:
+        if "bAP" in protocol.name:
+            stim_end = protocol.total_duration
+        else:
+            stim_end = protocol.stim_end
+
+    recording_names = {"": f"{feature_config.protocol_name}.{feature_config.recording_name}"}
+
+    efeature = eFELFeatureBPEM(
+        feature_config.name,
+        efel_feature_name=feature_config.efel_feature_name,
+        recording_names=recording_names,
+        stim_start=stim_start,
+        stim_end=stim_end,
+        exp_mean=feature_config.mean,
+        exp_std=feature_config.std,
+        stimulus_current=stim_amp,
+        efel_settings=efel_settings,
+    )
+
+    return efeature
 
 
-def define_RMP_protocol(features_definition, efel_settings, threshold_efeature_std):
+def define_RMP_protocol(efeatures):
     """Define the resting membrane potential protocol"""
 
-    feature_def = get_features_by_name(
-        features_definition["RMPProtocol"]["soma.v"], "steady_state_voltage_stimend"
-    )
-
-    if feature_def:
-
-        target_voltage = define_feature(
-            feature_def,
-            protocol_name="RMPProtocol",
-            recording_name="soma.v",
-            global_efel_settings=efel_settings,
-            threshold_efeature_std=threshold_efeature_std,
+    target_voltage = next(
+        f
+        for f in efeatures
+        if (
+            "RMPProtocol" in f.recording_names[""]
+            and f.efel_feature_name == "steady_state_voltage_stimend"
         )
-
-        protocol = RMPProtocol(name="RMPProtocol", location=soma_loc, target_voltage=target_voltage)
-
-        return protocol, [target_voltage]
-
-    logger.warning(
-        "steady_state_voltage_stimend not present in the feature_definition"
-        " dictionnary for RMPProtocol"
     )
 
-    return None, []
+    if target_voltage:
+
+        return RMPProtocol(name="RMPProtocol", location=soma_loc, target_voltage=target_voltage)
+
+    raise Exception("Couldn't find the voltage feature associated to the RMP protocol")
 
 
-def define_Rin_protocol(
-    features_definition, ais_recording=False, efel_settings=None, threshold_efeature_std=None
-):
-    """Define the Rin protocol.
+def define_Rin_protocol(efeatures, ais_recording=False):
+    """Define the input resistance protocol"""
 
-    With ais_rcording=True, the recording will be at the first axonal section.
-    """
-
-    feature_def = get_features_by_name(
-        features_definition["RinProtocol"]["soma.v"], "ohmic_input_resistance_vb_ssse"
+    target_rin = next(
+        f
+        for f in efeatures
+        if "RinProtocol" in f.recording_names[""]
+        and f.efel_feature_name == "ohmic_input_resistance_vb_ssse"
     )
 
-    if feature_def:
-
-        target_rin = define_feature(
-            feature_def,
-            protocol_name="RinProtocol",
-            recording_name="soma.v",
-            global_efel_settings=efel_settings,
-            threshold_efeature_std=threshold_efeature_std,
-        )
+    if target_rin:
 
         location = soma_loc if not ais_recording else ais_loc
-        protocol = RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
 
-        return protocol, [target_rin]
+        return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
 
-    logger.warning(
-        "ohmic_input_resistance_vb_ssse not present in the feature_definition"
-        " dictionnary for RinProtocol"
+    raise Exception("Couldn't find the Rin feature associated to the Rin protocol")
+
+
+def define_holding_protocol(efeatures, strict_bounds=False):
+    """Define the search holding current protocol"""
+
+    target_voltage = next(
+        f
+        for f in efeatures
+        if "SearchHoldingCurrent" in f.recording_names[""]
+        and f.efel_feature_name == "steady_state_voltage_stimend"
     )
-    return None, []
-
-
-def define_holding_protocol(
-    features_definition, efel_settings=None, threshold_efeature_std=None, strict_bounds=False
-):
-    """Define the search holdinf current protocol"""
-    def_holding_voltage = get_features_by_name(
-        features_definition["SearchHoldingCurrent"]["soma.v"], "steady_state_voltage_stimend"
-    )
-    def_holding_current = get_features_by_name(
-        features_definition["SearchHoldingCurrent"]["soma.v"], "bpo_holding_current"
+    target_current = next(
+        f
+        for f in efeatures
+        if "SearchHoldingCurrent" in f.recording_names[""]
+        and f.efel_feature_name == "bpo_holding_current"
     )
 
-    if def_holding_voltage and def_holding_current:
-
-        target_holding_voltage = define_feature(
-            def_holding_voltage,
-            protocol_name="SearchHoldingCurrent",
-            recording_name="soma.v",
-            global_efel_settings=efel_settings,
-            threshold_efeature_std=threshold_efeature_std,
-        )
-        target_holding_current = define_feature(
-            def_holding_current,
-            protocol_name="",
-            recording_name="bpo_holding_current",
-            global_efel_settings=efel_settings,
-            threshold_efeature_std=threshold_efeature_std,
-        )
-
-        protocol = SearchHoldingCurrent(
+    if target_voltage and target_current:
+        return SearchHoldingCurrent(
             name="SearchHoldingCurrent",
             location=soma_loc,
-            target_voltage=target_holding_voltage,
-            target_holding=target_holding_current,
+            target_voltage=target_voltage,
+            target_holding=target_current,
             strict_bounds=strict_bounds,
         )
 
-        return protocol, [target_holding_current]
-
-    logger.warning(
-        "steady_state_voltage_stimend or bpo_holding_current not present"
-        " in the feature_definition dictionnary for SearchHoldingCurrent"
+    raise Exception(
+        "Couldn't find the voltage feature or holding current feature associated "
+        "to the SearchHoldingCurrent protocol"
     )
-    return None, []
 
 
-def define_threshold_protocol(
-    features_definition, efel_settings=None, threshold_efeature_std=None, max_threshold_voltage=-30
-):
+def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
     """Define the search threshold current protocol"""
 
-    feature_def = get_features_by_name(
-        features_definition["SearchThresholdCurrent"]["soma.v"], "bpo_threshold_current"
+    target_current = next(
+        f
+        for f in efeatures
+        if "SearchThresholdCurrent" in f.recording_names[""]
+        and f.efel_feature_name == "bpo_threshold_current"
     )
 
-    if feature_def:
-
-        target_threshold = define_feature(
-            feature_def,
-            protocol_name="",
-            recording_name="bpo_threshold_current",
-            global_efel_settings=efel_settings,
-            threshold_efeature_std=threshold_efeature_std,
-        )
-
-        protocol = SearchThresholdCurrent(
+    if target_current:
+        return SearchThresholdCurrent(
             name="SearchThresholdCurrent",
             location=soma_loc,
-            target_threshold=target_threshold,
+            target_threshold=target_current,
             max_threshold_voltage=max_threshold_voltage,
         )
 
-        return protocol, [target_threshold]
-
-    logger.warning(
-        "bpo_threshold_current not present in the feature_definition dictionnary"
-        " for SearchThresholdCurrent"
+    raise Exception(
+        "Couldn't find the threshold current feature associated "
+        "to the SearchThresholdCurrent protocol"
     )
-    return None, []
 
 
-def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
-    protocols_definition,
-    features_definition,
+def define_main_protocol(
+    fitness_calculator_configuration,
+    include_validation_protocols=False,
     stochasticity=True,
     ais_recording=False,
     efel_settings=None,
-    threshold_efeature_std=None,
     score_threshold=12.0,
     max_threshold_voltage=-30,
     threshold_based_evaluator=True,
@@ -575,91 +279,66 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
     the current threshold while the "other_protocols" do not.
 
     Args:
-        protocols_definition (dict): in the following format. The "type" field
-            of a protocol can be StepProtocol, StepThresholdProtocol, RMP,
-            RinHoldCurrent. If protocols with type StepThresholdProtocol are
-            present, RMP and RinHoldCurrent should also be present.
+        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
+            fitness calculator.
+        include_validation_protocols (bool): should the validation protocols
+            and validation efeatures be added to the evaluator.
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
-        ais_rcording (bool): if True all the soma recording will be at the first axonal section.
+        ais_recording (bool): if True all the soma recording will be at the first axonal section.
         efel_settings (dict): eFEl settings.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
         threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
             by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
-
-    Returns:
     """
-
-    rmp_protocol, rmp_features = define_RMP_protocol(
-        features_definition, efel_settings, threshold_efeature_std
-    )
-    rin_protocol, rin_features = define_Rin_protocol(
-        features_definition,
-        ais_recording=ais_recording,
-        efel_settings=efel_settings,
-        threshold_efeature_std=threshold_efeature_std,
-    )
-
-    search_holding_protocol, hold_features = define_holding_protocol(
-        features_definition,
-        efel_settings,
-        threshold_efeature_std,
-        strict_bounds=strict_holding_bounds,
-    )
-    search_threshold_protocol, thres_features = define_threshold_protocol(
-        features_definition, efel_settings, threshold_efeature_std, max_threshold_voltage
-    )
-
-    features = thres_features + hold_features + rin_features + rmp_features
-
-    if threshold_based_evaluator and (
-        not rmp_protocol
-        or not rin_protocol
-        or not search_holding_protocol
-        or not search_threshold_protocol
-    ):
-        raise Exception(
-            "A threshold based evaluator was requested by either the protocol RMP, Rin, threshold"
-            " or holding couldn't be instantiated."
-        )
 
     threshold_protocols = {}
     other_protocols = {}
 
-    for name, definition in protocols_definition.items():
-        protocol = define_protocol(name, definition, stochasticity, threshold_based_evaluator)
+    for protocols_def in fitness_calculator_configuration.protocols:
+
+        if not include_validation_protocols and protocols_def.validation:
+            continue
+
+        protocol = define_protocol(protocols_def, stochasticity, threshold_based_evaluator)
 
         if threshold_based_evaluator:
-            threshold_protocols[name] = protocol
+            threshold_protocols[protocols_def.name] = protocol
         else:
-            other_protocols[name] = protocol
+            other_protocols[protocols_def.name] = protocol
 
-        # Define the efeatures associated to the protocol
-        if name in features_definition:
-            for recording_name, feature_configs in features_definition[name].items():
-                for feature_config in feature_configs:
+    efeatures = []
+    for feature_def in fitness_calculator_configuration.efeatures:
 
-                    stim_amp = protocol.amplitude
+        protocol = None
 
-                    stim_start = feature_config.get("stim_start", protocol.stim_start)
-                    stim_end = feature_config.get("stim_end", protocol.stim_end)
+        if feature_def.protocol_name not in PRE_PROTOCOLS:
+            for p in list(threshold_protocols.values()) + list(other_protocols.values()):
+                if p.name == feature_def.protocol_name:
+                    protocol = p
+                    break
+            else:
+                raise Exception(f"Could not find protocol named {feature_def.protocol_name}")
 
-                    if "bAP" in name:
-                        stim_end = protocol.total_duration
+        efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
-                    feature = define_feature(
-                        feature_config,
-                        stim_start,
-                        stim_end,
-                        stim_amp,
-                        protocol.name,
-                        recording_name,
-                        global_efel_settings=efel_settings,
-                        threshold_efeature_std=threshold_efeature_std,
-                    )
-                    features.append(feature)
+    rmp_protocol = None
+    rin_protocol = None
+    search_holding_protocol = None
+    search_threshold_protocol = None
+    if threshold_based_evaluator:
+        rmp_protocol = define_RMP_protocol(efeatures)
+        rin_protocol = define_Rin_protocol(efeatures, ais_recording)
+        search_holding_protocol = define_holding_protocol(efeatures, strict_holding_bounds)
+        search_threshold_protocol = define_threshold_protocol(efeatures, max_threshold_voltage)
+
+    for feature in efeatures:
+        if feature.efel_feature_name not in ["bpo_holding_current", "bpo_threshold_current"]:
+            assert feature.stim_start is not None
+            assert feature.stim_end is not None
+            assert feature.stimulus_current is not None
 
     main_protocol = MainProtocol(
         "Main",
@@ -672,7 +351,18 @@ def define_main_protocol(  # pylint: disable=R0912,R0915,R0914,R1702
         score_threshold=score_threshold,
     )
 
-    return main_protocol, features
+    # TODO: find a more elegant way to get ride of this efeature (or return the full response
+    # for the SearchHoldingCurrent and SearchThresholdCurrent)
+    efeatures = [
+        e
+        for e in efeatures
+        if not (
+            "SearchHoldingCurrent" in e.recording_names[""]
+            and e.efel_feature_name == "steady_state_voltage_stimend"
+        )
+    ]
+
+    return main_protocol, efeatures
 
 
 def define_fitness_calculator(features):
@@ -694,10 +384,11 @@ def get_simulator(stochasticity, cell_model, dt=None):
     """Get NrnSimulator
 
     Args:
-        stochasticity (Bool): allow the use of simulator for stochastic channels
+        stochasticity (bool): allow the use of simulator for stochastic channels
         cell_model (CellModel): used to check if any stochastic channels are present
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
     """
+
     if stochasticity:
         for mechanism in cell_model.mechanisms:
             if not mechanism.deterministic:
@@ -707,90 +398,20 @@ def get_simulator(stochasticity, cell_model, dt=None):
             "Stochasticity is True but no mechanisms are stochastic. Switching to "
             "non-stochastic."
         )
+
     if dt is None:
         return NrnSimulator()
+
     return NrnSimulator(dt=dt, cvode_active=False)
-
-
-def _get_apical_point(cell):
-    """Get the apical point isec usign automatic apical point detection."""
-    from morph_tool import apical_point
-    from morph_tool import nrnhines
-    from morphio import Morphology
-
-    point = apical_point.apical_point_position(Morphology(cell.morphology.morphology_path))
-    return nrnhines.point_to_section_end(cell.icell.apical, point)
-
-
-# pylint: disable=too-many-nested-blocks
-def _handle_extra_recordings(protocols, features, _cell, simulator):
-    """Here we deal with special types of recordings."""
-
-    cell = deepcopy(_cell)
-    cell.params = None
-    cell.mechanisms = None
-    cell.instantiate(sim=simulator)
-
-    for protocol_name, protocol in protocols.items():
-        if "extra_recordings" in protocol:
-            extra_recordings = []
-            for extra in protocol["extra_recordings"]:
-
-                if extra["type"] == "somadistanceapic":
-                    extra["sec_index"] = _get_apical_point(cell)
-                    extra["sec_name"] = seclist_to_sec.get(
-                        extra["seclist_name"], extra["seclist_name"]
-                    )
-                    extra_recordings.append(extra)
-
-                elif extra["type"] == "terminal_sections":
-                    # this recording is for highfreq protocol, to record on all terminal sections.
-                    for sec_id, section in enumerate(getattr(cell.icell, extra["seclist_name"])):
-                        if len(section.subtree()) == 1:
-                            _extra = deepcopy(extra)
-                            _extra["type"] = "nrnseclistcomp"
-                            _extra["name"] = f"{extra['name']}{sec_id}"
-                            _extra["sec_index"] = sec_id
-                            extra_recordings.append(_extra)
-
-                elif extra["type"] == "all_sections":
-                    # this recording type records from all section of given type
-                    for sec_id, section in enumerate(getattr(cell.icell, extra["seclist_name"])):
-                        _extra = deepcopy(extra)
-                        _extra["type"] = "nrnseclistcomp"
-                        _extra["name"] = f"{extra['name']}{sec_id}"
-                        _extra["sec_index"] = sec_id
-                        extra_recordings.append(_extra)
-                else:
-                    extra_recordings.append(extra)
-
-                protocols[protocol_name]["extra_recordings"] = extra_recordings
-
-    features_out = deepcopy(features)
-    for prot_name in features:
-        for loc in features[prot_name]:
-            for feat in features[prot_name][loc]:
-                # if the loc of the recording is of the form axon*.v, we replace * by
-                # all the corresponding int from the created protocols using their names
-                _loc_name, _rec_name = loc.split(".")
-                if _loc_name[-1] == "*":
-                    features_out[prot_name].pop(loc, None)
-                    for rec in protocols[prot_name].get("extra_recordings", []):
-                        if rec["name"].startswith(_loc_name[:-1]):
-                            _loc = rec["name"] + "." + _rec_name
-                            features_out[prot_name][_loc].append(deepcopy(feat))
-
-    return protocols, features_out
 
 
 def create_evaluator(
     cell_model,
-    protocols_definition,
-    features_definition,
+    fitness_calculator_configuration,
+    include_validation_protocols=False,
     stochasticity=True,
     timeout=None,
     efel_settings=None,
-    threshold_efeature_std=None,
     score_threshold=12.0,
     max_threshold_voltage=-30,
     dt=None,
@@ -801,6 +422,10 @@ def create_evaluator(
 
     Args:
         cell_model (CellModel): cell model
+        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
+            fitness calculator.
+        include_validation_protocols (bool): should the validation protocols
+            and validation efeatures be added to the evaluator.
         protocols_definition (dict): protocols and their definition
         features_definition (dict): features means and stds
         stochasticity (bool): should the stochastic channels be stochastic or
@@ -810,8 +435,6 @@ def create_evaluator(
         efel_settings (dict): efel settings in the form
             {setting_name: setting_value}. If settings are also informed
             in the targets per efeature, the latter will have priority.
-        threshold_efeature_std (float): if informed, compute the std as
-            threshold_efeature_std * mean if std is < threshold_efeature_std * min.
         score_threshold (float): threshold for score of protocols to stop evaluations
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
@@ -823,18 +446,16 @@ def create_evaluator(
     Returns:
         CellEvaluator
     """
+
     simulator = get_simulator(stochasticity, cell_model, dt)
 
-    protocols_definition, features_definition = _handle_extra_recordings(
-        protocols_definition, features_definition, cell_model, simulator
-    )
+    fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
     main_protocol, features = define_main_protocol(
-        protocols_definition,
-        features_definition,
+        fitness_calculator_configuration,
+        include_validation_protocols,
         stochasticity,
         efel_settings=efel_settings,
-        threshold_efeature_std=threshold_efeature_std,
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
         threshold_based_evaluator=threshold_based_evaluator,

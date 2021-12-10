@@ -4,7 +4,7 @@ from pathlib import Path
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 from bluepyemodel.access_point.local import LocalAccessPoint
 
-TEST_ROOT = Path(__file__).parent
+TEST_ROOT = Path(__file__).parents[1]
 DATA = TEST_ROOT / "test_data"
 
 

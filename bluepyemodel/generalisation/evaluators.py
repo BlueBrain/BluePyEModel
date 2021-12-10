@@ -55,13 +55,13 @@ def _single_evaluation(
 ):
     """Evaluating single protocol."""
 
-    cell, protocols, features, parameters = get_emodel_data(
+    cell, fitness_calculator_configuration, parameters = get_emodel_data(
         emodel_db, combo, morphology_path, copy(morph_modifiers)
     )
+
     _evaluator = create_evaluator(
         cell_model=cell,
-        protocols_definition=protocols,
-        features_definition=features,
+        fitness_calculator_configuration=fitness_calculator_configuration,
         stochasticity=stochasticity,
         timeout=timeout,
     )
@@ -134,12 +134,12 @@ def evaluate_scores(
 
 def get_emodel_data(emodel_db, combo, morphology_path, morph_modifiers):
     """Gather needed emodel data and build cell model for evaluation."""
+
     emodel_db.emodel = "_".join(combo["emodel"].split("_")[:2])
     emodel_db.morph_path = combo[morphology_path]
-    model_configuration = emodel_db.get_model_configuration()
 
-    protocols = emodel_db.get_protocols()
-    features = emodel_db.get_features()
+    model_configuration = emodel_db.get_model_configuration()
+    fitness_calculator_configuration = emodel_db.get_fitness_calculator_configuration()
 
     emodel_db.emodel = combo["emodel"]  # to get the hash from the final
     emodel_params = emodel_db.get_emodel()["parameters"]
@@ -149,7 +149,8 @@ def get_emodel_data(emodel_db, combo, morphology_path, morph_modifiers):
         model_configuration=model_configuration,
         morph_modifiers=_get_synth_modifiers(combo, morph_modifiers=morph_modifiers),
     )
-    return cell, protocols, features, emodel_params
+
+    return cell, fitness_calculator_configuration, emodel_params
 
 
 def _rin_evaluation(
@@ -165,12 +166,14 @@ def _rin_evaluation(
 ):
     """Evaluating rin protocol."""
 
-    cell_model, _, features, emodel_params = get_emodel_data(
+    cell_model, fitness_calculator_configuration, emodel_params = get_emodel_data(
         emodel_db, combo, morphology_path, copy(morph_modifiers)
     )
-    main_protocol, features = define_main_protocol(
-        {}, features, stochasticity, ais_recording=ais_recording
+
+    main_protocol, _ = define_main_protocol(
+        fitness_calculator_configuration, stochasticity, ais_recording=ais_recording
     )
+
     cell_model.freeze(emodel_params)
     sim = get_simulator(stochasticity, cell_model)
 
@@ -189,8 +192,10 @@ def _rin_evaluation(
             key + "holding_current": responses["bpo_holding_current"],
             key + "threshold_current": responses["bpo_threshold_current"],
         }
+
     responses = main_protocol.run_rin(cell_model, {}, sim=sim, timeout=timeout)[0]
     cell_model.unfreeze(emodel_params.keys())
+
     return {key: responses["bpo_rin"]}
 
 

@@ -11,7 +11,7 @@ from bluepyopt.ephys.locations import (
     NrnSecSomaDistanceCompLocation,
 )
 from bluepyopt.ephys.simulators import NrnSimulator
-from tests.testmodels import dummycells
+from tests.test_models import dummycells
 
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 

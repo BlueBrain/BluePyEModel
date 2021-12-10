@@ -65,7 +65,6 @@ def validate(
     cell_evaluator = get_evaluator_from_access_point(
         access_point,
         include_validation_protocols=True,
-        additional_protocols={},
     )
 
     emodels = compute_responses(
@@ -80,8 +79,6 @@ def validate(
         return []
 
     validation_function = define_validation_function(access_point)
-
-    name_validation_protocols = access_point.get_name_validation_protocols()
 
     logger.info("In validate, %s emodels found to validate.", len(emodels))
 
@@ -99,9 +96,10 @@ def validate(
 
         emodels[i]["scores_validation"] = {}
         for feature_names, score in mo["scores"].items():
-            for p in name_validation_protocols:
+            for p in access_point.pipeline_settings.validation_protocols:
                 if p in feature_names:
                     emodels[i]["scores_validation"][feature_names] = score
+                    break
 
         # turn bool_ into bool to be json serializable
         emodels[i]["validated"] = bool(

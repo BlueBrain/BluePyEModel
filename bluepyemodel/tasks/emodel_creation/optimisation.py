@@ -39,8 +39,8 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
 
     def exists(self):
         """Check if the features and protocols have been created."""
-        _ = self.access_point.has_protocols_and_features()
-        return _
+
+        return self.access_point.has_fitness_calculator_configuration()
 
 
 class ExtractEFeatures(WorkflowTask):
@@ -758,7 +758,6 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
 
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
-        additional_protocols = self.access_point.pipeline_settings.additional_protocols
 
         mapper = self.get_mapper()
         plot_models(
@@ -767,7 +766,6 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             mapper=mapper,
             seeds=range(self.seed, self.seed + batch_size),
             figures_dir=Path("./figures") / self.emodel,
-            additional_protocols=additional_protocols,
             plot_distributions=plot_optimisation,
             plot_traces=plot_optimisation,
             plot_scores=plot_optimisation,

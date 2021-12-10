@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 runner = CliRunner()
 
-DATA = Path(__file__).parent / "test_apps"
+DATA = Path(__file__).parents[1] / "test_data_apps"
 output_path = Path("out_emodel_release")
 os.environ["USE_NEURODAMUS"] = str(1)
 
