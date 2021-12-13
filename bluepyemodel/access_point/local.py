@@ -489,9 +489,9 @@ class LocalAccessPoint(DataAccessPoint):
         """Format emodel data."""
         out_data = {
             "emodel": self.emodel,
-            "fitness": model_data["score"],
+            "fitness": model_data.get("score", None),
             "parameters": model_data["params"],
-            "scores": model_data["fitness"],
+            "scores": model_data.get("fitness", None),
         }
 
         for key in [
