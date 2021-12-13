@@ -104,9 +104,10 @@ class LocalAccessPoint(DataAccessPoint):
 
         settings = self.get_recipes().get("pipeline_settings", {})
 
-        return EModelPipelineSettings(
-            morph_modifiers=self.get_recipes().get("morph_modifiers", None), **settings
-        )
+        if "morph_modifiers" not in settings:
+            settings["morph_modifiers"] = self.get_recipes().get("morph_modifiers", None)
+
+        return EModelPipelineSettings(**settings)
 
     def get_final(self, lock_file=True):
         """Get emodel dictionary from final.json."""
@@ -433,13 +434,20 @@ class LocalAccessPoint(DataAccessPoint):
         if legacy:
             efeatures = self._get_json("features")
             protocols = self._get_json("protocol")
+
+            from_bpe = "stimuli" not in next(iter(protocols.values()))
+
             configuration = FitnessCalculatorConfiguration(
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
             )
-            configuration.init_from_legacy_dict(efeatures, protocols)
+
+            if from_bpe:
+                configuration.init_from_bluepyefe(efeatures, protocols, {})
+            else:
+                configuration.init_from_legacy_dict(efeatures, protocols)
 
         else:
             configuration = FitnessCalculatorConfiguration(

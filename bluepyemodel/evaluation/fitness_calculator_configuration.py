@@ -209,12 +209,16 @@ class FitnessCalculatorConfiguration:
     def init_from_bluepyefe(self, efeatures, protocols, currents):
         """Fill the configuration using the output of BluePyEfe"""
 
-        if self.name_rmp_protocol not in efeatures and self.name_rmp_protocol != "all":
+        if (
+            self.name_rmp_protocol
+            and self.name_rmp_protocol not in efeatures
+            and self.name_rmp_protocol != "all"
+        ):
             raise Exception(
                 f"The stimulus {self.name_rmp_protocol} requested for RMP "
                 "computation couldn't be extracted from the ephys data."
             )
-        if self.name_rin_protocol not in efeatures:
+        if self.name_rin_protocol and self.name_rin_protocol not in efeatures:
             raise Exception(
                 f"The stimulus {self.name_rin_protocol} requested for Rin "
                 "computation couldn't be extracted from the ephys data."
@@ -237,27 +241,28 @@ class FitnessCalculatorConfiguration:
             self._add_bluepyefe_rmp_from_all_protocol(efeatures)
 
         # Add the current related features
-        self.efeatures.append(
-            EFeatureConfiguration(
-                efel_feature_name="bpo_holding_current",
-                protocol_name="SearchHoldingCurrent",
-                recording_name="soma.v",
-                mean=currents["holding_current"][0],
-                std=currents["holding_current"][1],
-                threshold_efeature_std=self.threshold_efeature_std,
+        if currents:
+            self.efeatures.append(
+                EFeatureConfiguration(
+                    efel_feature_name="bpo_holding_current",
+                    protocol_name="SearchHoldingCurrent",
+                    recording_name="soma.v",
+                    mean=currents["holding_current"][0],
+                    std=currents["holding_current"][1],
+                    threshold_efeature_std=self.threshold_efeature_std,
+                )
             )
-        )
 
-        self.efeatures.append(
-            EFeatureConfiguration(
-                efel_feature_name="bpo_threshold_current",
-                protocol_name="SearchThresholdCurrent",
-                recording_name="soma.v",
-                mean=currents["threshold_current"][0],
-                std=currents["threshold_current"][1],
-                threshold_efeature_std=self.threshold_efeature_std,
+            self.efeatures.append(
+                EFeatureConfiguration(
+                    efel_feature_name="bpo_threshold_current",
+                    protocol_name="SearchThresholdCurrent",
+                    recording_name="soma.v",
+                    mean=currents["threshold_current"][0],
+                    std=currents["threshold_current"][1],
+                    threshold_efeature_std=self.threshold_efeature_std,
+                )
             )
-        )
 
         self.remove_featureless_protocols()
 
@@ -344,12 +349,21 @@ class FitnessCalculatorConfiguration:
         self.protocols = []
         self.efeatures = []
 
-        if self.name_rmp_protocol not in efeatures and "RMP" not in efeatures:
+        if (
+            self.name_rmp_protocol
+            and self.name_rmp_protocol not in efeatures
+            and "RMP" not in efeatures
+        ):
             raise Exception(
                 f"The protocol {self.name_rmp_protocol} requested for RMP nor RMPProtocol "
                 "are present in your efeatures json file."
             )
-        if self.name_rin_protocol not in efeatures and "Rin" not in efeatures:
+
+        if (
+            self.name_rin_protocol
+            and self.name_rin_protocol not in efeatures
+            and "Rin" not in efeatures
+        ):
             raise Exception(
                 f"The protocol {self.name_rin_protocol} requested for Rin nor RinProtocol "
                 "are present in your efeatures json file."
