@@ -39,9 +39,16 @@ def plot_traces(trace_df, trace_path="traces", pdf_filename="traces.pdf"):
         if trace_df.loc[index, "trace_highlight"]:
             c = next(COLORS)
 
-        combo_hash = get_combo_hash(trace_df.loc[index])
-        with open(Path(trace_path) / ("trace_id_" + str(combo_hash) + ".pkl"), "rb") as f:
+        if "trace_data" in trace_df.columns:
+            trace_path = trace_df.loc[index, "trace_data"]
+        else:
+            combo_hash = get_combo_hash(trace_df.loc[index])
+            trace_path = Path(trace_path) / ("trace_id_" + str(combo_hash) + ".pkl")
+
+        with open(trace_path, "rb") as f:
             trace = pickle.load(f)
+            if isinstance(trace, list):
+                trace = trace[1]  # newer version the response are here
             for protocol, response in trace.items():
                 if isinstance(response, TimeVoltageResponse):
                     if trace_df.loc[index, "trace_highlight"]:
