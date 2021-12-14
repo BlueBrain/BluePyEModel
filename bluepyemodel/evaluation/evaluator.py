@@ -54,7 +54,7 @@ def define_location(definition):
         return NrnSecSomaDistanceCompLocation(
             name=definition["name"],
             soma_distance=definition["somadistance"],
-            sec_index=definition["sec_index"],
+            sec_index=definition.get("sec_index", None),
             sec_name=definition["seclist_name"],
         )
 
