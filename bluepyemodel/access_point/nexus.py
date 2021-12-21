@@ -844,6 +844,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "emodel": self.emodel,
                 "ttype": self.ttype,
             },
+            replace=True
         )
 
     def get_fitness_calculator_configuration(self):
