@@ -25,7 +25,7 @@ def parse_legacy_checkpoint_path(path):
     """"""
 
     filename = Path(path).stem.split("__")
-
+    checkpoint_metadata = {}
     if len(filename) == 4:
         checkpoint_metadata = {
             "emodel": filename[1],
@@ -125,7 +125,7 @@ def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
     raise Exception(f"Unknown optimizer: {optimizer}")
 
 
-def run_optimization(optimizer, checkpoint_path, max_ngen, terminator=None):
+def run_optimization(optimizer, checkpoint_path, max_ngen, terminator=None, continue_opt=None):
     """Run the optimisation.
 
     Args:
@@ -141,16 +141,16 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, terminator=None):
     """
 
     Path(checkpoint_path).parents[0].mkdir(parents=True, exist_ok=True)
-
-    if os.path.isfile(checkpoint_path):
-        logger.info(
-            "Checkopint already exists."
-            "Will continue optimisation from last generation in checkpoint"
-        )
-        continue_opt = True
-    else:
-        logger.info("No checkpoint found. Will start optimisation from scratch.")
-        continue_opt = False
+    if continue_opt is None:
+        if os.path.isfile(checkpoint_path):
+            logger.info(
+                "Checkopint already exists."
+                "Will continue optimisation from last generation in checkpoint"
+            )
+            continue_opt = True
+        else:
+            logger.info("No checkpoint found. Will start optimisation from scratch.")
+            continue_opt = False
 
     logger.info("Running optimisation ...")
     pop, hof, log, history = optimizer.run(
@@ -169,6 +169,8 @@ def setup_and_run_optimisation(
     seed,
     mapper=None,
     terminator=None,
+    checkpoint_path=None,
+    continue_opt=None,
 ):
 
     cell_evaluator = get_evaluator_from_access_point(
@@ -192,18 +194,20 @@ def setup_and_run_optimisation(
         optimizer=access_point.pipeline_settings.optimizer,
     )
 
-    checkpoint_path = get_checkpoint_path(
-        access_point.emodel,
-        seed,
-        ttype=access_point.ttype,
-        iteration_tag=access_point.iteration_tag,
-    )
+    if checkpoint_path is None:
+        checkpoint_path = get_checkpoint_path(
+            access_point.emodel,
+            seed,
+            ttype=access_point.ttype,
+            iteration_tag=access_point.iteration_tag,
+        )
 
     run_optimization(
         optimizer=opt,
         checkpoint_path=checkpoint_path,
         max_ngen=access_point.pipeline_settings.max_ngen,
         terminator=terminator,
+        continue_opt=continue_opt,
     )
 
 
@@ -259,5 +263,5 @@ def store_best_model(
         scores=scores,
         params=params,
         optimizer_name=access_point.pipeline_settings.optimizer,
-        seed=run_metadata.get("seed", None),
+        seed=run_metadata.get("seed", 0),
     )
