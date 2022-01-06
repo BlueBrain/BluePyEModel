@@ -238,6 +238,12 @@ def remove_soma(sim=None, icell=None):
     logger.debug("Remove soma")
 
 
+def isolate_dendrite(sim=None, icell=None):
+    """Remove everything except the soma."""
+    remove_soma(sim=sim, icell=icell)
+    remove_axon(sim=sim, icell=icell)
+
+
 def isolate_soma(sim=None, icell=None):
     """Remove everything except the soma."""
     for section in icell.axonal:
