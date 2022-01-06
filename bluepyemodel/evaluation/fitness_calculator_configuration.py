@@ -5,6 +5,7 @@ from copy import deepcopy
 import numpy
 
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
+from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import seclist_to_sec
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
@@ -371,13 +372,7 @@ class FitnessCalculatorConfiguration:
 
         for protocol_name, protocol in protocols.items():
 
-            if protocol_name in PRE_PROTOCOLS + [
-                "RMP",
-                "Rin",
-                "RinHoldcurrent",
-                "Main",
-                "ThresholdDetection",
-            ]:
+            if protocol_name in PRE_PROTOCOLS + LEGACY_PRE_PROTOCOLS:
                 continue
 
             self._add_legacy_protocol(protocol_name, protocol)

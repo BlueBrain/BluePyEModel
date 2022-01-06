@@ -10,6 +10,8 @@ from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
+from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
@@ -432,10 +434,17 @@ class LocalAccessPoint(DataAccessPoint):
         legacy = "efeatures" not in config_dict and "protocols" not in config_dict
 
         if legacy:
+
             efeatures = self._get_json("features")
             protocols = self._get_json("protocol")
 
-            from_bpe = "stimuli" not in next(iter(protocols.values()))
+            from_bpe = False
+            for protocol_name, protocol in protocols.items():
+                if protocol_name in PRE_PROTOCOLS + LEGACY_PRE_PROTOCOLS:
+                    continue
+                if "stimuli" not in protocol:
+                    from_bpe = True
+                    break
 
             configuration = FitnessCalculatorConfiguration(
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
