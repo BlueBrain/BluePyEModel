@@ -25,6 +25,7 @@ soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index
 ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
 
 PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
+LEGACY_PRE_PROTOCOLS = ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]
 
 seclist_to_sec = {
     "somatic": "soma",
