@@ -203,20 +203,29 @@ def remove_soma(sim=None, icell=None):
     and with diameter 1e-6. BluePyOp requires a soma for
     parameter scaling, and NEURON fails is the soma size is =0.
     """
-    for section in icell.basal:
-        if section.parentseg().sec in list(icell.soma):
-            sim.neuron.h.disconnect(section)
-            section.connect(icell.axon[0])
+    sec = list(icell.basal)[0]
+    for i, section in enumerate(icell.basal):
+        if i > 0:
+            if section.parentseg().sec in list(icell.soma):
+                sim.neuron.h.disconnect(section)
+                section.connect(sec)
 
     for section in icell.apical:
         if section.parentseg().sec in list(icell.soma):
             sim.neuron.h.disconnect(section)
-            section.connect(icell.axon[0])
+            section.connect(sec)
 
     for section in icell.soma:
         section.diam = ZERO
+        section.L = ZERO
 
     logger.debug("Remove soma")
+
+
+def isolate_dendrite(sim=None, icell=None):
+    """Remove everything except the soma."""
+    remove_soma(sim=sim, icell=icell)
+    remove_axon(sim=sim, icell=icell)
 
 
 def isolate_soma(sim=None, icell=None):
@@ -232,14 +241,11 @@ def isolate_soma(sim=None, icell=None):
 
 
 def remove_axon(sim=None, icell=None):  # pylint: disable=unused-argument
-    """Remove the axon.
-
-    Removing the axonal branches breaks the code, so we set it to ZERO
-    """
+    """Remove the axon."""
     for section in icell.myelin:
         sim.neuron.h.delete_section(sec=section)
     for section in icell.axonal:
-        section.diam = ZERO
+        sim.neuron.h.delete_section(sec=section)
 
 
 def isolate_axon(sim=None, icell=None):
@@ -249,6 +255,8 @@ def isolate_axon(sim=None, icell=None):
     for section in icell.apical:
         sim.neuron.h.delete_section(sec=section)
     for section in icell.soma:
+        sim.neuron.h.delete_section(sec=section)
+    for section in icell.myelin:
         sim.neuron.h.delete_section(sec=section)
 
 

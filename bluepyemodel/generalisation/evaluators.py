@@ -14,6 +14,8 @@ from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.evaluation.evaluator import define_main_protocol
 from bluepyemodel.evaluation.evaluator import get_simulator
 from bluepyemodel.evaluation.modifiers import isolate_axon
+from bluepyemodel.evaluation.modifiers import isolate_soma
+from bluepyemodel.evaluation.modifiers import isolate_dendrite
 from bluepyemodel.evaluation.modifiers import remove_axon
 from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
 from bluepyemodel.evaluation.modifiers import synth_axon
@@ -199,6 +201,92 @@ def _rin_evaluation(
     return {key: responses["bpo_rin"]}
 
 
+def evaluate_dendrite_rin(
+    morphs_combos_df,
+    emodel_db,
+    morphology_path="morphology_path",
+    resume=False,
+    db_url="eval_db.sql",
+    parallel_factory=None,
+):
+    """Compute the input resistance of the ais (axon).
+
+    Args:
+        morphs_combos_df (DataFrame): each row reprensents a computation
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
+        morphology_path (str): entry from dataframe with morphology paths
+        resume (bool): if True, it will use only compute the empty rows of the database,
+            if False, it will ecrase or generate the database
+        db_url (str): filename/url for the sql database
+        parallel_factory (ParallelFactory): parallel factory instance
+
+    Returns:
+        pandas.DataFrame: original combos with computed rin of ais
+    """
+    key = "rin_dendrite"
+
+    rin_ais_evaluation = partial(
+        _rin_evaluation,
+        emodel_db=emodel_db,
+        morph_modifiers=[isolate_dendrite],
+        key=key,
+        morphology_path=morphology_path,
+        ais_recording='basal',
+    )
+    return evaluate(
+        morphs_combos_df,
+        rin_ais_evaluation,
+        new_columns=[[key, 0.0]],
+        resume=resume,
+        parallel_factory=parallel_factory,
+        db_url=db_url,
+    )
+
+
+
+def evaluate_soma_rin(
+    morphs_combos_df,
+    emodel_db,
+    morphology_path="morphology_path",
+    resume=False,
+    db_url="eval_db.sql",
+    parallel_factory=None,
+):
+    """Compute the input resistance of the ais (axon).
+
+    Args:
+        morphs_combos_df (DataFrame): each row reprensents a computation
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
+        morphology_path (str): entry from dataframe with morphology paths
+        resume (bool): if True, it will use only compute the empty rows of the database,
+            if False, it will ecrase or generate the database
+        db_url (str): filename/url for the sql database
+        parallel_factory (ParallelFactory): parallel factory instance
+
+    Returns:
+        pandas.DataFrame: original combos with computed rin of ais
+    """
+    key = "rin_soma"
+
+    rin_ais_evaluation = partial(
+        _rin_evaluation,
+        emodel_db=emodel_db,
+        morph_modifiers=[isolate_soma],
+        key=key,
+        morphology_path=morphology_path,
+        ais_recording=False,
+    )
+    return evaluate(
+        morphs_combos_df,
+        rin_ais_evaluation,
+        new_columns=[[key, 0.0]],
+        resume=resume,
+        parallel_factory=parallel_factory,
+        db_url=db_url,
+    )
+
+
+
 def evaluate_ais_rin(
     morphs_combos_df,
     emodel_db,
@@ -279,6 +367,51 @@ def evaluate_somadend_rin(
         parallel_factory=parallel_factory,
         db_url=db_url,
     )
+
+
+def evaluate_rho(
+    morphs_combos_df,
+    emodel_db,
+    morphology_path="morphology_path",
+    resume=False,
+    db_url="eval_db.sql",
+    parallel_factory=None,
+):
+    """Compute the input resistances and rho factor.
+
+    Args:
+        morphs_combos_df (DataFrame): each row reprensents a computation
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
+        morphology_path (str): entry from dataframe with morphology paths
+        rersume (bool): if True, it will use only compute the empty rows of the database,
+            if False, it will ecrase or generate the database
+        db_url (str): filename/url for the sql database
+        parallel_factory (ParallelFactory): parallel factory instance
+
+    Returns:
+        pandas.DataFrame: original combos with computed rho axon
+    """
+    morphs_combos_df = evaluate_soma_rin(
+        morphs_combos_df,
+        emodel_db,
+        morphology_path=morphology_path,
+        resume=resume,
+        db_url=db_url,
+        parallel_factory=parallel_factory,
+    )
+
+    morphs_combos_df = evaluate_dendrite_rin(
+        morphs_combos_df,
+        emodel_db,
+        morphology_path=morphology_path,
+        resume=resume,
+        db_url=db_url,
+        parallel_factory=parallel_factory,
+    )
+
+    morphs_combos_df["rho"] = morphs_combos_df.rin_soma/ morphs_combos_df.rin_dendrite
+    return morphs_combos_df
+
 
 
 def evaluate_rho_axon(

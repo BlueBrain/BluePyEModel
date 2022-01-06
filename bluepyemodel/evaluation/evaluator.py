@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
+basal_loc = NrnSeclistCompLocation(name="soma", seclist_name="basal", sec_index=0, comp_x=0.5)
 
 PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
 LEGACY_PRE_PROTOCOLS = ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]
@@ -217,9 +218,10 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     )
 
     if target_rin:
-
-        location = soma_loc if not ais_recording else ais_loc
-
+        if isinstance(ais_recording, str):
+            location = eval(f"{ais_recording}_loc")
+        else:
+            location = soma_loc if not ais_recording else ais_loc
         return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
 
     raise Exception("Couldn't find the Rin feature associated to the Rin protocol")
