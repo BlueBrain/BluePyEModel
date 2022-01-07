@@ -56,7 +56,8 @@ def test_validation(db):
 
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
-
+    
+    db.get_mechanisms_directory = lambda: None
     emodels = validate(
         access_point=db,
         mapper=map,

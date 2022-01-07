@@ -356,23 +356,33 @@ class LocalAccessPoint(DataAccessPoint):
         with open(path, "w") as f:
             json.dump(configuration.as_dict(), f, indent=2)
 
+    def get_mechanisms_directory(self):
+        """Return the path to the directory containing the mechanisms for the current emodel"""
+
+        if self.emodel_dir:
+            mechanisms_directory = self.emodel_dir / "mechanisms"
+        else:
+            mechanisms_directory = Path("./") / "mechanisms"
+
+        if mechanisms_directory.is_dir():
+            return mechanisms_directory.resolve()
+
+        return None
+
     def get_available_mechanisms(self):
         """Get the list of names of the available mechanisms"""
 
         mechs = []
 
-        if self.emodel_dir:
-            mech_dir = self.emodel_dir / "mechanisms"
-        else:
-            mech_dir = Path("./") / "mechanisms"
+        mech_dir = self.get_mechanisms_directory()
 
-        if not mech_dir.is_dir():
+        if mech_dir is None:
             return None
 
-        for mech_file in glob.glob(str(mech_dir / "*.mod")):
+        for mech_file in glob.glob(str(Path(mech_dir) / "*.mod")):
             mechs.append(Path(mech_file).stem)
 
-        return set(mechs)
+        return [{"name": m, "version": None} for m in set(mechs)]
 
     def get_available_morphologies(self):
         """Get the list of names of available morphologies"""
@@ -504,6 +514,7 @@ class LocalAccessPoint(DataAccessPoint):
 
     def format_emodel_data(self, model_data):
         """Format emodel data."""
+
         out_data = {
             "emodel": self.emodel,
             "fitness": model_data.get("score", None),

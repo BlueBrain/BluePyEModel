@@ -87,6 +87,9 @@ class DataAccessPoint:
                                             'path': 'morph_path'}
         """
 
+    def get_mechanisms_directory(self):
+        """Return the path to the directory containing the mechanisms for the current emodel"""
+
     def download_mechanisms(self):
         """Download the mod files when not already downloaded"""
 

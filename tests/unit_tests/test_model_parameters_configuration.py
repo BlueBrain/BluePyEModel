@@ -6,7 +6,13 @@ from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 
 @pytest.fixture
 def configuration():
-    available_mechs = ["test_mechanism", "test_mechanism2", "test_mechanism3"]
+
+    available_mechs = [
+        {"name": "test_mechanism", "version": None},
+        {"name": "test_mechanism2", "version": None},
+        {"name": "test_mechanism3", "version": None}
+    ]
+
     available_morphologies = ["C060114A5"]
     config = NeuronModelConfiguration(
         configuration_name="Test",
