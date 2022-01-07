@@ -27,9 +27,9 @@ class NeuronModelConfiguration:
 
         Args:
             configuration_name (str): name of the configuration, can be any string.
-            available_mechanisms (list of str): list of the names of the available mechanisms in
-                the "./mechanisms" directory for the local access point or on Nexus for the
-                Nexus access point.
+            available_mechanisms (list of dict): list of the names (and optionally versions) of
+                the available mechanisms in the "./mechanisms" directory for the local access
+                point or on Nexus for the Nexus access point.
             available_morphologies (list of str): list of the names of the available morphology in
                 the "./morphology" directory for the local access point or on Nexus for the
                 Nexus access point.
@@ -47,14 +47,13 @@ class NeuronModelConfiguration:
 
         self.available_mechanisms = available_mechanisms
         if self.available_mechanisms is not None:
-            self.available_mechanisms = set(self.available_mechanisms)
-            self.available_mechanisms.add("pas")
+            self.available_mechanisms.append({"name": "pas"})
 
         self.available_morphologies = available_morphologies
 
     @property
     def mechanism_names(self):
-        """Returns the names of all the mechanisms used in the model"""
+        """Returns the names and versions of all the mechanisms used in the model"""
 
         return {m.name for m in self.mechanisms}
 
@@ -246,18 +245,24 @@ class NeuronModelConfiguration:
             if mechanism:
                 self.add_mechanism(mechanism, loc, stochastic=stochastic)
 
-    def is_mechanism_available(self, mechanism_name):
+    def is_mechanism_available(self, mechanism_name, version=None):
         """Is the mechanism part of the mechanisms available"""
 
         if self.available_mechanisms is not None:
+
             for mech in self.available_mechanisms:
-                if mechanism_name in mech:
+
+                if version is not None:
+                    if mechanism_name in mech['name'] and version == mech['version']:
+                        return True
+                elif mechanism_name in mech['name']:
                     return True
+
             return False
 
         return True
 
-    def add_mechanism(self, mechanism_name, locations, stochastic=None):
+    def add_mechanism(self, mechanism_name, locations, stochastic=None, version=None):
         """Add a mechanism to the configuration. This function should rarely be called directly as
          mechanisms are added automatically when using add_parameters. But it might be needed if a
          mechanism is not associated to any parameters.
@@ -267,20 +272,21 @@ class NeuronModelConfiguration:
              locations (str or list of str): sections of the neuron on which this mechanism
                  will be instantiated.
              stochastic (bool): Can the mechanisms behave stochastically (optional).
+             version (str): version id of the mod file.
         """
 
         locations = self._format_locations(locations)
 
         for loc in locations:
 
-            if not self.is_mechanism_available(mechanism_name):
+            if not self.is_mechanism_available(mechanism_name, version):
                 raise Exception(
                     f"You are trying to add mechanism {mechanism_name} but it is not available"
                     " on Nexus or local."
                 )
 
             tmp_mechanism = MechanismConfiguration(
-                name=mechanism_name, location=loc, stochastic=stochastic
+                name=mechanism_name, location=loc, stochastic=stochastic, version=version
             )
 
             # Check if mech is not already part of the configuration

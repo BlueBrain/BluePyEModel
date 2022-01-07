@@ -31,10 +31,14 @@ def db(api_config):
 
 @pytest.fixture
 def evaluator(db):
+
+    cwd = os.getcwd()
+    os.chdir(str(DATA))
     if pathlib.Path("x86_64").is_dir():
         os.popen("rm -rf x86_64").read()
-    os.popen(f"nrnivmodl {DATA}/mechanisms").read()
-
+    os.popen(f"nrnivmodl mechanisms").read()
+    os.chdir(cwd)
+    
     return get_evaluator_from_access_point(access_point=db)
 
 

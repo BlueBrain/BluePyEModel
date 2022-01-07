@@ -74,7 +74,7 @@ class ModelConfigurator:
                 "No gene mapping name informed. Only parameters registered by the user"
                 " will be used."
             )
-            return [], [], []
+            return [], [], [], []
 
         _, gene_map_path = self.access_point.load_channel_gene_expression(
             self.access_point.pipeline_settings.name_gene_map
@@ -83,11 +83,11 @@ class ModelConfigurator:
         ic_map_path = self.access_point.load_ic_map()
 
         selector = icselector.ICSelector(ic_map_path, gene_map_path)
-        parameters, mechanisms, distributions, _ = selector.get_cell_config_from_ttype(
+        parameters, mechanisms, distributions, nexus_keys = selector.get_cell_config_from_ttype(
             self.access_point.ttype
         )
 
-        return parameters, mechanisms, distributions
+        return parameters, mechanisms, distributions, nexus_keys
 
     def get_gene_based_configuration(self, configuration_name):
         """Overwrite the currently loaded configuration with a new configuration initiated from
@@ -99,9 +99,9 @@ class ModelConfigurator:
             available_morphologies=self.access_point.get_available_morphologies(),
         )
 
-        selector_params, selector_mechs, selector_distrs = self.get_gene_based_parameters()
+        params, mechs, distributions, nexus_keys = self.get_gene_based_parameters()
 
-        for d in selector_distrs:
+        for d in distributions:
             if d["name"] in ["uniform", "constant"]:
                 continue
             function = d["function"] if "function" in d else d["fun"]
@@ -109,7 +109,7 @@ class ModelConfigurator:
                 d["name"], function, d.get("parameters", None), d.get("soma_ref_location", 0.5)
             )
 
-        for p in selector_params:
+        for p in params:
             self.configuration.add_parameter(
                 p["name"],
                 locations=p["location"],
@@ -117,9 +117,11 @@ class ModelConfigurator:
                 mechanism=p.get("mechanism", "global"),
             )
 
-        for m in selector_mechs:
+        for m in mechs:
+            version = next((k['modelid'] for k in nexus_keys if k['name'] == m['name']), None)
             self.configuration.add_mechanism(
                 m["name"],
                 locations=m["location"],
                 stochastic=m.get("stochastic", None),
+                version=version
             )

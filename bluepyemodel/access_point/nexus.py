@@ -11,6 +11,7 @@ from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.emodel_pipeline.utils import run_metadata_as_string
 from bluepyemodel.emodel_pipeline.utils import yesno
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
@@ -304,31 +305,44 @@ class NexusAccessPoint(DataAccessPoint):
     def download_mechanisms(self, mechanisms):
         """Download the mod files if not already downloaded"""
 
+        mechanisms_directory = self.get_mechanisms_directory()
+
         for mechanism in mechanisms:
 
-            if mechanism == "pas":
+            if mechanism.name == "pas":
                 continue
 
-            resources = self.access_point.fetch(
-                {"type": "SubCellularModelScript", "name": mechanism}, use_version=False
-            )
+            if mechanism.version is not None:
+                resource = self.access_point.fetch_one(
+                    {
+                        "type": "SubCellularModelScript",
+                        "name": mechanism.name,
+                        "version": mechanism.version
+                    },
+                    use_version=False
+                )
 
-            # Genetic channel can have several versions, we want the most recent one:
-            if len(resources) > 1 and all(hasattr(r, "version") for r in resources):
-                resource = sorted(resources, key=lambda x: x.version)[-1]
             else:
-                resource = resources[0]
+                resources = self.access_point.fetch(
+                    {"type": "SubCellularModelScript", "name": mechanism.name}, use_version=False
+                )
 
-            mode_file_name = f"{mechanism}.mod"
-            if os.path.isfile(f"./mechanisms/{mode_file_name}"):
+                # If version not specified, we take the most recent one:
+                if len(resources) > 1 and all(hasattr(r, "version") for r in resources):
+                    resource = sorted(resources, key=lambda x: x.version)[-1]
+                else:
+                    resource = resources[0]
+
+            mod_file_name = f"{mechanism.name}.mod"
+            if os.path.isfile(str(mechanisms_directory / mod_file_name)):
                 continue
 
-            filepath = self.access_point.download(resource.id, "./mechanisms/")
+            filepath = self.access_point.download(resource.id, str(mechanisms_directory))
 
             # Rename the file in case it's different from the name of the resource
             filepath = pathlib.Path(filepath)
             if filepath.stem != mechanism:
-                filepath.rename(pathlib.Path(filepath.parent / mode_file_name))
+                filepath.rename(pathlib.Path(filepath.parent / mod_file_name))
 
     def download_morphology(self, name):
         """Download a morphology by name if not already downloaded"""
@@ -1081,12 +1095,35 @@ class NexusAccessPoint(DataAccessPoint):
             resource, filters_existance={"type": "EModelConfiguration", "name": resource["name"]}
         )
 
+    def get_mechanisms_directory(self):
+        """Return the path to the directory containing the mechanisms for the current emodel"""
+
+        directory_name = run_metadata_as_string(
+            emodel=self.emodel,
+            seed=None,
+            ttype=self.ttype,
+            iteration_tag=self.iteration_tag
+        )
+
+        mechanisms_directory = pathlib.Path("./nexus_tmp/") / directory_name / "mechanisms"
+
+        return mechanisms_directory.resolve()
+
     def get_available_mechanisms(self):
         """Get the list of names of the available mechanisms"""
 
         resources = self.access_point.fetch({"type": "SubCellularModelScript"}, use_version=False)
 
-        return {r.name for r in resources}
+        available_mechanisms = []
+        for r in resources:
+            available_mechanisms.append(
+                {
+                    'name': r.name,
+                    'version': r.version if hasattr(r, "version") else None
+                }
+            )
+
+        return available_mechanisms
 
     def get_available_morphologies(self):
         """Get the list of names of the available morphologies"""
@@ -1124,7 +1161,7 @@ class NexusAccessPoint(DataAccessPoint):
         )
 
         model_configuration.init_from_dict(config_dict)
-        self.download_mechanisms(model_configuration.mechanism_names)
+        self.download_mechanisms(model_configuration.mechanisms)
 
         return model_configuration
 

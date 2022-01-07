@@ -141,4 +141,5 @@ def get_evaluator_from_access_point(
         dt=dt,
         threshold_based_evaluator=access_point.pipeline_settings.threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
+        mechanisms_directory=access_point.get_mechanisms_directory()
     )

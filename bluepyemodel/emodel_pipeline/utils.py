@@ -29,14 +29,16 @@ def yesno(question):
     return False
 
 
-def run_metadata_as_string(emodel, seed, ttype=None, iteration_tag=None):
+def run_metadata_as_string(emodel, seed=None, ttype=None, iteration_tag=None):
     """"""
 
-    s = f"emodel={emodel}__seed={seed}"
+    s = f"emodel={emodel}"
 
-    if iteration_tag:
+    if seed is not None:
+        s += f"__seed={seed}"
+    if iteration_tag is not None:
         s += f"__iteration_tag={iteration_tag}"
-    if ttype:
+    if ttype is not None:
         ttype_formatted = ttype.replace("/", "")
         s += f"__ttype={ttype_formatted}"
 

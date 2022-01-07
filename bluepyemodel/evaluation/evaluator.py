@@ -1,5 +1,6 @@
 """Evaluator module."""
 import logging
+import pathlib
 
 from bluepyopt.ephys.evaluators import CellEvaluator
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
@@ -381,13 +382,14 @@ def define_fitness_calculator(features):
     return ObjectivesCalculator(objectives)
 
 
-def get_simulator(stochasticity, cell_model, dt=None):
+def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None):
     """Get NrnSimulator
 
     Args:
         stochasticity (bool): allow the use of simulator for stochastic channels
         cell_model (CellModel): used to check if any stochastic channels are present
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
+        mechanisms_directory (str or Path): path to the directory containing the mechanisms
     """
 
     if stochasticity:
@@ -400,10 +402,12 @@ def get_simulator(stochasticity, cell_model, dt=None):
             "non-stochastic."
         )
 
-    if dt is None:
-        return NrnSimulator()
+    mechs_parent_dir = str(pathlib.Path(mechanisms_directory).parents[0])
 
-    return NrnSimulator(dt=dt, cvode_active=False)
+    if dt is None:
+        return NrnSimulator(mechanisms_directory=mechs_parent_dir)
+
+    return NrnSimulator(dt=dt, cvode_active=False, mechanisms_directory=mechs_parent_dir)
 
 
 def create_evaluator(
@@ -418,6 +422,7 @@ def create_evaluator(
     dt=None,
     threshold_based_evaluator=True,
     strict_holding_bounds=True,
+    mechanisms_directory=None
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -443,12 +448,13 @@ def create_evaluator(
         threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
             by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is current is outside
+        mechanisms_directory (str or Path): path to the directory containing the mechanisms
 
     Returns:
         CellEvaluator
     """
 
-    simulator = get_simulator(stochasticity, cell_model, dt)
+    simulator = get_simulator(stochasticity, cell_model, dt, mechanisms_directory)
 
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
