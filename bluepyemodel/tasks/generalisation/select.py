@@ -110,7 +110,7 @@ class SelectCombos(BaseTask):
         megated_scores_df = pd.read_csv(self.input()["megated"].path)
 
         selected_combos_df["selected"] = megated_scores_df.all(axis=1)
-        # pylint: disable=protected-access
+        ensure_dir(self.output().get_prefix() / self.best_emodel_path)
         select_best_emodel(selected_combos_df, self.output().get_prefix() / self.best_emodel_path)
         ensure_dir(self.output().path)
         selected_combos_df.to_csv(self.output().path, index=False)

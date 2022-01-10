@@ -6,6 +6,8 @@ from bluepyparallel import init_parallel_factory
 
 from bluepyemodel.generalisation.evaluators import evaluate_combos_rho
 from bluepyemodel.generalisation.utils import get_scores
+from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
+from bluepyemodel.tasks.generalisation.ais_model import SomaResistanceModel
 from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAis
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import EvaluationLocalTarget

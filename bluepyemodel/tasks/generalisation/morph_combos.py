@@ -1,4 +1,6 @@
 """Task to create combos from morphologies dataframe."""
+import json
+
 import luigi
 import pandas as pd
 import yaml
@@ -6,6 +8,7 @@ import yaml
 from bluepyemodel.generalisation.combodb import ComboDB
 from bluepyemodel.generalisation.combodb import add_for_optimisation_flag
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
+from bluepyemodel.tasks.generalisation.config import EmodelAPIConfig
 from bluepyemodel.tasks.generalisation.config import MorphComboLocalTarget
 from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
@@ -78,8 +81,15 @@ class CreateMorphCombosDF(BaseTask):
 
         with open(self.cell_composition_path, "r") as cell_file:
             cell_composition = yaml.safe_load(cell_file)
+        with open(self.emodel_etype_map_path, "r") as map_file:
+            emodel_etype_map = json.load(map_file)
+
         morphs_combos_df = ComboDB.from_dataframe(
-            morphs_df, cell_composition, self.emodel_db
+            morphs_df,
+            cell_composition,
+            emodel_etype_map,
+            self.emodel_db,
+            emodels=EmodelAPIConfig().emodels,
         ).combo_df
         morphs_combos_df = add_for_optimisation_flag(self.emodel_db, morphs_combos_df)
 

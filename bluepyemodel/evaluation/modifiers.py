@@ -12,6 +12,20 @@ def taper_function(distance, strength, taper_scale, terminal_diameter, scale=1.0
     return strength * np.exp(-distance / taper_scale) + terminal_diameter * scale
 
 
+def synth_soma(sim=None, icell=None, params=None, scale=1.0):
+    """Synthesize a simple soma with given scale and parameters."""
+    L = 2.0 * params["soma_radius"]
+    area = params["soma_surface"]
+    nseg = params.get("nseg", 10)
+    diam = area / (np.pi * L) * nseg
+
+    soma_sec = icell.soma[0]
+    soma_sec.pt3dclear()
+    soma_sec.L = L
+    soma_sec.diam = scale * diam
+    soma_sec.nseg = nseg
+
+
 def synth_axon(sim=None, icell=None, params=None, scale=1.0):
     """Replace axon with tappered axon initial segment.
 
@@ -136,7 +150,6 @@ def replace_axon_with_taper(sim=None, icell=None):
 
     diams = []
     lens = []
-
     count = 0
     for section in icell.axonal:
         L = section.L

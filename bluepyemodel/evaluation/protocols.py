@@ -586,7 +586,7 @@ class MainProtocol(ephys.protocols.Protocol):
 
         self.threshold_protocols = threshold_protocols
         self.other_protocols = other_protocols
-        self.score_threshold = score_threshold
+        self.score_threshold = 40  # score_threshold
 
         self.RMP_protocol = rmp_protocol
         self.rin_protocol = rin_protocol

@@ -13,11 +13,15 @@ from bluepyemodel.generalisation.plotting import plot_ais_taper_models
 from bluepyemodel.generalisation.plotting import plot_feature_select
 from bluepyemodel.generalisation.plotting import plot_feature_summary_select
 from bluepyemodel.generalisation.plotting import plot_frac_exceptions
+from bluepyemodel.generalisation.plotting import plot_soma_resistance_models
+from bluepyemodel.generalisation.plotting import plot_soma_shape_models
 from bluepyemodel.generalisation.plotting import plot_summary_select
 from bluepyemodel.generalisation.plotting import plot_synth_ais_evaluations
 from bluepyemodel.generalisation.plotting import plot_target_rho_axon
 from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
 from bluepyemodel.tasks.generalisation.ais_model import AisShapeModel
+from bluepyemodel.tasks.generalisation.ais_model import SomaResistanceModel
+from bluepyemodel.tasks.generalisation.ais_model import SomaShapeModel
 from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import PlotLocalTarget
@@ -30,6 +34,53 @@ from bluepyemodel.tasks.generalisation.select import SelectGenericCombos
 from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
+
+
+class PlotSomaShapeModel(BaseTask):
+    """Plot the soma shape models."""
+
+    target_path = luigi.Parameter(default="soma_shape_models.pdf")
+
+    def requires(self):
+        """ """
+        return SomaShapeModel()
+
+    def run(self):
+        """ """
+        ensure_dir(self.output().path)
+        with self.input().open() as soma_model_file:
+            plot_soma_shape_models(yaml.safe_load(soma_model_file), self.output().path)
+
+    def output(self):
+        """ """
+        return PlotLocalTarget(self.target_path)
+
+
+class PlotSomaResistanceModel(BaseTask):
+    """Plot the soma shape models."""
+
+    emodel = luigi.Parameter()
+    target_path = luigi.Parameter(default="resistance_models/soma_resistance_model.pdf")
+
+    def requires(self):
+        """ """
+        return SomaResistanceModel(emodel=self.emodel)
+
+    def run(self):
+        """ """
+        _task = SomaResistanceModel(emodel=self.emodel)
+        fit_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.fit_df_path)))
+        ensure_dir(self.output().path)
+        with self.input().open() as soma_models_file:
+            plot_soma_resistance_models(
+                fit_df,
+                yaml.safe_load(soma_models_file),
+                pdf_filename=self.output().path,
+            )
+
+    def output(self):
+        """ """
+        return PlotLocalTarget(self.add_emodel(self.target_path))
 
 
 class PlotAisShapeModel(BaseTask):

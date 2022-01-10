@@ -2,6 +2,8 @@
 import luigi
 from luigi_tools.target import OutputLocalTarget
 
+from .utils import get_database
+
 
 class EmodelAPIConfig(luigi.Config):
     """Configuration of emodel api database."""
@@ -9,6 +11,14 @@ class EmodelAPIConfig(luigi.Config):
     api = luigi.Parameter(default="local")
     emodel_dir = luigi.Parameter(default="config")
     final_path = luigi.Parameter(default=None)
+    emodels = luigi.ListParameter(default=None)
+
+    def __init__(self, *args, **kwargs):
+        """Init."""
+        super().__init__(*args, **kwargs)
+        if self.emodels is None:
+            emodel_db = get_database(self)
+            self.emodels = list(emodel_db.get_emodel_names().keys())
 
 
 class SelectConfig(luigi.Config):
@@ -104,23 +114,13 @@ def reset_default_prefixes():
     # pylint: disable=protected-access
 
     OutputLocalTarget.set_default_prefix(PathConfig().result_path)
-    ModelLocalTarget.set_default_prefix(OutputLocalTarget._prefix / PathConfig().model_subpath)
-
-    MorphComboLocalTarget.set_default_prefix(
-        OutputLocalTarget._prefix / PathConfig().morphcombo_subpath
-    )
-
-    EvaluationLocalTarget.set_default_prefix(
-        OutputLocalTarget._prefix / PathConfig().evaluation_subpath
-    )
-
-    SynthesisLocalTarget.set_default_prefix(
-        OutputLocalTarget._prefix / PathConfig().synthesis_subpath
-    )
-
-    GatherLocalTarget.set_default_prefix(OutputLocalTarget._prefix / PathConfig().gather_subpath)
-    SelectLocalTarget.set_default_prefix(OutputLocalTarget._prefix / PathConfig().select_subpath)
-    PlotLocalTarget.set_default_prefix(OutputLocalTarget._prefix / PathConfig().plot_subpath)
+    ModelLocalTarget.set_default_prefix(PathConfig().model_subpath)
+    MorphComboLocalTarget.set_default_prefix(PathConfig().morphcombo_subpath)
+    EvaluationLocalTarget.set_default_prefix(PathConfig().evaluation_subpath)
+    SynthesisLocalTarget.set_default_prefix(PathConfig().synthesis_subpath)
+    GatherLocalTarget.set_default_prefix(PathConfig().gather_subpath)
+    SelectLocalTarget.set_default_prefix(PathConfig().select_subpath)
+    PlotLocalTarget.set_default_prefix(PathConfig().plot_subpath)
 
 
 reset_default_prefixes()

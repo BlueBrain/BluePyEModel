@@ -103,12 +103,12 @@ def plot_ais_taper(data, model, ax=None):
 
     ax.plot(
         data["bins"],
-        taper_function(np.array(data["bins"]), *model["AIS"]["popt"][1:]),
+        taper_function(np.array(data["bins"]), *model["AIS_model"]["popt"][1:]),
         c="C1",
     )
     ax.set_title(
         "Taper strength: {:.3}, \n scale: {:.3},\n terminal diameter: {:.3}".format(
-            *model["AIS"]["popt"][1:]
+            *model["AIS_model"]["popt"][1:]
         ),
         fontsize=10,
         loc="left",
@@ -117,30 +117,49 @@ def plot_ais_taper(data, model, ax=None):
         fig.savefig("ais_diameters.png", bbox_inches="tight")
 
 
+def plot_soma_shape_models(models, pdf_filename="soma_shape_models.pdf"):
+    """Plot soma shape models (surface area and radii)."""
+    models = models["all"]
+    with PdfPages(pdf_filename) as pdf:
+        plt.figure()
+        plt.hist(models["soma_data"]["soma_surfaces"], bins=20, label="data")
+        plt.axvline(models["soma_model"]["soma_surface"], label="model", c="k")
+        plt.xlabel("soma surface (NEURON)")
+        plt.legend()
+        pdf.savefig()
+
+        plt.figure()
+        plt.hist(models["soma_data"]["soma_radii"], bins=20, label="data")
+        plt.axvline(models["soma_model"]["soma_radius"], label="model", c="k")
+        plt.xlabel("soma radii (NeuroM)")
+        plt.legend()
+        pdf.savefig()
+
+
 def plot_ais_taper_models(models, pdf_filename="AIS_models.pdf"):
     """Create a pdf with all models of AIS and datapoints."""
     pdf = PdfPages(pdf_filename)
     for mtype in models:
         fig = plt.figure()
         fig.suptitle(mtype)
-        plot_ais_taper(models[mtype]["data"], models[mtype], ax=plt.gca())
+        plot_ais_taper(models[mtype]["AIS_data"], models[mtype], ax=plt.gca())
         pdf.savefig()
         plt.close()
 
     plt.figure()
     dists = np.linspace(0, 60, 100)
     plt.plot(
-        models["all"]["data"]["distances"],
-        models["all"]["data"]["diameters"],
+        models["all"]["AIS_data"]["distances"],
+        models["all"]["AIS_data"]["diameters"],
         ".",
         c="0.5",
         markersize=0.5,
     )
     for mtype, model in models.items():
-        plt.plot(dists, taper_function(dists, *model["AIS"]["popt"][1:]), lw=0.5, c="k")
+        plt.plot(dists, taper_function(dists, *model["AIS_model"]["popt"][1:]), lw=0.5, c="k")
     plt.plot(
         dists,
-        taper_function(dists, *models["all"]["AIS"]["popt"][1:]),
+        taper_function(dists, *models["all"]["AIS_model"]["popt"][1:]),
         lw=2,
         c="r",
         label="model with all cells",
@@ -154,21 +173,35 @@ def plot_ais_taper_models(models, pdf_filename="AIS_models.pdf"):
     pdf.close()
 
 
-def plot_ais_resistance_models(fit_df, ais_models, pdf_filename="scan_scales.pdf"):
+def plot_ais_resistance_models(fit_df, ais_models, pdf_filename="AIS_resistance_model.pdf"):
     """Plot the AIS resistance models."""
+    plot_resistance_models(fit_df, ais_models, pdf_filename=pdf_filename, tpe="ais")
+
+
+def plot_soma_resistance_models(fit_df, soma_models, pdf_filename="soma_resistance_model.pdf"):
+    """Plot the AIS resistance models."""
+    plot_resistance_models(fit_df, soma_models, pdf_filename=pdf_filename, tpe="soma")
+
+
+def plot_resistance_models(fit_df, models, pdf_filename="resistance_model.pdf", tpe="ais"):
+    """Plot the AIS resistance models."""
+    if tpe == "ais":
+        _tpe = "AIS"
+    else:
+        _tpe = tpe
     emodels = fit_df.emodel.unique()
     with PdfPages(pdf_filename) as pdf:
         for emodel in emodels:
-            for mtype in ais_models.keys():
+            for mtype in models.keys():
                 me_mask = fit_df.emodel == emodel
                 if mtype != "all":
                     me_mask = me_mask & (fit_df.mtype == mtype)
-                fit_df[me_mask].plot(x="AIS_scaler", y="rin_ais", marker="+")
+                fit_df[me_mask].plot(x=f"{_tpe}_scaler", y=f"rin_{tpe}", marker="+")
                 plt.plot(
-                    fit_df[me_mask].AIS_scaler,
+                    fit_df[me_mask][f"{_tpe}_scaler"],
                     10
-                    ** np.poly1d(ais_models[mtype]["resistance"][emodel]["polyfit_params"])(
-                        np.log10(fit_df[me_mask].AIS_scaler)
+                    ** np.poly1d(models[mtype]["resistance"][emodel]["polyfit_params"])(
+                        np.log10(fit_df[me_mask][f"{_tpe}_scaler"])
                     ),
                     "-o",
                     ms=0.5,
@@ -178,7 +211,7 @@ def plot_ais_resistance_models(fit_df, ais_models, pdf_filename="scan_scales.pdf
                 plt.xscale("log")
                 plt.legend()
                 plt.suptitle(mtype + "  " + emodel)
-                plt.ylabel("AIS input resistance")
+                plt.ylabel(f"{_tpe} input resistance")
 
                 pdf.savefig()
                 plt.close()
@@ -265,6 +298,19 @@ def plot_synth_ais_evaluations(
             ax = plt.gca()
 
             mask = morphs_combos_df.emodel == emodel
+            score_df = pd.DataFrame()
+            score_df["rho_axon"] = morphs_combos_df["rho_axon"]
+            import json
+
+            for score in json.loads(morphs_combos_df.loc[0, "scores_raw"]):
+                score_df[score] = morphs_combos_df["scores_raw"].apply(
+                    lambda s: json.loads(s)[score]
+                )
+            _df = score_df[mask & morphs_combos_df.for_optimisation]
+            _df = _df.set_index("rho_axon")
+            for i, d in zip(_df.index, _df.to_numpy()):
+                for _d in d:
+                    plt.plot(i, _d, "+")
             morphs_combos_df[mask & morphs_combos_df.for_optimisation].plot(
                 x="rho_axon",
                 y="median_score",
@@ -285,6 +331,12 @@ def plot_synth_ais_evaluations(
                     else:
                         me_mask_no_failed = me_mask
                         me_mask_failed = False * me_mask
+                    _df = score_df[me_mask_no_failed]
+                    _df = _df.sort_values(by="rho_axon")
+                    _df = _df.set_index("rho_axon")
+                    print(_df.std(axis=0))
+                    for score in _df.columns:
+                        plt.plot(_df.index, _df[score], "-.", lw=0.5)
 
                     morphs_combos_df[me_mask_no_failed].plot(
                         x="rho_axon",

@@ -14,11 +14,12 @@ from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.evaluation.evaluator import define_main_protocol
 from bluepyemodel.evaluation.evaluator import get_simulator
 from bluepyemodel.evaluation.modifiers import isolate_axon
-from bluepyemodel.evaluation.modifiers import isolate_soma
 from bluepyemodel.evaluation.modifiers import isolate_dendrite
+from bluepyemodel.evaluation.modifiers import isolate_soma
 from bluepyemodel.evaluation.modifiers import remove_axon
 from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
 from bluepyemodel.evaluation.modifiers import synth_axon
+from bluepyemodel.evaluation.modifiers import synth_soma
 from bluepyemodel.model.model import create_cell_model
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,13 @@ def _get_synth_modifiers(combo, morph_modifiers=None):
     """
     if morph_modifiers is None:
         morph_modifiers = []
+
+    if "soma_scaler" in combo and combo["soma_scaler"] is not None:
+        morph_modifiers.insert(
+            0,
+            partial(synth_soma, params=json.loads(combo["soma_model"]), scale=combo["soma_scaler"]),
+        )
+
     if "AIS_scaler" in combo and combo["AIS_scaler"] is not None:
         morph_modifiers.insert(
             0,
@@ -39,6 +47,7 @@ def _get_synth_modifiers(combo, morph_modifiers=None):
                 scale=combo["AIS_scaler"],
             ),
         )
+
     elif replace_axon_with_taper not in morph_modifiers:
         morph_modifiers.insert(0, replace_axon_with_taper)
     return morph_modifiers
@@ -231,7 +240,7 @@ def evaluate_dendrite_rin(
         morph_modifiers=[isolate_dendrite],
         key=key,
         morphology_path=morphology_path,
-        ais_recording='basal',
+        ais_recording="basal",
     )
     return evaluate(
         morphs_combos_df,
@@ -241,7 +250,6 @@ def evaluate_dendrite_rin(
         parallel_factory=parallel_factory,
         db_url=db_url,
     )
-
 
 
 def evaluate_soma_rin(
@@ -284,7 +292,6 @@ def evaluate_soma_rin(
         parallel_factory=parallel_factory,
         db_url=db_url,
     )
-
 
 
 def evaluate_ais_rin(
@@ -409,9 +416,8 @@ def evaluate_rho(
         parallel_factory=parallel_factory,
     )
 
-    morphs_combos_df["rho"] = morphs_combos_df.rin_soma/ morphs_combos_df.rin_dendrite
+    morphs_combos_df["rho"] = morphs_combos_df.rin_soma / morphs_combos_df.rin_dendrite
     return morphs_combos_df
-
 
 
 def evaluate_rho_axon(
@@ -492,12 +498,14 @@ def evaluate_combos_rho(
         db_url=str(db_url) + ".rho",
         parallel_factory=parallel_factory,
     )
+    from bluepyemodel.tools.misc_evaluators import feature_evaluation
 
-    morphs_combos_df = evaluate_scores(
+    # morphs_combos_df = evaluate_scores(
+    morphs_combos_df = feature_evaluation(
         morphs_combos_df,
         emodel_db,
-        save_traces=save_traces,
-        trace_folder=trace_folder,
+        # save_traces=save_traces,
+        # trace_folder=trace_folder,
         resume=resume,
         db_url=str(db_url) + ".scores",
         morphology_path=morphology_path,
