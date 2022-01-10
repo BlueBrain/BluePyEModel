@@ -24,7 +24,6 @@ from bluepyemodel.tasks.generalisation.plotting import PlotSomaResistanceModel
 from bluepyemodel.tasks.generalisation.plotting import PlotSomaShapeModel
 from bluepyemodel.tasks.generalisation.plotting import PlotSurfaceComparison
 from bluepyemodel.tasks.generalisation.plotting import PlotSynthesisEvaluation
-from bluepyemodel.tasks.generalisation.plotting import PlotTargetRhoAxon
 from bluepyemodel.tasks.generalisation.select import ApplyMegating
 from bluepyemodel.tasks.generalisation.select import SelectCombos
 from bluepyemodel.tasks.generalisation.select import SelectGenericCombos

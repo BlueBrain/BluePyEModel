@@ -45,7 +45,6 @@ class BaseTask(EmodelAwareTask, WorkflowTask):
 
     def set_tmp(self, path, tmp_path="tmp"):
         """Add tmp_path to hide files in tmp folders."""
-        # pylint: disable=no-member
         return self.output().super_prefix() / self.output().get_prefix() / Path(tmp_path) / path
 
 

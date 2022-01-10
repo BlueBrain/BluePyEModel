@@ -293,6 +293,12 @@ def plot_synth_ais_evaluations(
                     else:
                         me_mask_no_failed = me_mask
                         me_mask_failed = False * me_mask
+                    _df = score_df[me_mask_no_failed]
+                    _df = _df.sort_values(by="rho_axon")
+                    _df = _df.set_index("rho_axon")
+                    print(_df.std(axis=0))
+                    for score in _df.columns:
+                        plt.plot(_df.index, _df[score], "-.", lw=0.5)
 
                     morphs_combos_df[me_mask_no_failed].plot(
                         x="rho_axon",

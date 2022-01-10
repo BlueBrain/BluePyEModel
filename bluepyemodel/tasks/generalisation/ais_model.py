@@ -122,7 +122,6 @@ class TargetRho(BaseTask):
     morphology_path = luigi.Parameter(default="morphology_path")
     custom_target_rhos_path = luigi.Parameter(default="custom_target_rhos.yaml")
     rho_df_path = luigi.Parameter(default="csv/rho_scan_df.csv")
-
     target_path = luigi.Parameter(default="target_rhos/target_rhos.yaml")
 
     def requires(self):
