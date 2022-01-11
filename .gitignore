@@ -5,6 +5,13 @@ ExampleCell/
 examples/optimisation/mechanisms/
 examples/optimisation/config/
 .tmp/
+out_emodel_release/
+sonata_ais.h5
+results/
+sonata_currents.h5
+stuck_df/
+stuck_figures/
+exemplar_evaluations.csv
 
 SOURCES.txt
 *.svg

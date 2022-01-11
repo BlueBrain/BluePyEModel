@@ -1,6 +1,7 @@
 """Luigi tasks for emodel optimisation."""
 import glob
 import multiprocessing
+import os
 from pathlib import Path
 
 import luigi
@@ -18,7 +19,7 @@ from bluepyemodel.tasks.luigi_tools import WorkflowTaskRequiringMechanisms
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
 from bluepyemodel.tools.mechanisms import compile_mechs
 
-# pylint: disable=W0235,W0621,W0404,W0611
+# pylint: disable=W0235,W0621,W0404,W0611,W0703
 
 
 def _reformat_ttype(ttype):
@@ -85,13 +86,28 @@ class CompileMechanisms(WorkflowTaskRequiringMechanisms):
 
     def run(self):
         """ """
-        compile_mechs("./mechanisms")
+
+        mechanisms_directory = self.access_point.get_mechanisms_directory()
+        cwd = os.getcwd()
+
+        try:
+            os.chdir(str(mechanisms_directory.parents[0]))
+            compile_mechs("./mechanisms")
+        except Exception as e:
+            print(e)
+        finally:
+            os.chdir(cwd)
 
     def output(self):
         """ """
+
         targets = []
-        for filepath in glob.glob("./mechanisms/*.mod"):
-            targets.append(luigi.LocalTarget(f"./x86_64/{Path(filepath).stem}.c"))
+        mechanisms_directory = self.access_point.get_mechanisms_directory()
+
+        for filepath in glob.glob(f"{str(mechanisms_directory)}/*.mod"):
+            compile_path = mechanisms_directory.parents[0] / "x86_64" / f"{Path(filepath).stem}.c"
+            targets.append(luigi.LocalTarget(compile_path))
+
         return targets
 
 
