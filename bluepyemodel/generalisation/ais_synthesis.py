@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 from bluepyparallel import evaluate
 
-from bluepyemodel.generalisation.evaluators import evaluate_dendrite_rin
+from bluepyemodel.generalisation.evaluators import evaluate_rin_no_soma
 from bluepyemodel.generalisation.evaluators import evaluate_somadend_rin
 from bluepyemodel.generalisation.utils import get_emodels
 
@@ -69,6 +69,7 @@ def _ais_synth_combo(combo, ais_models, target_rho_axons, scale_min, scale_max):
 
     #  if debug_plots:
     #    _debug_plot(p, scale_min, scale_max, rin_ais, scale, mtype, task_id)
+    # scale = 1
     return {
         "ais_failed": ais_failed,
         "AIS_scaler": scale,
@@ -132,7 +133,7 @@ def synthesize_ais(
         parallel_factory=parallel_factory,
         db_url=db_url,
     )
-    morphs_combos_df = morphs_combos_df.rename(columns={"exception": "exception_rin"})
+    morphs_combos_df = morphs_combos_df.rename(columns={"exception": "exception_somadend_rin"})
 
     return evaluate(
         morphs_combos_df,
@@ -156,7 +157,7 @@ def _soma_synth_combo(combo, soma_models, target_rho, scale_min, scale_max):
     if mtype not in soma_models:
         mtype = "all"
 
-    rin_soma = combo["rin_dendrite"] * target_rho[emodel][mtype]
+    rin_soma = combo["rin_no_soma"] * target_rho[emodel][mtype]
     p = np.poly1d(soma_models[mtype]["resistance"][emodel]["polyfit_params"])
 
     # first ensures we are within the rin range of the fit
@@ -181,6 +182,7 @@ def _soma_synth_combo(combo, soma_models, target_rho, scale_min, scale_max):
 
     #  if debug_plots:
     #    _debug_plot(p, scale_min, scale_max, rin_ais, scale, mtype, task_id)
+    # scale = 1
     return {
         "soma_failed": soma_failed,
         "soma_scaler": scale,
@@ -236,7 +238,7 @@ def synthesize_soma(
         scale_min = 10 ** scales_params["min"]
         scale_max = 10 ** scales_params["max"]
 
-    morphs_combos_df = evaluate_dendrite_rin(
+    morphs_combos_df = evaluate_rin_no_soma(
         morphs_combos_df,
         emodel_db,
         morphology_path=morphology_path,
@@ -244,7 +246,7 @@ def synthesize_soma(
         parallel_factory=parallel_factory,
         db_url=db_url,
     )
-    morphs_combos_df = morphs_combos_df.rename(columns={"exception": "exception_rin"})
+    morphs_combos_df = morphs_combos_df.rename(columns={"exception": "exception_rin_no_soma"})
 
     return evaluate(
         morphs_combos_df,

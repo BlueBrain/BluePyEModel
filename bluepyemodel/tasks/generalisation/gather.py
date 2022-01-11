@@ -7,7 +7,7 @@ from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
 from bluepyemodel.tasks.generalisation.ais_model import AisShapeModel
 from bluepyemodel.tasks.generalisation.ais_model import TargetRho
 from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
-from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAis
+from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeSoma
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import GatherLocalTarget
 from bluepyemodel.tasks.generalisation.config import ScaleConfig
@@ -132,7 +132,7 @@ class GatherSynthAis(BaseTask):
 
     def requires(self):
         """ """
-        return {emodel: SynthesizeAis(emodel=emodel) for emodel in self.emodels}
+        return {emodel: SynthesizeSoma(emodel=emodel) for emodel in self.emodels}
 
     def run(self):
         """ """

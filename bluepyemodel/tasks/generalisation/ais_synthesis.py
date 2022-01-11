@@ -30,7 +30,7 @@ class SynthesizeSoma(BaseTask):
         tasks = {
             "soma_models": SomaResistanceModel(emodel=self.emodel),
             "target_rhos": TargetRho(emodel=self.emodel),
-            "morph_combos": CreateMorphCombosDF(),
+            "morph_combos": SynthesizeAis(emodel=self.emodel),
         }
         return tasks
 
@@ -84,7 +84,7 @@ class SynthesizeAis(BaseTask):
         tasks = {
             "ais_models": AisResistanceModel(emodel=self.emodel),
             "target_rho_axons": TargetRhoAxon(emodel=self.emodel),
-            "morph_combos": SynthesizeSoma(emodel=self.emodel),
+            "morph_combos": CreateMorphCombosDF(),
         }
         return tasks
 

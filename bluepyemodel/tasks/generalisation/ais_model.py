@@ -57,8 +57,8 @@ class SomaResistanceModel(BaseTask):
     """Constructs the AIS input resistance models."""
 
     emodel = luigi.Parameter(default=None)
-    fit_df_path = luigi.Parameter(default="csv/fit_df.csv")
-    fit_db_path = luigi.Parameter(default="sql/fit_db.sql")
+    fit_df_path = luigi.Parameter(default="csv/fit_soma_df.csv")
+    fit_db_path = luigi.Parameter(default="sql/fit_soma_db.sql")
     morphology_path = luigi.Parameter(default="repaired_morphology_path")
 
     target_path = luigi.Parameter(default="soma_resistances/soma_resistance_model.yaml")
@@ -204,8 +204,8 @@ class AisResistanceModel(BaseTask):
     """Constructs the AIS input resistance models."""
 
     emodel = luigi.Parameter(default=None)
-    fit_df_path = luigi.Parameter(default="csv/fit_df.csv")
-    fit_db_path = luigi.Parameter(default="sql/fit_db.sql")
+    fit_df_path = luigi.Parameter(default="csv/fit_AIS_df.csv")
+    fit_db_path = luigi.Parameter(default="sql/fit_AIS_db.sql")
     morphology_path = luigi.Parameter(default="repaired_morphology_path")
 
     target_path = luigi.Parameter(default="ais_resistances/ais_resistance_model.yaml")
@@ -258,8 +258,8 @@ class TargetRhoAxon(BaseTask):
     emodel = luigi.Parameter(default=None)
     morphology_path = luigi.Parameter(default="repaired_morphology_path")
     custom_target_rho_axons_path = luigi.Parameter(default="custom_target_rho_axons.yaml")
-    rho_scan_db_path = luigi.Parameter(default="sql/rho_scan_db.sql")
-    rho_scan_df_path = luigi.Parameter(default="csv/rho_scan_df.csv")
+    rho_scan_db_path = luigi.Parameter(default="sql/rho_axon_scan_db.sql")
+    rho_scan_df_path = luigi.Parameter(default="csv/rho_axon_scan_df.csv")
 
     target_path = luigi.Parameter(default="target_rhos/target_rho_axons.yaml")
 
@@ -293,7 +293,7 @@ class TargetRhoAxon(BaseTask):
             parallel_factory=parallel_factory,
         )
 
-        print("target rhos:", target_rho_axons)
+        print("target rho axon:", target_rho_axons)
         ensure_dir(self.set_tmp(self.add_emodel(self.rho_scan_df_path)))
         # rho_scan_df.to_csv(self.set_tmp(self.add_emodel(self.rho_scan_df_path)), index=False)
 

@@ -9,7 +9,9 @@ import numpy as np
 from bluepyparallel import evaluate
 
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
 from bluepyemodel.evaluation.modifiers import synth_axon
+from bluepyemodel.evaluation.modifiers import synth_soma
 
 
 def single_feature_evaluation(
@@ -26,12 +28,24 @@ def single_feature_evaluation(
 ):
     """Evaluating single protocol and save traces."""
     emodel_db.set_emodel(combo["emodel"])
+
     if morphology_path in combo:
         emodel_db.morph_path = combo[morphology_path]
-    if "AIS_scaler" in combo and "AIS_params" in combo:
+
+    if "AIS_scaler" in combo and isinstance(combo["AIS_model"], str):
         emodel_db.pipeline_settings.morph_modifiers = [
-            partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
+            partial(
+                synth_axon, params=json.loads(combo["AIS_model"])["popt"], scale=combo["AIS_scaler"]
+            )
         ]
+    else:
+        emodel_db.pipeline_settings.morph_modifiers = [replace_axon_with_taper]
+
+    if "soma_model" in combo and isinstance(combo["soma_model"], str):
+        emodel_db.pipeline_settings.morph_modifiers.insert(
+            0,
+            partial(synth_soma, params=json.loads(combo["soma_model"]), scale=combo["soma_scaler"]),
+        )
 
     emodel_db.set_emodel(combo["emodel"])
     evaluator = get_evaluator_from_access_point(

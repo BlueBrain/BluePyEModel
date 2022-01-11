@@ -579,9 +579,9 @@ def _single_evaluation(
     if "path" in combo:
         emodel_db.morph_path = combo["path"]
 
-    if "AIS_scaler" in combo and "AIS_params" in combo:
+    if "AIS_scaler" in combo and "AIS_model" in combo:
         emodel_db.pipeline_settings.morph_modifiers = [
-            partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
+            partial(synth_axon, params=combo["AIS_model"], scale=combo["AIS_scaler"])
         ]
 
     emodel_db.emodel = combo["emodel"]
@@ -701,9 +701,9 @@ def _evaluate_emodels(
     )
     if ais_emodels_path is not None:
         ais_models = yaml.safe_load(open(ais_emodels_path, "r"))
-        combos_df["AIS_params"] = len(combos_df) * [ais_models["mtype"]["all"]["AIS"]["popt"]]
+        combos_df["AIS_model"] = len(combos_df) * [ais_models["mtype"]["all"]["AIS"]["popt"]]
         combos_df["AIS_scaler"] = combos_df["@dynamics:AIS_scaler"]
-        combos_df = combos_df[["AIS_params", "AIS_scaler", "path", "mtype", "morphology", "emodel"]]
+        combos_df = combos_df[["AIS_model", "AIS_scaler", "path", "mtype", "morphology", "emodel"]]
     else:
         combos_df = combos_df[["path", "mtype", "morphology", "emodel"]]
     combos_df["gid"] = combos_df.index

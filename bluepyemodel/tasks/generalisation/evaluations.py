@@ -5,10 +5,9 @@ import yaml
 from bluepyparallel import init_parallel_factory
 
 from bluepyemodel.generalisation.evaluators import evaluate_combos_rho
+from bluepyemodel.generalisation.evaluators import evaluate_rho
 from bluepyemodel.generalisation.utils import get_scores
-from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
-from bluepyemodel.tasks.generalisation.ais_model import SomaResistanceModel
-from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAis
+from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeSoma
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import EvaluationLocalTarget
 from bluepyemodel.tasks.generalisation.config import SelectConfig
@@ -27,18 +26,26 @@ class EvaluateSynthesis(BaseTask):
 
     def requires(self):
         """Requires."""
-        return {"synth_ais": SynthesizeAis(emodel=self.emodel)}
+        return {"synth_ais": SynthesizeSoma(emodel=self.emodel)}
 
     def run(self):
         """Run."""
 
         synth_combos_df = pd.read_csv(self.input()["synth_ais"].path)
-        synth_combos_df = synth_combos_df.drop(columns=["rin_no_axon", "exception"])
+        synth_combos_df = synth_combos_df.drop(columns=["rin_no_axon", "rin_no_soma", "exception"])
         synth_combos_df = synth_combos_df[synth_combos_df.emodel == self.emodel]
 
         eval_db_path = self.set_tmp(self.add_emodel(self.eval_db_path))
         ensure_dir(eval_db_path)
         parallel_factory = init_parallel_factory(self.parallel_lib)
+        synth_combos_df = evaluate_rho(
+            synth_combos_df,
+            self.emodel_db,
+            morphology_path=self.morphology_path,
+            resume=self.resume,
+            parallel_factory=parallel_factory,
+        )
+
         synth_combos_df = evaluate_combos_rho(
             synth_combos_df,
             self.emodel_db,
@@ -135,6 +142,15 @@ class EvaluateExemplars(BaseTask):
 
         ensure_dir(self.set_tmp(self.add_emodel(self.eval_db_path)))
         parallel_factory = init_parallel_factory(self.parallel_lib)
+
+        morphs_combos_df = evaluate_rho(
+            morphs_combos_df,
+            self.emodel_db,
+            morphology_path=self.morphology_path,
+            resume=self.resume,
+            parallel_factory=parallel_factory,
+        )
+
         morphs_combos_df = evaluate_combos_rho(
             morphs_combos_df,
             self.emodel_db,

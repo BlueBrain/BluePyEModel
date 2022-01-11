@@ -281,13 +281,13 @@ def plot_target_rho_axon(
                     plt.close()
 
 
-def plot_synth_ais_evaluations(
+def plot_synth_ais_evaluations_old(
     morphs_combos_df,
     emodels="all",
     threshold=5,
     pdf_filename="evaluations.pdf",
 ):
-    """Plot the results of ais synthesis evalutions."""
+    """Plot the results of ais synthesis evaluations."""
     mtypes = get_mtypes(morphs_combos_df, "all")
     emodels = get_emodels(morphs_combos_df, emodels)
     morphs_combos_df["median_score"] = morphs_combos_df["median_score"].clip(0.0, 2 * threshold)
@@ -336,7 +336,7 @@ def plot_synth_ais_evaluations(
                     _df = _df.set_index("rho_axon")
                     print(_df.std(axis=0))
                     for score in _df.columns:
-                        plt.plot(_df.index, _df[score], "-.", lw=0.5)
+                        plt.plot(_df.index, _df[score], "-.", lw=0.1)
 
                     morphs_combos_df[me_mask_no_failed].plot(
                         x="rho_axon",
@@ -378,9 +378,117 @@ def plot_synth_ais_evaluations(
                 + ", pass max: "
                 + str(np.round(frac_pass_max, 3))
             )
-            ax.set_ylim([0, 11.0])
+            ax.set_ylim([0, 20.0])
             pdf.savefig()
             plt.close()
+
+
+def plot_synth_ais_evaluations(
+    morphs_combos_df,
+    emodels="all",
+    threshold=5,
+    pdf_filename="evaluations.pdf",
+):
+    """Plot the results of ais synthesis evaluations."""
+    mtypes = get_mtypes(morphs_combos_df, "all")
+    emodels = get_emodels(morphs_combos_df, emodels)
+    morphs_combos_df["median_score"] = morphs_combos_df["median_score"].clip(0.0, 2 * threshold)
+
+    for emodel in emodels:
+        with PdfPages(pdf_filename) as pdf:
+
+            mask = morphs_combos_df.emodel == emodel
+            score_df = pd.DataFrame()
+            score_df["rho_axon"] = morphs_combos_df["scale"]
+            import json
+
+            for score in json.loads(morphs_combos_df.loc[0, "scores_raw"]):
+                score_df[score] = morphs_combos_df["scores_raw"].apply(
+                    lambda s: json.loads(s)[score]
+                )
+            _df = score_df[mask]
+            _df = _df.set_index("rho_axon")
+            for feat in _df.columns:
+                plt.figure()
+                clip = 5
+                plt.plot(_df.index, np.clip(_df[feat], 0, clip), "-")
+                plt.plot(1.0, np.clip(_df.head(1)[feat], 0, clip), "or")
+                plt.suptitle(feat)
+                plt.gca().set_ylim(0, clip + 0.5)
+                pdf.savefig()
+                plt.close()
+            """
+            morphs_combos_df[mask & morphs_combos_df.for_optimisation].plot(
+                x="rho_axon",
+                y="median_score",
+                c="r",
+                ax=ax,
+                label="optimized cell",
+                ls="",
+                marker=">",
+                ms=10,
+            )
+
+            for mtype in mtypes:
+                me_mask = (morphs_combos_df.emodel == emodel) & (morphs_combos_df.mtype == mtype)
+                if len(morphs_combos_df[me_mask]) > 0:
+                    if "ais_failed" in morphs_combos_df:
+                        me_mask_no_failed = me_mask & (morphs_combos_df.ais_failed == 0)
+                        me_mask_failed = me_mask & (morphs_combos_df.ais_failed == 1)
+                    else:
+                        me_mask_no_failed = me_mask
+                        me_mask_failed = False * me_mask
+                    _df = score_df[me_mask_no_failed]
+                    _df = _df.sort_values(by="rho_axon")
+                    _df = _df.set_index("rho_axon")
+                    print(_df.std(axis=0))
+                    for score in _df.columns:
+                        plt.plot(_df.index, _df[score], "-.", lw=0.1)
+
+                    morphs_combos_df[me_mask_no_failed].plot(
+                        x="rho_axon",
+                        y="median_score",
+                        ls="",
+                        marker="+",
+                        ax=ax,
+                        label=mtype,
+                    )
+                    if len(morphs_combos_df[me_mask_failed]) > 0:
+                        morphs_combos_df[me_mask_failed].plot(
+                            x="rho_axon",
+                            y="median_score",
+                            ls="",
+                            marker=".",
+                            ax=ax,
+                            label=mtype + " (synth failed)",
+                        )
+            try:
+                frac_pass_mean = len(
+                    morphs_combos_df[mask][morphs_combos_df[mask].median_score < threshold].index
+                ) / len(morphs_combos_df[mask].index)
+            except ZeroDivisionError:
+                frac_pass_mean = -1
+            try:
+                frac_pass_max = len(
+                    morphs_combos_df[mask][morphs_combos_df[mask].max_score < threshold].index
+                ) / len(morphs_combos_df[mask].index)
+            except ZeroDivisionError:
+                frac_pass_max = -1
+
+            plt.axhline(threshold)
+            plt.suptitle(
+                emodel
+                + ", fraction < "
+                + str(threshold)
+                + ": pass mean: "
+                + str(np.round(frac_pass_mean, 3))
+                + ", pass max: "
+                + str(np.round(frac_pass_max, 3))
+            )
+            ax.set_ylim([0, 20.0])
+            pdf.savefig()
+            plt.close()
+            """
 
 
 def _plot_neuron(selected_combos_df, cell_id, ax, color="k", morphology_path="morphology_path"):

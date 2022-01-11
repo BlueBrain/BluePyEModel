@@ -16,14 +16,12 @@ def synth_soma(sim=None, icell=None, params=None, scale=1.0):
     """Synthesize a simple soma with given scale and parameters."""
     L = 2.0 * params["soma_radius"]
     area = params["soma_surface"]
-    nseg = params.get("nseg", 10)
+    nseg = params.get("nseg", 3)
     diam = area / (np.pi * L) * nseg
-
     soma_sec = icell.soma[0]
     soma_sec.pt3dclear()
-    soma_sec.L = L
-    soma_sec.diam = scale * diam
-    soma_sec.nseg = nseg
+    for i in range(nseg):
+        soma_sec.pt3dadd(0, scale * i * L / (nseg - 1), 0, diam / nseg)
 
 
 def synth_axon(sim=None, icell=None, params=None, scale=1.0):
@@ -62,7 +60,7 @@ def synth_axon(sim=None, icell=None, params=None, scale=1.0):
     icell.all.append(sec=icell.myelin[0])
     icell.myelin[0].nseg = 5
     icell.myelin[0].L = 1000
-    icell.myelin[0].diam = diameters[-1]  # this assigns the value of terminal_diameter
+    icell.myelin[0].diam = 1.0  # diameters[-1]  # this assigns the value of terminal_diameter
     icell.myelin[0].connect(icell.axon[1], 1.0, 0.0)
 
 
@@ -228,17 +226,16 @@ def remove_soma(sim=None, icell=None):
             sim.neuron.h.disconnect(section)
             section.connect(sec)
 
+    for section in icell.axonal:
+        if section.parentseg().sec in list(icell.soma):
+            sim.neuron.h.disconnect(section)
+            section.connect(sec)
+
     for section in icell.soma:
         section.diam = ZERO
         section.L = ZERO
 
     logger.debug("Remove soma")
-
-
-def isolate_dendrite(sim=None, icell=None):
-    """Remove everything except the soma."""
-    remove_soma(sim=sim, icell=icell)
-    remove_axon(sim=sim, icell=icell)
 
 
 def isolate_soma(sim=None, icell=None):

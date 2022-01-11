@@ -8,14 +8,17 @@ import pandas as pd
 from morph_tool.neuron_surface import get_NEURON_surface
 from morphio import SectionType
 from morphio.mut import Morphology
+from scipy.ndimage.filters import gaussian_filter
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
 from bluepyemodel.generalisation.evaluators import evaluate_ais_rin
 from bluepyemodel.generalisation.evaluators import evaluate_rho
 from bluepyemodel.generalisation.evaluators import evaluate_rho_axon
+from bluepyemodel.generalisation.evaluators import evaluate_scores
 from bluepyemodel.generalisation.evaluators import evaluate_soma_rin
 from bluepyemodel.generalisation.utils import get_mtypes
+from bluepyemodel.generalisation.utils import get_scores
 
 logger = logging.getLogger(__name__)
 POLYFIT_DEGREE = 10
@@ -483,6 +486,7 @@ def find_target_rho_axon(
     parallel_factory=None,
     filter_sigma=2.0,
     db_url="rho_scan_db.sql",
+    method="exemplar",
 ):
     """Find the target rho axons for an emodel.
 
@@ -509,30 +513,16 @@ def find_target_rho_axon(
     )
 
     mtype = "all"
-    target_rho_axons = {}
-    for gid in rho_df.index:
-        emodel = rho_df.loc[gid, "emodel"]
-        if emodel not in target_rho_axons:
-            target_rho_axons[emodel] = {}
-        target_rho_axons[emodel][mtype] = float(rho_df.loc[gid, "rho_axon"])
+    if method == "exemplar":
+        target_rho_axons = {}
+        for gid in rho_df.index:
+            emodel = rho_df.loc[gid, "emodel"]
+            if emodel not in target_rho_axons:
+                target_rho_axons[emodel] = {}
+            target_rho_axons[emodel][mtype] = float(rho_df.loc[gid, "rho_axon"])
 
-    rho_df = evaluate_rho(
-        morphs_combos_df[morphs_combos_df.for_optimisation],
-        emodel_db,
-        morphology_path=morphology_path,
-        resume=resume,
-        db_url=None,
-        parallel_factory=parallel_factory,
-    )
-    target_rhos = {}
-    for gid in rho_df.index:
-        emodel = rho_df.loc[gid, "emodel"]
-        if emodel not in target_rhos:
-            target_rhos[emodel] = {}
-        target_rhos[emodel][mtype] = float(rho_df.loc[gid, "rho"])
+        return {"rho_axon": target_rho_axons}
 
-    return {"rho": target_rhos, "rho_axon": target_rho_axons}
-    """
     rho_scan_df = _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel)
     rho_scan_df = evaluate_rho_axon(
         rho_scan_df,
@@ -555,13 +545,12 @@ def find_target_rho_axon(
 
     rho_scan_df = get_scores(
         rho_scan_df,
-        #features_to_keep=RHO_FACTOR_FEATURES,
+        features_to_keep=RHO_FACTOR_FEATURES,
         clip=5,
     )
-    mtype = "all"
 
     mask = rho_scan_df.emodel == emodel
-    # target_rhos = {}
+    target_rhos = {}
     if len(rho_scan_df[mask]) > 0:
         scale_mask = rho_scan_df.AIS_scaler == 1
         median_scores = rho_scan_df[mask & ~scale_mask].median_score.to_numpy()
@@ -569,9 +558,8 @@ def find_target_rho_axon(
         rho_scan_df.loc[mask & ~scale_mask, "smooth_score"] = smooth_score
         best_score_id = rho_scan_df[mask & ~scale_mask].smooth_score.idxmin()
 
-        # if emodel not in target_rhos:
-        #    target_rhos[emodel] = {}
-        # target_rhos[emodel][mtype] = float(rho_scan_df.loc[best_score_id, "rho_axon"])
+        if emodel not in target_rhos:
+            target_rhos[emodel] = {}
+        target_rhos[emodel][mtype] = float(rho_scan_df.loc[best_score_id, "rho_axon"])
 
     return rho_scan_df, target_rhos
-    """

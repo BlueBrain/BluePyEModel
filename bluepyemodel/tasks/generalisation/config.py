@@ -30,8 +30,8 @@ class SelectConfig(luigi.Config):
 class ScaleConfig(luigi.Config):
     """Scales configuration."""
 
-    scale_min = luigi.FloatParameter(default=-0.8)
-    scale_max = luigi.FloatParameter(default=0.8)
+    scale_min = luigi.FloatParameter(default=-1.5)
+    scale_max = luigi.FloatParameter(default=1.5)
     scale_n = luigi.IntParameter(default=50)
     scale_lin = luigi.BoolParameter(default=False)
 
