@@ -498,7 +498,6 @@ def evaluate_combos_rho(
         db_url=str(db_url) + ".rho",
         parallel_factory=parallel_factory,
     )
-    from bluepyemodel.tools.misc_evaluators import feature_evaluation
 
     morphs_combos_df = feature_evaluation(
         morphs_combos_df,

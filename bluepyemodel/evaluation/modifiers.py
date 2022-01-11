@@ -231,17 +231,16 @@ def remove_soma(sim=None, icell=None):
                 sim.neuron.h.disconnect(section)
                 section.connect(sec, 0, 0)
 
+    for section in icell.axonal:
+        if section.parentseg().sec in list(icell.soma):
+            sim.neuron.h.disconnect(section)
+            section.connect(sec)
+
     for section in icell.soma:
         section.diam = ZERO
         section.L = ZERO
 
     logger.debug("Remove soma")
-
-
-def isolate_dendrite(sim=None, icell=None):
-    """Remove everything except the soma."""
-    remove_soma(sim=sim, icell=icell)
-    remove_axon(sim=sim, icell=icell)
 
 
 def isolate_soma(sim=None, icell=None):
