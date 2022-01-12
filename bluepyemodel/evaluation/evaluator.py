@@ -299,6 +299,10 @@ def define_main_protocol(
     threshold_protocols = {}
     other_protocols = {}
 
+    validation_protocols = [
+        p.name for p in fitness_calculator_configuration.protocols if p.validation
+    ]
+
     for protocols_def in fitness_calculator_configuration.protocols:
 
         if not include_validation_protocols and protocols_def.validation:
@@ -314,8 +318,10 @@ def define_main_protocol(
     efeatures = []
     for feature_def in fitness_calculator_configuration.efeatures:
 
-        protocol = None
+        if not include_validation_protocols and feature_def.protocol_name in validation_protocols:
+            continue
 
+        protocol = None
         if feature_def.protocol_name not in PRE_PROTOCOLS:
             for p in list(threshold_protocols.values()) + list(other_protocols.values()):
                 if p.name == feature_def.protocol_name:
