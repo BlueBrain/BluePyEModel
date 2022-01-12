@@ -21,7 +21,7 @@ class SynthesizeSoma(BaseTask):
     """Synthesize Soma."""
 
     emodel = luigi.Parameter(default=None)
-    morphology_path = luigi.Parameter(default="repaired_morphology_path")
+    morphology_path = luigi.Parameter(default="morphology_path")
     synth_db_path = luigi.Parameter(default="synth_db.sql")
     target_path = luigi.Parameter(default="synth_soma_combos_df.csv")
 
@@ -75,7 +75,7 @@ class SynthesizeAis(BaseTask):
     """Synthesize AIS."""
 
     emodel = luigi.Parameter(default=None)
-    morphology_path = luigi.Parameter(default="repaired_morphology_path")
+    morphology_path = luigi.Parameter(default="morphology_path")
     synth_db_path = luigi.Parameter(default="synth_db.sql")
     target_path = luigi.Parameter(default="synth_combos_df.csv")
 

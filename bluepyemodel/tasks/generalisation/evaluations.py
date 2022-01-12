@@ -21,7 +21,7 @@ class EvaluateSynthesis(BaseTask):
     emodel = luigi.Parameter()
     save_traces = luigi.BoolParameter(default=False)
     eval_db_path = luigi.Parameter(default="eval_db.sql")
-    morphology_path = luigi.Parameter(default="repaired_morphology_path")
+    morphology_path = luigi.Parameter(default="morphology_path")
     target_path = luigi.Parameter(default="synth_combos_with_scores_df.csv")
 
     def requires(self):
@@ -75,7 +75,7 @@ class EvaluateGeneric(BaseTask):
     emodel = luigi.Parameter()
     save_traces = luigi.BoolParameter(default=False)
     eval_db_path = luigi.Parameter(default="eval_db.sql")
-    morphology_path = luigi.Parameter(default="repaired_morphology_path")
+    morphology_path = luigi.Parameter(default="morphology_path")
     target_path = luigi.Parameter(default="combos_with_scores_df.csv")
 
     def requires(self):
@@ -118,7 +118,7 @@ class EvaluateExemplars(BaseTask):
 
     emodel = luigi.Parameter(default=None)
     save_traces = luigi.BoolParameter(default=False)
-    morphology_path = luigi.Parameter(default="repaired_morphology_path")
+    morphology_path = luigi.Parameter(default="morphology_path")
     eval_db_path = luigi.Parameter(default="eval_db.sql")
     target_path = luigi.Parameter(default="exemplar_evaluations.csv")
 
