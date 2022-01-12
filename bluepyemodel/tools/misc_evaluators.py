@@ -41,7 +41,7 @@ def single_feature_evaluation(
     else:
         emodel_db.pipeline_settings.morph_modifiers = [replace_axon_with_taper]
 
-    if "soma_model" in combo and isinstance(combo["soma_model"], str):
+    if "soma_scaler" in combo and isinstance(combo["soma_model"], str):
         emodel_db.pipeline_settings.morph_modifiers.insert(
             0,
             partial(synth_soma, params=json.loads(combo["soma_model"]), scale=combo["soma_scaler"]),
