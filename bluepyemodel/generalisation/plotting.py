@@ -197,7 +197,8 @@ def plot_resistance_models(fit_df, models, pdf_filename="resistance_model.pdf", 
                 me_mask = fit_df.emodel == emodel
                 if mtype != "all":
                     me_mask = me_mask & (fit_df.mtype == mtype)
-                fit_df[me_mask].plot(x=f"{_tpe}_scaler", y=f"rin_{tpe}", marker="+")
+                plt.figure(figsize=(5, 3))
+                fit_df[me_mask].plot(x=f"{_tpe}_scaler", y=f"rin_{tpe}", marker="+", ax=plt.gca())
                 plt.plot(
                     fit_df[me_mask][f"{_tpe}_scaler"],
                     10
@@ -214,7 +215,7 @@ def plot_resistance_models(fit_df, models, pdf_filename="resistance_model.pdf", 
                 plt.suptitle(mtype + "  " + emodel)
                 plt.ylabel(f"{_tpe} input resistance")
 
-                pdf.savefig()
+                pdf.savefig(bbox_inches="tight")
                 plt.close()
 
 
@@ -282,7 +283,7 @@ def plot_target_rho_axon(
                     plt.close()
 
 
-def plot_synth_ais_evaluations_old(
+def plot_synth_ais_evaluations(
     morphs_combos_df,
     emodels="all",
     threshold=5,
@@ -381,40 +382,6 @@ def plot_synth_ais_evaluations_old(
             ax.set_ylim([0, 20.0])
             pdf.savefig()
             plt.close()
-
-
-def plot_synth_ais_evaluations(
-    morphs_combos_df,
-    emodels="all",
-    threshold=5,
-    pdf_filename="evaluations.pdf",
-):
-    """Plot the results of ais synthesis evaluations."""
-    emodels = get_emodels(morphs_combos_df, emodels)
-    morphs_combos_df["median_score"] = morphs_combos_df["median_score"].clip(0.0, 2 * threshold)
-
-    for emodel in emodels:
-        with PdfPages(pdf_filename) as pdf:
-
-            mask = morphs_combos_df.emodel == emodel
-            score_df = pd.DataFrame()
-            score_df["rho_axon"] = morphs_combos_df["scale"]
-
-            for score in json.loads(morphs_combos_df.loc[0, "scores_raw"]):
-                score_df[score] = morphs_combos_df["scores_raw"].apply(
-                    lambda s, score=score: json.loads(s)[score]
-                )
-            _df = score_df[mask]
-            _df = _df.set_index("rho_axon")
-            for feat in _df.columns:
-                plt.figure()
-                clip = 5
-                plt.plot(_df.index, np.clip(_df[feat], 0, clip), "-")
-                plt.plot(1.0, np.clip(_df.head(1)[feat], 0, clip), "or")
-                plt.suptitle(feat)
-                plt.gca().set_ylim(0, clip + 0.5)
-                pdf.savefig()
-                plt.close()
 
 
 def _plot_neuron(selected_combos_df, cell_id, ax, color="k", morphology_path="morphology_path"):
