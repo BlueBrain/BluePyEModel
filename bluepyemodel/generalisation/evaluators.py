@@ -507,6 +507,7 @@ def evaluate_combos_rho(
         morphology_path=morphology_path,
         parallel_factory=parallel_factory,
         score_threshold=20,
+        trace_data_path=trace_folder if save_traces else None,
     )
 
     return morphs_combos_df

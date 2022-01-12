@@ -219,7 +219,7 @@ def define_Rin_protocol(efeatures, ais_recording=False):
 
     if target_rin:
         if isinstance(ais_recording, str):
-            location = eval(f"{ais_recording}_loc")
+            location = eval(f"{ais_recording}_loc")  # pylint: disable=eval-used
         else:
             location = soma_loc if not ais_recording else ais_loc
         return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)

@@ -53,6 +53,7 @@ class ComboDB(MorphDB):
         label="default",
         morphology_folder=None,
         cell_composition=None,
+        emodel_etype_map=None,
         emodel_db=None,
     ):
         """Constructor from neurondb.
@@ -67,7 +68,10 @@ class ComboDB(MorphDB):
         obj = MorphDB.from_neurondb(neurondb, label=label, morphology_folder=morphology_folder)
         if cell_composition is not None and emodel_db is not None:
             obj.combo_df = cls._set_combo_df(
-                obj, cell_composition=cell_composition, emodel_db=emodel_db
+                obj,
+                cell_composition=cell_composition,
+                mtype_emodel_etype_map=emodel_etype_map,
+                emodel_db=emodel_db,
             )
         return obj
 

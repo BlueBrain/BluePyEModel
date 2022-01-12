@@ -12,7 +12,7 @@ def taper_function(distance, strength, taper_scale, terminal_diameter, scale=1.0
     return strength * np.exp(-distance / taper_scale) + terminal_diameter * scale
 
 
-def synth_soma(sim=None, icell=None, params=None, scale=1.0):
+def synth_soma(sim=None, icell=None, params=None, scale=1.0):  # pylint: disable=unused-argument
     """Synthesize a simple soma with given scale and parameters."""
     L = 2.0 * params["soma_radius"]
     area = params["soma_surface"]

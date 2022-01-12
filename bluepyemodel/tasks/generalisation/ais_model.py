@@ -30,7 +30,6 @@ class SomaShapeModel(BaseTask):
 
     mtypes = luigi.ListParameter(default="all")
     mtype_dependent = luigi.BoolParameter(default=False)
-    with_taper = luigi.BoolParameter(default=True)
     target_path = luigi.Parameter(default="soma_shape_model.yaml")
 
     def run(self):
@@ -41,7 +40,6 @@ class SomaShapeModel(BaseTask):
             self.mtypes,
             morphology_path=self.morphology_path,
             mtype_dependent=self.mtype_dependent,
-            with_taper=self.with_taper,
         )
 
         ensure_dir(self.output().path)
@@ -119,18 +117,12 @@ class TargetRho(BaseTask):
     def requires(self):
         """Requires."""
 
-        return {
-            "soma_model": SomaResistanceModel(emodel=self.emodel),
-            "morph_combos": CreateMorphCombosDF(),
-        }
+        return CreateMorphCombosDF()
 
     def run(self):
         """Run."""
         target_rhos = None
-        morphs_combos_df = pd.read_csv(self.input()["morph_combos"].path)
-
-        with self.input()["soma_model"].open() as f:
-            soma_models = yaml.full_load(f)
+        morphs_combos_df = pd.read_csv(self.input().path)
 
         ensure_dir(self.set_tmp(self.add_emodel(self.rho_scan_db_path)))
         parallel_factory = init_parallel_factory(self.parallel_lib)
@@ -138,10 +130,7 @@ class TargetRho(BaseTask):
             morphs_combos_df,
             self.emodel_db,
             self.emodel,
-            soma_models,
-            ScaleConfig().scales_params,
             morphology_path=self.morphology_path,
-            db_url=self.set_tmp(self.add_emodel(self.rho_scan_db_path)),
             resume=self.resume,
             parallel_factory=parallel_factory,
         )

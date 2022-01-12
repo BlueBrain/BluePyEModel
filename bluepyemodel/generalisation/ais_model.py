@@ -37,9 +37,6 @@ def build_soma_model(morphology_paths):
 
     Using only surface area for now.
     """
-
-    from tqdm import tqdm
-
     soma_surfaces = [float(get_NEURON_surface(path)) for path in tqdm(morphology_paths)]
     soma_radii = [
         float(nm.get("soma_radius", nm.load_morphology(path))) for path in morphology_paths
@@ -57,11 +54,7 @@ def build_soma_model(morphology_paths):
 
 
 def build_soma_models(
-    morphs_df,
-    mtypes="all",
-    morphology_path="morphology_path",
-    mtype_dependent=False,
-    with_taper=True,
+    morphs_df, mtypes="all", morphology_path="morphology_path", mtype_dependent=False
 ):
     """Build soma models from data, and plot the results.
 
@@ -167,13 +160,9 @@ def find_target_rho(
     morphs_combos_df,
     emodel_db,
     emodel,
-    soma_models,
-    scales_params,
     morphology_path="morphology_path",
     resume=False,
     parallel_factory=None,
-    filter_sigma=2.0,
-    db_url="rho_scan_db.sql",
 ):
     """Find the target rho for an emodel.
 
