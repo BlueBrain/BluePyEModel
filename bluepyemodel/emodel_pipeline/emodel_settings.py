@@ -90,9 +90,6 @@ class EModelPipelineSettings:
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
-            validation_protocols (dict): names and targets of the protocol that will be used for
-                validation only. This settings has to be set before efeature extraction if you
-                wish to run validation.
             model_configuration_name (str): name of the model configuration used to instantiate
                 the model. Required for the Nexus access point only.
         """

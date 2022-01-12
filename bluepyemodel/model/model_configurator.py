@@ -46,7 +46,7 @@ class ModelConfigurator:
         if isinstance(self.access_point, LocalAccessPoint):
             raise Exception("Loading configuration is not yet implemented for local access point")
 
-        self.access_point.get_model_configuration(name)
+        self.configuration = self.access_point.get_model_configuration(name)
 
     def save_configuration(self, path=None):
         """Save the configuration. The saving medium depends of the access point."""

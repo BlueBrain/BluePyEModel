@@ -17,7 +17,7 @@ from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalc
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools import search_pdfs
 
-# pylint: disable=simplifiable-if-expression,too-many-arguments,undefined-variable,unused-argument
+# pylint: disable=too-many-arguments,unused-argument,too-many-locals
 
 logger = logging.getLogger("__main__")
 
@@ -621,6 +621,7 @@ class NexusAccessPoint(DataAccessPoint):
         compile_mechanisms=False,
         name_Rin_protocol=None,
         name_rmp_protocol=None,
+        validation_protocols=None,
         model_configuration_name=None,
     ):
         """Creates an EModelPipelineSettings resource.
@@ -654,8 +655,9 @@ class NexusAccessPoint(DataAccessPoint):
                 to consider the EModel building task done.
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
             plot_optimisation (bool): should the EModel scores and traces be plotted.
-            additional_protocols(dict):
-            compile_mechanisms (bool):
+            validation_protocols (dict): names and targets of the protocol that will be used for
+                validation only. This settings has to be set before efeature extraction if you
+                wish to run validation.
         """
 
         if efel_settings is None:
@@ -691,6 +693,7 @@ class NexusAccessPoint(DataAccessPoint):
             "compile_mechanisms": compile_mechanisms,
             "name_Rin_protocol": name_Rin_protocol,
             "name_rmp_protocol": name_rmp_protocol,
+            "validation_protocols": validation_protocols,
             "model_configuration_name": model_configuration_name,
         }
 
@@ -1092,7 +1095,9 @@ class NexusAccessPoint(DataAccessPoint):
         resource.update(configuration.as_dict())
 
         self.access_point.register(
-            resource, filters_existance={"type": "EModelConfiguration", "name": resource["name"]}
+            resource,
+            filters_existance={"type": "EModelConfiguration", "name": resource["name"]},
+            replace=True,
         )
 
     def get_mechanisms_directory(self):
