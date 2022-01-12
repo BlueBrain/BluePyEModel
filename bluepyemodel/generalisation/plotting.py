@@ -249,7 +249,7 @@ def plot_target_rhos(df, target_rhos, target_rho_axons, pdf_filename="scan_rho.p
             plt.close()
 
 
-def plot_synth_ais_evaluations_old(
+def plot_synth_ais_evaluations(
     morphs_combos_df,
     emodels="all",
     threshold=5,
@@ -343,40 +343,6 @@ def plot_synth_ais_evaluations_old(
             ax.set_ylim([0, 20.0])
             pdf.savefig()
             plt.close()
-
-
-def plot_synth_ais_evaluations(
-    morphs_combos_df,
-    emodels="all",
-    threshold=5,
-    pdf_filename="evaluations.pdf",
-):
-    """Plot the results of ais synthesis evaluations."""
-    emodels = get_emodels(morphs_combos_df, emodels)
-    morphs_combos_df["median_score"] = morphs_combos_df["median_score"].clip(0.0, 2 * threshold)
-
-    for emodel in emodels:
-        with PdfPages(pdf_filename) as pdf:
-
-            mask = morphs_combos_df.emodel == emodel
-            score_df = pd.DataFrame()
-            score_df["rho_axon"] = morphs_combos_df["scale"]
-
-            for score in json.loads(morphs_combos_df.loc[0, "scores_raw"]):
-                score_df[score] = morphs_combos_df["scores_raw"].apply(
-                    lambda s, score=score: json.loads(s)[score]
-                )
-            _df = score_df[mask]
-            _df = _df.set_index("rho_axon")
-            for feat in _df.columns:
-                plt.figure()
-                clip = 5
-                plt.plot(_df.index, np.clip(_df[feat], 0, clip), "-")
-                plt.plot(1.0, np.clip(_df.head(1)[feat], 0, clip), "or")
-                plt.suptitle(feat)
-                plt.gca().set_ylim(0, clip + 0.5)
-                pdf.savefig()
-                plt.close()
 
 
 def _plot_neuron(selected_combos_df, cell_id, ax, color="k", morphology_path="morphology_path"):
