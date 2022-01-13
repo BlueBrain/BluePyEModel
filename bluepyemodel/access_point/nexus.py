@@ -10,6 +10,7 @@ from kgforge.specializations.resources import Dataset
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
+from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.utils import run_metadata_as_string
 from bluepyemodel.emodel_pipeline.utils import yesno
@@ -23,13 +24,11 @@ logger = logging.getLogger("__main__")
 
 
 BPEM_NEXUS_SCHEMA = [
-    "ElectrophysiologyFeatureExtractionTrace",
-    "ElectrophysiologyFeatureExtractionTarget",
-    "ElectrophysiologyFeatureOptimisationTarget",
     "EModel",
     "EModelPipelineSettings",
     "EModelConfiguration",
     "FitnessCalculatorConfiguration",
+    "ExtractionTargetsConfiguration",
 ]
 
 
@@ -117,7 +116,7 @@ class NexusAccessPoint(DataAccessPoint):
         elif self.species == "rat":
             subject = {
                 "type": "Subject",
-                "species": {"id": "http://purl.obolibrary.org /obo/NCBITaxon_7370"},
+                "species": {"id": "http://purl.obolibrary.org/obo/NCBITaxon_7370"},
             }
             if not for_search:
                 subject["species"]["label"] = "Musca domestica"
@@ -353,251 +352,6 @@ class NexusAccessPoint(DataAccessPoint):
 
         return self.access_point.download(resource.id, "./morphology/")
 
-    def store_trace_metadata(
-        self,
-        name=None,
-        id_=None,
-        ecode=None,
-        recording_metadata=None,
-    ):
-        """Creates an ElectrophysiologyFeatureExtractionTrace resource based on an ephys file.
-
-        Args:
-            id_ (str): Nexus id of the trace file.
-            name (str): name of the trace file.
-            ecode (str): name of the eCode of interest.
-            recording_metadata (dict): metadata such as ton, toff, v_unit associated to the traces
-                of ecode in this file.
-        """
-
-        if recording_metadata is None:
-            recording_metadata = {}
-
-        if "protocol_name" not in recording_metadata and ecode:
-            recording_metadata["protocol_name"] = ecode
-
-        if id_:
-            resource = self.access_point.retrieve(id_)
-        elif name:
-            resource = self.access_point.fetch_one(
-                {
-                    "type": "Trace",
-                    "name": name,
-                    "distribution": {"encodingFormat": "application/nwb"},
-                },
-                use_version=False,
-            )
-        else:
-            raise NexusAccessPointException("At least id_ or name should be informed.")
-
-        if not resource:
-            raise NexusAccessPointException(f"No matching resource for {id_} {name}")
-
-        self.access_point.register(
-            {
-                "type": "ElectrophysiologyFeatureExtractionTrace",
-                "eModel": self.emodel,
-                "name": f"{resource.name}_{ecode}",
-                "subject": self.get_subject(for_search=False),
-                "brainLocation": self.brain_region,
-                "trace": {"id": resource.id},
-                "cell": {"name": resource.name},
-                "ecode": ecode,
-                "recording_metadata": recording_metadata,
-            },
-            {
-                "type": "ElectrophysiologyFeatureExtractionTrace",
-                "eModel": self.emodel,
-                "name": f"{resource.name}_{ecode}",
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-                "trace": {"id": resource.id},
-                "cell": {"name": resource.name},
-                "ecode": ecode,
-            },
-        )
-
-    def store_extraction_target(
-        self, ecode, target_amplitudes, tolerances, use_for_rheobase, efeatures, efel_settings
-    ):
-        """Creates an ElectrophysiologyFeatureExtractionTarget resource used as target for the
-        e-features extraction process.
-
-        Args:
-            ecode (str): name of the eCode of interest.
-            target_amplitudes (list): amplitude of the step of the protocol. Expressed as a
-                percentage of the threshold amplitude (rheobase).
-            tolerances (list): tolerance around the target amplitude in which an
-                experimental trace will be seen as a hit during efeatures extraction.
-            use_for_rheobase (bool): should the ecode be used to compute the rheobase
-                of the cells during extraction.
-            efeatures (list): list of efeature names to extract for this ecode.
-            efel_settings (dict): eFEL settings.
-        """
-
-        features = [{"name": f} for f in efeatures]
-
-        self.access_point.register(
-            {
-                "type": ["Entity", "ElectrophysiologyFeatureExtractionTarget"],
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=False),
-                "brainLocation": self.brain_region,
-                "stimulus": {
-                    "stimulusType": {"label": ecode},
-                    "stimulusTarget": target_amplitudes,
-                    "tolerance": tolerances,
-                    "threshold": use_for_rheobase,
-                    "recordingLocation": "soma",
-                },
-                "feature": features,
-                "efel_settings": efel_settings,
-            },
-            {
-                "type": "ElectrophysiologyFeatureExtractionTarget",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-                "stimulus": {
-                    "stimulusType": {"label": ecode},
-                    "stimulusTarget": target_amplitudes[0],
-                },
-            },
-        )
-
-    def store_opt_validation_target(
-        self,
-        type_,
-        ecode,
-        protocol_type,
-        target_amplitude,
-        efeatures,
-        extra_recordings,
-        efel_settings,
-    ):
-        """Creates resources used as target optimisation and validation.
-
-        Args:
-            type_ (str): type of the Nexus Entity.
-            ecode (str): name of the eCode of the protocol.
-            protocol_type (str): type of the protocol ("StepProtocol" or "StepThresholdProtocol").
-            target_amplitude (float): amplitude of the step of the protocol. Expressed as a
-                percentage of the threshold amplitude (rheobase).
-            efeatures (list): list of efeatures name used as targets for this protocol.
-            extra_recordings (list): definition of additional recordings used for this protocol.
-            efel_settings (dict): eFEL settings.
-        """
-
-        if protocol_type not in [
-            "StepProtocol",
-            "StepThresholdProtocol",
-            "RinProtocol",
-            "RMPProtocol",
-        ]:
-            raise NexusAccessPointException(f"protocol_type {protocol_type} unknown.")
-
-        features = []
-        for f in efeatures:
-            features.append(
-                {
-                    "name": f,
-                    "onsetTime": {"unitCode": "ms", "value": None},
-                    "offsetTime": {"unitCode": "ms", "value": None},
-                }
-            )
-
-            if efel_settings and "stim_start" in efel_settings:
-                features[-1]["onsetTime"]["value"] = efel_settings["stim_start"]
-            if efel_settings and "stim_end" in efel_settings:
-                features[-1]["offsetTime"]["value"] = efel_settings["stim_end"]
-
-        self.access_point.register(
-            {
-                "type": ["Entity", "Target", type_],
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=False),
-                "brainLocation": self.brain_region,
-                "protocolType": protocol_type,
-                "stimulus": {
-                    "stimulusType": {"label": ecode},
-                    "target": target_amplitude,
-                    "recordingLocation": "soma",
-                },
-                "feature": features,
-                "extraRecordings": extra_recordings,
-            },
-            {
-                "type": type_,
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
-                "protocolType": protocol_type,
-                "stimulus": {
-                    "stimulusType": {"label": ecode},
-                    "target": target_amplitude,
-                    "recordingLocation": "soma",
-                },
-            },
-        )
-
-    def store_emodel_targets(
-        self,
-        ecode,
-        efeatures,
-        amplitude,
-        extraction_tolerance,
-        protocol_type,
-        used_for_extraction_rheobase=False,
-        used_for_optimization=True,
-        extra_recordings=None,
-        efel_settings=None,
-    ):
-        """Register the efeatures and their associated protocols that will be used as target during
-        efeatures extraction, optimisation and validation.
-
-        Args:
-        ecode (str): name of the eCode of the protocol.
-        efeatures (list): list of efeatures name used as targets for this ecode.
-        amplitude (float): amplitude of the step of the protocol. Expressed as a percentage of
-            the threshold amplitude (rheobase).
-        extraction_tolerance (list): tolerance around the target amplitude in which an
-            experimental trace will be seen as a hit during efeatures extraction.
-        protocol_type (str): type of the protocol ("StepProtocol" or "StepThresholdProtocol",
-            "RinProtocol", "RMPProtocol"). If using StepThresholdProtocols, it is mandatory to
-            have another target as RMPProtocol and another target as RinProtocol.
-        used_for_extraction_rheobase (bool): should the ecode be used to compute the rheobase
-            of the cells during extraction.
-        used_for_optimization (bool): should the ecode be used as a target during optimisation.
-        extra_recordings (list): definitions of additional recordings to use for this protocol.
-        efel_settings (dict): eFEL settings.
-        """
-
-        if efel_settings is None:
-            efel_settings = {}
-
-        if extra_recordings is None:
-            extra_recordings = []
-
-        self.store_extraction_target(
-            ecode=ecode,
-            target_amplitudes=[amplitude],
-            tolerances=[extraction_tolerance],
-            use_for_rheobase=used_for_extraction_rheobase,
-            efeatures=efeatures,
-            efel_settings=efel_settings,
-        )
-
-        if used_for_optimization:
-            self.store_opt_validation_target(
-                "ElectrophysiologyFeatureOptimisationTarget",
-                ecode=ecode,
-                protocol_type=protocol_type,
-                target_amplitude=amplitude,
-                efeatures=efeatures,
-                extra_recordings=extra_recordings,
-                efel_settings=efel_settings,
-            )
-
     def store_pipeline_settings(
         self,
         extraction_threshold_value_save=1,
@@ -707,140 +461,79 @@ class NexusAccessPoint(DataAccessPoint):
 
         self.access_point.register(resource_description, resource_search)
 
-    def _build_extraction_targets(self, resources_target):
-        """Create a dictionary defining the target of the feature extraction process"""
+    def store_targets_configuration(self, configuration):
+        """Store the configuration of the targets (targets and ephys files used)"""
 
-        targets = []
-        protocols_threshold = []
+        resource = {
+            "type": ["ExtractionTargetsConfiguration"],
+            "emodel": self.emodel,
+            "ttype": self.ttype,
+            "name": f"ExtractionTargetsConfiguration_{self.emodel}_{self.ttype}",
+        }
 
-        for resource in resources_target:
+        resource.update(configuration.as_dict())
 
-            ecode = resource.stimulus.stimulusType.label
+        self.access_point.register(
+            resource,
+            filters_existance={
+                "type": "ExtractionTargetsConfiguration",
+                "emodel": self.emodel,
+                "ttype": self.ttype,
+            },
+            replace=True,
+        )
 
-            if isinstance(resource.stimulus.tolerance, (int, float)):
-                tolerances = [resource.stimulus.tolerance]
-            else:
-                tolerances = resource.stimulus.tolerance
+    def download_trace(self, id_=None, name=None):
+        """Does not actually download the Trace since traces are already stored on Nexus"""
 
-            if isinstance(resource.stimulus.stimulusTarget, (int, float)):
-                amplitudes = [resource.stimulus.stimulusTarget]
-            else:
-                amplitudes = resource.stimulus.stimulusTarget
+        # TODO: actually download the Trace if trace is not available in local
 
-            efel_settings = {}
-            if hasattr(resource, "efel_settings"):
-                efel_settings = self.access_point.forge.as_json(resource.efel_settings)
-
-            efeatures = self.access_point.forge.as_json(resource.feature)
-            if not isinstance(efeatures, list):
-                efeatures = [efeatures]
-
-            for amp, tol in zip(amplitudes, tolerances):
-                for f in efeatures:
-                    targets.append(
-                        {
-                            "efeature": f["name"],
-                            "protocol": ecode,
-                            "amplitude": amp,
-                            "tolerance": tol,
-                            "efel_settings": efel_settings,
-                        }
-                    )
-
-            if hasattr(resource.stimulus, "threshold") and resource.stimulus.threshold:
-                protocols_threshold.append(ecode)
-
-        return targets, set(protocols_threshold)
-
-    def _build_extraction_metadata(self, targets):
-        """
-        Create a dictionary that informs which files should be used for which
-        target. It also specifies the metadata (such as units or ljp) associated
-        to the files.
-
-        This function also download the files in ./nexus_tmp, if they are not
-        already present.
-        """
-
-        traces_metadata = {}
-
-        for protocol in list(set(t["protocol"] for t in targets)):
-
-            resources_ephys = self.access_point.fetch(
-                filters={
-                    "type": "ElectrophysiologyFeatureExtractionTrace",
-                    "eModel": self.emodel,
-                    "subject": self.get_subject(for_search=True),
-                    "brainLocation": self.brain_region,
-                    "ecode": protocol,
+        if id_:
+            resource = self.access_point.retrieve(id_)
+        elif name:
+            resource = self.access_point.fetch_one(
+                {
+                    "type": "Trace",
+                    "name": name,
+                    "distribution": {"encodingFormat": "application/nwb"},
                 },
+                use_version=False,
             )
+        else:
+            raise NexusAccessPointException("At least id_ or name should be informed.")
 
-            if resources_ephys is None:
-                raise NexusAccessPointException(
-                    f"Could not get ephys files for ecode {protocol}, emodel {self.emodel}"
-                )
+        if not resource:
+            raise NexusAccessPointException(f"No matching resource for {id_} {name}")
 
-            for resource in resources_ephys:
+        return self.access_point.resource_location(resource)[0]
 
-                recording_metadata = self.access_point.forge.as_json(resource.recording_metadata)
+    def get_targets_configuration(self):
+        """Get the configuration of the targets (targets and ephys files used)"""
 
-                resource_trace = self.access_point.retrieve(resource.trace.id)
-                recording_metadata["filepath"] = self.access_point.resource_location(
-                    resource_trace
-                )[0]
-
-                cell_name = resource.cell.name
-                ecode = resource.ecode
-
-                if cell_name not in traces_metadata:
-                    traces_metadata[cell_name] = {}
-
-                if ecode not in traces_metadata[cell_name]:
-                    traces_metadata[cell_name][ecode] = []
-
-                traces_metadata[cell_name][ecode].append(recording_metadata)
-
-        return traces_metadata
-
-    def get_extraction_metadata(self):
-        """Gather the metadata used to build the config dictionaries given as an
-        input to BluePyEfe.
-
-        Returns:
-            traces_metadata (dict)
-            targets (dict)
-            protocols_threshold (list)
-        """
-
-        traces_metadata = {}
-        targets = {}
-        protocols_threshold = []
-
-        resources = self.access_point.fetch(
+        resource = self.access_point.fetch_one(
             {
-                "type": "ElectrophysiologyFeatureExtractionTarget",
-                "eModel": self.emodel,
-                "subject": self.get_subject(for_search=True),
-                "brainLocation": self.brain_region,
+                "type": "ExtractionTargetsConfiguration",
+                "emodel": self.emodel,
+                "ttype": self.ttype,
             }
         )
 
-        if resources is None:
-            logger.warning(
-                "Could not get extraction metadata from Nexus for emodel %s", self.emodel
-            )
-            return traces_metadata, targets, protocols_threshold
+        config_dict = self.access_point.forge.as_json(resource)
 
-        targets, protocols_threshold = self._build_extraction_targets(resources)
-        if not protocols_threshold:
-            raise NexusAccessPointException(
-                "No eCode have been informed to compute the rheobase during extraction."
-            )
+        protocols_rheobase = config_dict["protocols_rheobase"]
+        if isinstance(protocols_rheobase, str):
+            protocols_rheobase = [protocols_rheobase]
 
-        traces_metadata = self._build_extraction_metadata(targets)
+        configuration = TargetsConfiguration(
+            files=config_dict["files"],
+            targets=config_dict["targets"],
+            protocols_rheobase=protocols_rheobase,
+        )
 
-        return traces_metadata, targets, protocols_threshold
+        for file in configuration.files:
+            file.filepath = self.download_trace(id_=file.resource_id, name=file.filename)
+
+        return configuration
 
     def store_fitness_calculator_configuration(self, configuration):
         """Store a fitness calculator configuration as a resource of type

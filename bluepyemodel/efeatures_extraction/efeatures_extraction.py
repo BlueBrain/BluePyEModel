@@ -68,10 +68,7 @@ def extract_save_features_protocols(
         mapper (map): mapper for parallel computations.
     """
 
-    (files_metadata, targets, protocols_threshold) = access_point.get_extraction_metadata()
-
-    if files_metadata is None or targets is None or protocols_threshold is None:
-        raise Exception("Could not get the extraction metadata from the api.")
+    targets_configuration = access_point.get_targets_configuration()
 
     reader_function = define_extraction_reader_function(access_point)
 
@@ -81,10 +78,10 @@ def extract_save_features_protocols(
 
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
         output_directory=output_directory,
-        files_metadata=files_metadata,
-        targets=targets,
+        files_metadata=targets_configuration.files_metadata_BPE,
+        targets=targets_configuration.targets_BPE,
         threshold_nvalue_save=threshold_nvalue_save,
-        protocols_rheobase=protocols_threshold,
+        protocols_rheobase=targets_configuration.protocols_rheobase,
         recording_reader=reader_function,
         map_function=mapper,
         write_files=False,

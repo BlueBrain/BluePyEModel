@@ -9,6 +9,7 @@ import fasteners
 from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
+from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
@@ -208,29 +209,6 @@ class LocalAccessPoint(DataAccessPoint):
         with open(json_path, "r") as f:
             return json.load(f)
 
-    def get_extraction_metadata(self):
-        """Get the configuration parameters used for feature extraction.
-
-        Returns:
-            files_metadata (dict)
-            targets (dict)
-            protocols_threshold (list)
-        """
-
-        path_extract_config = self.pipeline_settings.path_extract_config
-
-        if not path_extract_config:
-            return None, None, None
-
-        with open(path_extract_config, "r") as f:
-            config_dict = json.load(f)
-
-        files_metadata = config_dict["files_metadata"]
-        targets = config_dict["targets"]
-        protocols_threshold = config_dict["protocols_threshold"]
-
-        return files_metadata, targets, protocols_threshold
-
     def get_model_name_for_final(self, seed):
         """Return model name used as key in final.json."""
 
@@ -424,6 +402,38 @@ class LocalAccessPoint(DataAccessPoint):
             configuration.init_from_dict(parameters)
 
         configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
+
+        return configuration
+
+    def store_targets_configuration(self, configuration):
+        """Store the configuration of the targets (targets and ephys files used)"""
+
+        config_dict = {
+            "emodel": self.emodel,
+            "ttype": self.ttype,
+        }
+
+        config_dict.update(configuration.as_dict())
+
+        path_extract_config = self.pipeline_settings.path_extract_config
+        path_extract_config.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(str(path_extract_config), "w") as f:
+            f.write(json.dumps(config_dict, indent=2, cls=NumpyEncoder))
+
+    def get_targets_configuration(self):
+        """Get the configuration of the targets (targets and ephys files used)"""
+
+        path_extract_config = self.pipeline_settings.path_extract_config
+
+        with open(path_extract_config, "r") as f:
+            config_dict = json.load(f)
+
+        configuration = TargetsConfiguration(
+            files=config_dict["files_metadata"],
+            targets=config_dict["targets"],
+            protocols_rheobase=config_dict["protocols_threshold"],
+        )
 
         return configuration
 
