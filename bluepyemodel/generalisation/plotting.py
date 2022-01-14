@@ -1,7 +1,9 @@
 """Plotting functions."""
 import json
 import pickle
+from functools import partial
 from itertools import cycle
+from multiprocessing.pool import Pool
 from pathlib import Path
 
 import matplotlib

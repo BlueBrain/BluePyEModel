@@ -61,9 +61,6 @@ class EvaluateSynthesis(BaseTask):
         )
 
         synth_combos_df = feature_evaluation(
-
-        synth_combos_df = evaluate_combos_rho(
->>>>>>> dc7521c (more update)
             synth_combos_df,
             self.emodel_db,
             morphology_path=self.morphology_path,
