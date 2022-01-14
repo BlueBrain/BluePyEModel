@@ -8,17 +8,14 @@ import pandas as pd
 from morph_tool.neuron_surface import get_NEURON_surface
 from morphio import SectionType
 from morphio.mut import Morphology
-from scipy.ndimage.filters import gaussian_filter
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
 from bluepyemodel.generalisation.evaluators import evaluate_ais_rin
 from bluepyemodel.generalisation.evaluators import evaluate_rho
 from bluepyemodel.generalisation.evaluators import evaluate_rho_axon
-from bluepyemodel.generalisation.evaluators import evaluate_scores
 from bluepyemodel.generalisation.evaluators import evaluate_soma_rin
 from bluepyemodel.generalisation.utils import get_mtypes
-from bluepyemodel.generalisation.utils import get_scores
 
 logger = logging.getLogger(__name__)
 POLYFIT_DEGREE = 10

@@ -221,14 +221,7 @@ def plot_resistance_models(fit_df, models, pdf_filename="resistance_model.pdf", 
                 plt.close()
 
 
-def plot_target_rhos(
-    df,
-    target_rhos,
-    target_rho_axons,
-    pdf_filename="scan_rho.pdf",
-    clip=3,
-    original_morphs_combos_path="../evaluate_original_cells/evaluation_results.csv",
-):
+def plot_target_rhos(df, target_rhos, target_rho_axons, pdf_filename="scan_rho.pdf", clip=3):
     """Plot the results of the search for target rhow axon."""
     df["median_score"] = np.clip(df.median_score, 0, clip)
     with PdfPages(pdf_filename) as pdf:

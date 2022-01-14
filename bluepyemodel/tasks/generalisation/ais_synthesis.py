@@ -65,7 +65,7 @@ class SynthesizeAisSoma(BaseTask):
 
         ensure_dir(self.set_tmp(self.add_emodel(self.synth_db_path)))
         parallel_factory = init_parallel_factory(self.parallel_lib)
-        for i in range(self.n_steps):
+        for _ in range(self.n_steps):
             if "rin_no_soma" in morphs_combos_df.columns:
                 morphs_combos_df = morphs_combos_df.drop(columns=["rin_no_soma"])
             if "rin_no_axon" in morphs_combos_df.columns:

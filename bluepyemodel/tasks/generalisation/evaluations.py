@@ -31,7 +31,6 @@ class EvaluateSynthesis(BaseTask):
 
     def run(self):
         """Run."""
-
         synth_combos_df = pd.read_csv(self.input()["synth_ais"].path)
         if "rin_no_axon" in synth_combos_df.columns:
             synth_combos_df = synth_combos_df.drop(columns=["rin_no_axon"])
