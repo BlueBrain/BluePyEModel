@@ -4,8 +4,8 @@ import pandas as pd
 import yaml
 from bluepyparallel import init_parallel_factory
 
-from bluepyemodel.generalisation.evaluators import evaluate_combos_rho
 from bluepyemodel.generalisation.evaluators import evaluate_rho
+from bluepyemodel.generalisation.evaluators import evaluate_rho_axon
 from bluepyemodel.generalisation.utils import get_scores
 from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAisSoma
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
@@ -13,6 +13,7 @@ from bluepyemodel.tasks.generalisation.config import EvaluationLocalTarget
 from bluepyemodel.tasks.generalisation.config import SelectConfig
 from bluepyemodel.tasks.generalisation.morph_combos import CreateMorphCombosDF
 from bluepyemodel.tasks.generalisation.utils import ensure_dir
+from bluepyemodel.tools.misc_evaluators import feature_evaluation
 
 
 class EvaluateSynthesis(BaseTask):
@@ -49,15 +50,23 @@ class EvaluateSynthesis(BaseTask):
             morphology_path=self.morphology_path,
             resume=self.resume,
             parallel_factory=parallel_factory,
+            db_url=eval_db_path,
         )
-
-        synth_combos_df = evaluate_combos_rho(
+        synth_combos_df = evaluate_rho_axon(
             synth_combos_df,
             self.emodel_db,
             morphology_path=self.morphology_path,
             resume=self.resume,
             parallel_factory=parallel_factory,
-            save_traces=self.save_traces,
+            db_url=eval_db_path,
+        )
+
+        synth_combos_df = feature_evaluation(
+            synth_combos_df,
+            self.emodel_db,
+            morphology_path=self.morphology_path,
+            resume=self.resume,
+            parallel_factory=parallel_factory,
             db_url=eval_db_path,
         )
 
@@ -81,7 +90,7 @@ class EvaluateGeneric(BaseTask):
     save_traces = luigi.BoolParameter(default=False)
     eval_db_path = luigi.Parameter(default="eval_db.sql")
     morphology_path = luigi.Parameter(default="morphology_path")
-    target_path = luigi.Parameter(default="combos_with_scores_df.csv")
+    target_path = luigi.Parameter(default="generic_combos_with_scores_df.csv")
 
     def requires(self):
         """ """
@@ -96,13 +105,12 @@ class EvaluateGeneric(BaseTask):
         eval_db_path = self.set_tmp(self.add_emodel(self.eval_db_path))
         ensure_dir(eval_db_path)
         parallel_factory = init_parallel_factory(self.parallel_lib)
-        morphs_combos_df = evaluate_combos_rho(
+        morphs_combos_df = feature_evaluation(
             morphs_combos_df,
             self.emodel_db,
             morphology_path=self.morphology_path,
             resume=self.resume,
             parallel_factory=parallel_factory,
-            save_traces=self.save_traces,
             db_url=eval_db_path,
         )
         with open(SelectConfig().megate_thresholds_path, "r") as megate_thres_file:
@@ -154,15 +162,15 @@ class EvaluateExemplars(BaseTask):
             morphology_path=self.morphology_path,
             resume=self.resume,
             parallel_factory=parallel_factory,
+            db_url=self.set_tmp(self.add_emodel(self.eval_db_path)),
         )
 
-        morphs_combos_df = evaluate_combos_rho(
+        morphs_combos_df = feature_evaluation(
             morphs_combos_df,
             self.emodel_db,
             morphology_path=self.morphology_path,
             resume=self.resume,
             parallel_factory=parallel_factory,
-            save_traces=self.save_traces,
             db_url=self.set_tmp(self.add_emodel(self.eval_db_path)),
         )
 

@@ -16,12 +16,14 @@ from bluepyemodel.generalisation.plotting import plot_frac_exceptions
 from bluepyemodel.generalisation.plotting import plot_soma_resistance_models
 from bluepyemodel.generalisation.plotting import plot_soma_shape_models
 from bluepyemodel.generalisation.plotting import plot_summary_select
+from bluepyemodel.generalisation.plotting import plot_surface_comparison
 from bluepyemodel.generalisation.plotting import plot_synth_ais_evaluations
-from bluepyemodel.generalisation.plotting import plot_target_rho_axon
+from bluepyemodel.generalisation.plotting import plot_target_rhos
 from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
 from bluepyemodel.tasks.generalisation.ais_model import AisShapeModel
 from bluepyemodel.tasks.generalisation.ais_model import SomaResistanceModel
 from bluepyemodel.tasks.generalisation.ais_model import SomaShapeModel
+from bluepyemodel.tasks.generalisation.ais_model import TargetRho
 from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import PlotLocalTarget
@@ -138,26 +140,37 @@ class PlotTargetRhoAxon(BaseTask):
 
     def requires(self):
         """ """
-        return TargetRhoAxon(emodel=self.emodel)
+        return {
+            "target_rho_axon": TargetRhoAxon(emodel=self.emodel),
+            "target_rho": TargetRho(emodel=self.emodel),
+            "evaluation": EvaluateGeneric(emodel=self.emodel),
+        }
 
     def run(self):
         """ """
-        try:
-            _task = TargetRhoAxon(emodel=self.emodel)
-            rho_scan_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.rho_scan_df_path)))
+        _task = TargetRhoAxon(emodel=self.emodel)
+        rho_axon_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.rho_axon_df_path)))
 
-            ensure_dir(self.output().path)
-            with self.input().open() as target_rhos_file:
-                plot_target_rho_axon(
-                    rho_scan_df,
-                    yaml.safe_load(target_rhos_file),
-                    original_morphs_combos_path=None,
-                    pdf_filename=self.output().path,
-                )
-        except FileNotFoundError:
-            ensure_dir(self.output().path)
-            with open(self.output().path, "w") as f:
-                f.write("no plot for linear_fit mode")
+        _task = TargetRho(emodel=self.emodel)
+        rho_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.rho_df_path)))
+
+        df = pd.read_csv(self.input()["evaluation"].path)
+
+        ensure_dir(self.output().path)
+        with self.input()["target_rho"].open() as target_rhos_file:
+            target_rhos = yaml.safe_load(target_rhos_file)
+        with self.input()["target_rho_axon"].open() as target_rho_axons_file:
+            target_rho_axons = yaml.safe_load(target_rho_axons_file)
+
+        df["rho"] = rho_df["rho"]
+        df["rho_axon"] = rho_axon_df["rho_axon"]
+        plot_target_rhos(
+            df,
+            target_rhos,
+            target_rho_axons,
+            original_morphs_combos_path=None,
+            pdf_filename=self.output().path,
+        )
 
     def output(self):
         """ """
@@ -183,6 +196,32 @@ class PlotSynthesisEvaluation(BaseTask):
             emodels=[self.emodel],
             threshold=self.threshold,
             pdf_filename=self.output().path,
+        )
+
+    def output(self):
+        """ """
+        return PlotLocalTarget(self.add_emodel(self.target_path))
+
+
+class PlotSurfaceComparison(BaseTask):
+    """Make the surface area comparison plots."""
+
+    emodel = luigi.Parameter()
+    threshold = luigi.FloatParameter(default=5)
+    target_path = luigi.Parameter(default="surfaces_comparison/surface.pdf")
+
+    def requires(self):
+        """ """
+        return EvaluateSynthesis(emodel=self.emodel)
+
+    def run(self):
+        """ """
+        ensure_dir(self.output().path)
+        df = pd.read_csv(self.input().path)
+        plot_surface_comparison(
+            df[df.emodel == self.emodel],
+            pdf_filename=self.output().path,
+            bin_params={"min": 0, "max": 1500, "n": 100},
         )
 
     def output(self):

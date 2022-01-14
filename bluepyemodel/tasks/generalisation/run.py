@@ -22,7 +22,9 @@ from bluepyemodel.tasks.generalisation.plotting import PlotGenericSelected
 from bluepyemodel.tasks.generalisation.plotting import PlotSelected
 from bluepyemodel.tasks.generalisation.plotting import PlotSomaResistanceModel
 from bluepyemodel.tasks.generalisation.plotting import PlotSomaShapeModel
+from bluepyemodel.tasks.generalisation.plotting import PlotSurfaceComparison
 from bluepyemodel.tasks.generalisation.plotting import PlotSynthesisEvaluation
+from bluepyemodel.tasks.generalisation.plotting import PlotTargetRhoAxon
 from bluepyemodel.tasks.generalisation.select import ApplyMegating
 from bluepyemodel.tasks.generalisation.select import SelectCombos
 from bluepyemodel.tasks.generalisation.select import SelectGenericCombos
@@ -48,7 +50,9 @@ class RunAll(BaseWrapperTask):
 
             tasks.append(PlotAisResistanceModel(emodel=emodel, rerun=rerun_emodel))
             tasks.append(PlotSomaResistanceModel(emodel=emodel, rerun=rerun_emodel))
+            tasks.append(PlotTargetRhoAxon(emodel=emodel, rerun=rerun_emodel))
             tasks.append(PlotSynthesisEvaluation(emodel=emodel, rerun=rerun_emodel))
+            tasks.append(PlotSurfaceComparison(emodel=emodel, rerun=rerun_emodel))
 
         tasks.append(GatherAisModels(emodels=EmodelAPIConfig().emodels, rerun=rerun_emodel))
         tasks.append(GatherTargetRho(emodels=EmodelAPIConfig().emodels, rerun=rerun_emodel))

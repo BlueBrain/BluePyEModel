@@ -1,17 +1,20 @@
 """Plotting functions."""
 import json
 import pickle
+from functools import partial
 from itertools import cycle
+from multiprocessing.pool import Pool
 from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
+import neurom as nm
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from bluepyopt.ephys.responses import TimeVoltageResponse
 from matplotlib.backends.backend_pdf import PdfPages
-from neurom import load_morphology
+from matplotlib.colors import Normalize
 from neurom.view import matplotlib_impl
 from tqdm import tqdm
 
@@ -19,7 +22,6 @@ from bluepyemodel.generalisation.ais_model import taper_function
 from bluepyemodel.generalisation.evaluators import get_combo_hash
 from bluepyemodel.generalisation.utils import get_emodels
 from bluepyemodel.generalisation.utils import get_mtypes
-from bluepyemodel.generalisation.utils import get_scores
 
 matplotlib.use("Agg")
 
@@ -219,68 +221,41 @@ def plot_resistance_models(fit_df, models, pdf_filename="resistance_model.pdf", 
                 plt.close()
 
 
-def plot_target_rho_axon(
-    rho_scan_df,
+def plot_target_rhos(
+    df,
     target_rhos,
+    target_rho_axons,
     pdf_filename="scan_rho.pdf",
+    clip=3,
     original_morphs_combos_path="../evaluate_original_cells/evaluation_results.csv",
 ):
     """Plot the results of the search for target rhow axon."""
-    # pylint: disable=no-member
-    mtypes = sorted(list(set(rho_scan_df.mtype.to_list())))
-    emodels = sorted(list(set(rho_scan_df.emodel.to_list())))
-
-    if original_morphs_combos_path is not None:
-        all_morphs_combos_df = pd.read_csv(original_morphs_combos_path)
-        all_morphs_combos_df = get_scores(all_morphs_combos_df)
-    else:
-        all_morphs_combos_df = None
-
+    df["median_score"] = np.clip(df.median_score, 0, clip)
     with PdfPages(pdf_filename) as pdf:
-        for emodel in emodels:
-            for mtype in mtypes:
-                me_mask = (rho_scan_df.mtype == mtype) & (rho_scan_df.emodel == emodel)
-                if len(rho_scan_df[me_mask]) > 0:
-                    plt.figure()
-                    ax = plt.gca()
-                    scale_mask = rho_scan_df.AIS_scaler == 1
-                    rho_scan_df[me_mask & ~scale_mask].plot(
-                        x="rho_axon", y="median_score", ls="-", marker="+", ax=ax
-                    )
-                    rho_scan_df[me_mask & ~scale_mask].plot(
-                        x="rho_axon", y="smooth_score", ls="-", ax=ax
-                    )
+        for emodel in df.emodel.unique():
 
-                    ax.axvline(target_rhos[emodel][mtype], label="optimal rho", c="k")
-                    ax.scatter(
-                        rho_scan_df.loc[me_mask & scale_mask, "rho_axon"],
-                        rho_scan_df.loc[me_mask & scale_mask, "median_score"],
-                        c="r",
-                        label="mean AIS model",
-                    )
-                    plt.xscale("log")
-                    if all_morphs_combos_df is not None:
-                        ax.scatter(
-                            all_morphs_combos_df.loc[
-                                (all_morphs_combos_df.emodel == emodel)
-                                & all_morphs_combos_df.for_optimisation,
-                                "rho_axon",
-                            ],
-                            all_morphs_combos_df.loc[
-                                (all_morphs_combos_df.emodel == emodel)
-                                & all_morphs_combos_df.for_optimisation,
-                                "median_score",
-                            ],
-                            c="b",
-                            label="original AIS",
-                        )
+            plt.figure(figsize=(5, 3))
+            _df = df[df.for_optimisation]
+            plt.scatter(df.rho, df.rho_axon, c=df.median_score, s=20)
+            plt.scatter(_df.rho, _df.rho_axon, marker="+", c="r", s=30, label="exemplar")
+            plt.scatter(
+                target_rhos[emodel]["all"],
+                target_rho_axons[emodel]["all"],
+                marker="+",
+                c="g",
+                s=30,
+                label="target",
+            )
+            plt.xscale("log")
+            plt.yscale("log")
+            plt.legend(loc="best")
 
-                    plt.suptitle(emodel + "  " + mtype)
-                    ax.set_ylim(0, 6)
-                    plt.legend()
-                    plt.ylabel("mean z-score of e-features")
-                    pdf.savefig()
-                    plt.close()
+            plt.colorbar(label="median score")
+            plt.xlabel("rho")
+            plt.ylabel("rho axon")
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
 
 
 def plot_synth_ais_evaluations(
@@ -374,7 +349,7 @@ def plot_synth_ais_evaluations(
 
 
 def _plot_neuron(selected_combos_df, cell_id, ax, color="k", morphology_path="morphology_path"):
-    neuron = load_morphology(selected_combos_df.loc[cell_id, morphology_path])
+    neuron = nm.load_morphology(selected_combos_df.loc[cell_id, morphology_path])
     matplotlib_impl.plot_morph(neuron, ax, realistic_diameters=True)
 
     ax.set_title(
@@ -529,3 +504,115 @@ def plot_frac_exceptions(select_df, e_column="emodel"):
         select_df[[e_column, "scores_raw"]][select_df.scores_raw.isna()].groupby(e_column).size()
     )
     select_plot_df.T.plot(kind="barh", x=e_column)
+
+
+def get_bins(bin_params):
+    """Compute path lenghs bins from parameters."""
+    _b = np.linspace(bin_params["min"], bin_params["max"], bin_params["n"] + 1)
+    return [[_b[i], _b[i + 1]] for i in range(bin_params["n"] - 1)]
+
+
+def bin_data(distances, data, path_bins):
+    """Bin data using distances."""
+    for _bin in path_bins:
+        bin_center = 0.5 * (_bin[0] + _bin[1])
+        mean_data = data[(_bin[0] <= distances) & (distances < _bin[1])].sum() / (_bin[1] - _bin[0])
+        yield bin_center, mean_data
+
+
+def get_surface_density(neuron_path, path_bins, neurite_type="basal"):
+    """Compute the binned surface densities of a neuron."""
+
+    neuron = nm.load_morphology(neuron_path)
+
+    _types = {"apical": nm.NeuriteType.apical_dendrite, "basal": nm.NeuriteType.basal_dendrite}
+
+    areas, dists = [], []
+    for neurite in neuron.neurites:
+        if neurite.type == _types[neurite_type]:
+            areas += list(nm.get("segment_areas", neurite))
+            dists += list(nm.get("segment_path_lengths", neurite))
+    return list(bin_data(np.array(dists), np.array(areas), path_bins))
+
+
+def get_surface_profile(df, path_bins, neurite_type="basal"):
+    surface_df = pd.DataFrame()
+    with Pool(4) as pool:
+        for gid, res in enumerate(
+            pool.map(
+                partial(get_surface_density, path_bins=path_bins, neurite_type=neurite_type),
+                df["morphology_path"],
+            )
+        ):
+            for b, s in res:
+                surface_df.loc[gid, b] = s
+    surface_df[surface_df.isna()] = 0
+
+    return surface_df
+
+
+def plot_surface_comparison(df, pdf_filename, bin_params=None, clip=3):
+    """Plot comparison of surface areas and median scores."""
+    if bin_params is None:
+        bin_params = {"min": 0, "max": 1500, "n": 100}
+    path_bins = get_bins(bin_params)
+
+    df["median_score"] = np.clip(df.median_score, 0, clip)
+    df = df.reset_index()
+    with PdfPages(pdf_filename) as pdf:
+        surf_df = get_surface_profile(df, path_bins, "basal")
+        surf_df += get_surface_profile(df, path_bins, "apical")
+
+        mean = surf_df.mean(axis=0)
+        cmappable = plt.cm.ScalarMappable(
+            norm=Normalize(df.median_score.min(), df.median_score.max()), cmap="plasma"
+        )
+
+        plt.figure(figsize=(7, 4))
+        for gid in surf_df.index:
+            c = cmappable.to_rgba(df.loc[gid, "median_score"])
+            plt.plot(surf_df.columns, surf_df.loc[gid], c=c, lw=0.5)
+
+        plt.plot(surf_df.columns, mean, c="r", lw=3, label="mean area")
+        plt.plot(
+            surf_df.columns,
+            surf_df[df.for_optimisation].to_numpy()[0],
+            c="g",
+            lw=3,
+            label="exemplar",
+        )
+        plt.colorbar(cmappable, label="median score")
+        plt.xlabel("path distance")
+        plt.ylabel("surface area")
+        plt.legend()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(7, 4))
+        for gid in surf_df.index:
+            c = cmappable.to_rgba(df.loc[gid, "median_score"])
+            df.loc[gid, "diffs"] = ((surf_df.loc[gid] - mean)).mean()
+            plt.plot(surf_df.columns, surf_df.loc[gid] - mean, c=c, lw=0.5)
+        plt.plot(
+            surf_df.columns,
+            surf_df.loc[df.for_optimisation].to_numpy()[0] - mean,
+            c="g",
+            lw=3,
+            label="exemplar",
+        )
+        plt.colorbar(cmappable, label="median score")
+        plt.xlabel("path distance")
+        plt.ylabel("surface area - mean(surface area)")
+        plt.legend()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(5, 3))
+        plt.scatter(df.median_score, df.diffs)
+        plt.xlabel("median score")
+        plt.ylabel("average surface area difference")
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()

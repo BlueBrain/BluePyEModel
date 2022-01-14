@@ -188,7 +188,7 @@ def find_target_rho(
         parallel_factory=parallel_factory,
     )
 
-    return {emodel: {"all": float(rho_df.rho.median())}}
+    return {emodel: {"all": float(rho_df.rho.median())}}, rho_df
 
 
 def get_ais(neuron):
@@ -459,14 +459,9 @@ def find_target_rho_axon(
     morphs_combos_df,
     emodel_db,
     emodel,
-    ais_models,
-    scales_params,
     morphology_path="morphology_path",
     resume=False,
     parallel_factory=None,
-    filter_sigma=2.0,
-    db_url="rho_scan_db.sql",
-    method="exemplar",
 ):
     """Find the target rho axons for an emodel.
 
@@ -474,11 +469,7 @@ def find_target_rho_axon(
         morphs_combos_df (dataframe): data for me combos
         emodel_db (DataAccessPoint): object which contains API to access emodel data
         emodel (str): emodel to consider
-        ais_models_file (str): path to yaml with ais models
-        scales_params (dict): parameter for scales of AIS to use
         resume (bool): to ecrase previous AIS Rin computations
-        filter_sigma (float): sigma for guassian smoothing of mean scores,
-            using (scipy.ndimage.filters.gaussian_filter)
 
     Returns:
         (dataframe, dict): dataframe with results and dict target rhos for plots
@@ -492,47 +483,4 @@ def find_target_rho_axon(
         parallel_factory=parallel_factory,
     )
 
-    mtype = "all"
-    if method == "exemplar":
-        return {emodel: {"all": float(rho_df.rho_axon.median())}}
-
-    rho_scan_df = _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel)
-    rho_scan_df = evaluate_rho_axon(
-        rho_scan_df,
-        emodel_db,
-        morphology_path=morphology_path,
-        resume=resume,
-        db_url=str(db_url) + ".rho",
-        parallel_factory=parallel_factory,
-    )
-
-    rho_scan_df = evaluate_scores(
-        rho_scan_df,
-        emodel_db,
-        save_traces=False,
-        resume=resume,
-        db_url=str(db_url) + ".scores",
-        morphology_path=morphology_path,
-        parallel_factory=parallel_factory,
-    )
-
-    rho_scan_df = get_scores(
-        rho_scan_df,
-        features_to_keep=RHO_FACTOR_FEATURES,
-        clip=5,
-    )
-
-    mask = rho_scan_df.emodel == emodel
-    target_rhos = {}
-    if len(rho_scan_df[mask]) > 0:
-        scale_mask = rho_scan_df.AIS_scaler == 1
-        median_scores = rho_scan_df[mask & ~scale_mask].median_score.to_numpy()
-        smooth_score = gaussian_filter(median_scores, filter_sigma)
-        rho_scan_df.loc[mask & ~scale_mask, "smooth_score"] = smooth_score
-        best_score_id = rho_scan_df[mask & ~scale_mask].smooth_score.idxmin()
-
-        if emodel not in target_rhos:
-            target_rhos[emodel] = {}
-        target_rhos[emodel][mtype] = float(rho_scan_df.loc[best_score_id, "rho_axon"])
-
-    return rho_scan_df, target_rhos
+    return {emodel: {"all": float(rho_df.rho_axon.median())}}, rho_df

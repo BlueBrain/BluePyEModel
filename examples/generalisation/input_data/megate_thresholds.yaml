@@ -1,0 +1,9 @@
+thresholds:
+    - features:
+        - .*ohmic_input_resistance_vb_ssse
+
+ignore:
+    - bAP
+    - bpo_
+    - decay_time_constant_after_stim
+    - AP2_amp

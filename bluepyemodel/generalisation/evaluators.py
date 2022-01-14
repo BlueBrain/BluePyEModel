@@ -189,12 +189,7 @@ def _rin_evaluation(
     cell_model.freeze(emodel_params)
     sim = get_simulator(stochasticity, cell_model)
 
-    responses = {}
-    for pre_run in [
-        # main_protocol.run_holding,
-        main_protocol.run_rin,
-    ]:
-        responses.update(pre_run(cell_model, responses, sim=sim, timeout=timeout)[0])
+    responses = main_protocol.run_rin(cell_model, {}, sim=sim, timeout=timeout)[0]
 
     if with_currents:
         responses.update(main_protocol.run_RMP(cell_model, responses, sim=sim, timeout=timeout)[0])

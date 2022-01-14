@@ -112,8 +112,7 @@ class TargetRho(BaseTask):
     emodel = luigi.Parameter(default=None)
     morphology_path = luigi.Parameter(default="morphology_path")
     custom_target_rhos_path = luigi.Parameter(default="custom_target_rhos.yaml")
-    rho_scan_db_path = luigi.Parameter(default="sql/rho_scan_db.sql")
-    rho_scan_df_path = luigi.Parameter(default="csv/rho_scan_df.csv")
+    rho_df_path = luigi.Parameter(default="csv/rho_scan_df.csv")
 
     target_path = luigi.Parameter(default="target_rhos/target_rhos.yaml")
 
@@ -127,9 +126,8 @@ class TargetRho(BaseTask):
         target_rhos = None
         morphs_combos_df = pd.read_csv(self.input().path)
 
-        ensure_dir(self.set_tmp(self.add_emodel(self.rho_scan_db_path)))
         parallel_factory = init_parallel_factory(self.parallel_lib)
-        target_rhos = find_target_rho(
+        target_rhos, rho_df = find_target_rho(
             morphs_combos_df[morphs_combos_df.emodel == self.emodel],
             self.emodel_db,
             self.emodel,
@@ -138,9 +136,8 @@ class TargetRho(BaseTask):
             parallel_factory=parallel_factory,
         )
 
-        print("target rhos:", target_rhos)
-        ensure_dir(self.set_tmp(self.add_emodel(self.rho_scan_df_path)))
-        # rho_scan_df.to_csv(self.set_tmp(self.add_emodel(self.rho_scan_df_path)), index=False)
+        ensure_dir(self.set_tmp(self.add_emodel(self.rho_df_path)))
+        rho_df.to_csv(self.set_tmp(self.add_emodel(self.rho_df_path)), index=False)
 
         if Path(self.custom_target_rhos_path).exists():
             with open(self.custom_target_rhos_path, "r") as custom_target_file:
@@ -254,44 +251,32 @@ class TargetRhoAxon(BaseTask):
     emodel = luigi.Parameter(default=None)
     morphology_path = luigi.Parameter(default="morphology_path")
     custom_target_rho_axons_path = luigi.Parameter(default="custom_target_rho_axons.yaml")
-    rho_scan_db_path = luigi.Parameter(default="sql/rho_axon_scan_db.sql")
-    rho_scan_df_path = luigi.Parameter(default="csv/rho_axon_scan_df.csv")
+    rho_axon_df_path = luigi.Parameter(default="csv/rho_axon_scan_df.csv")
 
     target_path = luigi.Parameter(default="target_rhos/target_rho_axons.yaml")
 
     def requires(self):
         """Requires."""
 
-        return {
-            "ais_model": AisResistanceModel(emodel=self.emodel),
-            "morph_combos": CreateMorphCombosDF(),
-        }
+        return CreateMorphCombosDF()
 
     def run(self):
         """Run."""
         target_rho_axons = None
-        morphs_combos_df = pd.read_csv(self.input()["morph_combos"].path)
+        morphs_combos_df = pd.read_csv(self.input().path)
 
-        with self.input()["ais_model"].open() as f:
-            ais_models = yaml.full_load(f)
-
-        ensure_dir(self.set_tmp(self.add_emodel(self.rho_scan_db_path)))
         parallel_factory = init_parallel_factory(self.parallel_lib)
-        target_rho_axons = find_target_rho_axon(
+        target_rho_axons, rho_axon_df = find_target_rho_axon(
             morphs_combos_df,
             self.emodel_db,
             self.emodel,
-            ais_models,
-            ScaleConfig().scales_params,
             morphology_path=self.morphology_path,
-            db_url=self.set_tmp(self.add_emodel(self.rho_scan_db_path)),
             resume=self.resume,
             parallel_factory=parallel_factory,
         )
 
-        print("target rho axon:", target_rho_axons)
-        ensure_dir(self.set_tmp(self.add_emodel(self.rho_scan_df_path)))
-        # rho_scan_df.to_csv(self.set_tmp(self.add_emodel(self.rho_scan_df_path)), index=False)
+        ensure_dir(self.set_tmp(self.add_emodel(self.rho_axon_df_path)))
+        rho_axon_df.to_csv(self.set_tmp(self.add_emodel(self.rho_axon_df_path)), index=False)
 
         if Path(self.custom_target_rho_axons_path).exists():
             with open(self.custom_target_rho_axons_path, "r") as custom_target_file:
