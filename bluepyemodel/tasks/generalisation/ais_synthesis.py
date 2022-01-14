@@ -19,6 +19,7 @@ from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 class SynthesizeAisSoma(BaseTask):
     """Synthesize AIS and Soma."""
+
     emodel = luigi.Parameter(default=None)
     morphology_path = luigi.Parameter(default="morphology_path")
     synth_db_path = luigi.Parameter(default="synth_db.sql")

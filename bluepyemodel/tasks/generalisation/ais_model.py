@@ -36,6 +36,10 @@ class SomaShapeModel(BaseTask):
         """ """
         return CreateMorphCombosDF()
 
+    def requires(self):
+        """ """
+        return CreateMorphCombosDF()
+
     def run(self):
         """Run."""
         if self.custom_shape_model is None:
@@ -175,6 +179,10 @@ class AisShapeModel(BaseTask):
     with_taper = luigi.BoolParameter(default=True)
     target_path = luigi.Parameter(default="ais_shape_model.yaml")
     custom_shape_model = luigi.Parameter(default=None)
+
+    def requires(self):
+        """ """
+        return CreateMorphCombosDF()
 
     def requires(self):
         """ """
