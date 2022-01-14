@@ -55,5 +55,5 @@ if __name__ == "__main__":
     df_scaled = pd.read_csv("out/evaluations/synth_combos_with_scores_df_cADpyr_L5TPC.csv")
     df_orig = pd.read_csv("data.csv")
     df_orig = get_scores(df_orig)
-    plot(df_scaled, df_orig, feat_set='Step_200', pdf_filename='evaluations_step_200.pdf')
-    plot(df_scaled, df_orig, pdf_filename='evaluations_all.pdf')
+    #plot(df_scaled, df_orig, feat_set='Step_200', pdf_filename='evaluations_step_200.pdf')
+    plot(df_scaled, df_orig, pdf_filename='evaluations_new.pdf')

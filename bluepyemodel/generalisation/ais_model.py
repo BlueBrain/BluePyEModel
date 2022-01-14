@@ -70,7 +70,7 @@ def build_soma_models(
 
     if not mtype_dependent:
         if mtypes is not None:
-            morphs_df = morphs_df[morphs_df.mtype.isin(mtypes)]
+            morphs_df = morphs_df[morphs_df.mtype.isin(mtypes) & morphs_df.for_optimisation]
         return {"all": build_soma_model(morphs_df[morphology_path].to_list())}
 
     models = {}
@@ -180,7 +180,7 @@ def find_target_rho(
         (dataframe, dict): dataframe with results and dict target rhos for plots
     """
     rho_df = evaluate_rho(
-        morphs_combos_df[morphs_combos_df.for_optimisation],
+        morphs_combos_df,
         emodel_db,
         morphology_path=morphology_path,
         resume=resume,
@@ -188,15 +188,7 @@ def find_target_rho(
         parallel_factory=parallel_factory,
     )
 
-    mtype = "all"
-    target_rho = {}
-    for gid in rho_df.index:
-        emodel = rho_df.loc[gid, "emodel"]
-        if emodel not in target_rho:
-            target_rho[emodel] = {}
-        target_rho[emodel][mtype] = float(rho_df.loc[gid, "rho"])
-
-    return {"rho": target_rho}
+    return {emodel: {"all": float(rho_df.rho.median())}}
 
 
 def get_ais(neuron):
@@ -300,7 +292,7 @@ def build_ais_diameter_models(
 
     mtypes = get_mtypes(morphs_df, mtypes)
     logger.info("Extracting model from all axons")
-    morphologies_all = morphs_df.loc[:, morphology_path].to_list()
+    morphologies_all = morphs_df[morphs_df.for_optimisation][morphology_path].to_list()
 
     models = {}
     models["all"] = build_ais_diameter_model(morphologies_all, with_taper=with_taper)
@@ -417,7 +409,6 @@ def _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel
 
     mask = morphs_combos_df.emodel == emodel
     rho_scan_df = pd.DataFrame()
-
     if len(morphs_combos_df[mask]) > 0:
         logger.info("creating rows for %s", emodel)
         new_row = morphs_combos_df[mask & morphs_combos_df.for_optimisation].copy()
@@ -493,7 +484,7 @@ def find_target_rho_axon(
         (dataframe, dict): dataframe with results and dict target rhos for plots
     """
     rho_df = evaluate_rho_axon(
-        morphs_combos_df[morphs_combos_df.for_optimisation],
+        morphs_combos_df,
         emodel_db,
         morphology_path=morphology_path,
         resume=resume,
@@ -503,14 +494,7 @@ def find_target_rho_axon(
 
     mtype = "all"
     if method == "exemplar":
-        target_rho_axons = {}
-        for gid in rho_df.index:
-            emodel = rho_df.loc[gid, "emodel"]
-            if emodel not in target_rho_axons:
-                target_rho_axons[emodel] = {}
-            target_rho_axons[emodel][mtype] = float(rho_df.loc[gid, "rho_axon"])
-
-        return {"rho_axon": target_rho_axons}
+        return {emodel: {"all": float(rho_df.rho_axon.median())}}
 
     rho_scan_df = _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel)
     rho_scan_df = evaluate_rho_axon(

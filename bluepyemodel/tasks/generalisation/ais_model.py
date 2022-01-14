@@ -16,7 +16,6 @@ from bluepyemodel.generalisation.ais_model import find_target_rho_axon
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import ModelLocalTarget
 from bluepyemodel.tasks.generalisation.config import ScaleConfig
-from bluepyemodel.tasks.generalisation.morph_combos import ApplySubstitutionRules
 from bluepyemodel.tasks.generalisation.morph_combos import CreateMorphCombosDF
 from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
@@ -32,9 +31,13 @@ class SomaShapeModel(BaseTask):
     mtype_dependent = luigi.BoolParameter(default=False)
     target_path = luigi.Parameter(default="soma_shape_model.yaml")
 
+    def requires(self):
+        """ """
+        return CreateMorphCombosDF()
+
     def run(self):
         """Run."""
-        morphs_df = pd.read_csv(ApplySubstitutionRules().morphs_df_path)
+        morphs_df = pd.read_csv(self.input().path)
         models = build_soma_models(
             morphs_df,
             self.mtypes,
@@ -127,7 +130,7 @@ class TargetRho(BaseTask):
         ensure_dir(self.set_tmp(self.add_emodel(self.rho_scan_db_path)))
         parallel_factory = init_parallel_factory(self.parallel_lib)
         target_rhos = find_target_rho(
-            morphs_combos_df,
+            morphs_combos_df[morphs_combos_df.emodel == self.emodel],
             self.emodel_db,
             self.emodel,
             morphology_path=self.morphology_path,
@@ -167,9 +170,13 @@ class AisShapeModel(BaseTask):
     with_taper = luigi.BoolParameter(default=True)
     target_path = luigi.Parameter(default="ais_shape_model.yaml")
 
+    def requires(self):
+        """ """
+        return CreateMorphCombosDF()
+
     def run(self):
         """Run."""
-        morphs_df = pd.read_csv(ApplySubstitutionRules().morphs_df_path)
+        morphs_df = pd.read_csv(self.input().path)
         morphs_df = morphs_df[morphs_df.use_axon]
 
         models = build_ais_diameter_models(

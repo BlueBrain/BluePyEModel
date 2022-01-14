@@ -7,7 +7,7 @@ from bluepyparallel import init_parallel_factory
 from bluepyemodel.generalisation.evaluators import evaluate_combos_rho
 from bluepyemodel.generalisation.evaluators import evaluate_rho
 from bluepyemodel.generalisation.utils import get_scores
-from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeSoma
+from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAisSoma
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import EvaluationLocalTarget
 from bluepyemodel.tasks.generalisation.config import SelectConfig
@@ -26,13 +26,18 @@ class EvaluateSynthesis(BaseTask):
 
     def requires(self):
         """Requires."""
-        return {"synth_ais": SynthesizeSoma(emodel=self.emodel)}
+        return {"synth_ais": SynthesizeAisSoma(emodel=self.emodel)}
 
     def run(self):
         """Run."""
 
         synth_combos_df = pd.read_csv(self.input()["synth_ais"].path)
-        synth_combos_df = synth_combos_df.drop(columns=["rin_no_axon", "rin_no_soma", "exception"])
+        if "rin_no_axon" in synth_combos_df.columns:
+            synth_combos_df = synth_combos_df.drop(columns=["rin_no_axon"])
+        if "rin_no_soma" in synth_combos_df.columns:
+            synth_combos_df = synth_combos_df.drop(columns=["rin_no_soma"])
+        if "exception" in synth_combos_df.columns:
+            synth_combos_df = synth_combos_df.drop(columns=["exception"])
         synth_combos_df = synth_combos_df[synth_combos_df.emodel == self.emodel]
 
         eval_db_path = self.set_tmp(self.add_emodel(self.eval_db_path))

@@ -2,7 +2,7 @@
 import luigi
 
 from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
-from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeSoma
+from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAisSoma
 from bluepyemodel.tasks.generalisation.base_task import BaseWrapperTask
 from bluepyemodel.tasks.generalisation.config import EmodelAPIConfig
 from bluepyemodel.tasks.generalisation.evaluations import EvaluateExemplars
@@ -42,7 +42,7 @@ class RunAll(BaseWrapperTask):
             if self.rerun_emodels is not None and emodel in self.rerun_emodels:
                 rerun_emodel = True
                 tasks.append(AisResistanceModel(emodel=emodel, rerun=rerun_emodel))
-                tasks.append(SynthesizeSoma(emodel=emodel, rerun=rerun_emodel))
+                tasks.append(SynthesizeAisSoma(emodel=emodel, rerun=rerun_emodel))
                 tasks.append(EvaluateSynthesis(emodel=emodel, rerun=rerun_emodel))
                 tasks.append(EvaluateExemplars(emodel=emodel, rerun=rerun_emodel))
 

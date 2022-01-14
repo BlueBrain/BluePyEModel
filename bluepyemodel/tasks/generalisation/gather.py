@@ -7,7 +7,7 @@ from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
 from bluepyemodel.tasks.generalisation.ais_model import AisShapeModel
 from bluepyemodel.tasks.generalisation.ais_model import TargetRho
 from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
-from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeSoma
+from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAisSoma
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import GatherLocalTarget
 from bluepyemodel.tasks.generalisation.config import ScaleConfig
@@ -83,7 +83,7 @@ class GatherTargetRho(BaseTask):
         for emodel in self.emodels:
             with self.input()["target_rho_" + emodel].open() as f:
                 rhos = yaml.full_load(f)
-                target_rho[emodel] = rhos["rho"][emodel]
+                target_rho[emodel] = rhos[emodel]
 
         ensure_dir(self.output().path)
         with self.output().open("w") as f:
@@ -113,7 +113,7 @@ class GatherTargetRhoAxon(BaseTask):
         for emodel in self.emodels:
             with self.input()["target_rho_axon_" + emodel].open() as f:
                 rhos = yaml.full_load(f)
-                target_rho_axons[emodel] = rhos["rho_axon"][emodel]
+                target_rho_axons[emodel] = rhos[emodel]
 
         ensure_dir(self.output().path)
         with self.output().open("w") as f:
@@ -132,7 +132,7 @@ class GatherSynthAis(BaseTask):
 
     def requires(self):
         """ """
-        return {emodel: SynthesizeSoma(emodel=emodel) for emodel in self.emodels}
+        return {emodel: SynthesizeAisSoma(emodel=emodel) for emodel in self.emodels}
 
     def run(self):
         """ """

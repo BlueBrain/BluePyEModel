@@ -189,25 +189,25 @@ def _rin_evaluation(
     cell_model.freeze(emodel_params)
     sim = get_simulator(stochasticity, cell_model)
 
-    if with_currents:
-        responses = {}
-        for pre_run in [
-            main_protocol.run_RMP,
-            main_protocol.run_holding,
-            main_protocol.run_rin,
-            main_protocol.run_threshold,
-        ]:
-            responses.update(pre_run(cell_model, responses, sim=sim, timeout=timeout)[0])
+    responses = {}
+    for pre_run in [
+        # main_protocol.run_holding,
+        main_protocol.run_rin,
+    ]:
+        responses.update(pre_run(cell_model, responses, sim=sim, timeout=timeout)[0])
 
+    if with_currents:
+        responses.update(main_protocol.run_RMP(cell_model, responses, sim=sim, timeout=timeout)[0])
+        responses.update(
+            main_protocol.run_threshold(cell_model, responses, sim=sim, timeout=timeout)[0]
+        )
         cell_model.unfreeze(emodel_params.keys())
         return {
             key + "holding_current": responses["bpo_holding_current"],
             key + "threshold_current": responses["bpo_threshold_current"],
         }
 
-    responses = main_protocol.run_rin(cell_model, {}, sim=sim, timeout=timeout)[0]
     cell_model.unfreeze(emodel_params.keys())
-
     return {key: responses["bpo_rin"]}
 
 
@@ -506,7 +506,7 @@ def evaluate_combos_rho(
         resume=resume,
         morphology_path=morphology_path,
         parallel_factory=parallel_factory,
-        score_threshold=20,
+        score_threshold=100,
         trace_data_path=trace_folder if save_traces else None,
     )
 

@@ -307,11 +307,6 @@ def plot_synth_ais_evaluations(
                 score_df[score] = morphs_combos_df["scores_raw"].apply(
                     lambda s, score=score: json.loads(s)[score]
                 )
-            _df = score_df[mask & morphs_combos_df.for_optimisation]
-            _df = _df.set_index("rho_axon")
-            for i, d in zip(_df.index, _df.to_numpy()):
-                for _d in d:
-                    plt.plot(i, _d, "+")
             morphs_combos_df[mask & morphs_combos_df.for_optimisation].plot(
                 x="rho_axon",
                 y="median_score",
@@ -332,12 +327,6 @@ def plot_synth_ais_evaluations(
                     else:
                         me_mask_no_failed = me_mask
                         me_mask_failed = False * me_mask
-                    _df = score_df[me_mask_no_failed]
-                    _df = _df.sort_values(by="rho_axon")
-                    _df = _df.set_index("rho_axon")
-                    print(_df.std(axis=0))
-                    for score in _df.columns:
-                        plt.plot(_df.index, _df[score], "-.", lw=0.1)
 
                     morphs_combos_df[me_mask_no_failed].plot(
                         x="rho_axon",

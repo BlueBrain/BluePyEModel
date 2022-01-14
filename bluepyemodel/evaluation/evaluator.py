@@ -227,7 +227,7 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     raise Exception("Couldn't find the Rin feature associated to the Rin protocol")
 
 
-def define_holding_protocol(efeatures, strict_bounds=False):
+def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False):
     """Define the search holding current protocol"""
 
     target_voltage = next(
@@ -244,9 +244,14 @@ def define_holding_protocol(efeatures, strict_bounds=False):
     )
 
     if target_voltage and target_current:
+        if isinstance(ais_recording, str):
+            location = eval(f"{ais_recording}_loc")  # pylint: disable=eval-used
+        else:
+            location = soma_loc if not ais_recording else ais_loc
+
         return SearchHoldingCurrent(
             name="SearchHoldingCurrent",
-            location=soma_loc,
+            location=location,
             target_voltage=target_voltage,
             target_holding=target_current,
             strict_bounds=strict_bounds,
@@ -356,7 +361,9 @@ def define_main_protocol(
     if threshold_based_evaluator:
         rmp_protocol = define_RMP_protocol(efeatures)
         rin_protocol = define_Rin_protocol(efeatures, ais_recording)
-        search_holding_protocol = define_holding_protocol(efeatures, strict_holding_bounds)
+        search_holding_protocol = define_holding_protocol(
+            efeatures, strict_holding_bounds, ais_recording
+        )
         search_threshold_protocol = define_threshold_protocol(efeatures, max_threshold_voltage)
 
     for feature in efeatures:
