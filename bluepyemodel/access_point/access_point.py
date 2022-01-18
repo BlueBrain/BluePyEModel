@@ -67,6 +67,12 @@ class DataAccessPoint:
     def get_emodels(self, emodels):
         """Get the list of emodels dictionaries."""
 
+    def store_targets_configuration(self):
+        """Store the configuration of the targets (targets and ephys files used)"""
+
+    def get_targets_configuration(self):
+        """Get the configuration of the targets (targets and ephys files used)"""
+
     def store_model_configuration(self):
         """Store the configuration of a model, including parameters, mechanisms and distributions"""
 

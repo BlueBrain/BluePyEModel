@@ -45,10 +45,10 @@ def get_access_point(access_point, emodel, **kwargs):
 
         return NexusAccessPoint(
             emodel=emodel,
-            species=kwargs.get("species", "rat"),
-            brain_region=kwargs.get("brain_region", None),
-            project=kwargs.get("project", "emodel_pipeline"),
-            organisation=kwargs.get("organisation", "demo"),
+            species=kwargs["species"],
+            brain_region=kwargs["brain_region"],
+            project=kwargs.get("project", "ncmv3"),
+            organisation=kwargs.get("organisation", "bbp"),
             endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
             forge_path=kwargs.get("forge_path", None),
             ttype=ttype,
