@@ -118,7 +118,12 @@ class ModelConfigurator:
             )
 
         for m in mechs:
-            version = next((k["modelid"] for k in nexus_keys if k["name"] == m["name"]), None)
+
+            version = None
+            for k in nexus_keys:
+                if k["name"] == m["name"]:
+                    version = k.get("modelid", None)
+
             self.configuration.add_mechanism(
                 m["name"],
                 locations=m["location"],

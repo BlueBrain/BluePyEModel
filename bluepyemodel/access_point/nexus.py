@@ -811,9 +811,13 @@ class NexusAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for r in resources:
-            available_mechanisms.append(
-                {"name": r.name, "version": r.version if hasattr(r, "version") else None}
-            )
+
+            mech = {"name": r.name, "version": None}
+
+            if hasattr(r, "modelid"):
+                mech["version"] = r.modelid
+
+            available_mechanisms.append(mech)
 
         return available_mechanisms
 
