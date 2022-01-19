@@ -54,7 +54,7 @@ class EFeatureConfiguration:
         self.std = _limit_std(mean, std, threshold_efeature_std)
 
         if efel_settings is None:
-            self.efel_settings = {"strict_stim": True}
+            self.efel_settings = {"strict_stiminterval": True}
         else:
             self.efel_settings = efel_settings
 
