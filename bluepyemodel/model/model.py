@@ -1,7 +1,7 @@
 """Cell model creation."""
 import collections
-import logging
 import importlib
+import logging
 
 from bluepyopt import ephys
 from bluepyopt.ephys.morphologies import NrnFileMorphology
