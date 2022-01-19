@@ -1,8 +1,7 @@
 """Cell model creation."""
 import collections
+import importlib
 import logging
-import pathlib
-from importlib.machinery import SourceFileLoader
 
 from bluepyopt import ephys
 from bluepyopt.ephys.morphologies import NrnFileMorphology
@@ -204,10 +203,7 @@ def define_morphology(
     else:
         for i, morph_modifier in enumerate(morph_modifiers):
             if isinstance(morph_modifier, list):
-                # pylint: disable=deprecated-method,no-value-for-parameter
-                modifier_module = SourceFileLoader(
-                    pathlib.Path(morph_modifier[0]).stem, morph_modifier[0]
-                ).load_module()
+                modifier_module = importlib.import_module(morph_modifier[0])
                 morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
 
             elif not callable(morph_modifier):
