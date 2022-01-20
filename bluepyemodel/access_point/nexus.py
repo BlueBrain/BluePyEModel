@@ -350,7 +350,7 @@ class NexusAccessPoint(DataAccessPoint):
             {"type": "NeuronMorphology", "name": name}, use_version=False
         )
 
-        return self.access_point.download(resource.id, "./morphology/")
+        return self.access_point.download(resource.id, "./nexus_temp/")
 
     def store_pipeline_settings(
         self,
@@ -800,7 +800,7 @@ class NexusAccessPoint(DataAccessPoint):
             emodel=self.emodel, seed=None, ttype=self.ttype, iteration_tag=self.iteration_tag
         )
 
-        mechanisms_directory = pathlib.Path("./nexus_tmp/") / directory_name / "mechanisms"
+        mechanisms_directory = pathlib.Path("./nexus_temp/") / directory_name / "mechanisms"
 
         return mechanisms_directory.resolve()
 
