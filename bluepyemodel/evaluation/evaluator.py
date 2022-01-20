@@ -68,8 +68,6 @@ def define_location(definition):
             seclist_name=definition["seclist_name"],
         )
 
-    raise Exception(f"Unknown recording type {definition['type']}")
-
 
 def define_protocol(protocol_configuration, stochasticity=False, threshold_based=False):
     """Create the protocol.
