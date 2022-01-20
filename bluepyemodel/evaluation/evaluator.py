@@ -67,6 +67,7 @@ def define_location(definition):
             sec_index=definition["sec_index"],
             seclist_name=definition["seclist_name"],
         )
+    raise Exception(f"Unknown recording type {definition['type']}")
 
 
 def define_protocol(protocol_configuration, stochasticity=False, threshold_based=False):
@@ -87,17 +88,17 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
     for rec_def in protocol_configuration.recordings:
 
         location = define_location(rec_def)
+        if location is not None:
+            if "variable" in rec_def:
+                variable = rec_def["variable"]
+            else:
+                variable = rec_def["var"]
 
-        if "variable" in rec_def:
-            variable = rec_def["variable"]
-        else:
-            variable = rec_def["var"]
-
-        recording = CompRecording(
-            name=rec_def["name"],
-            location=location,
-            variable=variable,
-        )
+            recording = CompRecording(
+                name=rec_def["name"],
+                location=location,
+                variable=variable,
+            )
 
         recordings.append(recording)
 

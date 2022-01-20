@@ -28,30 +28,40 @@ def _get_apical_point(cell):
 def _set_morphology_dependent_locations(stimulus, cell):
     """Here we deal with morphology dependent locations"""
 
-    new_stim = deepcopy(stimulus)
-
+    new_stims = []
     if stimulus["type"] == "somadistanceapic":
-        new_stim["sec_index"] = _get_apical_point(cell)
-        new_stim["sec_name"] = seclist_to_sec.get(
-            new_stim["seclist_name"], new_stim["seclist_name"]
+        new_stims = [deepcopy(stimulus)]
+        new_stims[0]["sec_index"] = _get_apical_point(cell)
+        new_stims[0]["sec_name"] = seclist_to_sec.get(
+            stimulus["seclist_name"], stimulus["seclist_name"]
         )
 
     elif stimulus["type"] == "terminal_sections":
         # all terminal sections
         for sec_id, section in enumerate(getattr(cell.icell, stimulus["seclist_name"])):
             if len(section.subtree()) == 1:
-                new_stim["type"] = "nrnseclistcomp"
-                new_stim["name"] = f"{stimulus['name']}{sec_id}"
-                new_stim["sec_index"] = sec_id
+                _new_stim = deepcopy(stimulus)
+                _new_stim["type"] = "nrnseclistcomp"
+                _new_stim["name"] = f"{stimulus['name']}{sec_id}"
+                _new_stim["sec_index"] = sec_id
+                new_stims.append(_new_stim)
 
     elif stimulus["type"] == "all_sections":
         # all section of given type
-        for sec_id, section in enumerate(getattr(cell.icell, new_stim["seclist_name"])):
-            new_stim["type"] = "nrnseclistcomp"
-            new_stim["name"] = f"{new_stim['name']}{sec_id}"
-            new_stim["sec_index"] = sec_id
+        for sec_id, section in enumerate(getattr(cell.icell, stimulus["seclist_name"])):
+            _new_stim = deepcopy(stimulus)
+            _new_stim["type"] = "nrnseclistcomp"
+            _new_stim["name"] = f"{stimulus['name']}{sec_id}"
+            _new_stim["sec_index"] = sec_id
+            new_stims.append(_new_stim)
 
-    return new_stim
+    if len(new_stims) == 0 and stimulus["type"] in [
+        "somadistanceapic",
+        "terminal_sections",
+        "all_sections",
+    ]:
+        logger.warning("We could not add a location for %s", stimulus)
+    return new_stims
 
 
 class FitnessCalculatorConfiguration:
@@ -417,9 +427,12 @@ class FitnessCalculatorConfiguration:
         # TODO: THE SAME FOR STIMULI
 
         for i, protocol in enumerate(self.protocols):
+            recordings = []
             for j, rec in enumerate(protocol.recordings):
                 if rec["type"] != "CompRecording":
-                    self.protocols[i].recordings[j] = _set_morphology_dependent_locations(rec, cell)
+                    for rec in _set_morphology_dependent_locations(rec, cell):
+                        recordings.append(rec)
+            self.protocols[i].recordings = recordings
 
         to_remove = []
         for i, feature in enumerate(self.efeatures):
