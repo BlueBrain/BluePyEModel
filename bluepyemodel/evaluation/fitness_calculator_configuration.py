@@ -55,6 +55,9 @@ def _set_morphology_dependent_locations(stimulus, cell):
             _new_stim["sec_index"] = sec_id
             new_stims.append(_new_stim)
 
+    else:
+        new_stims = [deepcopy(stimulus)]
+
     if len(new_stims) == 0 and stimulus["type"] in [
         "somadistanceapic",
         "terminal_sections",
@@ -432,6 +435,8 @@ class FitnessCalculatorConfiguration:
                 if rec["type"] != "CompRecording":
                     for rec in _set_morphology_dependent_locations(rec, cell):
                         recordings.append(rec)
+                else:
+                    recordings.append(self.protocols[i].recordings[j])
             self.protocols[i].recordings = recordings
 
         to_remove = []
