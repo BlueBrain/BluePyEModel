@@ -451,7 +451,7 @@ class FitnessCalculatorConfiguration:
                 for rec in protocol.recordings:
                     if rec["name"].split(".")[1].startswith(_loc_name[:-1]):
                         features.append(deepcopy(feature))
-                        features[-1].recording_name = rec["name"] + "." + _rec_name
+                        features[-1].recording_name = rec["name"]
 
         self.efeatures = [f for i, f in enumerate(self.efeatures + features) if i not in to_remove]
 
