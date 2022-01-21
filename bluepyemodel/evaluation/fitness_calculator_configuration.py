@@ -449,9 +449,10 @@ class FitnessCalculatorConfiguration:
                 to_remove.append(i)
                 protocol = next(p for p in self.protocols if p.name == feature.protocol_name)
                 for rec in protocol.recordings:
-                    if rec["name"].split(".")[1].startswith(_loc_name[:-1]):
+                    rec_name = rec["name"].split(".")[1]
+                    if rec_name.startswith(_loc_name[:-1]):
                         features.append(deepcopy(feature))
-                        features[-1].recording_name = rec["name"]
+                        features[-1].recording_name = rec_name
 
         self.efeatures = [f for i, f in enumerate(self.efeatures + features) if i not in to_remove]
 
