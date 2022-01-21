@@ -433,8 +433,8 @@ class FitnessCalculatorConfiguration:
             recordings = []
             for j, rec in enumerate(protocol.recordings):
                 if rec["type"] != "CompRecording":
-                    for rec in _set_morphology_dependent_locations(rec, cell):
-                        recordings.append(rec)
+                    for _rec in _set_morphology_dependent_locations(rec, cell):
+                        recordings.append(_rec)
                 else:
                     recordings.append(self.protocols[i].recordings[j])
             self.protocols[i].recordings = recordings
