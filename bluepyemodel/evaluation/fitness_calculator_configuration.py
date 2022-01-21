@@ -42,7 +42,7 @@ def _set_morphology_dependent_locations(stimulus, cell):
             if len(section.subtree()) == 1:
                 _new_stim = deepcopy(stimulus)
                 _new_stim["type"] = "nrnseclistcomp"
-                _new_stim["name"] = f"{stimulus['name']}{sec_id}"
+                _new_stim["name"] = f"{'.'.join(stimulus['name'].split('.')[:-1])}_{sec_id}"
                 _new_stim["sec_index"] = sec_id
                 new_stims.append(_new_stim)
 
@@ -51,7 +51,7 @@ def _set_morphology_dependent_locations(stimulus, cell):
         for sec_id, section in enumerate(getattr(cell.icell, stimulus["seclist_name"])):
             _new_stim = deepcopy(stimulus)
             _new_stim["type"] = "nrnseclistcomp"
-            _new_stim["name"] = f"{stimulus['name']}{sec_id}"
+            _new_stim["name"] = f"{'.'.join(stimulus['name'].split('.')[:-1])}_{sec_id}"
             _new_stim["sec_index"] = sec_id
             new_stims.append(_new_stim)
 
