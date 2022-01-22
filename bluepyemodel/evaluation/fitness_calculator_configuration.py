@@ -442,19 +442,19 @@ class FitnessCalculatorConfiguration:
         # if the loc of the recording is of the form axon*.v, we replace * by
         # all the corresponding int from the created recordings
         to_remove = []
-        features = []
-        for i, feature in enumerate(self.efeatures):
-            _loc_name, _rec_name = feature.recording_name.split(".")
+        efeatures = []
+        for i, efeature in enumerate(self.efeatures):
+            _loc_name, _rec_name = efeature.recording_name.split(".")
             if _loc_name[-1] == "*":
                 to_remove.append(i)
-                protocol = next(p for p in self.protocols if p.name == feature.protocol_name)
+                protocol = next(p for p in self.protocols if p.name == efeature.protocol_name)
                 for rec in protocol.recordings:
                     rec_name = rec["name"].split(".")[1]
                     if rec_name.startswith(_loc_name[:-1]):
-                        features.append(deepcopy(feature))
-                        features[-1].recording_name = rec_name
+                        efeatures.append(deepcopy(efeature))
+                        efeatures[-1].recording_name = rec_name
 
-        self.efeatures = [f for i, f in enumerate(self.efeatures + features) if i not in to_remove]
+        self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove] + efeatures
 
     def as_dict(self):
         """Used for the storage of the configuration"""
