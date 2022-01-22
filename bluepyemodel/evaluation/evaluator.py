@@ -89,7 +89,6 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
     for rec_def in protocol_configuration.recordings:
 
         location = define_location(rec_def)
-
         if "variable" in rec_def:
             variable = rec_def["variable"]
         else:
