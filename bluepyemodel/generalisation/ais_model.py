@@ -161,7 +161,7 @@ def find_target_rho(
     resume=False,
     parallel_factory=None,
 ):
-    """Find the target rho for an emodel.
+    """Find the target rho for an emodel from exemplar.
 
     Args:
         morphs_combos_df (dataframe): data for me combos
@@ -185,7 +185,7 @@ def find_target_rho(
         parallel_factory=parallel_factory,
     )
 
-    return {emodel: {"all": float(rho_df.rho.median())}}, rho_df
+    return {emodel: {"all": float(rho_df[rho_df.for_optimisation].rho.median())}}, rho_df
 
 
 def get_ais(neuron):
@@ -460,7 +460,7 @@ def find_target_rho_axon(
     resume=False,
     parallel_factory=None,
 ):
-    """Find the target rho axons for an emodel.
+    """Find the target rho axons for an emodel from exemplar.
 
     Args:
         morphs_combos_df (dataframe): data for me combos
@@ -480,4 +480,4 @@ def find_target_rho_axon(
         parallel_factory=parallel_factory,
     )
 
-    return {emodel: {"all": float(rho_df.rho_axon.median())}}, rho_df
+    return {emodel: {"all": float(rho_df[rho_df.for_optimisation].rho_axon.median())}}, rho_df

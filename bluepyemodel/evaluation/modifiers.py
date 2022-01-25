@@ -208,28 +208,28 @@ def replace_axon_with_taper(sim=None, icell=None):
 
 
 def remove_soma(sim=None, icell=None):
-    """Remove the soma and connect dendrites together.
+    """Remove the soma and connect dendrites together at the axon.
 
     For this to work, we leave the soma connected to the axon,
     and with diameter 1e-6. BluePyOp requires a soma for
     parameter scaling, and NEURON fails is the soma size is =0.
     """
-    sec = list(icell.basal)[0]
-    for i, section in enumerate(icell.basal):
-        if i > 0:
-            if section.parentseg().sec in list(icell.soma):
-                sim.neuron.h.disconnect(section)
-                section.connect(sec)
+    sec = list(icell.axonal)[0]
+    for section in icell.basal:
+        if section.parentseg().sec in list(icell.soma):
+            sim.neuron.h.disconnect(section)
+            section.connect(sec, 0, 0)
 
     for section in icell.apical:
         if section.parentseg().sec in list(icell.soma):
             sim.neuron.h.disconnect(section)
-            section.connect(sec)
+            section.connect(sec, 0, 0)
 
-    for section in icell.axonal:
-        if section.parentseg().sec in list(icell.soma):
-            sim.neuron.h.disconnect(section)
-            section.connect(sec)
+    for i, section in enumerate(icell.axonal):
+        if i > 0:
+            if section.parentseg().sec in list(icell.soma):
+                sim.neuron.h.disconnect(section)
+                section.connect(sec, 0, 0)
 
     for section in icell.soma:
         section.diam = ZERO

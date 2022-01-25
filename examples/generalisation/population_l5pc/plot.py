@@ -27,3 +27,17 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig("score_comparison.pdf")
 
+    df = pd.read_csv("morphs_df.csv")
+    areas = []
+    for gid in df.index:
+        m = nm.load_morphology(df.loc[gid, "morphology_path"])
+        _a = 0
+        for neurite in m.neurites:
+            if neurite.type in [nm.NeuriteType.apical_dendrite, nm.NeuriteType.basal_dendrite]:
+                _a += neurite.area
+        areas.append(_a)
+    plt.figure(figsize=(3, 2))
+    plt.hist(areas, bins=20)
+    plt.xlabel('basal/apical surface area')
+    plt.tight_layout()
+    plt.savefig("pop_surface_areas.pdf")

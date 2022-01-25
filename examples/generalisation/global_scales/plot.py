@@ -50,6 +50,7 @@ def plot(df1, df2, threshold=5, pdf_filename="evaluations.pdf", feat_set=None):
             _df1 = _df1.drop(index=0).sort_values(by="area").set_index("area")
 
             _df2 = score_df2[mask]
+            __df2 = _df2.set_index("area")
             _df2 = _df2.drop(index=0).sort_values(by="area").set_index("area")
             for feat in _df1.columns:
                 if feat_set is None or (feat_set is not None and feat.startswith(feat_set)):
@@ -66,6 +67,10 @@ def plot(df1, df2, threshold=5, pdf_filename="evaluations.pdf", feat_set=None):
                     plt.plot(
                         df1.area[0], np.clip(__df1.head(1)[feat], 0, clip), "or", label="exemplar"
                     )
+                    plt.plot(
+                        df2.area[0], np.clip(__df2.head(1)[feat], 0, clip), "or", label="exemplar"
+                    )
+
                     plt.suptitle(feat)
                     plt.legend()
                     plt.gca().set_ylim(0, clip + 0.5)

@@ -164,13 +164,7 @@ class PlotTargetRhoAxon(BaseTask):
 
         df["rho"] = rho_df["rho"]
         df["rho_axon"] = rho_axon_df["rho_axon"]
-        plot_target_rhos(
-            df,
-            target_rhos,
-            target_rho_axons,
-            original_morphs_combos_path=None,
-            pdf_filename=self.output().path,
-        )
+        plot_target_rhos(df, target_rhos, target_rho_axons, pdf_filename=self.output().path)
 
     def output(self):
         """ """

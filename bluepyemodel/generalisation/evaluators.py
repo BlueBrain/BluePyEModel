@@ -236,7 +236,7 @@ def evaluate_rin_no_soma(
         morph_modifiers=[remove_soma],
         key=key,
         morphology_path=morphology_path,
-        ais_recording="basal",
+        ais_recording=True,
     )
     return evaluate(
         morphs_combos_df,
