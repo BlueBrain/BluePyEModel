@@ -1,6 +1,8 @@
 """Repair functions for cell morphologies, given an emodel."""
 import json
 import logging
+from functools import partial
+from multiprocessing.pool import Pool
 
 import neurom as nm
 import numpy as np
@@ -51,7 +53,7 @@ def build_soma_model(morphology_paths):
 
 
 def build_soma_models(
-    morphs_df, mtypes="all", morphology_path="morphology_path", mtype_dependent=False
+    morphs_df, mtypes=None, morphology_path="morphology_path", mtype_dependent=False
 ):
     """Build soma models from data, and plot the results.
 
@@ -67,7 +69,9 @@ def build_soma_models(
 
     if not mtype_dependent:
         if mtypes is not None:
-            morphs_df = morphs_df[morphs_df.mtype.isin(mtypes) & morphs_df.for_optimisation]
+            morphs_df = morphs_df[morphs_df.mtype.isin(mtypes)]
+            if "for_optimisation" in morphs_df.columns:
+                morphs_df = morphs_df[morphs_df.for_optimisation]
         return {"all": build_soma_model(morphs_df[morphology_path].to_list())}
 
     models = {}
@@ -273,7 +277,7 @@ def build_ais_diameter_models(
     mtypes="all",
     morphology_path="morphology_path",
     mtype_dependent=False,
-    with_taper=True,
+    with_taper=False,
 ):
     """Build ais diameter models from data, and plot the results.
 
@@ -289,7 +293,9 @@ def build_ais_diameter_models(
 
     mtypes = get_mtypes(morphs_df, mtypes)
     logger.info("Extracting model from all axons")
-    morphologies_all = morphs_df[morphs_df.for_optimisation][morphology_path].to_list()
+    if "for_optimisation" in morphs_df.columns:
+        morphs_df = morphs_df[morphs_df.for_optimisation]
+    morphologies_all = morphs_df[morphology_path].to_list()
 
     models = {}
     models["all"] = build_ais_diameter_model(morphologies_all, with_taper=with_taper)
@@ -481,3 +487,48 @@ def find_target_rho_axon(
     )
 
     return {emodel: {"all": float(rho_df[rho_df.for_optimisation].rho_axon.median())}}, rho_df
+
+
+def get_bins(bin_params):
+    """Compute path lenghs bins from parameters."""
+    _b = np.linspace(bin_params["min"], bin_params["max"], bin_params["n"] + 1)
+    return [[_b[i], _b[i + 1]] for i in range(bin_params["n"] - 1)]
+
+
+def bin_data(distances, data, path_bins):
+    """Bin data using distances."""
+    for _bin in path_bins:
+        bin_center = 0.5 * (_bin[0] + _bin[1])
+        mean_data = data[(_bin[0] <= distances) & (distances < _bin[1])].sum() / (_bin[1] - _bin[0])
+        yield bin_center, mean_data
+
+
+def get_surface_density(neuron_path, path_bins, neurite_type="basal"):
+    """Compute the binned surface densities of a neuron."""
+
+    neuron = nm.load_morphology(neuron_path)
+
+    _types = {"apical": nm.NeuriteType.apical_dendrite, "basal": nm.NeuriteType.basal_dendrite}
+
+    areas, dists = [], []
+    for neurite in neuron.neurites:
+        if neurite.type == _types[neurite_type]:
+            areas += list(nm.get("segment_areas", neurite))
+            dists += list(nm.get("segment_path_lengths", neurite))
+    return list(bin_data(np.array(dists), np.array(areas), path_bins))
+
+
+def get_surface_profile(df, path_bins, neurite_type="basal"):
+    surface_df = pd.DataFrame()
+    with Pool() as pool:
+        for gid, res in enumerate(
+            pool.map(
+                partial(get_surface_density, path_bins=path_bins, neurite_type=neurite_type),
+                df["morphology_path"],
+            )
+        ):
+            for b, s in res:
+                surface_df.loc[gid, b] = s
+    surface_df[surface_df.isna()] = 0
+
+    return surface_df

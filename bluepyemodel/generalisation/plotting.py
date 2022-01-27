@@ -1,9 +1,7 @@
 """Plotting functions."""
 import json
 import pickle
-from functools import partial
 from itertools import cycle
-from multiprocessing.pool import Pool
 from pathlib import Path
 
 import matplotlib
@@ -499,82 +497,33 @@ def plot_frac_exceptions(select_df, e_column="emodel"):
     select_plot_df.T.plot(kind="barh", x=e_column)
 
 
-def get_bins(bin_params):
-    """Compute path lenghs bins from parameters."""
-    _b = np.linspace(bin_params["min"], bin_params["max"], bin_params["n"] + 1)
-    return [[_b[i], _b[i + 1]] for i in range(bin_params["n"] - 1)]
-
-
-def bin_data(distances, data, path_bins):
-    """Bin data using distances."""
-    for _bin in path_bins:
-        bin_center = 0.5 * (_bin[0] + _bin[1])
-        mean_data = data[(_bin[0] <= distances) & (distances < _bin[1])].sum() / (_bin[1] - _bin[0])
-        yield bin_center, mean_data
-
-
-def get_surface_density(neuron_path, path_bins, neurite_type="basal"):
-    """Compute the binned surface densities of a neuron."""
-
-    neuron = nm.load_morphology(neuron_path)
-
-    _types = {"apical": nm.NeuriteType.apical_dendrite, "basal": nm.NeuriteType.basal_dendrite}
-
-    areas, dists = [], []
-    for neurite in neuron.neurites:
-        if neurite.type == _types[neurite_type]:
-            areas += list(nm.get("segment_areas", neurite))
-            dists += list(nm.get("segment_path_lengths", neurite))
-    return list(bin_data(np.array(dists), np.array(areas), path_bins))
-
-
-def get_surface_profile(df, path_bins, neurite_type="basal"):
-    surface_df = pd.DataFrame()
-    with Pool(4) as pool:
-        for gid, res in enumerate(
-            pool.map(
-                partial(get_surface_density, path_bins=path_bins, neurite_type=neurite_type),
-                df["morphology_path"],
-            )
-        ):
-            for b, s in res:
-                surface_df.loc[gid, b] = s
-    surface_df[surface_df.isna()] = 0
-
-    return surface_df
-
-
-def plot_surface_comparison(df, pdf_filename, bin_params=None, clip=3):
+def plot_surface_comparison(surf_df, df, pdf_filename="surface_profile.pdf"):
     """Plot comparison of surface areas and median scores."""
-    if bin_params is None:
-        bin_params = {"min": 0, "max": 1500, "n": 100}
-    path_bins = get_bins(bin_params)
-
-    df["median_score"] = np.clip(df.median_score, 0, clip)
-    df = df.reset_index()
     with PdfPages(pdf_filename) as pdf:
-        surf_df = get_surface_profile(df, path_bins, "basal")
-        surf_df += get_surface_profile(df, path_bins, "apical")
-
         mean = surf_df.mean(axis=0)
-        cmappable = plt.cm.ScalarMappable(
-            norm=Normalize(df.median_score.min(), df.median_score.max()), cmap="plasma"
-        )
+        if "median_score" in df.columns:
+            cmappable = plt.cm.ScalarMappable(
+                norm=Normalize(df.median_score.min(), df.median_score.max()), cmap="plasma"
+            )
 
         plt.figure(figsize=(7, 4))
         for gid in surf_df.index:
-            c = cmappable.to_rgba(df.loc[gid, "median_score"])
+            if "median_score" in df.columns:
+                c = cmappable.to_rgba(df.loc[gid, "median_score"])
+            else:
+                c = "k"
             plt.plot(surf_df.columns, surf_df.loc[gid], c=c, lw=0.5)
 
         plt.plot(surf_df.columns, mean, c="r", lw=3, label="mean area")
         plt.plot(
             surf_df.columns,
-            surf_df[df.for_optimisation].to_numpy()[0],
+            surf_df.loc[df.for_optimisation].to_numpy()[0],
             c="g",
             lw=3,
             label="exemplar",
         )
-        plt.colorbar(cmappable, label="median score")
+        if "median_score" in df.columns:
+            plt.colorbar(cmappable, label="median score")
         plt.xlabel("path distance")
         plt.ylabel("surface area")
         plt.legend()
@@ -584,8 +533,11 @@ def plot_surface_comparison(df, pdf_filename, bin_params=None, clip=3):
 
         plt.figure(figsize=(7, 4))
         for gid in surf_df.index:
-            c = cmappable.to_rgba(df.loc[gid, "median_score"])
-            df.loc[gid, "diffs"] = ((surf_df.loc[gid] - mean)).mean()
+            if "median_score" in df.columns:
+                c = cmappable.to_rgba(df.loc[gid, "median_score"])
+            else:
+                c = "k"
+            df.loc[gid, "diffs"] = np.linalg.norm(surf_df.loc[gid] - mean)
             plt.plot(surf_df.columns, surf_df.loc[gid] - mean, c=c, lw=0.5)
         plt.plot(
             surf_df.columns,
@@ -594,7 +546,8 @@ def plot_surface_comparison(df, pdf_filename, bin_params=None, clip=3):
             lw=3,
             label="exemplar",
         )
-        plt.colorbar(cmappable, label="median score")
+        if "median_score" in df.columns:
+            plt.colorbar(cmappable, label="median score")
         plt.xlabel("path distance")
         plt.ylabel("surface area - mean(surface area)")
         plt.legend()
@@ -602,10 +555,63 @@ def plot_surface_comparison(df, pdf_filename, bin_params=None, clip=3):
         pdf.savefig()
         plt.close()
 
-        plt.figure(figsize=(5, 3))
-        plt.scatter(df.median_score, df.diffs)
-        plt.xlabel("median score")
-        plt.ylabel("average surface area difference")
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
+        if "median_score" in df.columns:
+            clip = 5
+            plt.figure(figsize=(5, 3))
+            plt.scatter(np.clip(df.median_score, 0, clip), df.diffs, label="adapted AIS/soma", s=10)
+            plt.scatter(
+                np.clip(df.generic_median_score, 0, clip),
+                df.diffs,
+                label="original AIS/SOMA",
+                s=20,
+                marker="+",
+            )
+            plt.legend(loc="best")
+            plt.xlabel("median score")
+            plt.ylabel("norm(surface area - mean)")
+            plt.tight_layout()
+            pdf.savefig()
+
+            clip = 20
+            plt.figure(figsize=(5, 3))
+            plt.scatter(np.clip(df.max_score, 0, clip), df.diffs, label="adapted AIS/soma", s=10)
+            plt.scatter(
+                np.clip(df.generic_max_score, 0, clip),
+                df.diffs,
+                label="original AIS/SOMA",
+                s=20,
+                marker="+",
+            )
+            plt.legend(loc="best")
+            plt.xlabel("max score")
+            plt.ylabel("norm(surface area - mean)")
+            plt.tight_layout()
+            pdf.savefig()
+
+            plt.figure(figsize=(5, 3))
+            clip = 5
+            plt.plot([0, clip], [0, clip], "k", lw=0.5)
+            plt.scatter(
+                np.clip(df.generic_median_score, 0, clip), np.clip(df.median_score, 0, clip), s=3
+            )
+            plt.xlabel("median original score")
+            plt.ylabel("median adapted score")
+            plt.axvline(2, ls="--", c="k", lw=0.5)
+            plt.axhline(2, ls="--", c="k", lw=0.5)
+            plt.axis([0, clip + 0.5, 0, clip + 0.5])
+            plt.tight_layout()
+            pdf.savefig()
+
+            plt.figure(figsize=(5, 3))
+            clip = 20
+            plt.plot([0, clip], [0, clip], "k", lw=0.5)
+            plt.scatter(np.clip(df.generic_max_score, 0, clip), np.clip(df.max_score, 0, clip), s=3)
+            plt.xlabel("max original score")
+            plt.ylabel("max adapted score")
+            plt.axvline(5, ls="--", c="k", lw=0.5)
+            plt.axhline(5, ls="--", c="k", lw=0.5)
+            plt.axis([0, clip + 0.5, 0, clip + 0.5])
+            plt.tight_layout()
+            pdf.savefig()
+
+        plt.close("all")

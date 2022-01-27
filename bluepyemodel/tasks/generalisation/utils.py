@@ -1,6 +1,8 @@
 """Utils functions."""
 from pathlib import Path
 
+import numpy as np
+
 from bluepyemodel.access_point.local import LocalAccessPoint
 
 

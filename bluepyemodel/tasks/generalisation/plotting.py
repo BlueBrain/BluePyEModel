@@ -4,10 +4,13 @@ from pathlib import Path
 
 import luigi
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import yaml
 from matplotlib.backends.backend_pdf import PdfPages
 
+from bluepyemodel.generalisation.ais_model import get_bins
+from bluepyemodel.generalisation.ais_model import get_surface_profile
 from bluepyemodel.generalisation.plotting import plot_ais_resistance_models
 from bluepyemodel.generalisation.plotting import plot_ais_taper_models
 from bluepyemodel.generalisation.plotting import plot_feature_select
@@ -206,17 +209,29 @@ class PlotSurfaceComparison(BaseTask):
 
     def requires(self):
         """ """
-        return EvaluateSynthesis(emodel=self.emodel)
+        return {
+            "synthesis": EvaluateSynthesis(emodel=self.emodel),
+            "generic": EvaluateGeneric(emodel=self.emodel),
+        }
 
     def run(self):
         """ """
         ensure_dir(self.output().path)
-        df = pd.read_csv(self.input().path)
-        plot_surface_comparison(
-            df[df.emodel == self.emodel],
-            pdf_filename=self.output().path,
-            bin_params={"min": 0, "max": 1500, "n": 100},
-        )
+        df = pd.read_csv(self.input()["synthesis"].path)
+        df = df[df.emodel == self.emodel]
+        bin_params = {"min": 0, "max": 1500, "n": 100}
+        clip = 3
+        path_bins = get_bins(bin_params)
+        df["median_score"] = np.clip(df.median_score, 0, clip)
+        df = df.reset_index()
+        surf_df = get_surface_profile(df, path_bins, "basal")
+        surf_df += get_surface_profile(df, path_bins, "apical")
+
+        df_generic = pd.read_csv(self.input()["generic"].path)
+        df["generic_median_score"] = df_generic["median_score"]
+        df["generic_max_score"] = df_generic["max_score"]
+
+        plot_surface_comparison(surf_df, df, pdf_filename=self.output().path)
 
     def output(self):
         """ """
