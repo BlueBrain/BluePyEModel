@@ -152,6 +152,10 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
             stim_end = protocol.total_duration
         else:
             stim_end = protocol.stim_end
+    if feature_config.name == "RMPProtocol.soma.v.Spikecount":
+        stim_start = 0
+        stim_end = 1700
+        stim_amp = 0
 
     recording_names = {"": f"{feature_config.protocol_name}.{feature_config.recording_name}"}
 
@@ -328,7 +332,6 @@ def define_main_protocol(
                     break
             else:
                 raise Exception(f"Could not find protocol named {feature_def.protocol_name}")
-
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
     rmp_protocol = None
