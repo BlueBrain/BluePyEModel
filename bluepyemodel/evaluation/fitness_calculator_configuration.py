@@ -162,7 +162,6 @@ class FitnessCalculatorConfiguration:
         """"""
 
         recording_name = "soma.v" if recording == "soma" else recording
-
         tmp_feature = EFeatureConfiguration(
             efel_feature_name=feature["feature"],
             protocol_name=protocol_name,
