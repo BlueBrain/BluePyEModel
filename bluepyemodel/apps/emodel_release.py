@@ -41,7 +41,7 @@ def _get_database(api, emodel_path, final_path=None, legacy_dir_structure=True):
     if api == "local":
         return get_access_point(
             api,
-            "cADpyr_L5TPC",  # assumes it exists to be able to load recipe
+            emodel="cADpyr_L5TPC",  # assumes it exists to be able to load recipe
             emodel_dir=emodel_path,
             final_path=final_path,
             legacy_dir_structure=legacy_dir_structure,
@@ -89,9 +89,10 @@ def create_hoc_file(emodel, emodel_db, template_path, ais_models=None):
         morph_modifiers=[lambda: None],
         morph_modifiers_hoc=[morph_modifier_hoc],
     )
-    emodel_db.emodel = emodel
+    emodel_db.emodel_metadata.emodel = emodel
+
     return cell_model.create_hoc(
-        emodel_db.get_emodel()["parameters"],
+        emodel_db.get_emodel().parameters,
         template=Path(template_path).name,
         template_dir=Path(template_path).parent,
     )
@@ -569,7 +570,7 @@ def _single_evaluation(
     """Evaluating single protocol and save traces."""
     emodel_db = get_access_point(
         emodel_api,
-        combo["emodel"],
+        emodel=combo["emodel"],
         emodel_dir=emodel_path,
         final_path=final_path,
         with_seeds=True,
@@ -591,7 +592,7 @@ def _single_evaluation(
         score_threshold=score_threshold,
     )
     responses = evaluator.run_protocols(
-        evaluator.fitness_protocols.values(), emodel_db.get_emodel()["parameters"]
+        evaluator.fitness_protocols.values(), emodel_db.get_emodel().parameters
     )
     features = evaluator.fitness_calculator.calculate_values(responses)
     scores = evaluator.fitness_calculator.calculate_scores(responses)
@@ -632,7 +633,7 @@ def _evaluate_exemplars(
     emodel_path = Path(emodel_path)
     emodel_db = get_access_point(
         emodel_api,
-        "cADpyr_L5TPC",  # assumes it exists to be able to load recipe
+        emodel="cADpyr_L5TPC",  # assumes it exists to be able to load recipe
         emodel_dir=emodel_path,
         final_path=final_path,
         with_seeds=True,

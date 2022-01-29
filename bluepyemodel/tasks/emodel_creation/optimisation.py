@@ -9,7 +9,6 @@ import luigi
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline.plotting import optimization
 from bluepyemodel.emodel_pipeline.plotting import plot_models
-from bluepyemodel.emodel_pipeline.utils import run_metadata_as_string
 from bluepyemodel.optimisation import get_checkpoint_path
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tasks.luigi_tools import IPyParallelTask
@@ -34,9 +33,17 @@ def _reformat_ttype(ttype):
 class EfeaturesProtocolsTarget(WorkflowTarget):
     """Target to check if efeatures and protocols are present in the database."""
 
-    def __init__(self, emodel, ttype, iteration_tag):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag):
         """Constructor."""
-        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
+        super().__init__(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+        )
 
     def exists(self):
         """Check if the features and protocols have been created."""
@@ -45,44 +52,30 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
 
 
 class ExtractEFeatures(WorkflowTask):
-    """Luigi wrapper for extract_efeatures in emodel_pipeline.EModel_pipeline.
-
-    Parameters:
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
-        ttype (str): name of the t-type.
-        iteration_tag (str): tag of the current iteration
-    """
+    """Luigi wrapper for extract_efeatures in emodel_pipeline.EModel_pipeline."""
 
     def run(self):
         """ """
 
         mapper = self.get_mapper()
-        _ = extract_save_features_protocols(
-            access_point=self.access_point, emodel=self.emodel, mapper=mapper
-        )
+
+        _ = extract_save_features_protocols(access_point=self.access_point, mapper=mapper)
 
     def output(self):
         """ """
         return EfeaturesProtocolsTarget(
-            emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag
+            emodel=self.emodel,
+            etype=self.etype,
+            ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
+            iteration_tag=self.iteration_tag,
         )
 
 
 class CompileMechanisms(WorkflowTaskRequiringMechanisms):
-    """Luigi wrapper for optimisation.compile_mechs
-
-    Parameters:
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
-        ttype (str): name of the t-type.
-        iteration_tag (str): tag of the current iteration
-        species (str): name of the species.
-        brain_region (str): name of the brain_region.
-    """
-
-    species = luigi.Parameter(default=None)
-    brain_region = luigi.Parameter(default=None)
+    """Luigi wrapper for optimisation.compile_mechs"""
 
     def run(self):
         """ """
@@ -114,7 +107,18 @@ class CompileMechanisms(WorkflowTaskRequiringMechanisms):
 class OptimisationTarget(WorkflowTarget):
     """Target to check if an optimisation is present in the database."""
 
-    def __init__(self, emodel, ttype, iteration_tag, seed=1, continue_opt=False):
+    def __init__(
+        self,
+        emodel,
+        etype,
+        ttype,
+        mtype,
+        species,
+        brain_region,
+        iteration_tag,
+        seed=1,
+        continue_opt=False,
+    ):
         """Constructor.
 
         Args:
@@ -122,7 +126,15 @@ class OptimisationTarget(WorkflowTarget):
            continue_opt (bool): whether to continue optimisation or not
                 when the optimisation is not complete.
         """
-        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
+        super().__init__(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+        )
 
         self.seed = seed
         self.continue_opt = continue_opt
@@ -136,12 +148,6 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     """Luigi wrapper for emodel_pipeline.emodel_creation.optimize
 
     Parameters:
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
-        ttype (str): name of the t-type.
-        iteration_tag (str): tag of the current iteration
-        species (str): name of the species.
-        brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
         continue_unfinished_optimisation (bool): whether to continue optimisation or not
                 when the optimisation is not complete.
@@ -152,8 +158,6 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     """
 
     # if default not set, crashes when parameters are read by luigi_tools.copy_params
-    species = luigi.Parameter(default=None)
-    brain_region = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
     continue_unfinished_optimisation = luigi.BoolParameter(default=False)
     graceful_killer = multiprocessing.Event()
@@ -163,17 +167,27 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         compile_mechanisms = self.access_point.pipeline_settings.compile_mechanisms
 
         targets = [
-            ExtractEFeatures(emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag)
+            ExtractEFeatures(
+                emodel=self.emodel,
+                etype=self.etype,
+                ttype=self.ttype,
+                mtype=self.mtype,
+                species=self.species,
+                brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
+            )
         ]
 
         if compile_mechanisms:
             targets.append(
                 CompileMechanisms(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
-                    iteration_tag=self.iteration_tag,
+                    mtype=self.mtype,
                     species=self.species,
                     brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
                 )
             )
 
@@ -185,9 +199,11 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
             "backend",
             "emodel",
             "seed",
+            "etype",
+            "ttype",
+            "mtype",
             "species",
             "brain_region",
-            "ttype",
             "iteration_tag",
         ]
         self.prepare_args_for_remote_script(attrs)
@@ -228,12 +244,13 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
             type=json.loads,
         )
         parser.add_argument("--emodel", default=None, type=str)
-        parser.add_argument("--seed", default=1, type=int)
+        parser.add_argument("--etype", default=None, type=str)
         parser.add_argument("--ttype", default=None, type=str)
-        parser.add_argument("--iteration_tag", default=None, type=str)
+        parser.add_argument("--mtype", default=None, type=str)
         parser.add_argument("--species", default=None, type=str)
-        parser.add_argument("--brain_region", default="", type=str)
-
+        parser.add_argument("--brain_region", default=None, type=str)
+        parser.add_argument("--iteration_tag", default=None, type=str)
+        parser.add_argument("--seed", default=1, type=int)
         args = parser.parse_args()
 
         # -- run optimisation -- #
@@ -241,7 +258,11 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         access_pt = access_point.get_access_point(
             access_point=args.api_from_config,
             emodel=args.emodel,
+            etype=args.etype,
             ttype=args.ttype,
+            mtype=args.mtype,
+            species=args.species,
+            brain_region=args.brain_region,
             iteration_tag=args.iteration_tag,
             **args.api_args_from_config,
         )
@@ -250,10 +271,14 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     def output(self):
         """ """
         return OptimisationTarget(
-            seed=self.seed,
-            ttype=self.ttype,
             emodel=self.emodel,
+            etype=self.etype,
+            ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
             iteration_tag=self.iteration_tag,
+            seed=self.seed,
             continue_opt=self.continue_unfinished_optimisation,
         )
 
@@ -261,16 +286,21 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 class BestModelTarget(WorkflowTarget):
     """Check if the best model from optimisation is present in the database."""
 
-    def __init__(self, emodel, ttype, iteration_tag, seed=1):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed=1):
         """Constructor.
 
         Args:
-            emodel (str): name of the emodel. Has to match the name of the emodel
-                under which the configuration data are stored.
-            ttype (str): name of the ttype
             seed (int): seed used in the optimisation.
         """
-        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
+        super().__init__(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+        )
 
         self.seed = seed
 
@@ -283,16 +313,9 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
     """Luigi wrapper for store_best_model.
 
     Parameters:
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
-        ttype (str): name of the t-type.
-        species (str): name of the species.
-        brain_region (str): name of the brain_region.
         seed (int): seed used in the optimisation.
     """
 
-    species = luigi.Parameter(default="")
-    brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=1)
 
     def requires(self):
@@ -305,10 +328,12 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
             to_run.append(
                 Optimize(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
-                    iteration_tag=self.iteration_tag,
+                    mtype=self.mtype,
                     species=self.species,
                     brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
                     seed=seed,
                 )
             )
@@ -316,16 +341,26 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
             to_run.append(
                 PlotOptimisation(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
-                    iteration_tag=self.iteration_tag,
+                    mtype=self.mtype,
                     species=self.species,
                     brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
                     seed=seed,
                 )
             )
 
         to_run.append(
-            ExtractEFeatures(emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag)
+            ExtractEFeatures(
+                emodel=self.emodel,
+                etype=self.etype,
+                ttype=self.ttype,
+                mtype=self.mtype,
+                species=self.species,
+                brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
+            )
         )
 
         return to_run
@@ -337,9 +372,13 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
             # can have unfulfilled dependecies if slurm has send signal near time limit.
             if OptimisationTarget(
                 emodel=self.emodel,
+                etype=self.etype,
                 ttype=self.ttype,
+                mtype=self.mtype,
+                species=self.species,
+                brain_region=self.brain_region,
                 iteration_tag=self.iteration_tag,
-                seed=seed,
+                seed=self.seed,
             ).exists():
                 store_best_model(self.access_point, seed)
 
@@ -351,7 +390,11 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
             targets.append(
                 BestModelTarget(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
+                    mtype=self.mtype,
+                    species=self.species,
+                    brain_region=self.brain_region,
                     iteration_tag=self.iteration_tag,
                     seed=seed,
                 )
@@ -366,7 +409,7 @@ class ValidationTarget(WorkflowTarget):
         even if the model is not validated.
     """
 
-    def __init__(self, emodel, ttype, iteration_tag, seed):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed):
         """Constructor.
 
         Args:
@@ -375,7 +418,15 @@ class ValidationTarget(WorkflowTarget):
             ttype (str): name of the ttype.
             seed (int): seed used in the optimisation.
         """
-        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
+        super().__init__(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+        )
 
         self.seed = seed
 
@@ -393,19 +444,12 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     """Luigi wrapper for validation.
 
     Parameters:
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
-        ttype (str): name of the t-type.
-        species (str): name of the species.
-        brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
         graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
             Has to use multiprocessing event for communicating between processes
             when there is more than 1 luigi worker. Skip task if set.
     """
 
-    species = luigi.Parameter(default="")
-    brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=1)
     graceful_killer = multiprocessing.Event()
 
@@ -418,10 +462,12 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         to_run = [
             StoreBestModels(
                 emodel=self.emodel,
+                etype=self.etype,
                 ttype=self.ttype,
-                iteration_tag=self.iteration_tag,
+                mtype=self.mtype,
                 species=self.species,
                 brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
                 seed=self.seed,
             )
         ]
@@ -429,10 +475,12 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
             to_run.append(
                 CompileMechanisms(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
-                    iteration_tag=self.iteration_tag,
+                    mtype=self.mtype,
                     species=self.species,
                     brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
                 )
             )
 
@@ -440,16 +488,26 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
             to_run.append(
                 PlotModels(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
-                    iteration_tag=self.iteration_tag,
+                    mtype=self.mtype,
                     species=self.species,
                     brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
                     seed=self.seed,
                 )
             )
 
         to_run.append(
-            ExtractEFeatures(emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag)
+            ExtractEFeatures(
+                emodel=self.emodel,
+                etype=self.etype,
+                ttype=self.ttype,
+                mtype=self.mtype,
+                species=self.species,
+                brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
+            )
         )
 
         return to_run
@@ -458,12 +516,15 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
         attrs = [
             "backend",
-            "species",
             "emodel",
-            "brain_region",
+            "etype",
             "ttype",
+            "mtype",
+            "species",
+            "brain_region",
             "iteration_tag",
         ]
+
         self.prepare_args_for_remote_script(attrs)
 
         super().run()
@@ -496,9 +557,11 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
             type=json.loads,
         )
         parser.add_argument("--emodel", default=None, type=str)
+        parser.add_argument("--etype", default=None, type=str)
+        parser.add_argument("--ttype", default=None, type=str)
+        parser.add_argument("--mtype", default=None, type=str)
         parser.add_argument("--species", default=None, type=str)
         parser.add_argument("--brain_region", default=None, type=str)
-        parser.add_argument("--ttype", default=None, type=str)
         parser.add_argument("--iteration_tag", default=None, type=str)
         args = parser.parse_args()
 
@@ -507,7 +570,11 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         access_pt = access_point.get_access_point(
             access_point=args.api_from_config,
             emodel=args.emodel,
+            etype=args.etype,
             ttype=args.ttype,
+            mtype=args.mtype,
+            species=args.species,
+            brain_region=args.brain_region,
             iteration_tag=args.iteration_tag,
             **args.api_args_from_config,
         )
@@ -518,7 +585,11 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         """ """
         return ValidationTarget(
             emodel=self.emodel,
+            etype=self.etype,
             ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
             iteration_tag=self.iteration_tag,
             seed=self.seed,
         )
@@ -527,7 +598,7 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 class EModelCreationTarget(WorkflowTarget):
     """Check if the the model is validated for any seed."""
 
-    def __init__(self, emodel, ttype, iteration_tag):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag):
         """Constructor.
 
         Args:
@@ -535,7 +606,15 @@ class EModelCreationTarget(WorkflowTarget):
                 under which the configuration data are stored.
             ttype (str): name of the ttype.
         """
-        super().__init__(emodel=emodel, ttype=ttype, iteration_tag=iteration_tag)
+        super().__init__(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+        )
 
     def exists(self):
         """Check if the model is completed."""
@@ -547,8 +626,7 @@ class EModelCreation(WorkflowTask):
     """Main Wrokflow Task. Creates an emodel.
 
     Parameters:
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
+        emodel (str): name of the emodel.
         ttype (str): name of the t-type.
         species (str): name of the species.
         brain_region (str): name of the brain region.
@@ -558,13 +636,12 @@ class EModelCreation(WorkflowTask):
             when there is more than 1 luigi worker. Exit loop if set.
     """
 
-    species = luigi.Parameter(default=None)
-    brain_region = luigi.Parameter(default="")
     seed = luigi.IntParameter(default=1)
     graceful_killer = multiprocessing.Event()
 
     def run(self):
         """Optimize e-models by batches of batch_size until one is validated."""
+
         seed = self.seed
 
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
@@ -578,10 +655,12 @@ class EModelCreation(WorkflowTask):
             yield (
                 Validation(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
-                    iteration_tag=self.iteration_tag,
+                    mtype=self.mtype,
                     species=self.species,
                     brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
                     seed=seed,
                 )
             )
@@ -592,7 +671,13 @@ class EModelCreation(WorkflowTask):
     def output(self):
         """ """
         return EModelCreationTarget(
-            emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag
+            emodel=self.emodel,
+            etype=self.etype,
+            ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
+            iteration_tag=self.iteration_tag,
         )
 
 
@@ -617,10 +702,12 @@ class EModelCreationWrapper(WorkflowWrapperTask):
         to_run = [
             EModelCreation(
                 emodel=self.emodel,
+                etype=self.etype,
                 ttype=self.ttype,
-                iteration_tag=self.iteration_tag,
+                mtype=self.mtype,
                 species=self.species,
                 brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
             )
         ]
 
@@ -630,10 +717,12 @@ class EModelCreationWrapper(WorkflowWrapperTask):
             to_run.append(
                 PlotValidatedDistributions(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
-                    iteration_tag=self.iteration_tag,
+                    mtype=self.mtype,
                     species=self.species,
                     brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
                 )
             )
 
@@ -653,8 +742,6 @@ class OptimizeWrapper(WorkflowWrapperTask):
         batch_size (int): number of seeds to optimize at the same time before each validation.
     """
 
-    species = luigi.Parameter(default=None)
-    brain_region = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
 
     def requires(self):
@@ -667,10 +754,12 @@ class OptimizeWrapper(WorkflowWrapperTask):
             to_run.append(
                 Optimize(
                     emodel=self.emodel,
+                    etype=self.etype,
                     ttype=self.ttype,
-                    iteration_tag=self.iteration_tag,
+                    mtype=self.mtype,
                     species=self.species,
                     brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
                     seed=seed,
                 )
             )
@@ -687,16 +776,15 @@ class PlotOptimisation(WorkflowTask):
         checkpoint_dir (str): path to the repo where files used as a checkpoint by BluePyOpt are.
     """
 
-    species = luigi.Parameter(default="")
-    brain_region = luigi.Parameter(default=None)
     seed = luigi.IntParameter(default=42)
 
     def requires(self):
         """ """
         return Optimize(
             emodel=self.emodel,
+            etype=self.etype,
             ttype=self.ttype,
-            iteration_tag=self.iteration_tag,
+            mtype=self.mtype,
             species=self.species,
             brain_region=self.brain_region,
             seed=self.seed,
@@ -705,12 +793,7 @@ class PlotOptimisation(WorkflowTask):
     def run(self):
         """ """
 
-        checkpoint_path = get_checkpoint_path(
-            self.emodel,
-            seed=self.seed,
-            iteration_tag=self.iteration_tag,
-            ttype=_reformat_ttype(self.ttype),
-        )
+        checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
 
         optimization(
             checkpoint_path=checkpoint_path,
@@ -719,15 +802,9 @@ class PlotOptimisation(WorkflowTask):
 
     def output(self):
         """ """
+        checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
 
-        chkpt_name = get_checkpoint_path(
-            self.emodel,
-            self.seed,
-            iteration_tag=self.iteration_tag,
-            ttype=_reformat_ttype(self.ttype),
-        )
-
-        fname = f"{Path(chkpt_name).stem}.pdf"
+        fname = f"{Path(checkpoint_path).stem}.pdf"
         return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
@@ -748,22 +825,32 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         """ """
         requires = [
             ExtractEFeatures(
-                emodel=self.emodel, ttype=self.ttype, iteration_tag=self.iteration_tag
+                emodel=self.emodel,
+                etype=self.etype,
+                ttype=self.ttype,
+                mtype=self.mtype,
+                species=self.species,
+                brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
             ),
             StoreBestModels(
                 emodel=self.emodel,
+                etype=self.etype,
                 ttype=self.ttype,
-                iteration_tag=self.iteration_tag,
+                mtype=self.mtype,
                 species=self.species,
                 brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
                 seed=self.seed,
             ),
             CompileMechanisms(
                 emodel=self.emodel,
+                etype=self.etype,
                 ttype=self.ttype,
-                iteration_tag=self.iteration_tag,
+                mtype=self.mtype,
                 species=self.species,
                 brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
             ),
         ]
 
@@ -778,7 +865,6 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         mapper = self.get_mapper()
         plot_models(
             access_point=self.access_point,
-            emodel=self.emodel,
             mapper=mapper,
             seeds=range(self.seed, self.seed + batch_size),
             figures_dir=Path("./figures") / self.emodel,
@@ -795,37 +881,23 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
 
         outputs = []
         if plot_optimisation:
+
             # distribution
-            fname = run_metadata_as_string(
-                self.emodel,
-                seed="",
-                ttype=_reformat_ttype(self.ttype),
-                iteration_tag=self.iteration_tag,
-            )
+            fname = self.access_point.emodel_metadata.as_string()
             fname += "__parameters_distribution.pdf"
             fpath = Path("./figures") / self.emodel / "distributions" / "all" / fname
             outputs.append(luigi.LocalTarget(fpath))
 
             # scores
             for seed in range(self.seed, self.seed + batch_size):
-                fname = run_metadata_as_string(
-                    self.emodel,
-                    seed,
-                    ttype=_reformat_ttype(self.ttype),
-                    iteration_tag=self.iteration_tag,
-                )
+                fname = self.access_point.emodel_metadata.as_string(seed)
                 fname += "__scores.pdf"
                 fpath = Path("./figures") / self.emodel / "scores" / "all" / fname
                 outputs.append(luigi.LocalTarget(fpath))
 
             # traces
             for seed in range(self.seed, self.seed + batch_size):
-                fname = run_metadata_as_string(
-                    self.emodel,
-                    seed,
-                    ttype=_reformat_ttype(self.ttype),
-                    iteration_tag=self.iteration_tag,
-                )
+                fname = self.access_point.emodel_metadata.as_string(seed)
                 fname += "__traces.pdf"
                 fpath = Path("./figures") / self.emodel / "traces" / "all" / fname
                 outputs.append(luigi.LocalTarget(fpath))
@@ -841,36 +913,35 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
         brain_region (str): name of the brain region.
     """
 
-    species = luigi.Parameter(default="")
-    brain_region = luigi.Parameter(default="")
-
     def requires(self):
         """ """
 
         return [
             EModelCreation(
                 emodel=self.emodel,
+                etype=self.etype,
                 ttype=self.ttype,
-                iteration_tag=self.iteration_tag,
+                mtype=self.mtype,
                 species=self.species,
                 brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
             ),
             CompileMechanisms(
                 emodel=self.emodel,
+                etype=self.etype,
                 ttype=self.ttype,
-                iteration_tag=self.iteration_tag,
+                mtype=self.mtype,
                 species=self.species,
                 brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
             ),
         ]
 
     def run(self):
         """ """
-        mapper = self.get_mapper()
         plot_models(
             access_point=self.access_point,
-            emodel=self.emodel,
-            mapper=mapper,
+            mapper=self.get_mapper(),
             figures_dir=Path("./figures") / self.emodel,
             plot_distributions=True,
             plot_traces=False,
@@ -880,6 +951,7 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
 
     def output(self):
         """ """
+
         fname = f"{self.emodel}_parameters_distribution.pdf"
         fpath = Path("./figures") / self.emodel / "distributions" / "validated" / fname
 

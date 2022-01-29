@@ -135,14 +135,14 @@ def evaluate_scores(
 def get_emodel_data(emodel_db, combo, morphology_path, morph_modifiers):
     """Gather needed emodel data and build cell model for evaluation."""
 
-    emodel_db.emodel = "_".join(combo["emodel"].split("_")[:2])
+    emodel_db.emodel_metadata.emodel = "_".join(combo["emodel"].split("_")[:2])
     emodel_db.morph_path = combo[morphology_path]
 
     model_configuration = emodel_db.get_model_configuration()
     fitness_calculator_configuration = emodel_db.get_fitness_calculator_configuration()
 
-    emodel_db.emodel = combo["emodel"]  # to get the hash from the final
-    emodel_params = emodel_db.get_emodel()["parameters"]
+    emodel_db.emodel_metadata.emodel = combo["emodel"]  # to get the hash from the final
+    emodel_params = emodel_db.get_emodel().parameters
 
     cell = create_cell_model(
         "cell",

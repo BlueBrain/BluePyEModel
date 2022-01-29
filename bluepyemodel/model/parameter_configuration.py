@@ -39,7 +39,7 @@ class ParameterConfiguration:
         }
 
         if self.distribution and self.distribution != "uniform":
-            param_dict["dist"] = self.distribution
+            param_dict["distribution"] = self.distribution
 
         if self.mechanism:
             param_dict["mechanism"] = self.mechanism

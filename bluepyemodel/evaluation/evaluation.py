@@ -53,13 +53,15 @@ def compute_responses(
     emodels = access_point.get_emodels()
 
     if seeds:
-        emodels = [model for model in emodels if model["seed"] in seeds]
-    if access_point.iteration_tag:
+        emodels = [model for model in emodels if model.seed in seeds]
+    if access_point.emodel_metadata.iteration:
         emodels = [
-            model for model in emodels if model["iteration_tag"] == access_point.iteration_tag
+            model
+            for model in emodels
+            if model.emodel_metadata.iteration == access_point.emodel_metadata.iteration
         ]
     if preselect_for_validation:
-        emodels = [model for model in emodels if model["validated"] is None]
+        emodels = [model for model in emodels if model.passed_validation is None]
 
     if emodels:
 
@@ -70,18 +72,20 @@ def compute_responses(
             to_run.append(
                 {
                     "evaluator": copy.deepcopy(cell_evaluator),
-                    "parameters": mo["parameters"],
+                    "parameters": mo.parameters,
                 }
             )
 
         responses = list(map_function(get_responses, to_run))
 
         for mo, r in zip(emodels, responses):
-            mo["responses"] = r
-            mo["evaluator"] = r.pop("evaluator")
+            mo.responses = r
+            mo.evaluator = r.pop("evaluator")
 
     else:
-        logger.warning("In compute_responses, no emodel for %s", access_point.emodel)
+        logger.warning(
+            "In compute_responses, no emodel for %s", access_point.emodel_metadata.emodel
+        )
 
     return emodels
 
@@ -120,7 +124,7 @@ def get_evaluator_from_access_point(
     fitness_calculator_configuration = access_point.get_fitness_calculator_configuration()
 
     cell_model = model.create_cell_model(
-        name=access_point.emodel,
+        name=access_point.emodel_metadata.emodel,
         model_configuration=model_configuration,
         morph_modifiers=access_point.pipeline_settings.morph_modifiers,
         nseg_frequency=nseg_frequency,

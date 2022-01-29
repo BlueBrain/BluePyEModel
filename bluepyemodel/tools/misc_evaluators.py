@@ -33,7 +33,7 @@ def single_feature_evaluation(
             partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
         ]
 
-    emodel_db.emodel = combo["emodel"]
+    emodel_db.set_emodel(combo["emodel"])
     evaluator = get_evaluator_from_access_point(
         emodel_db,
         stochasticity=stochasticity,
@@ -44,7 +44,7 @@ def single_feature_evaluation(
         dt=dt,
         strict_holding_bounds=False,
     )
-    params = emodel_db.get_emodel()["parameters"]
+    params = emodel_db.get_emodel().parameters
     if "new_parameters" in combo:
         params.update(combo["new_parameters"])
 

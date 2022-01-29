@@ -3,7 +3,7 @@ import logging
 
 from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
-from bluepyemodel.emodel_pipeline.utils import yesno
+from bluepyemodel.tools.utils import yesno
 
 logger = logging.getLogger(__name__)
 

@@ -55,16 +55,11 @@ def attach_efeatures_pdf(emodel, efeatures):
                 efeat["pdfs"] = pdfs
 
 
-def extract_save_features_protocols(
-    access_point,
-    emodel,
-    mapper=map,
-):
+def extract_save_features_protocols(access_point, mapper=map):
     """Extract the efeatures and saves the results as a configuration for the fitness calculator.
 
     Args:
-        access_point (DataAccessPoint): object which contains API to access emodel data
-        emodel (str): name of the emodel.
+        access_point (DataAccessPoint): access point to the model's data
         mapper (map): mapper for parallel computations.
     """
 
@@ -74,7 +69,7 @@ def extract_save_features_protocols(
 
     threshold_nvalue_save = access_point.pipeline_settings.extraction_threshold_value_save
     plot = access_point.pipeline_settings.plot_extraction
-    output_directory = f"./figures/{emodel}/efeatures_extraction/"
+    output_directory = f"./figures/{access_point.emodel_metadata.emodel}/efeatures_extraction/"
 
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
         output_directory=output_directory,
@@ -89,7 +84,7 @@ def extract_save_features_protocols(
     )
 
     if plot:
-        attach_efeatures_pdf(emodel, efeatures)
+        attach_efeatures_pdf(access_point.emodel_metadata.emodel, efeatures)
 
     fitness_calculator_config = FitnessCalculatorConfiguration(
         name_rmp_protocol=access_point.pipeline_settings.name_rmp_protocol,

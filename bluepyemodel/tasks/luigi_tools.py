@@ -20,9 +20,14 @@ class WorkflowTask(luigi.Task):
     """Workflow task with loaded data access point."""
 
     backend = luigi.Parameter(default=None, config_path=dict(section="parallel", name="backend"))
+
     emodel = luigi.Parameter()
-    ttype = luigi.Parameter()
-    iteration_tag = luigi.Parameter()
+    etype = luigi.Parameter(default=None)
+    ttype = luigi.Parameter(default=None)
+    mtype = luigi.Parameter(default=None)
+    species = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default=None)
+    iteration_tag = luigi.Parameter(default=None)
 
     def __init__(self, *args, **kwargs):
         """ """
@@ -31,7 +36,11 @@ class WorkflowTask(luigi.Task):
         self.access_point = access_point.get_access_point(
             EmodelAPIConfig().api,
             emodel=self.emodel,
+            etype=self.etype,
             ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
             iteration_tag=self.iteration_tag,
             **EmodelAPIConfig().api_args
         )
@@ -55,19 +64,21 @@ class WorkflowTaskRequiringMechanisms(WorkflowTask):
 class WorkflowTarget(luigi.Target, ABC):
     """Workflow target with loaded access_point."""
 
-    def __init__(self, emodel, ttype, iteration_tag, *args, **kwargs):
+    def __init__(
+        self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, *args, **kwargs
+    ):
         """ """
         super().__init__(*args, **kwargs)
 
-        self.emodel = emodel
-        self.ttype = ttype
-        self.iteration_tag = iteration_tag
-
         self.access_point = access_point.get_access_point(
             EmodelAPIConfig().api,
-            emodel=self.emodel,
-            ttype=self.ttype,
-            iteration_tag=self.iteration_tag,
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
             **EmodelAPIConfig().api_args
         )
 

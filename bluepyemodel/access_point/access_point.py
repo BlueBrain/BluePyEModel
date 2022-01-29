@@ -6,8 +6,11 @@ import pickle
 from bluepyopt.deapext.algorithms import _check_stopping_criteria
 from bluepyopt.deapext.stoppingCriteria import MaxNGen
 
+from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.optimisation import get_checkpoint_path
+
+# pylint: disable=no-member
 
 logger = logging.getLogger(__name__)
 
@@ -15,19 +18,27 @@ logger = logging.getLogger(__name__)
 class DataAccessPoint:
     """Data access point"""
 
-    def __init__(self, emodel, ttype=None, iteration_tag=None):
+    def __init__(
+        self,
+        emodel=None,
+        etype=None,
+        ttype=None,
+        mtype=None,
+        species=None,
+        brain_region=None,
+        iteration_tag=None,
+    ):
         """Init"""
 
-        self.emodel = emodel
-        self.ttype = ttype
-        self.iteration_tag = iteration_tag
-        self.pipeline_settings = None
+        self.emodel_metadata = EModelMetadata(
+            emodel, etype, ttype, mtype, species, brain_region, iteration_tag
+        )
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel."""
-        self.emodel = emodel
+        self.emodel_metadata.emodel = emodel
 
-    def load_pipeline_settings(self):
+    def get_pipeline_settings(self):
         """ """
         return EModelPipelineSettings()
 
@@ -52,15 +63,6 @@ class DataAccessPoint:
     ):
         """Save a model obtained from BluePyOpt"""
 
-    def get_extraction_metadata(self):
-        """Get the configuration parameters used for feature extraction.
-
-        Returns:
-            files_metadata (dict)
-            targets (dict)
-            protocols_threshold (list)
-        """
-
     def get_emodel(self):
         """Get dict with parameter of single emodel (including seed if any)"""
 
@@ -84,14 +86,6 @@ class DataAccessPoint:
 
     def get_fitness_calculator_configuration(self):
         """Get the configuration of the fitness calculator (efeatures and protocols)"""
-
-    def get_morphologies(self):
-        """Get the name and path to the morphologies.
-
-        Returns:
-            morphology_definition (dict): [{'name': morph_name,
-                                            'path': 'morph_path'}
-        """
 
     def get_mechanisms_directory(self):
         """Return the path to the directory containing the mechanisms for the current emodel"""
@@ -125,12 +119,7 @@ class DataAccessPoint:
             bool: True if completed, False if in progress or empty
         """
 
-        checkpoint_path = get_checkpoint_path(
-            emodel=self.emodel,
-            seed=seed,
-            iteration_tag=self.iteration_tag,
-            ttype=self.ttype,
-        )
+        checkpoint_path = get_checkpoint_path(self.emodel_metadata, seed=seed)
 
         # no file -> target not complete
         if not pathlib.Path(checkpoint_path).is_file():
@@ -169,6 +158,3 @@ class DataAccessPoint:
             return False
 
         raise Exception(f"Unknown optimizer: {optimizer}")
-
-    def _build_pdf_dependencies(self, seed):
-        """Find all the pdfs associated to an emodel"""

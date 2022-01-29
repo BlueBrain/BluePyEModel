@@ -75,17 +75,18 @@ def test_get_model_configuration(db):
 def test_get_final(db):
     final = db.get_final()
     assert "cADpyr_L5TPC" in final
-    assert "params" in final["cADpyr_L5TPC"]
+    assert "parameters" in final["cADpyr_L5TPC"] or "params" in final["cADpyr_L5TPC"]
 
 
 def test_load_pipeline_settings(db):
     assert db.pipeline_settings.path_extract_config == "tests/test_data/config/config_dict.json"
     assert db.pipeline_settings.validation_protocols == {"APWaveform": [140]}
 
+
 def test_get_model_name_for_final(db):
-    db.iteration_tag = ""
+    db.emodel_metadata.iteration = ""
     assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
-    db.iteration_tag = None
+    db.emodel_metadata.iteration = None
     assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
-    db.iteration_tag = "hash"
+    db.emodel_metadata.iteration = "hash"
     assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__hash__42"

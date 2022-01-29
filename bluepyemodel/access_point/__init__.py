@@ -10,10 +10,12 @@ def get_access_point(access_point, emodel, **kwargs):
         kwargs (dict): extra arguments to pass to access_point constructors, see below.
 
     Optional:
-        ttype (str): name of the t-type.
-        brain_region (str): name of the brain region.
-        iteration_tag (str): tag associated to the current run. Used to tag the
-            Resources generated during the different run.
+        etype (str): name of the electric type.
+        ttype (str): name of the transcriptomic type.
+        mtype (str): name of the morphology type.
+        species (str): name of the species.
+        brain_region (str): name of the brain location.
+        iteration (str): tag associated to the current run.
 
     For local:
         emodel_dir (str): path of the directory containing the parameters,
@@ -24,8 +26,6 @@ def get_access_point(access_point, emodel, **kwargs):
         with_seed (bool): allows for emodel_seed type of emodel names in final.json (not in recipes)
 
     For nexus:
-        species (str): name of the species.
-        brain_region (str): name of the brain region.
         project (str): name of the Nexus project.
         organisation (str): name of the Nexus organization to which the project belong.
         endpoint (str): Nexus endpoint.
@@ -36,23 +36,30 @@ def get_access_point(access_point, emodel, **kwargs):
         DataAccessPoint
     """
 
+    etype = kwargs.get("etype", None)
+    etype = etype.replace("__", " ") if etype else None
+
     ttype = kwargs.get("ttype", None)
-    if ttype:
-        ttype = ttype.replace("__", " ")
+    ttype = ttype.replace("__", " ") if ttype else None
+
+    mtype = kwargs.get("mtype", None)
+    mtype = mtype.replace("__", " ") if mtype else None
 
     if access_point == "nexus":
         from bluepyemodel.access_point.nexus import NexusAccessPoint
 
         return NexusAccessPoint(
             emodel=emodel,
-            species=kwargs["species"],
-            brain_region=kwargs["brain_region"],
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=kwargs.get("species", None),
+            brain_region=kwargs.get("brain_region", None),
+            iteration_tag=kwargs.get("iteration_tag", None),
             project=kwargs.get("project", "ncmv3"),
             organisation=kwargs.get("organisation", "bbp"),
             endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
             forge_path=kwargs.get("forge_path", None),
-            ttype=ttype,
-            iteration_tag=kwargs.get("iteration_tag", None),
             access_token=kwargs.get("access_token", None),
         )
 
@@ -62,12 +69,16 @@ def get_access_point(access_point, emodel, **kwargs):
         return LocalAccessPoint(
             emodel=emodel,
             emodel_dir=kwargs["emodel_dir"],
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=kwargs.get("species", None),
+            brain_region=kwargs.get("brain_region", None),
+            iteration_tag=kwargs.get("iteration_tag", None),
             recipes_path=kwargs.get("recipes_path", None),
             final_path=kwargs.get("final_path", None),
             legacy_dir_structure=kwargs.get("legacy_dir_structure", False),
             with_seeds=kwargs.get("with_seeds", False),
-            ttype=ttype,
-            iteration_tag=kwargs.get("iteration_tag", None),
         )
 
     raise Exception(f"Unknown access point: {access_point}")

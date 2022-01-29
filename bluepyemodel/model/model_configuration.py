@@ -9,8 +9,6 @@ logger = logging.getLogger(__name__)
 def configure_model(
     access_point,
     morphology_name,
-    emodel=None,
-    ttype=None,
     morphology_path=None,
     morphology_format=None,
     use_gene_data=True,
@@ -22,9 +20,6 @@ def configure_model(
         morphology_name (str): name of the morphology on which to build the neuron model. This
             morphology has to be available in the directory "./morphology" if using the local
             access point or on Nexus if using the Nexus access point.
-        emodel (str): name of the emodel.
-        ttype (str): name of the transcriptomic type. If the configuration is initialized from
-            gene data (use_gene_data=True), ttype has to match an entry of the gene mapping file.
         morphology_path (str): path to the morphology file
         morphology_format (str): format of the morphology, can be 'asc' or 'swc'. Optional if
             morphology_path was provided.
@@ -32,15 +27,8 @@ def configure_model(
             the configuration will be empty.
     """
 
-    if access_point.pipeline_settings.model_configuration_name:
-        configuration_name = access_point.pipeline_settings.model_configuration_name
-    else:
-        configuration_name = f"{emodel}_{ttype}"
-
     configurator = ModelConfigurator(access_point=access_point)
-    configurator.new_configuration(
-        configuration_name=configuration_name, use_gene_data=use_gene_data
-    )
+    configurator.new_configuration(use_gene_data=use_gene_data)
 
     configurator.configuration.select_morphology(
         morphology_name, morphology_path=morphology_path, morphology_format=morphology_format

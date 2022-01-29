@@ -75,7 +75,7 @@ def validate(
     )
 
     if not emodels:
-        logger.warning("In compute_scores, no emodels for %s", access_point.emodel)
+        logger.warning("In compute_scores, no emodels for %s", access_point.emodel_metadata.emodel)
         return []
 
     validation_function = define_validation_function(access_point)
@@ -84,25 +84,25 @@ def validate(
 
     for i, mo in enumerate(emodels):
 
-        emodels[i]["scores"] = mo["evaluator"].fitness_calculator.calculate_scores(mo["responses"])
+        emodels[i].scores = mo.evaluator.fitness_calculator.calculate_scores(mo.responses)
         # turn features from arrays to float to be json serializable
-        emodels[i]["features"] = {}
-        values = mo["evaluator"].fitness_calculator.calculate_values(mo["responses"])
+        emodels[i].features = {}
+        values = mo.evaluator.fitness_calculator.calculate_values(mo.responses)
         for key, value in values.items():
             if value is not None:
-                emodels[i]["features"][key] = float(numpy.mean([v for v in value if v]))
+                emodels[i].features[key] = float(numpy.mean([v for v in value if v]))
             else:
-                emodels[i]["features"][key] = None
+                emodels[i].features[key] = None
 
-        emodels[i]["scores_validation"] = {}
-        for feature_names, score in mo["scores"].items():
+        emodels[i].scores_validation = {}
+        for feature_names, score in mo.scores.items():
             for p in access_point.pipeline_settings.validation_protocols:
                 if p in feature_names:
-                    emodels[i]["scores_validation"][feature_names] = score
+                    emodels[i].scores_validation[feature_names] = score
                     break
 
         # turn bool_ into bool to be json serializable
-        emodels[i]["validated"] = bool(
+        emodels[i].passed_validation = bool(
             validation_function(
                 mo,
                 access_point.pipeline_settings.validation_threshold,
@@ -110,14 +110,6 @@ def validate(
             )
         )
 
-        access_point.store_emodel(
-            scores=emodels[i]["scores"],
-            params=emodels[i]["parameters"],
-            optimizer_name=emodels[i]["optimizer"],
-            seed=emodels[i]["seed"],
-            validated=emodels[i]["validated"],
-            scores_validation=emodels[i]["scores_validation"],
-            features=emodels[i]["features"],
-        )
+        access_point.store_emodel(emodels[i])
 
     return emodels
