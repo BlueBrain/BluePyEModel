@@ -30,6 +30,7 @@ class SomaShapeModel(BaseTask):
     mtypes = luigi.ListParameter(default="all")
     mtype_dependent = luigi.BoolParameter(default=False)
     target_path = luigi.Parameter(default="soma_shape_model.yaml")
+    custom_shape_model = luigi.Parameter(default=None)
 
     def requires(self):
         """ """
@@ -37,13 +38,21 @@ class SomaShapeModel(BaseTask):
 
     def run(self):
         """Run."""
-        morphs_df = pd.read_csv(self.input().path)
-        models = build_soma_models(
-            morphs_df,
-            self.mtypes,
-            morphology_path=self.morphology_path,
-            mtype_dependent=self.mtype_dependent,
-        )
+        if self.custom_shape_model is None:
+            morphs_df = pd.read_csv(self.input().path)
+            models = build_soma_models(
+                morphs_df,
+                self.mtypes,
+                morphology_path=self.morphology_path,
+                mtype_dependent=self.mtype_dependent,
+            )
+        else:
+            with open(self.custom_shape_model) as shape_file:
+                shape_model = yaml.safe_load(shape_file)
+                # hardcoded!
+                models = {
+                    self.mtypes: {"soma_model": shape_model["cADpyr_L5TPC"]["L5_TPC:A"]["soma"]}
+                }
 
         ensure_dir(self.output().path)
         with self.output().open("w") as f:
@@ -166,6 +175,7 @@ class AisShapeModel(BaseTask):
     mtype_dependent = luigi.BoolParameter(default=False)
     with_taper = luigi.BoolParameter(default=True)
     target_path = luigi.Parameter(default="ais_shape_model.yaml")
+    custom_shape_model = luigi.Parameter(default=None)
 
     def requires(self):
         """ """
@@ -173,16 +183,25 @@ class AisShapeModel(BaseTask):
 
     def run(self):
         """Run."""
-        morphs_df = pd.read_csv(self.input().path)
-        morphs_df = morphs_df[morphs_df.use_axon]
+        if self.custom_shape_model is None:
+            morphs_df = pd.read_csv(self.input().path)
+            morphs_df = morphs_df[morphs_df.use_axon]
 
-        models = build_ais_diameter_models(
-            morphs_df,
-            self.mtypes,
-            morphology_path=self.morphology_path,
-            mtype_dependent=self.mtype_dependent,
-            with_taper=self.with_taper,
-        )
+            models = build_ais_diameter_models(
+                morphs_df,
+                self.mtypes,
+                morphology_path=self.morphology_path,
+                mtype_dependent=self.mtype_dependent,
+                with_taper=self.with_taper,
+            )
+        else:
+            with open(self.custom_shape_model) as shape_file:
+                shape_model = yaml.safe_load(shape_file)
+                print(shape_model)
+                # hardcoded!
+                models = {
+                    self.mtypes: {"AIS_model": shape_model["cADpyr_L5TPC"]["L5_TPC:A"]["AIS"]}
+                }
 
         ensure_dir(self.output().path)
         with self.output().open("w") as f:

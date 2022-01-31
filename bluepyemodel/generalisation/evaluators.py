@@ -33,19 +33,23 @@ def _get_synth_modifiers(combo, morph_modifiers=None):
     if morph_modifiers is None:
         morph_modifiers = []
 
-    if "soma_scaler" in combo and combo["soma_scaler"] is not None:
+    if "soma_model" in combo and isinstance(combo["soma_model"], str):
         morph_modifiers.insert(
             0,
-            partial(synth_soma, params=json.loads(combo["soma_model"]), scale=combo["soma_scaler"]),
+            partial(
+                synth_soma,
+                params=json.loads(combo["soma_model"]),
+                scale=combo.get("soma_scaler", 1),
+            ),
         )
 
-    if "AIS_scaler" in combo and combo["AIS_scaler"] is not None:
+    if "AIS_model" in combo and isinstance(combo["AIS_model"], str):
         morph_modifiers.insert(
             0,
             partial(
                 synth_axon,
                 params=json.loads(combo["AIS_model"])["popt"],
-                scale=combo["AIS_scaler"],
+                scale=combo.get("AIS_scaler", 1),
             ),
         )
 
