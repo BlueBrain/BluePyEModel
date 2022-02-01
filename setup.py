@@ -38,6 +38,7 @@ EXTRA_GENERALISATION = [
 EXTRA_TEST = [
     "pytest>=6.2",
     "dictdiffer>=0.8"
+    "click>=8.0.0", # temporary, because of https://github.com/psf/black/issues/2774
 ]
 
 EXTRA_DOC = [
