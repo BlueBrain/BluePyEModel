@@ -184,7 +184,20 @@ def define_RMP_protocol(efeatures):
 
     if target_voltage:
 
-        return RMPProtocol(name="RMPProtocol", location=soma_loc, target_voltage=target_voltage)
+        rmp_protocol = RMPProtocol(
+            name="RMPProtocol", location=soma_loc, target_voltage=target_voltage
+        )
+
+        for f in efeatures:
+            if (
+                "RMPProtocol" in f.recording_names[""]
+                and f.efel_feature_name != "steady_state_voltage_stimend"
+            ):
+                f.stim_start = 0.0
+                f.stim_end = rmp_protocol.stimulus_duration
+                f.stimulus_current = 0.0
+
+        return rmp_protocol
 
     raise Exception("Couldn't find the voltage feature associated to the RMP protocol")
 
