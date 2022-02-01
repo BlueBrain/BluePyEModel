@@ -147,6 +147,12 @@ class NexusAccessPoint(DataAccessPoint):
         #    scope="brainRegion",
         #    strategy=ResolvingStrategy.EXACT_MATCH
         # )
+        _ = ap.access_point.forge.resolve(
+            "Somatosensory",
+            scope="ontology",
+            strategy=ResolvingStrategy.ALL_MATCHES,
+            limit=3
+        )
 
         return {
             "type": "BrainLocation",
@@ -827,6 +833,23 @@ class NexusAccessPoint(DataAccessPoint):
         resources = self.access_point.fetch({"type": "NeuronMorphology"}, use_version=False)
 
         return {r.name for r in resources}
+
+    def get_available_traces(self, filter_species=True, filter_brain_region=True, filter_layer=True):
+        """Get the list of available Traces for the current species from Nexus"""
+
+        filters = {"type": "Trace"}
+
+        if filter_species:
+            filters["subject"] = self.get_subject(for_search=True)
+        if filter_brain_region:
+            filters["brainLocation"] = self.get_brain_region()
+        if filter_layer:
+            # TODO
+            pass
+
+        resource_traces = self.access_point.access_point.fetch()
+
+        return resource_traces
 
     def get_model_configuration(self, configuration_name=None):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""

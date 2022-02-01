@@ -7,12 +7,13 @@ import time
 
 import jwt
 from entity_management.state import refresh_token
+
 from kgforge.core import KnowledgeGraphForge
 from kgforge.core import Resource
+from kgforge.core.commons.strategies import ResolvingStrategy
 from kgforge.specializations.resources import Dataset
 
 logger = logging.getLogger("__main__")
-
 
 # pylint: disable=bare-except
 
@@ -84,6 +85,19 @@ class NexusForgeAccessPoint:
         )
 
         return forge
+
+    def resolve(self, text, scope="ontology", strategy="all", limit=1):
+
+        if strategy == "all":
+            resolving_strategy = ResolvingStrategy.ALL_MATCHES
+        elif strategy == "best":
+            resolving_strategy = ResolvingStrategy.BEST_MATCH
+        elif strategy == "exact":
+            resolving_strategy = ResolvingStrategy.EXACT_MATCH
+        else:
+            raise Exception(f"Resolving strategy {strategy} does not exist")
+
+        return self.forge.resolve(text, scope=scope, strategy=resolving_strategy, limit=limit)
 
     def add_contribution(self, resource):
         """Add the contributing agent to the resource"""
@@ -278,3 +292,62 @@ class NexusForgeAccessPoint:
             paths.append(filepath)
 
         return paths
+
+
+def ontology_forge_access_point(access_token=None):
+
+    if access_token is None:
+        access_token = getpass.getpass()
+
+    access_point = NexusForgeAccessPoint(
+        project="datamodels",
+        organisation="neurosciencegraph",
+        endpoint="https://bbp.epfl.ch/nexus/v1",
+        forge_path=None,
+        iteration_tag=None,
+        access_token=access_token,
+    )
+
+    return access_point
+
+
+def get_all_brain_regions(access_token=None):
+
+    access_point = ontology_forge_access_point(access_token)
+
+    filters = {
+        "isDefinedBy": {
+            "id": "http://bbp.epfl.ch/neurosciencegraph/ontologies/mba"
+        },
+        "type":"Class"
+    }
+
+    resources = access_point.forge.search(filters, limit=10000, cross_bucket=True)
+    
+    brain_regions = sorted(set([r.label for r in resources]))
+
+    return brain_regions
+
+
+def get_all_species(access_token=None):
+    
+    access_point = ontology_forge_access_point(access_token)
+    
+    resources = access_point.forge.search({"subClassOf": "nsg:Species"}, limit=100)
+    
+    species = sorted(set([r.label for r in resources]))
+    
+    return species
+
+
+# def resolve_brain_region():
+    
+#     resources = access_point.resolve(
+#        "Mus musculus",
+#        scope="ontology",
+#        strategy="all",
+#        limit=20
+#     )
+
+# print(get_all_brain_regions())
+# print(get_all_species())
