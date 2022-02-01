@@ -342,6 +342,9 @@ class FitnessCalculatorConfiguration:
             if feature["feature"] == "voltage_base":
                 tmp_feature.protocol_name = "RMPProtocol"
                 tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
+            elif feature["feature"] == "Spikecount":
+                tmp_feature.protocol_name = "RMPProtocol"
+                tmp_feature.efel_feature_name = "Spikecount"
             else:
                 return
 
