@@ -23,16 +23,18 @@ class EModel_pipeline:
     def __init__(
         self,
         emodel,
-        species,
-        brain_region,
         data_access_point,
+        etype=None,
+        ttype=None,
+        mtype=None,
+        species=None,
+        brain_region=None,
+        iteration_tag=None,
         recipes_path=None,
         forge_path=None,
         nexus_organisation=None,
         nexus_project=None,
         nexus_endpoint="staging",
-        ttype=None,
-        iteration_tag=None,
         use_ipyparallel=None,
     ):
         """Initialize the emodel_pipeline.
@@ -58,16 +60,19 @@ class EModel_pipeline:
             nexus_endpoint (str): Nexus endpoint ("prod" or "staging")
             ttype (str): name of the t-type. Required if using the gene expression or IC selector.
             iteration_tag (str): tag associated to the current run. If used with the local access
-                point,the pipeline will work in the directory working_dir/run/iteration_tag.
+                point,the pipeline will work in the directory working_dir/run/iteration.
                 If used with the Nexus access point, it will be used to tag the resources
                 generated during the run.
             use_ipyparallel (bool): should the parallelization map be base on ipyparallel.
         """
 
         self.emodel = emodel
+        self.etype = etype
         self.ttype = ttype
+        self.mtype = mtype
         self.species = species
         self.brain_region = brain_region
+        self.iteration_tag = iteration_tag
 
         if use_ipyparallel:
             self.mapper = ipyparallel_map_function()
@@ -81,8 +86,6 @@ class EModel_pipeline:
             nexus_organisation,
             nexus_endpoint,
             nexus_project,
-            ttype,
-            iteration_tag,
         )
 
     def init_access_point(
@@ -93,8 +96,6 @@ class EModel_pipeline:
         nexus_organisation,
         nexus_endpoint,
         nexus_project,
-        ttype,
-        iteration_tag,
     ):
         """Instantiate a data access point, either to Nexus or GPFS"""
 
@@ -105,23 +106,25 @@ class EModel_pipeline:
             endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
 
         emodel_dir = "./"
-        if iteration_tag and data_access_point == "local":
-            emodel_dir = str(pathlib.Path("./") / "run" / iteration_tag)
+        if self.iteration_tag and data_access_point == "local":
+            emodel_dir = str(pathlib.Path("./") / "run" / self.iteration_tag)
 
         return get_access_point(
-            access_point=data_access_point,
             emodel=self.emodel,
+            etype=self.etype,
+            ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
+            iteration_tag=self.iteration_tag,
+            access_point=data_access_point,
             emodel_dir=emodel_dir,
             recipes_path=recipes_path,
             final_path="final.json",
-            species=self.species,
-            brain_region=self.brain_region,
             organisation=nexus_organisation,
             project=nexus_project,
             endpoint=endpoint,
             forge_path=forge_path,
-            ttype=ttype,
-            iteration_tag=iteration_tag,
         )
 
     def configure_model(
@@ -131,9 +134,7 @@ class EModel_pipeline:
 
         return configure_model(
             self.access_point,
-            morphology_name,
-            self.emodel,
-            self.ttype,
+            morphology_name=morphology_name,
             morphology_path=morphology_path,
             morphology_format=morphology_format,
             use_gene_data=use_gene_data,
@@ -142,9 +143,7 @@ class EModel_pipeline:
     def extract_efeatures(self):
         """"""
 
-        return extract_save_features_protocols(
-            emodel=self.emodel, access_point=self.access_point, mapper=self.mapper
-        )
+        return extract_save_features_protocols(access_point=self.access_point, mapper=self.mapper)
 
     def optimize(self, seed=1):
         """"""
@@ -164,7 +163,10 @@ class EModel_pipeline:
             if self.emodel not in chkp_path:
                 continue
 
-            if self.access_point.iteration_tag and self.access_point.iteration_tag not in chkp_path:
+            if (
+                self.access_point.emodel_metadata.iteration
+                and self.access_point.emodel_metadata.iteration not in chkp_path
+            ):
                 continue
 
             if seed and str(seed) not in chkp_path:
@@ -191,7 +193,10 @@ class EModel_pipeline:
             if self.emodel not in chkp_path:
                 continue
 
-            if self.access_point.iteration_tag and self.access_point.iteration_tag not in chkp_path:
+            if (
+                self.access_point.emodel_metadata.iteration
+                and self.access_point.emodel_metadata.iteration not in chkp_path
+            ):
                 continue
 
             plotting.optimization(
@@ -201,7 +206,6 @@ class EModel_pipeline:
 
         return plotting.plot_models(
             access_point=self.access_point,
-            emodel=self.emodel,
             mapper=self.mapper,
             seeds=None,
             figures_dir=pathlib.Path("./figures") / self.emodel,

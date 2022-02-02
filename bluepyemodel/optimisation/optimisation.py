@@ -6,17 +6,17 @@ from pathlib import Path
 
 import bluepyopt
 
-from bluepyemodel.emodel_pipeline.utils import logger
-from bluepyemodel.emodel_pipeline.utils import run_metadata_as_string
+from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.tools.utils import logger
 
 logger = logging.getLogger(__name__)
 
 
-def get_checkpoint_path(emodel, seed, ttype=None, iteration_tag=None):
+def get_checkpoint_path(metadata, seed=None):
     """"""
 
-    filename = run_metadata_as_string(emodel, seed, ttype=ttype, iteration_tag=iteration_tag)
+    filename = metadata.as_string(seed=seed)
 
     return f"./checkpoints/{filename}.pkl"
 
@@ -30,14 +30,14 @@ def parse_legacy_checkpoint_path(path):
         checkpoint_metadata = {
             "emodel": filename[1],
             "seed": filename[3],
-            "iteration_tag": filename[2],
+            "iteration": filename[2],
             "ttype": None,
         }
     elif len(filename) == 3:
         checkpoint_metadata = {
             "emodel": filename[1],
             "seed": filename[2],
-            "iteration_tag": None,
+            "iteration": None,
             "ttype": None,
         }
 
@@ -57,7 +57,16 @@ def parse_checkpoint_path(path):
 
     checkpoint_metadata = {}
 
-    for field in ["emodel", "seed", "iteration_tag", "ttype"]:
+    for field in [
+        "emodel",
+        "etype",
+        "ttype",
+        "mtype",
+        "species",
+        "brain_region",
+        "seed",
+        "iteration",
+    ]:
         search_str = f"{field}="
         checkpoint_metadata[field] = next(
             (e.replace(search_str, "") for e in filename if search_str in e), None
@@ -192,12 +201,7 @@ def setup_and_run_optimisation(
         optimizer=access_point.pipeline_settings.optimizer,
     )
 
-    checkpoint_path = get_checkpoint_path(
-        access_point.emodel,
-        seed,
-        ttype=access_point.ttype,
-        iteration_tag=access_point.iteration_tag,
-    )
+    checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed)
 
     run_optimization(
         optimizer=opt,
@@ -230,12 +234,7 @@ def store_best_model(
         if seed is None:
             raise Exception("Please specify either the seed or the checkpoint_path")
 
-        checkpoint_path = get_checkpoint_path(
-            access_point.emodel,
-            seed=seed,
-            ttype=access_point.ttype,
-            iteration_tag=access_point.iteration_tag,
-        )
+        checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed=seed)
 
     run, run_metadata = read_checkpoint(checkpoint_path)
 
@@ -255,9 +254,12 @@ def store_best_model(
 
     scores = dict(zip(feature_names, best_model.fitness.values))
 
-    access_point.store_emodel(
-        scores=scores,
-        params=params,
-        optimizer_name=access_point.pipeline_settings.optimizer,
+    emodel = EModel(
+        fitness=sum(list(scores.values())),
+        parameter=params,
+        score=scores,
         seed=run_metadata.get("seed", None),
+        emodel_metadata=access_point.emodel_metadata,
     )
+
+    access_point.store_emodel(emodel)

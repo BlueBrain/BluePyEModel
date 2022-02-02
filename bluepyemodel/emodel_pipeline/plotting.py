@@ -3,16 +3,14 @@
 import logging
 from pathlib import Path
 
-import matplotlib
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import numpy
 
-from bluepyemodel.emodel_pipeline.utils import make_dir
-from bluepyemodel.emodel_pipeline.utils import run_metadata_as_string
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.optimisation.optimisation import read_checkpoint
+from bluepyemodel.tools.utils import make_dir
 
 # pylint: disable=W0612,W0102,C0209
 
@@ -62,11 +60,8 @@ def scores(model, figures_dir="./figures"):
     """Plot the scores of a model"""
     make_dir(figures_dir)
 
-    score = list(model["scores"].values())
-    scores_names = list(model["scores"].keys())
-    if "scores_validation" in model:
-        score += list(model["scores_validation"].values())
-        scores_names += list(model["scores_validation"].keys())
+    score = list(model.score.values()) + list(model.scores_validation.values())
+    scores_names = list(model.score.keys()) + list(model.scores_validation.keys())
 
     pos = [*range(len(score))]
 
@@ -86,13 +81,7 @@ def scores(model, figures_dir="./figures"):
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
 
-    fname = run_metadata_as_string(
-        model.get("emodel"),
-        model.get("seed"),
-        ttype=model.get("ttype", None),
-        iteration_tag=model.get("iteration_tag", None),
-    )
-    fname += "__scores.pdf"
+    fname = model.emodel_metadata.as_string(model.seed) + "__scores.pdf"
 
     plt.tight_layout()
     save_fig(figures_dir, fname)
@@ -159,7 +148,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
 
         idx += 1
 
-    title = str(model["emodel"])
+    title = str(model.emodel_metadata.emodel)
 
     if threshold:
         title += "\n Threshold current = {:.4f} nA".format(threshold)
@@ -172,13 +161,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
 
     fig.suptitle(title)
 
-    fname = run_metadata_as_string(
-        model.get("emodel"),
-        model.get("seed"),
-        ttype=model.get("ttype", None),
-        iteration_tag=model.get("iteration_tag", None),
-    )
-    fname += "__traces.pdf"
+    fname = model.emodel_metadata.as_string(model.seed) + "__traces.pdf"
 
     plt.tight_layout()
     save_fig(figures_dir, fname)
@@ -188,7 +171,7 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
     """Plot the distribution of the parameters across several models"""
     make_dir(figures_dir)
 
-    if len({mo["emodel"] for mo in models}) > 1:
+    if len({mo.emodel_metadata.as_string() for mo in models}) > 1:
         logger.warning(
             "More than one e-type passed to the plotting.parameters_distribution function"
         )
@@ -201,7 +184,7 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
         for param in parameters:
             bm = (ubounds[param] + lbounds[param]) / 2.0
             br = (ubounds[param] - lbounds[param]) / 2.0
-            _.append((mo["parameters"][param] - bm) / br)
+            _.append((mo.parameters[param] - bm) / br)
         data.append(_)
     data = numpy.array(data)
 
@@ -228,15 +211,9 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
     axs[0, 0].set_xlim(0, 1 + len(ubounds))
     axs[0, 0].set_ylim(-1.05, 1.05)
 
-    axs[0, 0].set_title(models[0]["emodel"])
+    axs[0, 0].set_title(models[0].emodel_metadata.as_string())
 
-    fname = run_metadata_as_string(
-        models[0].get("emodel"),
-        seed="",
-        ttype=models[0].get("ttype", None),
-        iteration_tag=models[0].get("iteration_tag", None),
-    )
-    fname += "__parameters_distribution.pdf"
+    fname = models[0].emodel_metadata.as_string() + "__parameters_distribution.pdf"
 
     plt.tight_layout()
     save_fig(figures_dir, fname)
@@ -244,7 +221,6 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
 
 def plot_models(
     access_point,
-    emodel,
     mapper,
     seeds=None,
     figures_dir="./figures",
@@ -258,8 +234,6 @@ def plot_models(
 
     Args:
         access_point (DataAccessPoint): data access point.
-        emodel (str): name of the emodel. Has to match the name of the emodel
-            under which the configuration data are stored.
         mapper (map): used to parallelize the evaluation of the
             individual in the population.
         seeds (list): if not None, filter emodels to keep only the ones with these seeds.
@@ -283,31 +257,31 @@ def plot_models(
     if plot_traces:
         emodels = compute_responses(access_point, cell_evaluator, mapper, seeds)
     else:
-        emodels = access_point.get_emodels([emodel])
+        emodels = access_point.get_emodels([access_point.emodel_metadata.emodel])
         if seeds:
-            emodels = [model for model in emodels if model["seed"] in seeds]
+            emodels = [model for model in emodels if model.seed in seeds]
 
     stimuli = cell_evaluator.fitness_protocols["main_protocol"].subprotocols()
 
     if only_validated:
-        emodels = [model for model in emodels if "validated" in model and model["validated"]]
+        emodels = [model for model in emodels if model.passed_validation]
         dest_leaf = "validated"
     else:
         dest_leaf = "all"
 
     if not emodels:
-        logger.warning("In plot_models, no emodel for %s", emodel)
+        logger.warning("In plot_models, no emodel for %s", access_point.emodel_metadata.emodel)
         return []
 
     if plot_distributions:
         lbounds = {
             p.name: p.bounds[0]
-            for p in cell_evaluator.cell_model.params.values()
+            for p in cell_evaluator.cell_model.parameters.values()
             if p.bounds is not None
         }
         ubounds = {
             p.name: p.bounds[1]
-            for p in cell_evaluator.cell_model.params.values()
+            for p in cell_evaluator.cell_model.parameters.values()
             if p.bounds is not None
         }
 
@@ -326,6 +300,6 @@ def plot_models(
             scores(mo, figures_dir_scores)
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
-            traces(mo, mo["responses"], stimuli, figures_dir_traces)
+            traces(mo, mo.responses, stimuli, figures_dir_traces)
 
     return emodels

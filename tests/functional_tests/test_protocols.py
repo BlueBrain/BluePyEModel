@@ -45,7 +45,7 @@ def test_protocols(db, evaluator):
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
 
-    params = db.get_emodel()["parameters"]
+    params = db.get_emodel().parameters
     
     responses = evaluator.run_protocols(
         protocols=evaluator.fitness_protocols.values(), param_values=params

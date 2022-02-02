@@ -55,7 +55,12 @@ class TargetsConfiguration:
         else:
             self.targets = []
 
-        self.protocols_rheobase = protocols_rheobase if protocols_rheobase is not None else []
+        if protocols_rheobase is None:
+            self.protocols_rheobase = []
+        elif isinstance(protocols_rheobase, str):
+            self.protocols_rheobase = [protocols_rheobase]
+        else:
+            self.protocols_rheobase = protocols_rheobase
 
     @property
     def files_metadata_BPE(self):

@@ -11,10 +11,35 @@ from kgforge.core import KnowledgeGraphForge
 from kgforge.core import Resource
 from kgforge.specializations.resources import Dataset
 
+from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
+from bluepyemodel.emodel_pipeline.emodel import EModel
+from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
+from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.tools.utils import yesno
+
 logger = logging.getLogger("__main__")
 
 
-# pylint: disable=bare-except
+# pylint: disable=bare-except,consider-iterating-dictionary
+
+CLASS_TO_NEXUS_TYPE = {
+    "TargetsConfiguration": "ExtractionTargetsConfiguration",
+    "EModelPipelineSettings": "EModelPipelineSettings",
+    "FitnessCalculatorConfiguration": "FitnessCalculatorConfiguration",
+    "NeuronModelConfiguration": "EModelConfiguration",
+    "EModel": "EModel",
+}
+
+NEXUS_TYPE_TO_CLASS = {
+    "ExtractionTargetsConfiguration": TargetsConfiguration,
+    "EModelPipelineSettings": EModelPipelineSettings,
+    "FitnessCalculatorConfiguration": FitnessCalculatorConfiguration,
+    "EModelConfiguration": NeuronModelConfiguration,
+    "EModel": EModel,
+}
+
+NEXUS_ENTRIES = ["objectOfStudy", "contribution", "type", "id"]
 
 
 class AccessPointException(Exception):
@@ -34,7 +59,6 @@ class NexusForgeAccessPoint:
         debug=False,
         cross_bucket=True,
         access_token=None,
-        iteration_tag=None,
     ):
 
         self.limit = limit
@@ -47,8 +71,6 @@ class NexusForgeAccessPoint:
 
         bucket = organisation + "/" + project
         self.forge = self.connect_forge(bucket, endpoint, self.access_token, forge_path)
-
-        self.iteration_tag = iteration_tag
 
         decoded_token = jwt.decode(self.access_token, options={"verify_signature": False})
         self.agent = self.forge.reshape(
@@ -102,7 +124,6 @@ class NexusForgeAccessPoint:
         resource_description,
         filters_existance=None,
         replace=False,
-        tag=True,
         distributions=None,
     ):
         """Register a resource from its dictionary description."""
@@ -112,9 +133,6 @@ class NexusForgeAccessPoint:
 
         previous_resources = None
         if filters_existance:
-
-            if tag and self.iteration_tag:
-                filters_existance["iteration"] = self.iteration_tag
 
             previous_resources = self.fetch(filters_existance)
 
@@ -129,9 +147,6 @@ class NexusForgeAccessPoint:
                     "The resource you are trying to register already exist and will be ignored."
                 )
                 return
-
-        if tag and self.iteration_tag:
-            resource_description["iteration"] = self.iteration_tag
 
         resource_description["objectOfStudy"] = {
             "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
@@ -163,13 +178,11 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch(self, filters, use_version=True, retries=5):
+    def fetch(self, filters, retries=2):
         """Fetch resources based on filters. Retry the search if it fails to find any resources.
 
         Args:
             filters (dict): keys and values used for the "WHERE". Should include "type" or "id".
-            use_version (bool): if True, the search is restricted to the Resources that include
-                the current version tag.
 
         Returns:
             resources (list): list of resources
@@ -177,9 +190,6 @@ class NexusForgeAccessPoint:
 
         if "type" not in filters and "id" not in filters:
             raise AccessPointException("Search filters should contain either 'type' or 'id'.")
-
-        if use_version and self.iteration_tag:
-            filters["iteration"] = self.iteration_tag
 
         logger.debug("Searching: %s", filters)
 
@@ -198,10 +208,10 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch_one(self, filters, use_version=True, strict=True):
+    def fetch_one(self, filters, strict=True):
         """Fetch one and only one resource based on filters."""
 
-        resources = self.fetch(filters, use_version=use_version)
+        resources = self.fetch(filters)
 
         if resources is None:
             if strict:
@@ -240,14 +250,27 @@ class NexusForgeAccessPoint:
 
         return str(file_path)
 
-    def deprecate(self, filters, use_version=True):
+    def deprecate(self, filters):  # TODO: THATS VERY DANGEROUS TO REWORK
         """Deprecate resources based on filters."""
 
-        resources = self.fetch(filters, use_version=use_version)
+        resources = self.fetch(filters)
 
         if resources:
             for resource in resources:
                 self.forge.deprecate(resource)
+
+    def deprecate_all(self, metadata):
+        """Deprecate all resources used or produced by BluePyModel. Use with extreme caution."""
+
+        if not yesno("Confirm deprecation of all BluePyEmodel resources in Nexus project"):
+            return
+
+        for type_ in NEXUS_TYPE_TO_CLASS.keys():
+
+            filters = {"type": type_}
+            filters.update(metadata)
+
+            self.deprecate(filters)
 
     def resource_location(self, resource):
         """Get the path of the files attached to a resource. If the resource is
@@ -278,3 +301,69 @@ class NexusForgeAccessPoint:
             paths.append(filepath)
 
         return paths
+
+    def object_to_nexus(self, object_, metadata, replace=True):
+        """Transform a BPEM object into a dict which gets registered into Nexus as
+        a Resource of the matching type. The metadata are also attached to the object
+        to be able to retrieve the Resource."""
+
+        type_ = CLASS_TO_NEXUS_TYPE[object_.__class__.__name__]
+
+        base_payload = {"type": [type_]}
+        payload_existance = {"type": type_}
+
+        base_payload.update(metadata)
+        payload_existance.update(metadata)
+
+        payload = {**base_payload, **object_.as_dict()}
+
+        distributions = payload.pop("nexus_distributions", None)
+
+        self.register(
+            payload,
+            filters_existance=payload_existance,
+            replace=replace,
+            distributions=distributions,
+        )
+
+    def resource_to_object(self, type_, resource, metadata):
+        """Transform a Resource into a BPEM object of the matching type"""
+
+        payload = self.forge.as_json(resource)
+
+        for k in metadata:
+            payload.pop(k, None)
+
+        for k in NEXUS_ENTRIES:
+            payload.pop(k, None)
+
+        # TODO: need to check what happens when a list of len 1 gets transformed
+
+        return NEXUS_TYPE_TO_CLASS[type_](**payload)
+
+    def nexus_to_object(self, type_, metadata):
+        """Search for a single Resource matching the type_ and metadata and return it
+        as a BPEM object of the matching type"""
+
+        filters = {"type": type_}
+        filters.update(metadata)
+
+        resource = self.fetch_one(filters)
+
+        return self.resource_to_object(type_, resource, metadata)
+
+    def nexus_to_objects(self, type_, metadata):
+        """Search for Resources matching the type_ and metadata and return them
+        as BPEM objects of the matching type"""
+
+        filters = {"type": type_}
+        filters.update(metadata)
+
+        resources = self.fetch(filters)
+
+        objects_ = []
+
+        for resource in resources:
+            objects_.append(self.resource_to_object(type_, resource, metadata))
+
+        return objects_

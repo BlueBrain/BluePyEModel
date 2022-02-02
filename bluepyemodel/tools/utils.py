@@ -27,19 +27,3 @@ def yesno(question):
         return True
 
     return False
-
-
-def run_metadata_as_string(emodel, seed=None, ttype=None, iteration_tag=None):
-    """"""
-
-    s = f"emodel={emodel}"
-
-    if seed is not None:
-        s += f"__seed={seed}"
-    if iteration_tag is not None:
-        s += f"__iteration_tag={iteration_tag}"
-    if ttype is not None:
-        ttype_formatted = ttype.replace("/", "")
-        s += f"__ttype={ttype_formatted}"
-
-    return s

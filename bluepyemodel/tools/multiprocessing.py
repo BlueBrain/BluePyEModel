@@ -4,7 +4,7 @@ import multiprocessing
 import os
 from multiprocessing import pool
 
-from bluepyemodel.emodel_pipeline.utils import logger
+from bluepyemodel.tools.utils import logger
 
 
 def ipyparallel_map_function(ipython_profile="IPYTHON_PROFILE"):
