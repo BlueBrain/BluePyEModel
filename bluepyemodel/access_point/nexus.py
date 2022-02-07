@@ -331,7 +331,7 @@ class NexusAccessPoint(DataAccessPoint):
         metadata = self.emodel_metadata.for_resource()
         metadata["seed"] = emodel.seed
 
-        self.store_object(emodel)
+        self.store_object(emodel, metadata)
 
     def get_emodels(self, emodels=None):
         """Get all the emodels"""
