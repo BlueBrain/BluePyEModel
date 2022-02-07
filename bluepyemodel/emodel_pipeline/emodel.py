@@ -59,23 +59,23 @@ class EModel:
         if isinstance(parameter, dict):
             self.parameters = parameter
         else:
-            self.parameters = {p["name"]: ["value"] for p in parameter} if parameter else {}
+            self.parameters = {p["name"]: p["value"] for p in parameter} if parameter else {}
 
         if isinstance(score, dict):
             self.scores = score
         else:
-            self.scores = {p["name"]: ["value"] for p in score} if score else {}
+            self.scores = {p["name"]: p["value"] for p in score} if score else {}
 
         if isinstance(features, dict):
             self.features = features
         else:
-            self.features = {p["name"]: ["value"] for p in features} if features else {}
+            self.features = {p["name"]: p["value"] for p in features} if features else {}
 
         if isinstance(scoreValidation, dict):
             self.scores_validation = scoreValidation
         else:
             self.scores_validation = (
-                {p["name"]: ["value"] for p in scoreValidation} if scoreValidation else {}
+                {p["name"]: p["value"] for p in scoreValidation} if scoreValidation else {}
             )
 
         self.responses = {}
