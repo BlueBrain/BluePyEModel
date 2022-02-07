@@ -16,6 +16,7 @@ from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
+from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 
 logger = logging.getLogger(__name__)
@@ -310,17 +311,17 @@ class LocalAccessPoint(DataAccessPoint):
     def get_available_mechanisms(self):
         """Get the list of names of the available mechanisms"""
 
-        mechs = []
-
         mech_dir = self.get_mechanisms_directory()
-
         if mech_dir is None:
             return None
 
+        available_mechanisms = []
         for mech_file in glob.glob(str(Path(mech_dir) / "*.mod")):
-            mechs.append(Path(mech_file).stem)
+            available_mechanisms.append(
+                MechanismConfiguration(name=Path(mech_file).stem, location=None)
+            )
 
-        return [{"name": m, "version": None} for m in set(mechs)]
+        return available_mechanisms
 
     def get_available_morphologies(self):
         """Get the list of names of available morphologies"""

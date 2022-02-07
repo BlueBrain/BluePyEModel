@@ -17,6 +17,7 @@ class Target:
         efel_settings=None,
     ):
         """Constructor
+
         Args:
             efeature (str): name of the eFeature in the eFEL library
                 (ex: 'AP1_peak')

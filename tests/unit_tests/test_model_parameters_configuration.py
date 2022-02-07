@@ -1,5 +1,6 @@
 import pytest
 
+from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 
@@ -8,9 +9,9 @@ from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 def configuration():
 
     available_mechs = [
-        {"name": "test_mechanism", "version": None},
-        {"name": "test_mechanism2", "version": None},
-        {"name": "test_mechanism3", "version": None}
+        MechanismConfiguration(name="test_mechanism", location=None),
+        MechanismConfiguration(name="test_mechanism2", location=None),
+        MechanismConfiguration(name="test_mechanism3", location=None)
     ]
 
     available_morphologies = ["C060114A5"]
@@ -41,7 +42,7 @@ def configuration_with_distribution(configuration):
     )
 
     configuration.add_parameter(
-        parameter_name="test_parameter2",
+        parameter_name="gtest_parameter2",
         locations='soma',
         value=[1., 2.],
         mechanism='test_mechanism2',
@@ -160,6 +161,6 @@ def test_select_morphology(configuration):
 def test_distribution(configuration_with_distribution):
     assert len(configuration_with_distribution.parameters) == 3
     assert len(configuration_with_distribution.mechanisms) == 2
-    assert len(configuration_with_distribution.distributions) == 1
-    assert len(configuration_with_distribution.distribution_names) == 1
-    assert len(configuration_with_distribution.used_distribution_names) == 1
+    assert len(configuration_with_distribution.distributions) == 2
+    assert len(configuration_with_distribution.distribution_names) == 2
+    assert len(configuration_with_distribution.used_distribution_names) == 2

@@ -23,16 +23,18 @@ class TargetsConfigurator:
         self.access_point = access_point
         self.configuration = configuration
 
-    def new_configuration(self, files=None, targets=None, protocols_rheobase=None, auto=False):
+    def new_configuration(self, files=None, targets=None, protocols_rheobase=None):
         """Create a new configuration"""
 
         if self.configuration is not None:
             self.delete_configuration()
 
-        if auto:
-            self.get_nexus_roaming_base_configuration()
-        else:
-            self.configuration = TargetsConfiguration(files, targets, protocols_rheobase)
+        available_traces = self.access_point.get_available_traces()
+        available_efeatures = self.access_point.get_available_efeatures()
+
+        self.configuration = TargetsConfiguration(
+            files, targets, protocols_rheobase, available_traces, available_efeatures
+        )
 
     def load_configuration(self):
         """Load a previously registered configuration"""
@@ -46,7 +48,10 @@ class TargetsConfigurator:
         """Save the configuration. The saving medium depends of the access point."""
 
         if self.configuration:
-            self.access_point.store_targets_configuration(self.configuration)
+            if self.configuration.is_configuration_valid:
+                self.access_point.store_targets_configuration(self.configuration)
+            else:
+                raise Exception("Couldn't save invalid configuration")
 
     def delete_configuration(self):
         """Delete the current configuration. Warning: it does not delete the file or resource of
@@ -58,10 +63,3 @@ class TargetsConfigurator:
                 self.save_configuration()
 
             self.configuration = None
-
-    def get_nexus_roaming_base_configuration(self):
-        """Overwrite the currently loaded configuration with a new configuration initiated from
-        finding available Traces on Nexus"""
-
-        raise Exception("Not implemented yet")
-        # self.configuration = TargetsConfiguration()

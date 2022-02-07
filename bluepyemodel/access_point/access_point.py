@@ -3,6 +3,7 @@ import logging
 import pathlib
 import pickle
 
+import efel
 from bluepyopt.deapext.algorithms import _check_stopping_criteria
 from bluepyopt.deapext.stoppingCriteria import MaxNGen
 
@@ -10,7 +11,7 @@ from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.tools.utils import get_checkpoint_path
 
-# pylint: disable=no-member
+# pylint: disable=no-member,unused-argument
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,40 @@ class DataAccessPoint:
 
     def store_model_configuration(self):
         """Store the configuration of a model, including parameters, mechanisms and distributions"""
+
+    def get_available_mechanisms(self):
+        """Get all the available mechanisms"""
+
+    def get_available_efeatures(self, cleaned=True):
+        """Returns a curated list of available eFEL features"""
+
+        efel_features = efel.getFeatureNames()
+
+        if not cleaned:
+            return efel_features
+
+        features = []
+        for f in efel_features:
+            if f.endswith("indices"):
+                continue
+            if f in ["voltage", "time", "current"]:
+                continue
+            features.append(f)
+
+        features.remove("AP_begin_time")
+        features.remove("peak_time")
+
+        return features
+
+    def get_available_traces(self, filter_species=False, filter_brain_region=False):
+        """Get the list of available Traces for the current species from Nexus"""
+        return None
+
+    def get_distributions(self):
+        """Get the list of available distributions"""
+
+    def store_distribution(self, distribution):
+        """Store a channel distribution as a resource of type EModelChannelDistribution"""
 
     def get_model_configuration(self):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""

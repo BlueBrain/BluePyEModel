@@ -47,15 +47,18 @@ def define_distributions(distributions_definition):
     """
 
     distributions = collections.OrderedDict()
-    distributions["uniform"] = ephys.parameterscalers.NrnSegmentLinearScaler()
 
     for definition in distributions_definition:
-        distributions[definition.name] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
-            name=definition.name,
-            distribution=definition.function,
-            dist_param_names=definition.parameters,
-            soma_ref_location=definition.soma_ref_location,
-        )
+
+        if definition.name == "uniform":
+            distributions[definition.name] = ephys.parameterscalers.NrnSegmentLinearScaler()
+        else:
+            distributions[definition.name] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
+                name=definition.name,
+                distribution=definition.function,
+                dist_param_names=definition.parameters,
+                soma_ref_location=definition.soma_ref_location,
+            )
 
     return distributions
 

@@ -9,9 +9,11 @@ import pandas
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
+from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 
 # pylint: disable=too-many-arguments,unused-argument,too-many-locals
+from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 
 logger = logging.getLogger("__main__")
 
@@ -249,7 +251,6 @@ class NexusAccessPoint(DataAccessPoint):
 
         if metadata is None:
             metadata = self.emodel_metadata_ontology.for_resource()
-
         self.access_point.object_to_nexus(object_, metadata, replace=True)
 
     def get_targets_configuration(self):
@@ -259,6 +260,9 @@ class NexusAccessPoint(DataAccessPoint):
             type_="ExtractionTargetsConfiguration",
             metadata=self.emodel_metadata_ontology.for_resource(),
         )
+
+        configuration.available_traces = self.get_available_traces()
+        configuration.available_efeatures = self.get_available_efeatures()
 
         for file in configuration.files:
             file.filepath = self.download_trace(id_=file.resource_id, name=file.filename)
@@ -311,6 +315,16 @@ class NexusAccessPoint(DataAccessPoint):
         """Store a model configuration as a resource of type EModelConfiguration"""
 
         self.store_object(configuration)
+
+    def get_distributions(self):
+        """Get the list of available distributions"""
+
+        return self.access_point.nexus_to_objects(type_="EModelChannelDistribution", metadata={})
+
+    def store_distribution(self, distribution):
+        """Store a channel distribution as a resource of type EModelChannelDistribution"""
+
+        self.store_object(distribution, metadata={})
 
     def get_emodel(self, seed=None):
         """Fetch an emodel"""
@@ -506,26 +520,87 @@ class NexusAccessPoint(DataAccessPoint):
         df, _ = self.load_channel_gene_expression(table_name)
         return df.loc[self.emodel].index.get_level_values("t-type").unique().tolist()
 
-    def get_available_mechanisms(self):
-        """Get the list of names of the available mechanisms"""
-
-        resources = self.access_point.fetch({"type": "SubCellularModelScript"})
-
-        available_mechanisms = []
-        for r in resources:
-
-            mech = {"name": r.name, "version": None}
-
-            if hasattr(r, "modelid"):
-                mech["version"] = r.modelid
-
-            available_mechanisms.append(mech)
-
-        return available_mechanisms
-
     def get_available_morphologies(self):
         """Get the list of names of the available morphologies"""
 
         resources = self.access_point.fetch({"type": "NeuronMorphology"})
 
         return {r.name for r in resources}
+
+    def get_available_mechanisms(self):
+        """Get all the available mechanisms"""
+
+        resources = self.access_point.fetch({"type": "SubCellularModelScript"})
+
+        available_mechanisms = []
+        for r in resources:
+
+            version = r.modelid if hasattr(r, "modelid") else None
+            stochastic = r.stochastic if hasattr(r, "stochastic") else None
+
+            parameters = []
+            if hasattr(r.mod, "gbar"):
+                parameters.append(f"{r.mod.gbar}_{r.mod.suffix}")
+            if hasattr(r.mod, "parameters"):
+                if isinstance(r.mod.parameters, list):
+                    parameters += [f"{pn}_{r.mod.suffix}" for pn in r.mod.parameters]
+                else:
+                    parameters.append(f"{r.mod.parameters}_{r.mod.suffix}")
+
+            mech = MechanismConfiguration(
+                r.name, location=None, stochastic=stochastic, version=version, parameters=parameters
+            )
+
+            available_mechanisms.append(mech)
+
+        return available_mechanisms
+
+    def get_available_traces(self, filter_species=False, filter_brain_region=False):
+        """Get the list of available Traces for the current species from Nexus"""
+
+        filters = {"type": "Trace", "distribution": {"encodingFormat": "application/nwb"}}
+
+        if filter_species:
+            filters["subject"] = self.emodel_metadata_ontology.species
+        if filter_brain_region:
+            filters["brainLocation"] = self.emodel_metadata_ontology.brain_region
+
+        resource_traces = self.access_point.fetch(filters)
+
+        traces = []
+
+        if resource_traces is None:
+            return traces
+
+        for r in resource_traces:
+
+            ecodes = None
+            if hasattr(r, "image"):
+                ecodes = []
+                for stimulus in r.image:
+                    ecode = stimulus.stimulusType.id.split("/")[-1]
+                    ecodes.append(ecode)
+
+            species = None
+            if hasattr(r, "subject") and hasattr(r.subject, "species"):
+                species = r.subject.species
+
+            brain_region = None
+            if hasattr(r, "brainLocation"):
+                brain_region = r.brainLocation
+
+            traces.append(
+                TraceFile(
+                    r.name,
+                    filename=None,
+                    filepath=None,
+                    resource_id=r.id,
+                    ecodes=ecodes,
+                    other_metadata=None,
+                    species=species,
+                    brain_region=brain_region,
+                    etype=None,  # Todo: update when etype will be available
+                )
+            )
+
+        return traces
