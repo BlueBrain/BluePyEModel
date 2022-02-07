@@ -787,6 +787,7 @@ class PlotOptimisation(WorkflowTask):
             mtype=self.mtype,
             species=self.species,
             brain_region=self.brain_region,
+            iteration_tag=self.iteration_tag,
             seed=self.seed,
         )
 
