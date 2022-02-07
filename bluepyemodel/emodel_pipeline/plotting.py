@@ -276,12 +276,12 @@ def plot_models(
     if plot_distributions:
         lbounds = {
             p.name: p.bounds[0]
-            for p in cell_evaluator.cell_model.parameters.values()
+            for p in cell_evaluator.cell_model.params.values()
             if p.bounds is not None
         }
         ubounds = {
             p.name: p.bounds[1]
-            for p in cell_evaluator.cell_model.parameters.values()
+            for p in cell_evaluator.cell_model.params.values()
             if p.bounds is not None
         }
 
