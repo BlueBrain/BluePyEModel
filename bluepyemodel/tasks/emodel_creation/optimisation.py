@@ -378,7 +378,7 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
                 species=self.species,
                 brain_region=self.brain_region,
                 iteration_tag=self.iteration_tag,
-                seed=self.seed,
+                seed=seed,
             ).exists():
                 store_best_model(self.access_point, seed)
 
