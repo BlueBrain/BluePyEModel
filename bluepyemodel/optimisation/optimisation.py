@@ -254,11 +254,13 @@ def store_best_model(
 
     scores = dict(zip(feature_names, best_model.fitness.values))
 
+    emodel_seed = run_metadata.get("seed", None) if seed is None else seed
+
     emodel = EModel(
         fitness=sum(list(scores.values())),
         parameter=params,
         score=scores,
-        seed=run_metadata.get("seed", None),
+        seed=emodel_seed,
         emodel_metadata=access_point.emodel_metadata,
     )
 

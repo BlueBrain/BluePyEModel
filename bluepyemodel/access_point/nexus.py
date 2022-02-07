@@ -244,12 +244,13 @@ class NexusAccessPoint(DataAccessPoint):
             },
         }
 
-    def store_object(self, object_):
+    def store_object(self, object_, metadata=None):
         """Store a BPEM object on Nexus"""
 
-        self.access_point.object_to_nexus(
-            object_, self.emodel_metadata_ontology.for_resource(), replace=True
-        )
+        if metadata is None:
+            metadata = self.emodel_metadata.for_resource()
+
+        self.access_point.object_to_nexus(object_, metadata, replace=True)
 
     def get_targets_configuration(self):
         """Get the configuration of the targets (targets and ephys files used)"""
@@ -326,6 +327,9 @@ class NexusAccessPoint(DataAccessPoint):
 
     def store_emodel(self, emodel):
         """Store an EModel on Nexus"""
+
+        metadata = self.emodel_metadata.for_resource()
+        metadata["seed"] = emodel.seed
 
         self.store_object(emodel)
 
