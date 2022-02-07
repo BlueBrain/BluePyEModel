@@ -119,6 +119,5 @@ class EModel:
             "features": features_resource,
             "scoreValidation": scores_validation_resource,
             "passedValidation": self.passed_validation,
-            "seed": int(self.seed),
             "nexus_distributions": pdf_dependencies,
         }
