@@ -328,7 +328,7 @@ class NexusAccessPoint(DataAccessPoint):
     def store_emodel(self, emodel):
         """Store an EModel on Nexus"""
 
-        metadata = self.self.emodel_metadata_ontology.for_resource()
+        metadata = self.emodel_metadata_ontology.for_resource()
         metadata["seed"] = emodel.seed
 
         self.store_object(emodel, metadata)
