@@ -60,8 +60,8 @@ def scores(model, figures_dir="./figures"):
     """Plot the scores of a model"""
     make_dir(figures_dir)
 
-    score = list(model.score.values()) + list(model.scores_validation.values())
-    scores_names = list(model.score.keys()) + list(model.scores_validation.keys())
+    score = list(model.scores.values()) + list(model.scores_validation.values())
+    scores_names = list(model.scores.keys()) + list(model.scores_validation.keys())
 
     pos = [*range(len(score))]
 
