@@ -60,7 +60,7 @@ def single_feature_evaluation(
     )
     params = emodel_db.get_emodel().parameters
     if "new_parameters" in combo:
-        params.update(combo["new_parameters"])
+        params.update(json.loads(combo["new_parameters"]))
 
     responses = evaluator.run_protocols(evaluator.fitness_protocols.values(), params)
     features = evaluator.fitness_calculator.calculate_values(responses)
@@ -78,7 +78,8 @@ def single_feature_evaluation(
     if trace_data_path is not None:
         Path(trace_data_path).mkdir(exist_ok=True, parents=True)
         stimuli = evaluator.fitness_protocols["main_protocol"].subprotocols()
-        hash_id = sha256(json.dumps(combo).encode()).hexdigest()
+        _combo = combo if isinstance(combo, dict) else combo.to_dict()
+        hash_id = sha256(json.dumps(_combo).encode()).hexdigest()
         trace_data_path = f"{trace_data_path}/trace_data_{hash_id}.pkl"
         with open(trace_data_path, "wb") as handle:
             pickle.dump([stimuli, responses], handle)
