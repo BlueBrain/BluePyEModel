@@ -5,6 +5,7 @@ from abc import ABC
 
 import luigi
 from bbp_workflow.task import IPyParallelExclusive
+# from bbp_workflow.task import IPyParallel
 from luigi.parameter import MissingParameterException
 from luigi.parameter import _no_value
 from luigi_tools.task import _no_default_value
@@ -122,6 +123,9 @@ class IPyParallelTask(IPyParallelExclusive):
             + json.dumps(dict(EmodelAPIConfig().api_args))
             + "'\\''"
         )
+
+        # append ipyparallel profile (str)
+        self.args += " --ipyparallel_profile " + self.task_id
 
 
 class BoolParameterCustom(luigi.BoolParameter):

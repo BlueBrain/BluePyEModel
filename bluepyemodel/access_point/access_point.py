@@ -118,6 +118,7 @@ class DataAccessPoint:
         Returns:
             bool: True if completed, False if in progress or empty
         """
+        # return False # cheating :3
 
         checkpoint_path = get_checkpoint_path(
             emodel=self.emodel,

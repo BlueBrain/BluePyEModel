@@ -7,20 +7,25 @@ from multiprocessing import pool
 from bluepyemodel.emodel_pipeline.utils import logger
 
 
-def ipyparallel_map_function(ipython_profile="IPYTHON_PROFILE"):
+def ipyparallel_map_function(os_env_profile="IPYTHON_PROFILE", profile=None):
     """Get the map function linked to the ipython profile
 
     Args:
-       ipython_profile (str): name fo the environement variable containing
+        os_env_profile (str): name fo the environement variable containing
            the name of the name of the ipython profile
+           Will be used is name of the ipython profile is not given
+        profile (str): name of the name of the ipython profile
 
     Returns:
         map
     """
-    if os.getenv(ipython_profile):
+    logger.warning(f"ipython profile: {profile}")
+    if not profile:
+        profile = os.getenv(os_env_profile)
+    if profile:
         from ipyparallel import Client
 
-        rc = Client(profile=os.getenv(ipython_profile))
+        rc = Client(profile=profile)
         lview = rc.load_balanced_view()
 
         def mapper(func, it):
@@ -60,10 +65,10 @@ class NestedPool(pool.Pool):  # pylint: disable=abstract-method
     Process = NoDaemonProcess
 
 
-def get_mapper(backend):
+def get_mapper(backend, ipyparallel_profile=None):
     """Get a mapper for parallel computations."""
     if backend == "ipyparallel":
-        return ipyparallel_map_function()
+        return ipyparallel_map_function(profile=ipyparallel_profile)
 
     if backend == "multiprocessing":
         nested_pool = NestedPool()
