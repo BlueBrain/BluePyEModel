@@ -9,12 +9,14 @@ import fasteners
 from bluepyefe.tools import NumpyEncoder
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
+from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
+from bluepyemodel.emodel_pipeline.emodel import EModel
+from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
-from bluepyemodel.tools import search_pdfs
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,11 @@ class LocalAccessPoint(DataAccessPoint):
         self,
         emodel,
         emodel_dir,
+        etype=None,
         ttype=None,
+        mtype=None,
+        species=None,
+        brain_region=None,
         iteration_tag=None,
         final_path=None,
         recipes_path=None,
@@ -65,13 +71,12 @@ class LocalAccessPoint(DataAccessPoint):
             with_seed (bool): allows for emodel_seed type of emodel names in final.json
         """
 
+        super().__init__(emodel, etype, ttype, mtype, species, brain_region, iteration_tag)
+
         self.emodel_dir = Path(emodel_dir)
         self.recipes_path = recipes_path
         self.legacy_dir_structure = legacy_dir_structure
-        self.emodel = emodel
         self.with_seeds = with_seeds
-
-        super().__init__(emodel, ttype, iteration_tag)
 
         self.morph_path = None
 
@@ -99,7 +104,7 @@ class LocalAccessPoint(DataAccessPoint):
             )
 
         self.unfrozen_params = None
-        self.emodel = emodel
+        self.emodel_metadata.emodel = _emodel
 
     def load_pipeline_settings(self):
         """ """
@@ -175,7 +180,7 @@ class LocalAccessPoint(DataAccessPoint):
         """
 
         if self.legacy_dir_structure:
-            emodel = "_".join(self.emodel.split("_")[:2])
+            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
             recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
             recipes_path = self.recipes_path
@@ -189,9 +194,9 @@ class LocalAccessPoint(DataAccessPoint):
         See docstring of __init__ for the format of the file of recipes.
         """
         if self.with_seeds:
-            emodel = "_".join(self.emodel.split("_")[:2])
+            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
         else:
-            emodel = self.emodel
+            emodel = self.emodel_metadata.emodel
         return self.get_all_recipes()[emodel]
 
     def _get_json(self, recipe_entry):
@@ -200,7 +205,7 @@ class LocalAccessPoint(DataAccessPoint):
         json_path = Path(self.get_recipes()[recipe_entry])
 
         if self.legacy_dir_structure:
-            emodel = "_".join(self.emodel.split("_")[:2])
+            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
             json_path = self.emodel_dir / emodel / json_path
         elif not json_path.is_absolute():
             json_path = self.emodel_dir / json_path
@@ -208,129 +213,62 @@ class LocalAccessPoint(DataAccessPoint):
         with open(json_path, "r") as f:
             return json.load(f)
 
-    def get_extraction_metadata(self):
-        """Get the configuration parameters used for feature extraction.
-
-        Returns:
-            files_metadata (dict)
-            targets (dict)
-            protocols_threshold (list)
-        """
-
-        path_extract_config = self.pipeline_settings.path_extract_config
-
-        if not path_extract_config:
-            return None, None, None
-
-        with open(path_extract_config, "r") as f:
-            config_dict = json.load(f)
-
-        files_metadata = config_dict["files_metadata"]
-        targets = config_dict["targets"]
-        protocols_threshold = config_dict["protocols_threshold"]
-
-        return files_metadata, targets, protocols_threshold
-
     def get_model_name_for_final(self, seed):
         """Return model name used as key in final.json."""
 
-        if self.iteration_tag:
-            return f"{self.emodel}__{self.iteration_tag}__{seed}"
+        if self.emodel_metadata.iteration:
+            return f"{self.emodel_metadata.emodel}__{self.emodel_metadata.iteration}__{seed}"
 
         logger.warning(
-            "The iteration_tag is %s. It is strongly advised to use "
-            "an iteration tag in the future.",
-            self.iteration_tag,
+            "The iteration is %s. It is strongly advised to use " "an iteration tag in the future.",
+            self.emodel_metadata.iteration,
         )
 
-        return f"{self.emodel}__{seed}"
+        return f"{self.emodel_metadata.emodel}__{seed}"
 
-    def store_emodel(
-        self,
-        scores,
-        params,
-        optimizer_name,
-        seed,
-        validated=None,
-        scores_validation=None,
-        features=None,
-    ):
+    def store_emodel(self, emodel):
         """Store an emodel obtained from BluePyOpt in the final.json. Note that if a model in the
-        final.json has the same key (emodel__iteration_tag__seed), it will be overwritten.
-
-        Args:
-            scores (dict): scores of the efeatures. Of the format {"objective_name": score}.
-            params (dict): values of the parameters. Of the format {"param_name": param_value}.
-            optimizer_name (str): name of the optimizer (IBEA, CMA, ...).
-            seed (int): seed used by the optimizer.
-            validated (bool): None indicate that the model did not go through validation.
-                False indicates that it failed validation. True indicates that it
-                passed validation.
-            scores_validation (dict): scores of the validation efeatures. Of the format
-                {"objective_name": score}.
-            features (dict): value of the efeatures. Of the format {"objective_name": value}.
-        """
-
-        if scores_validation is None:
-            scores_validation = {}
-
-        if features is None:
-            features = {}
+        final.json has the same key (emodel__iteration_tag__seed), it will be overwritten."""
 
         with self.rw_lock_final.write_lock():
             with self.rw_lock_final_tmp.write_lock():
 
                 final = self.get_final(lock_file=False)
-                model_name = self.get_model_name_for_final(seed)
+                model_name = self.get_model_name_for_final(emodel.seed)
 
                 if model_name in final:
                     logger.warning(
                         "Entry %s was already in the final.json and will be overwritten", model_name
                     )
 
-                pdf_dependencies = self._build_pdf_dependencies(int(seed))
+                pdf_dependencies = emodel.build_pdf_dependencies(int(emodel.seed))
 
                 if self.new_final_path is None:
                     final_path = self.final_path
-                    _params = params
+                    _params = emodel.parameters
                 else:
-                    _params = final[self.emodel]["params"]
-                    _params.update(params)
+                    if "params" in final[self.emodel_metadata.emodel]:
+                        _params = final[self.emodel_metadata.emodel]["params"]
+                    else:
+                        _params = final[self.emodel_metadata.emodel]["parameters"]
+                    _params.update(emodel.parameters)
                     final_path = self.new_final_path
 
                 final[model_name] = {
-                    "emodel": self.emodel,
-                    "score": sum(list(scores.values())),
-                    "params": _params,
-                    "fitness": scores,
-                    "features": features,
-                    "validation_fitness": scores_validation,
-                    "validated": validated,
-                    "optimizer": str(optimizer_name),
-                    "seed": int(seed),
-                    "ttype": self.ttype,
-                    "iteration_tag": str(self.iteration_tag),
+                    "emodel": self.emodel_metadata.emodel,
+                    "score": sum(list(emodel.scores.values())),
+                    "parameters": _params,
+                    "fitness": emodel.scores,
+                    "features": emodel.features,
+                    "validation_fitness": emodel.scores_validation,
+                    "validated": emodel.passed_validation,
+                    "seed": int(emodel.seed),
+                    "ttype": emodel.emodel_metadata.ttype,
+                    "iteration_tag": str(emodel.emodel_metadata.iteration),
                     "pdfs": pdf_dependencies,
                 }
+
                 self.save_final(final, Path(final_path), lock_file=False)
-
-    def _build_pdf_dependencies(self, seed):
-        """Find all the pdfs associated to an emodel"""
-
-        pdfs = {}
-
-        pdfs["optimisation"] = search_pdfs.search_figure_emodel_optimisation(
-            self.emodel, seed, self.iteration_tag
-        )
-        pdfs["traces"] = search_pdfs.search_figure_emodel_traces(
-            self.emodel, seed, self.iteration_tag
-        )
-        pdfs["scores"] = search_pdfs.search_figure_emodel_score(
-            self.emodel, seed, self.iteration_tag
-        )
-        pdfs["parameters"] = search_pdfs.search_figure_emodel_parameters(self.emodel)
-
-        return pdfs
 
     def set_unfrozen_params(self, params):
         """Freeze parameters for partial optimisation."""
@@ -364,21 +302,25 @@ class LocalAccessPoint(DataAccessPoint):
         else:
             mechanisms_directory = Path("./") / "mechanisms"
 
-        return mechanisms_directory.resolve()
+        if mechanisms_directory.is_dir():
+            return mechanisms_directory.resolve()
+
+        return None
 
     def get_available_mechanisms(self):
         """Get the list of names of the available mechanisms"""
 
         mechs = []
-        mech_dir = Path(self.get_mechanisms_directory())
 
-        if not mech_dir.is_dir():
+        mech_dir = self.get_mechanisms_directory()
+
+        if mech_dir is None:
             return None
 
-        for mech_file in glob.glob(str(mech_dir / "*.mod")):
+        for mech_file in glob.glob(str(Path(mech_dir) / "*.mod")):
             mechs.append(Path(mech_file).stem)
 
-        return [{'name': m, 'version': None} for m in set(mechs)]
+        return [{"name": m, "version": None} for m in set(mechs)]
 
     def get_available_morphologies(self):
         """Get the list of names of available morphologies"""
@@ -402,12 +344,14 @@ class LocalAccessPoint(DataAccessPoint):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
         configuration = NeuronModelConfiguration(
-            configuration_name=None,
             available_mechanisms=self.get_available_mechanisms(),
             available_morphologies=self.get_available_morphologies(),
         )
 
-        parameters = self._get_json("params")
+        try:
+            parameters = self._get_json("parameters")
+        except KeyError:
+            parameters = self._get_json("params")
 
         parameters["parameters"].pop("__comment", None)
 
@@ -420,6 +364,38 @@ class LocalAccessPoint(DataAccessPoint):
             configuration.init_from_dict(parameters)
 
         configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
+
+        return configuration
+
+    def store_targets_configuration(self, configuration):
+        """Store the configuration of the targets (targets and ephys files used)"""
+
+        config_dict = {
+            "emodel": self.emodel_metadata.emodel,
+            "ttype": self.emodel_metadata.ttype,
+        }
+
+        config_dict.update(configuration.as_dict())
+
+        path_extract_config = self.pipeline_settings.path_extract_config
+        path_extract_config.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(str(path_extract_config), "w") as f:
+            f.write(json.dumps(config_dict, indent=2, cls=NumpyEncoder))
+
+    def get_targets_configuration(self):
+        """Get the configuration of the targets (targets and ephys files used)"""
+
+        path_extract_config = self.pipeline_settings.path_extract_config
+
+        with open(path_extract_config, "r") as f:
+            config_dict = json.load(f)
+
+        configuration = TargetsConfiguration(
+            files=config_dict["files_metadata"],
+            targets=config_dict["targets"],
+            protocols_rheobase=config_dict["protocols_threshold"],
+        )
 
         return configuration
 
@@ -511,36 +487,35 @@ class LocalAccessPoint(DataAccessPoint):
     def format_emodel_data(self, model_data):
         """Format emodel data."""
 
-        out_data = {
-            "emodel": self.emodel,
-            "fitness": model_data.get("score", None),
-            "parameters": model_data["params"],
-            "scores": model_data.get("fitness", None),
-        }
-
-        for key in [
-            "seed",
-            "iteration_tag",
-            "ttype",
-            "branch",
-            "rank",
-            "optimizer",
-            "validated",
-        ]:
-            if key in model_data:
-                out_data[key] = model_data[key]
-
         if "githash" in model_data:
-            out_data["iteration_tag"] = model_data["githash"]
-        if "iteration_tag" not in out_data:
-            out_data["iteration_tag"] = None
+            iteration_tag = model_data["githash"]
+        elif "iteration_tag" in model_data:
+            iteration_tag = model_data["iteration_tag"]
+        else:
+            iteration_tag = None
 
-        if "validated" not in out_data:
-            out_data["validated"] = None
-        if "validation_fitness" in model_data:
-            out_data["scores_validation"] = model_data["validation_fitness"]
+        emodel_metadata = EModelMetadata(
+            emodel=str(self.emodel_metadata.emodel),
+            etype=model_data.get("etype", None),
+            ttype=model_data.get("ttype", None),
+            mtype=model_data.get("mtype", None),
+            species=model_data.get("seed", None),
+            brain_region=model_data.get("brain_region", None),
+            iteration_tag=iteration_tag,
+        )
 
-        return out_data
+        emodel = EModel(
+            fitness=model_data.get("score", None),
+            parameter=model_data.get("params", model_data.get("parameters", None)),
+            score=model_data.get("fitness", None),
+            features=model_data.get("features", None),
+            scoreValidation=model_data.get("validation_fitness", None),
+            passedValidation=model_data.get("validated", None),
+            seed=model_data.get("seed", None),
+            emodel_metadata=emodel_metadata,
+        )
+
+        return emodel
 
     def get_emodel(self):
         """Get dict with parameter of single emodel (including seed if any)
@@ -553,10 +528,11 @@ class LocalAccessPoint(DataAccessPoint):
         """
 
         final = self.get_final()
-        if self.emodel in final:
-            return self.format_emodel_data(final[self.emodel])
 
-        logger.warning("Could not find models for emodel %s", self.emodel)
+        if self.emodel_metadata.emodel in final:
+            return self.format_emodel_data(final[self.emodel_metadata.emodel])
+
+        logger.warning("Could not find models for emodel %s", self.emodel_metadata.emodel)
 
         return None
 
@@ -568,7 +544,7 @@ class LocalAccessPoint(DataAccessPoint):
         """
 
         if emodels is None:
-            emodels = [self.emodel]
+            emodels = [self.emodel_metadata.emodel]
 
         models = []
         for mod_data in self.get_final().values():
@@ -581,7 +557,9 @@ class LocalAccessPoint(DataAccessPoint):
         """Check if the fitness calculator configuration exists"""
 
         return (
-            Path(self.emodel_dir, "config", "features", self.emodel).with_suffix(".json").is_file()
+            Path(self.emodel_dir, "config", "features", self.emodel_metadata.emodel)
+            .with_suffix(".json")
+            .is_file()
         )
 
     def get_emodel_etype_map(self):
@@ -630,8 +608,8 @@ class LocalAccessPoint(DataAccessPoint):
         for _, entry in final.items():
 
             if (
-                entry["iteration_tag"] == self.iteration_tag
-                and entry["emodel"] == self.emodel
+                entry["iteration"] == self.emodel_metadata.iteration
+                and entry["emodel"] == self.emodel_metadata.emodel
                 and entry["validated"]
             ):
                 n_validated += 1

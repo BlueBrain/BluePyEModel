@@ -29,5 +29,5 @@ class MechanismConfiguration:
             "name": self.name,
             "stochastic": self.stochastic,
             "location": self.location,
-            "version": self.version
+            "version": self.version,
         }

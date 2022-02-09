@@ -15,7 +15,6 @@ def configuration():
 
     available_morphologies = ["C060114A5"]
     config = NeuronModelConfiguration(
-        configuration_name="Test",
         available_mechanisms=available_mechs,
         available_morphologies=available_morphologies
     )

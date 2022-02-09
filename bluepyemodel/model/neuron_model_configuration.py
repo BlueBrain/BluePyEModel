@@ -21,12 +21,19 @@ class NeuronModelConfiguration:
     """A neuron model configuration, which includes the model's parameters, distributions,
     mechanisms and a morphology."""
 
-    def __init__(self, configuration_name, available_mechanisms=None, available_morphologies=None):
+    def __init__(
+        self,
+        parameters=None,
+        mechanisms=None,
+        distributions=None,
+        morphology=None,
+        available_mechanisms=None,
+        available_morphologies=None,
+    ):
         """Creates a model configuration, which includes the model parameters, distributions,
         mechanisms and a morphology.
 
         Args:
-            configuration_name (str): name of the configuration, can be any string.
             available_mechanisms (list of dict): list of the names (and optionally versions) of
                 the available mechanisms in the "./mechanisms" directory for the local access
                 point or on Nexus for the Nexus access point.
@@ -35,12 +42,28 @@ class NeuronModelConfiguration:
                 Nexus access point.
         """
 
-        self.configuration_name = configuration_name
+        if isinstance(parameters, dict):
+            self.parameters = [ParameterConfiguration(**parameters)]
+        elif isinstance(parameters, list):
+            self.parameters = [ParameterConfiguration(**p) for p in parameters]
+        else:
+            self.parameters = []
 
-        self.parameters = []
-        self.mechanisms = []
-        self.distributions = []
-        self.morphology = None
+        if isinstance(mechanisms, dict):
+            self.mechanisms = [MechanismConfiguration(**mechanisms)]
+        elif isinstance(mechanisms, list):
+            self.mechanisms = [MechanismConfiguration(**m) for m in mechanisms]
+        else:
+            self.mechanisms = []
+
+        if isinstance(distributions, dict):
+            self.distributions = [DistributionConfiguration(**distributions)]
+        elif isinstance(distributions, list):
+            self.distributions = [DistributionConfiguration(**d) for d in distributions]
+        else:
+            self.distributions = []
+
+        self.morphology = MorphologyConfiguration(**morphology) if morphology else None
 
         # TODO: actually use this:
         self.mapping_multilocation = None
@@ -82,8 +105,6 @@ class NeuronModelConfiguration:
 
     def init_from_dict(self, configuration_dict):
         """Instantiate the object from its dictionary form"""
-
-        self.configuration_name = configuration_dict["name"]
 
         if "distributions" in configuration_dict:
             for distribution in configuration_dict["distributions"]:
@@ -253,9 +274,9 @@ class NeuronModelConfiguration:
             for mech in self.available_mechanisms:
 
                 if version is not None:
-                    if mechanism_name in mech['name'] and version == mech['version']:
+                    if mechanism_name in mech["name"] and version == mech["version"]:
                         return True
-                elif mechanism_name in mech['name']:
+                elif mechanism_name in mech["name"]:
                     return True
 
             return False
@@ -281,8 +302,8 @@ class NeuronModelConfiguration:
 
             if not self.is_mechanism_available(mechanism_name, version):
                 raise Exception(
-                    f"You are trying to add mechanism {mechanism_name} but it is not available"
-                    " on Nexus or local."
+                    f"You are trying to add mechanism {mechanism_name} (version {version}) "
+                    "but it is not available on Nexus or local."
                 )
 
             tmp_mechanism = MechanismConfiguration(
@@ -391,7 +412,6 @@ class NeuronModelConfiguration:
         a list of mechanism names"""
 
         return {
-            "name": self.configuration_name,
             "mechanisms": [m.as_dict() for m in self.mechanisms],
             "distributions": [d.as_dict() for d in self.distributions],
             "parameters": [p.as_dict() for p in self.parameters],
@@ -401,7 +421,7 @@ class NeuronModelConfiguration:
     def __str__(self):
         """String representation"""
 
-        str_form = f"Model Configuration - {self.configuration_name}:\n\n"
+        str_form = "Model Configuration:\n\n"
 
         str_form += "Mechanisms:\n"
         for m in self.mechanisms:

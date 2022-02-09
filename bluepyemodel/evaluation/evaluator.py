@@ -89,7 +89,6 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
     for rec_def in protocol_configuration.recordings:
 
         location = define_location(rec_def)
-
         if "variable" in rec_def:
             variable = rec_def["variable"]
         else:
@@ -185,7 +184,20 @@ def define_RMP_protocol(efeatures):
 
     if target_voltage:
 
-        return RMPProtocol(name="RMPProtocol", location=soma_loc, target_voltage=target_voltage)
+        rmp_protocol = RMPProtocol(
+            name="RMPProtocol", location=soma_loc, target_voltage=target_voltage
+        )
+
+        for f in efeatures:
+            if (
+                "RMPProtocol" in f.recording_names[""]
+                and f.efel_feature_name != "steady_state_voltage_stimend"
+            ):
+                f.stim_start = 0.0
+                f.stim_end = rmp_protocol.stimulus_duration
+                f.stimulus_current = 0.0
+
+        return rmp_protocol
 
     raise Exception("Couldn't find the voltage feature associated to the RMP protocol")
 
@@ -299,6 +311,10 @@ def define_main_protocol(
     threshold_protocols = {}
     other_protocols = {}
 
+    validation_protocols = [
+        p.name for p in fitness_calculator_configuration.protocols if p.validation
+    ]
+
     for protocols_def in fitness_calculator_configuration.protocols:
 
         if not include_validation_protocols and protocols_def.validation:
@@ -314,8 +330,10 @@ def define_main_protocol(
     efeatures = []
     for feature_def in fitness_calculator_configuration.efeatures:
 
-        protocol = None
+        if not include_validation_protocols and feature_def.protocol_name in validation_protocols:
+            continue
 
+        protocol = None
         if feature_def.protocol_name not in PRE_PROTOCOLS:
             for p in list(threshold_protocols.values()) + list(other_protocols.values()):
                 if p.name == feature_def.protocol_name:
@@ -402,7 +420,10 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None)
             "non-stochastic."
         )
 
-    mechs_parent_dir = str(pathlib.Path(mechanisms_directory).parents[0])
+    if mechanisms_directory is not None:
+        mechs_parent_dir = str(pathlib.Path(mechanisms_directory).parents[0])
+    else:
+        mechs_parent_dir = None
 
     if dt is None:
         return NrnSimulator(mechanisms_directory=mechs_parent_dir)
@@ -422,7 +443,7 @@ def create_evaluator(
     dt=None,
     threshold_based_evaluator=True,
     strict_holding_bounds=True,
-    mechanisms_directory=None
+    mechanisms_directory=None,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 

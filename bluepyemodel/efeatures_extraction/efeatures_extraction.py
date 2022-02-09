@@ -55,36 +55,28 @@ def attach_efeatures_pdf(emodel, efeatures):
                 efeat["pdfs"] = pdfs
 
 
-def extract_save_features_protocols(
-    access_point,
-    emodel,
-    mapper=map,
-):
+def extract_save_features_protocols(access_point, mapper=map):
     """Extract the efeatures and saves the results as a configuration for the fitness calculator.
 
     Args:
-        access_point (DataAccessPoint): object which contains API to access emodel data
-        emodel (str): name of the emodel.
+        access_point (DataAccessPoint): access point to the model's data
         mapper (map): mapper for parallel computations.
     """
 
-    (files_metadata, targets, protocols_threshold) = access_point.get_extraction_metadata()
-
-    if files_metadata is None or targets is None or protocols_threshold is None:
-        raise Exception("Could not get the extraction metadata from the api.")
+    targets_configuration = access_point.get_targets_configuration()
 
     reader_function = define_extraction_reader_function(access_point)
 
     threshold_nvalue_save = access_point.pipeline_settings.extraction_threshold_value_save
     plot = access_point.pipeline_settings.plot_extraction
-    output_directory = f"./figures/{emodel}/efeatures_extraction/"
+    output_directory = f"./figures/{access_point.emodel_metadata.emodel}/efeatures_extraction/"
 
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
         output_directory=output_directory,
-        files_metadata=files_metadata,
-        targets=targets,
+        files_metadata=targets_configuration.files_metadata_BPE,
+        targets=targets_configuration.targets_BPE,
         threshold_nvalue_save=threshold_nvalue_save,
-        protocols_rheobase=protocols_threshold,
+        protocols_rheobase=targets_configuration.protocols_rheobase,
         recording_reader=reader_function,
         map_function=mapper,
         write_files=False,
@@ -92,7 +84,7 @@ def extract_save_features_protocols(
     )
 
     if plot:
-        attach_efeatures_pdf(emodel, efeatures)
+        attach_efeatures_pdf(access_point.emodel_metadata.emodel, efeatures)
 
     fitness_calculator_config = FitnessCalculatorConfiguration(
         name_rmp_protocol=access_point.pipeline_settings.name_rmp_protocol,

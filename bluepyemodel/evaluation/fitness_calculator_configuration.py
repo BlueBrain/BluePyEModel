@@ -28,30 +28,43 @@ def _get_apical_point(cell):
 def _set_morphology_dependent_locations(stimulus, cell):
     """Here we deal with morphology dependent locations"""
 
-    new_stim = deepcopy(stimulus)
+    def _get_stim(stimulus, sec_id):
+        new_stim = deepcopy(stimulus)
+        stim_split = stimulus["name"].split(".")
+        new_stim["type"] = "nrnseclistcomp"
+        new_stim["name"] = f"{'.'.join(stim_split[:-1])}_{sec_id}.{stim_split[-1]}"
+        new_stim["sec_index"] = sec_id
+        return new_stim
 
+    new_stims = []
     if stimulus["type"] == "somadistanceapic":
-        new_stim["sec_index"] = _get_apical_point(cell)
-        new_stim["sec_name"] = seclist_to_sec.get(
-            new_stim["seclist_name"], new_stim["seclist_name"]
+        new_stims = [deepcopy(stimulus)]
+        new_stims[0]["sec_index"] = _get_apical_point(cell)
+        new_stims[0]["sec_name"] = seclist_to_sec.get(
+            stimulus["seclist_name"], stimulus["seclist_name"]
         )
 
     elif stimulus["type"] == "terminal_sections":
         # all terminal sections
         for sec_id, section in enumerate(getattr(cell.icell, stimulus["seclist_name"])):
             if len(section.subtree()) == 1:
-                new_stim["type"] = "nrnseclistcomp"
-                new_stim["name"] = f"{stimulus['name']}{sec_id}"
-                new_stim["sec_index"] = sec_id
+                new_stims.append(_get_stim(stimulus, sec_id))
 
     elif stimulus["type"] == "all_sections":
         # all section of given type
-        for sec_id, section in enumerate(getattr(cell.icell, new_stim["seclist_name"])):
-            new_stim["type"] = "nrnseclistcomp"
-            new_stim["name"] = f"{new_stim['name']}{sec_id}"
-            new_stim["sec_index"] = sec_id
+        for sec_id, section in enumerate(getattr(cell.icell, stimulus["seclist_name"])):
+            new_stims.append(_get_stim(stimulus, sec_id))
 
-    return new_stim
+    else:
+        new_stims = [deepcopy(stimulus)]
+
+    if len(new_stims) == 0 and stimulus["type"] in [
+        "somadistanceapic",
+        "terminal_sections",
+        "all_sections",
+    ]:
+        logger.warning("We could not add a location for %s", stimulus)
+    return new_stims
 
 
 class FitnessCalculatorConfiguration:
@@ -329,6 +342,9 @@ class FitnessCalculatorConfiguration:
             if feature["feature"] == "voltage_base":
                 tmp_feature.protocol_name = "RMPProtocol"
                 tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
+            elif feature["feature"] == "Spikecount":
+                tmp_feature.protocol_name = "RMPProtocol"
+                tmp_feature.efel_feature_name = "Spikecount"
             else:
                 return
 
@@ -417,29 +433,31 @@ class FitnessCalculatorConfiguration:
         # TODO: THE SAME FOR STIMULI
 
         for i, protocol in enumerate(self.protocols):
+            recordings = []
             for j, rec in enumerate(protocol.recordings):
                 if rec["type"] != "CompRecording":
-                    self.protocols[i].recordings[j] = _set_morphology_dependent_locations(rec, cell)
+                    for _rec in _set_morphology_dependent_locations(rec, cell):
+                        recordings.append(_rec)
+                else:
+                    recordings.append(self.protocols[i].recordings[j])
+            self.protocols[i].recordings = recordings
 
+        # if the loc of the recording is of the form axon*.v, we replace * by
+        # all the corresponding int from the created recordings
         to_remove = []
-        for i, feature in enumerate(self.efeatures):
-
-            # if the loc of the recording is of the form axon*.v, we replace * by
-            # all the corresponding int from the created recordings
-            _loc_name, _rec_name = feature.recording_name.split(".")
-
-            if _loc_name[-1] == "*":
-
+        efeatures = []
+        for i, efeature in enumerate(self.efeatures):
+            loc_name, rec_name = efeature.recording_name.split(".")
+            if loc_name[-1] == "*":
                 to_remove.append(i)
-                protocol = next(p for p in self.protocols if p.name == feature.protocol_name)
-
+                protocol = next(p for p in self.protocols if p.name == efeature.protocol_name)
                 for rec in protocol.recordings:
-                    if rec["name"].startswith(_loc_name[:-1]):
+                    base_rec_name = rec["name"].split(".")[1]
+                    if base_rec_name.startswith(loc_name[:-1]):
+                        efeatures.append(deepcopy(efeature))
+                        efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
 
-                        self.efeatures.append(deepcopy(feature))
-                        self.efeatures[-1].recording_name = rec["name"] + "." + _rec_name
-
-        self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove]
+        self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove] + efeatures
 
     def as_dict(self):
         """Used for the storage of the configuration"""

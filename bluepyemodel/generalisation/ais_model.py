@@ -279,7 +279,7 @@ def get_rho_targets(final):
 
     df = pd.DataFrame()
     for emodel in final:
-        for name, val in final[emodel]["params"].items():
+        for name, val in final[emodel]["parameters"].items():
             if name in axon_params:
                 df.loc[emodel, name] = val
 

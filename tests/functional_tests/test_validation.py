@@ -1,10 +1,7 @@
-import pathlib
-import os
 from pathlib import Path
 import pytest
 import logging
 
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.validation.validation import validate, define_validation_function
 
@@ -49,17 +46,18 @@ def test_define_validation_function(db):
         )
     )
 
-    assert validated == True
+    assert validated
 
 
 def test_validation(db):
 
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
-
+    
+    db.get_mechanisms_directory = lambda: None
     emodels = validate(
         access_point=db,
         mapper=map,
     )
 
-    assert emodels[0]["validated"] == True
+    assert emodels[0].passed_validation

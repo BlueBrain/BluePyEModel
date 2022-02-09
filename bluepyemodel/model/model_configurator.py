@@ -4,8 +4,8 @@ import logging
 import icselector
 
 from bluepyemodel.access_point.local import LocalAccessPoint
-from bluepyemodel.emodel_pipeline.utils import yesno
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.tools.utils import yesno
 
 logger = logging.getLogger(__name__)
 
@@ -25,28 +25,27 @@ class ModelConfigurator:
         self.access_point = access_point
         self.configuration = configuration
 
-    def new_configuration(self, configuration_name, use_gene_data=False):
+    def new_configuration(self, use_gene_data=False):
         """Create a new configuration"""
 
         if self.configuration is not None:
             self.delete_configuration()
 
         if use_gene_data:
-            self.get_gene_based_configuration(configuration_name=configuration_name)
+            self.get_gene_based_configuration()
         else:
             self.configuration = NeuronModelConfiguration(
-                configuration_name=configuration_name,
                 available_mechanisms=self.access_point.get_available_mechanisms(),
                 available_morphologies=self.access_point.get_available_morphologies(),
             )
 
-    def load_configuration(self, name):
+    def load_configuration(self):
         """Load a previously registered configuration"""
 
         if isinstance(self.access_point, LocalAccessPoint):
             raise Exception("Loading configuration is not yet implemented for local access point")
 
-        self.access_point.get_model_configuration(name)
+        self.configuration = self.access_point.get_model_configuration()
 
     def save_configuration(self, path=None):
         """Save the configuration. The saving medium depends of the access point."""
@@ -89,12 +88,11 @@ class ModelConfigurator:
 
         return parameters, mechanisms, distributions, nexus_keys
 
-    def get_gene_based_configuration(self, configuration_name):
+    def get_gene_based_configuration(self):
         """Overwrite the currently loaded configuration with a new configuration initiated from
         gene data."""
 
         self.configuration = NeuronModelConfiguration(
-            configuration_name=configuration_name,
             available_mechanisms=self.access_point.get_available_mechanisms(),
             available_morphologies=self.access_point.get_available_morphologies(),
         )
@@ -118,10 +116,15 @@ class ModelConfigurator:
             )
 
         for m in mechs:
-            version = next((k['modelid'] for k in nexus_keys if k['name'] == m['name']), None)
+
+            version = None
+            for k in nexus_keys:
+                if k["name"] == m["name"]:
+                    version = k.get("modelid", None)
+
             self.configuration.add_mechanism(
                 m["name"],
                 locations=m["location"],
                 stochastic=m.get("stochastic", None),
-                version=version
+                version=version,
             )

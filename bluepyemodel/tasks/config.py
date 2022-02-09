@@ -9,7 +9,6 @@ class EmodelAPIConfig(luigi.Config):
 
     # local parameters
     emodel_dir = luigi.Parameter(default="./")
-    species = luigi.Parameter(default="rat")
     recipes_path = luigi.Parameter(default=None)
     final_path = luigi.Parameter(default="./final.json")
     legacy_dir_structure = luigi.BoolParameter(default=False)
@@ -17,7 +16,6 @@ class EmodelAPIConfig(luigi.Config):
 
     # nexus parameters
     forge_path = luigi.Parameter(default=None)
-    brain_region = luigi.Parameter(default="")
     nexus_poject = luigi.Parameter(default="emodel_pipeline")
     nexus_organisation = luigi.Parameter(default="demo")
     nexus_endpoint = luigi.Parameter(default="https://bbp.epfl.ch/nexus/v1")
@@ -37,9 +35,7 @@ class EmodelAPIConfig(luigi.Config):
 
         if self.api == "nexus":
             self.api_args = {
-                "brain_region": self.brain_region,
                 "forge_path": self.forge_path,
-                "species": self.species,
                 "project": self.nexus_poject,
                 "organisation": self.nexus_organisation,
                 "endpoint": self.nexus_endpoint,

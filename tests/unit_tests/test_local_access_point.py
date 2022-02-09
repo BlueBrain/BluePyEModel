@@ -75,7 +75,7 @@ def test_get_model_configuration(db):
 def test_get_final(db):
     final = db.get_final()
     assert "cADpyr_L5TPC" in final
-    assert "params" in final["cADpyr_L5TPC"]
+    assert "parameters" in final["cADpyr_L5TPC"] or "params" in final["cADpyr_L5TPC"]
 
 
 def test_load_pipeline_settings(db):
@@ -83,25 +83,10 @@ def test_load_pipeline_settings(db):
     assert db.pipeline_settings.validation_protocols == {"APWaveform": [140]}
 
 
-def test_get_extraction_metadata(db):
-    path_extract_config = DATA / "config" / "config_dict.json"
-    with open(path_extract_config, "r") as f:
-        config_dict = json.load(f)
-
-    expected_files_metadata = config_dict["files_metadata"]
-    expected_targets = config_dict["targets"]
-    expected_protocols_threshold = config_dict["protocols_threshold"]
-
-    (files_metadata, targets, protocols_threshold) = db.get_extraction_metadata()
-    assert list(diff(files_metadata, expected_files_metadata)) == []
-    assert list(diff(targets, expected_targets)) == []
-    assert list(diff(protocols_threshold, expected_protocols_threshold)) == []
-
-
 def test_get_model_name_for_final(db):
-    db.iteration_tag = ""
+    db.emodel_metadata.iteration = ""
     assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
-    db.iteration_tag = None
+    db.emodel_metadata.iteration = None
     assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
-    db.iteration_tag = "hash"
+    db.emodel_metadata.iteration = "hash"
     assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__hash__42"

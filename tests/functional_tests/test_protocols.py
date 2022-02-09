@@ -32,13 +32,11 @@ def db(api_config):
 @pytest.fixture
 def evaluator(db):
 
-    cwd = os.getcwd()
-    os.chdir(str(DATA))
     if pathlib.Path("x86_64").is_dir():
         os.popen("rm -rf x86_64").read()
-    os.popen(f"nrnivmodl mechanisms").read()
-    os.chdir(cwd)
-    
+    os.popen(f"nrnivmodl {DATA}/mechanisms").read()
+
+    db.get_mechanisms_directory = lambda: None
     return get_evaluator_from_access_point(access_point=db)
 
 
@@ -47,7 +45,7 @@ def test_protocols(db, evaluator):
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
 
-    params = db.get_emodel()["parameters"]
+    params = db.get_emodel().parameters
     
     responses = evaluator.run_protocols(
         protocols=evaluator.fitness_protocols.values(), param_values=params
