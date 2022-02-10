@@ -69,7 +69,7 @@ class EModel:
         if isinstance(features, dict):
             self.features = features
         else:
-            self.features = {p["name"]: p["value"] for p in features} if features else {}
+            self.features = {p["name"]: (p["value"] if "value" in p else 0) for p in features} if features else {}
 
         if isinstance(scoreValidation, dict):
             self.scores_validation = scoreValidation

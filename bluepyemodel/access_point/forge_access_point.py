@@ -39,7 +39,7 @@ NEXUS_TYPE_TO_CLASS = {
     "EModel": EModel,
 }
 
-NEXUS_ENTRIES = ["objectOfStudy", "contribution", "type", "id"]
+NEXUS_ENTRIES = ["objectOfStudy", "contribution", "type", "id", "distribution"]
 
 
 class AccessPointException(Exception):

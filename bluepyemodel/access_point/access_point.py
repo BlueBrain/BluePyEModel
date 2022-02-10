@@ -136,6 +136,7 @@ class DataAccessPoint:
         # there is a file & we want to continue optimisation -> check if optimisation if finished
         optimizer = self.pipeline_settings.optimizer
         ngen = self.pipeline_settings.max_ngen
+        logger.warning(f"max ngen for seed={seed} is {ngen}")
 
         with open(str(checkpoint_path), "rb") as checkpoint_file:
             cp = pickle.load(checkpoint_file)
@@ -143,6 +144,7 @@ class DataAccessPoint:
         # CMA
         if optimizer in ["SO-CMA", "MO-CMA"]:
             gen = cp["generation"]
+            logger.warning(f"gen for seed={seed} is {gen}")
             CMA_es = cp["CMA_es"]
             CMA_es.check_termination(gen)
             # no termination met -> still active -> target not complete
