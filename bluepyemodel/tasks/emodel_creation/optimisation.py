@@ -251,10 +251,11 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         parser.add_argument("--brain_region", default=None, type=str)
         parser.add_argument("--iteration_tag", default=None, type=str)
         parser.add_argument("--seed", default=1, type=int)
+        parser.add_argument("--ipyparallel_profile", default=None, type=str)
         args = parser.parse_args()
 
         # -- run optimisation -- #
-        mapper = get_mapper(args.backend)
+        mapper = get_mapper(args.backend, ipyparallel_profile=args.ipyparallel_profile)
         access_pt = access_point.get_access_point(
             access_point=args.api_from_config,
             emodel=args.emodel,
@@ -563,10 +564,12 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         parser.add_argument("--species", default=None, type=str)
         parser.add_argument("--brain_region", default=None, type=str)
         parser.add_argument("--iteration_tag", default=None, type=str)
+        parser.add_argument("--ipyparallel_profile", default=None, type=str)
+
         args = parser.parse_args()
 
         # -- run validation -- #
-        mapper = get_mapper(args.backend)
+        mapper = get_mapper(args.backend, ipyparallel_profile=args.ipyparallel_profile)
         access_pt = access_point.get_access_point(
             access_point=args.api_from_config,
             emodel=args.emodel,

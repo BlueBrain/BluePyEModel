@@ -83,7 +83,7 @@ class ModelConfigurator:
 
         selector = icselector.ICSelector(ic_map_path, gene_map_path)
         parameters, mechanisms, distributions, nexus_keys = selector.get_cell_config_from_ttype(
-            self.access_point.ttype
+            self.access_point.emodel_metadata.ttype
         )
 
         return parameters, mechanisms, distributions, nexus_keys
