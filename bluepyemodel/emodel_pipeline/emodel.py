@@ -22,6 +22,21 @@ def format_dict_for_resource(d):
     return out
 
 
+def format_resource_to_dict(data):
+    """Temporary hack to fix the disappearing None in Nexus"""
+
+    if isinstance(data, dict):
+        return data
+
+    elif isinstance(data, list):
+        formatted_data = {}
+        for p in data:
+            formatted_data[p["name"]] = p["value"] if "value" in p else numpy.nan
+        return formatted_data
+
+    return {}
+
+
 class EModel:
 
     """Contains a set of parameters for the EModel and its matching scores and efeatures"""
@@ -56,27 +71,10 @@ class EModel:
         self.fitness = fitness
         self.seed = seed
 
-        if isinstance(parameter, dict):
-            self.parameters = parameter
-        else:
-            self.parameters = {p["name"]: p["value"] for p in parameter} if parameter else {}
-
-        if isinstance(score, dict):
-            self.scores = score
-        else:
-            self.scores = {p["name"]: p["value"] for p in score} if score else {}
-
-        if isinstance(features, dict):
-            self.features = features
-        else:
-            self.features = {p["name"]: p["value"] for p in features} if features else {}
-
-        if isinstance(scoreValidation, dict):
-            self.scores_validation = scoreValidation
-        else:
-            self.scores_validation = (
-                {p["name"]: p["value"] for p in scoreValidation} if scoreValidation else {}
-            )
+        self.parameters = format_resource_to_dict(parameter)
+        self.scores = format_resource_to_dict(score)
+        self.features = format_resource_to_dict(features)
+        self.scores_validation = format_resource_to_dict(scoreValidation)
 
         self.responses = {}
         self.evaluator = None
