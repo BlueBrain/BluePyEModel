@@ -70,7 +70,7 @@ class EModel:
             self.features = features
         else:
             self.features = (
-                {p["name"]: (p["value"] if "value" in p else 0) for p in features}
+                {p["name"]: (p["value"] if "value" in p else numpy.nan) for p in features}
                 if features
                 else {}
             )
