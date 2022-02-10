@@ -5,6 +5,14 @@ from pathlib import Path
 logger = logging.getLogger("__main__")
 
 
+def get_checkpoint_path(metadata, seed=None):
+    """"""
+
+    filename = metadata.as_string(seed=seed)
+
+    return f"./checkpoints/{filename}.pkl"
+
+
 def make_dir(path_dir):
     """Creates directory if it does not exist"""
     p = Path(path_dir)

@@ -8,17 +8,10 @@ import bluepyopt
 
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.tools.utils import logger
 
 logger = logging.getLogger(__name__)
-
-
-def get_checkpoint_path(metadata, seed=None):
-    """"""
-
-    filename = metadata.as_string(seed=seed)
-
-    return f"./checkpoints/{filename}.pkl"
 
 
 def parse_legacy_checkpoint_path(path):

@@ -2,6 +2,7 @@
 import copy
 import logging
 
+from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.model import model
 
@@ -133,6 +134,11 @@ def get_evaluator_from_access_point(
     timeout = timeout or access_point.pipeline_settings.timeout
     stochasticity = stochasticity or access_point.pipeline_settings.stochasticity
 
+    if isinstance(access_point, LocalAccessPoint):
+        mechanisms_directory = None
+    else:
+        mechanisms_directory = access_point.get_mechanisms_directory()
+
     return create_evaluator(
         cell_model=cell_model,
         fitness_calculator_configuration=fitness_calculator_configuration,
@@ -145,5 +151,5 @@ def get_evaluator_from_access_point(
         dt=dt,
         threshold_based_evaluator=access_point.pipeline_settings.threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
-        mechanisms_directory=access_point.get_mechanisms_directory(),
+        mechanisms_directory=mechanisms_directory,
     )

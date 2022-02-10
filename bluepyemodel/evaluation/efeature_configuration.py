@@ -7,6 +7,9 @@ def _limit_std(mean, std, threshold_efeature_std):
     if threshold_efeature_std is None:
         return std
 
+    if mean == 0.0:
+        return threshold_efeature_std
+
     limit = abs(threshold_efeature_std * mean)
 
     if std < limit:
