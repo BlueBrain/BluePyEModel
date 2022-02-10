@@ -248,7 +248,7 @@ class NexusAccessPoint(DataAccessPoint):
         """Store a BPEM object on Nexus"""
 
         if metadata is None:
-            metadata = self.emodel_metadata.for_resource()
+            metadata = self.emodel_metadata_ontology.for_resource()
 
         self.access_point.object_to_nexus(object_, metadata, replace=True)
 

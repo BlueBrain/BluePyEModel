@@ -134,6 +134,9 @@ class IPyParallelTask(IPyParallelExclusive):
             + "'\\''"
         )
 
+        # append ipyparallel profile (str)
+        self.args += " --ipyparallel_profile " + self.task_id
+
 
 class BoolParameterCustom(luigi.BoolParameter):
     """Class to make luigi BoolParameter compatible with luigi-tools's copy-params."""
