@@ -14,12 +14,11 @@ def ipyparallel_map_function(os_env_profile="IPYTHON_PROFILE", profile=None):
         os_env_profile (str): name fo the environement variable containing
            the name of the name of the ipython profile
            Will be used is name of the ipython profile is not given
-        profile (str): name of the name of the ipython profile
+        profile (str): name of the ipython profile
 
     Returns:
         map
     """
-    logger.warning(f"ipython profile: {profile}")
     if not profile:
         profile = os.getenv(os_env_profile)
     if profile:

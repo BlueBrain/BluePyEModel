@@ -76,7 +76,7 @@ class NeuronModelConfiguration:
 
     @property
     def mechanism_names(self):
-        """Returns the names and versions of all the mechanisms used in the model"""
+        """Returns the names of all the mechanisms used in the model"""
 
         return {m.name for m in self.mechanisms}
 

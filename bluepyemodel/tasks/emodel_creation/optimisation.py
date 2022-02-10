@@ -568,7 +568,7 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 
         args = parser.parse_args()
 
-        # -- run optimisation -- #
+        # -- run validation -- #
         mapper = get_mapper(args.backend, ipyparallel_profile=args.ipyparallel_profile)
         access_pt = access_point.get_access_point(
             access_point=args.api_from_config,
