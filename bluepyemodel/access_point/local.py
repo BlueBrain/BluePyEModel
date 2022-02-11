@@ -378,7 +378,7 @@ class LocalAccessPoint(DataAccessPoint):
         config_dict.update(configuration.as_dict())
 
         path_extract_config = self.pipeline_settings.path_extract_config
-        path_extract_config.parent.mkdir(parents=True, exist_ok=True)
+        Path(path_extract_config).parent.mkdir(parents=True, exist_ok=True)
 
         with open(str(path_extract_config), "w") as f:
             f.write(json.dumps(config_dict, indent=2, cls=NumpyEncoder))
@@ -392,9 +392,9 @@ class LocalAccessPoint(DataAccessPoint):
             config_dict = json.load(f)
 
         configuration = TargetsConfiguration(
-            files=config_dict["files_metadata"],
+            files=config_dict["files"],
             targets=config_dict["targets"],
-            protocols_rheobase=config_dict["protocols_threshold"],
+            protocols_rheobase=config_dict["protocols_rheobase"],
         )
 
         return configuration

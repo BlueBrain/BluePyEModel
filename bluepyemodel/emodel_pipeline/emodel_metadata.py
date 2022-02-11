@@ -43,6 +43,8 @@ class EModelMetadata:
 
         for k, v in vars(self).items():
             if v:
+                if isinstance(v, int):
+                    v = str(v)
                 s += f"{k}={v.replace('/', '')}__"
 
         if seed not in [None, "None"]:

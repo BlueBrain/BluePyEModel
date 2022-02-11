@@ -1,5 +1,6 @@
 """Evaluator module."""
 import logging
+import os
 import pathlib
 
 from bluepyopt.ephys.evaluators import CellEvaluator
@@ -421,7 +422,13 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None)
         )
 
     if mechanisms_directory is not None:
-        mechs_parent_dir = str(pathlib.Path(mechanisms_directory).parents[0])
+        # To avoid double loading the same mechanisms:
+        cwd = pathlib.Path(os.getcwd())
+        mech_dir = pathlib.Path(mechanisms_directory)
+        if cwd.resolve() == mech_dir.resolve():
+            mechs_parent_dir = None
+        else:
+            mechs_parent_dir = str(mech_dir.parents[0])
     else:
         mechs_parent_dir = None
 

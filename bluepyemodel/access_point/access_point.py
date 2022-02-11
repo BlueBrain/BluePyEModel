@@ -8,7 +8,7 @@ from bluepyopt.deapext.stoppingCriteria import MaxNGen
 
 from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
-from bluepyemodel.optimisation import get_checkpoint_path
+from bluepyemodel.tools.utils import get_checkpoint_path
 
 # pylint: disable=no-member
 
