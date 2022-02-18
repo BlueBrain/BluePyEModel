@@ -34,9 +34,9 @@ class NeuronModelConfiguration:
         mechanisms and a morphology.
 
         Args:
-            available_mechanisms (list of dict): list of the names (and optionally versions) of
-                the available mechanisms in the "./mechanisms" directory for the local access
-                point or on Nexus for the Nexus access point.
+            available_mechanisms (list of MechanismConfiguration): list of the names (
+                and optionally versions) of the available mechanisms in the "./mechanisms"
+                directory for the local access point or on Nexus for the Nexus access point.
             available_morphologies (list of str): list of the names of the available morphology in
                 the "./morphology" directory for the local access point or on Nexus for the
                 Nexus access point.
@@ -56,12 +56,21 @@ class NeuronModelConfiguration:
         else:
             self.mechanisms = []
 
-        if isinstance(distributions, dict):
+        if not distributions:
+            self.distributions = []
+        elif isinstance(distributions, dict):
             self.distributions = [DistributionConfiguration(**distributions)]
         elif isinstance(distributions, list):
-            self.distributions = [DistributionConfiguration(**d) for d in distributions]
+            if isinstance(distributions[0], dict):
+                self.distributions = [DistributionConfiguration(**d) for d in distributions]
+            elif isinstance(distributions[0], DistributionConfiguration):
+                self.distributions = distributions
+
+        for dist in self.distributions:
+            if dist.name == "uniform":
+                break
         else:
-            self.distributions = []
+            self.distributions.append(DistributionConfiguration(name="uniform"))
 
         self.morphology = MorphologyConfiguration(**morphology) if morphology else None
 
@@ -69,9 +78,6 @@ class NeuronModelConfiguration:
         self.mapping_multilocation = None
 
         self.available_mechanisms = available_mechanisms
-        if self.available_mechanisms is not None:
-            self.available_mechanisms.append({"name": "pas"})
-
         self.available_morphologies = available_morphologies
 
     @property
@@ -90,7 +96,7 @@ class NeuronModelConfiguration:
     def used_distribution_names(self):
         """Returns the names of all the distributions used in the model"""
 
-        return {p.distribution for p in self.parameters if p.distribution != "uniform"}
+        return {p.distribution for p in self.parameters}
 
     @staticmethod
     def _format_locations(locations):
@@ -181,7 +187,14 @@ class NeuronModelConfiguration:
 
         self.morphology = MorphologyConfiguration(**morphology)
 
-    def add_distribution(self, distribution_name, function, parameters=None, soma_ref_location=0.5):
+    def add_distribution(
+        self,
+        distribution_name,
+        function,
+        parameters=None,
+        morphology_dependent_parameters=None,
+        soma_ref_location=0.5,
+    ):
         """Add a channel distribution to the configuration
 
         Args:
@@ -190,6 +203,7 @@ class NeuronModelConfiguration:
                 using the python "eval" method.
             parameters (list of str): names of the parameters that parametrize the above function
                 (no need to include the parameter "distance"). (Optional).
+            morphology_dependent_parameters (list of str):
             soma_ref_location (float): location along the soma used as origin
                 from which to compute the distances. Expressed as a fraction
                 (between 0.0 and 1.0). (Optional).
@@ -199,6 +213,7 @@ class NeuronModelConfiguration:
             name=distribution_name,
             function=function,
             parameters=parameters,
+            morphology_dependent_parameters=morphology_dependent_parameters,
             soma_ref_location=soma_ref_location,
         )
 
@@ -215,6 +230,7 @@ class NeuronModelConfiguration:
         mechanism=None,
         distribution_name=None,
         stochastic=None,
+        auto_mechanism=True,
     ):
         """Add a parameter to the configuration
 
@@ -227,10 +243,12 @@ class NeuronModelConfiguration:
                 of two floats, sets the upper and lower bound between which the parameter will
                 be optimized.
             mechanism (name): name of the mechanism to which the parameter relates (optional).
-            distribution_name (str): name of the distribution followed by the parameter (optional).
+            distribution_name (str): name of the distribution followed by the parameter.
                 Distributions have to be added before adding the parameters that uses them.
             stochastic (bool): Can the mechanisms to which the parameter relates behave
-             stochastically (optional).
+                stochastically (optional).
+            auto_mechanism (bool): if True, will automatically add the mechanism associated to
+                the parameter.
         """
 
         if not locations:
@@ -241,12 +259,17 @@ class NeuronModelConfiguration:
 
         locations = self._format_locations(locations)
 
-        if distribution_name and distribution_name != "uniform":
-            if distribution_name not in self.distribution_names:
-                raise Exception(
-                    f"No distribution of name {distribution_name} in the configuration."
-                    " Please register your distributions first."
-                )
+        if distribution_name is None or distribution_name == "constant":
+            distribution_name = "uniform"
+
+        if distribution_name not in self.distribution_names:
+            raise Exception(
+                f"No distribution of name {distribution_name} in the configuration."
+                " Please register your distributions first."
+            )
+
+        if distribution_name != "uniform" and parameter_name[0] != "g":
+            raise Exception("Only channel density parameters can be linked to a distribution")
 
         for loc in locations:
 
@@ -263,7 +286,7 @@ class NeuronModelConfiguration:
 
             self.parameters.append(tmp_param)
 
-            if mechanism:
+            if mechanism and auto_mechanism:
                 self.add_mechanism(mechanism, loc, stochastic=stochastic)
 
     def is_mechanism_available(self, mechanism_name, version=None):
@@ -274,16 +297,18 @@ class NeuronModelConfiguration:
             for mech in self.available_mechanisms:
 
                 if version is not None:
-                    if mechanism_name in mech["name"] and version == mech["version"]:
+                    if mechanism_name in mech.name and version == mech.version:
                         return True
-                elif mechanism_name in mech["name"]:
+                elif mechanism_name in mech.name:
                     return True
 
             return False
 
         return True
 
-    def add_mechanism(self, mechanism_name, locations, stochastic=None, version=None):
+    def add_mechanism(
+        self, mechanism_name, locations, stochastic=None, version=None, auto_parameter=False
+    ):
         """Add a mechanism to the configuration. This function should rarely be called directly as
          mechanisms are added automatically when using add_parameters. But it might be needed if a
          mechanism is not associated to any parameters.
@@ -294,20 +319,32 @@ class NeuronModelConfiguration:
                  will be instantiated.
              stochastic (bool): Can the mechanisms behave stochastically (optional).
              version (str): version id of the mod file.
+             auto_parameter (bool): if True, will automatically add the parameters of the mechanism
+                if they are known.
         """
 
         locations = self._format_locations(locations)
 
-        for loc in locations:
+        if mechanism_name != "pas" and not self.is_mechanism_available(mechanism_name, version):
+            raise Exception(
+                f"You are trying to add mechanism {mechanism_name} (version {version}) "
+                "but it is not available on Nexus or local."
+            )
 
-            if not self.is_mechanism_available(mechanism_name, version):
-                raise Exception(
-                    f"You are trying to add mechanism {mechanism_name} (version {version}) "
-                    "but it is not available on Nexus or local."
+        for loc in locations:
+            if self.available_mechanisms and mechanism_name != "pas":
+                mechanism_parameters = next(
+                    m.parameters for m in self.available_mechanisms if m.name == mechanism_name
                 )
+            else:
+                mechanism_parameters = None
 
             tmp_mechanism = MechanismConfiguration(
-                name=mechanism_name, location=loc, stochastic=stochastic, version=version
+                name=mechanism_name,
+                location=loc,
+                stochastic=stochastic,
+                version=version,
+                parameters=mechanism_parameters,
             )
 
             # Check if mech is not already part of the configuration
@@ -328,9 +365,47 @@ class NeuronModelConfiguration:
                 for m in self.mechanisms:
                     if m.name == tmp_mechanism.name:
                         if m.location in multiloc_map and loc in multiloc_map[m.location]:
-                            break
-                else:
-                    self.mechanisms.append(tmp_mechanism)
+                            return
+
+                self.mechanisms.append(tmp_mechanism)
+
+            if auto_parameter:
+                for mechanism_parameter in tmp_mechanism.parameters:
+                    self.add_parameter(
+                        parameter_name=mechanism_parameter,
+                        locations=[tmp_mechanism.location],
+                        value=None,
+                        mechanism=tmp_mechanism.name,
+                        distribution_name="uniform",
+                        auto_mechanism=False,
+                    )
+
+    def set_parameter_distribution(self, parameter_name, location, distribution_name):
+        """Set the distribution of a parameter"""
+
+        if not location:
+            raise Exception("Cannot set a parameter's distribution without specifying a location.")
+        locations = self._format_locations(location)
+
+        if distribution_name != "uniform" and parameter_name[0] != "g":
+            raise Exception("Only channel density parameters can be linked to a distribution")
+
+        for loc in locations:
+            for p in self.parameters:
+                if p.name == parameter_name and p.location == loc:
+                    p.distribution = distribution_name
+
+    def set_parameter_value(self, parameter_name, location, value):
+        """Set the value of a parameter"""
+
+        if not location:
+            raise Exception("Cannot set a parameter's distribution without specifying a location.")
+        locations = self._format_locations(location)
+
+        for loc in locations:
+            for p in self.parameters:
+                if p.name == parameter_name and p.location == loc:
+                    p.value = value
 
     def select_morphology(
         self,
@@ -413,7 +488,9 @@ class NeuronModelConfiguration:
 
         return {
             "mechanisms": [m.as_dict() for m in self.mechanisms],
-            "distributions": [d.as_dict() for d in self.distributions],
+            "distributions": [
+                d.as_dict() for d in self.distributions if d.name in self.used_distribution_names
+            ],
             "parameters": [p.as_dict() for p in self.parameters],
             "morphology": self.morphology.as_dict(),
         }
@@ -429,7 +506,8 @@ class NeuronModelConfiguration:
 
         str_form += "Distributions:\n"
         for d in self.distributions:
-            str_form += f"   {d.as_dict()}\n"
+            if d.name in self.used_distribution_names:
+                str_form += f"   {d.as_dict()}\n"
 
         str_form += "Parameters:\n"
         for p in self.parameters:

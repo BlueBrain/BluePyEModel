@@ -20,14 +20,22 @@ class ParameterConfiguration:
 
         self.name = name
         self.location = location
+
         self.value = value
         if isinstance(self.value, tuple):
             self.value = list(self.value)
+        if isinstance(self.value, list) and len(self.value) == 1:
+            self.value = self.value[0]
+
         self.mechanism = mechanism
 
         self.distribution = distribution
         if self.distribution is None:
             self.distribution = "uniform"
+
+    @property
+    def valid_value(self):
+        return not (self.value is None)
 
     def as_dict(self):
         """ """

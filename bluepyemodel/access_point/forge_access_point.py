@@ -15,6 +15,7 @@ from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfi
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
+from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools.utils import yesno
 
@@ -29,6 +30,7 @@ CLASS_TO_NEXUS_TYPE = {
     "FitnessCalculatorConfiguration": "FitnessCalculatorConfiguration",
     "NeuronModelConfiguration": "EModelConfiguration",
     "EModel": "EModel",
+    "DistributionConfiguration": "EModelChannelDistribution",
 }
 
 NEXUS_TYPE_TO_CLASS = {
@@ -37,6 +39,7 @@ NEXUS_TYPE_TO_CLASS = {
     "FitnessCalculatorConfiguration": FitnessCalculatorConfiguration,
     "EModelConfiguration": NeuronModelConfiguration,
     "EModel": EModel,
+    "EModelChannelDistribution": DistributionConfiguration,
 }
 
 NEXUS_ENTRIES = ["objectOfStudy", "contribution", "type", "id", "distribution"]
@@ -55,7 +58,7 @@ class NexusForgeAccessPoint:
         organisation="demo",
         endpoint="https://bbp.epfl.ch/nexus/v1",
         forge_path=None,
-        limit=1000,
+        limit=5000,
         debug=False,
         cross_bucket=True,
         access_token=None,
@@ -140,7 +143,8 @@ class NexusForgeAccessPoint:
 
             if replace:
                 for resource in previous_resources:
-                    self.forge.deprecate(resource)
+                    rr = self.retrieve(resource.id)
+                    self.forge.deprecate(rr)
 
             else:
                 logger.warning(
@@ -238,11 +242,6 @@ class NexusForgeAccessPoint:
         else:
             filename = resource.distribution.name
 
-        if isinstance(resource.distribution, list):
-            filename = resource.distribution[0].name
-        else:
-            filename = resource.distribution.name
-
         file_path = pathlib.Path(download_directory) / filename
 
         if not file_path.is_file():
@@ -257,7 +256,8 @@ class NexusForgeAccessPoint:
 
         if resources:
             for resource in resources:
-                self.forge.deprecate(resource)
+                rr = self.retrieve(resource.id)
+                self.forge.deprecate(rr)
 
     def deprecate_all(self, metadata):
         """Deprecate all resources used or produced by BluePyModel. Use with extreme caution."""
@@ -309,7 +309,7 @@ class NexusForgeAccessPoint:
 
         type_ = CLASS_TO_NEXUS_TYPE[object_.__class__.__name__]
 
-        base_payload = {"type": [type_]}
+        base_payload = {"type": ["Entity", type_]}
         payload_existance = {"type": type_}
 
         base_payload.update(metadata)
@@ -337,8 +337,6 @@ class NexusForgeAccessPoint:
         for k in NEXUS_ENTRIES:
             payload.pop(k, None)
 
-        # TODO: need to check what happens when a list of len 1 gets transformed
-
         return NEXUS_TYPE_TO_CLASS[type_](**payload)
 
     def nexus_to_object(self, type_, metadata):
@@ -363,7 +361,8 @@ class NexusForgeAccessPoint:
 
         objects_ = []
 
-        for resource in resources:
-            objects_.append(self.resource_to_object(type_, resource, metadata))
+        if resources:
+            for resource in resources:
+                objects_.append(self.resource_to_object(type_, resource, metadata))
 
         return objects_
