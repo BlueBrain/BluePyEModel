@@ -35,6 +35,7 @@ class ModelConfigurator:
             self.get_gene_based_configuration()
         else:
             self.configuration = NeuronModelConfiguration(
+                distributions=self.access_point.get_distributions(),
                 available_mechanisms=self.access_point.get_available_mechanisms(),
                 available_morphologies=self.access_point.get_available_morphologies(),
             )
@@ -93,6 +94,7 @@ class ModelConfigurator:
         gene data."""
 
         self.configuration = NeuronModelConfiguration(
+            distributions=self.access_point.get_distributions(),
             available_mechanisms=self.access_point.get_available_mechanisms(),
             available_morphologies=self.access_point.get_available_morphologies(),
         )

@@ -1,4 +1,5 @@
 """TargetsConfiguration"""
+import itertools
 import logging
 
 from bluepyemodel.efeatures_extraction.target import Target
@@ -12,7 +13,14 @@ class TargetsConfiguration:
     """The goal of this class is to configure the targets and files metadata that will be
     used during efeature extraction"""
 
-    def __init__(self, files=None, targets=None, protocols_rheobase=None):
+    def __init__(
+        self,
+        files=None,
+        targets=None,
+        protocols_rheobase=None,
+        available_traces=None,
+        available_efeatures=None,
+    ):
         """Init
 
         Args:
@@ -43,17 +51,29 @@ class TargetsConfiguration:
                     }
                 }]
             protocols_rheobase (list): names of the protocols that will be
-                used to compute the rheobase of the cells. E.g: ['IDthresh']."""
+                used to compute the rheobase of the cells. E.g: ['IDthresh'].
+            available_traces (list of TraceFile)
+            available_efeatures (llist of strings)
+        """
 
+        self.available_traces = available_traces
+        self.available_efeatures = available_efeatures
+
+        self.files = []
         if files is not None:
-            self.files = [TraceFile(**f) for f in files]
-        else:
-            self.files = []
+            for f in files:
+                tmp_trace = TraceFile(**f)
+                if not self.is_trace_available(tmp_trace):
+                    raise Exception(f"File named {tmp_trace.cell_name} is not present on Nexus")
+                self.files.append(tmp_trace)
 
+        self.targets = []
         if targets is not None:
-            self.targets = [Target(**t) for t in targets]
-        else:
-            self.targets = []
+            for t in targets:
+                tmp_target = Target(**t)
+                if not self.is_target_available(tmp_target):
+                    raise Exception(f"Efeature name {tmp_target.efeature} does not exist")
+                self.targets.append(tmp_target)
 
         if protocols_rheobase is None:
             self.protocols_rheobase = []
@@ -61,6 +81,17 @@ class TargetsConfiguration:
             self.protocols_rheobase = [protocols_rheobase]
         else:
             self.protocols_rheobase = protocols_rheobase
+
+    def is_trace_available(self, trace):
+        if self.available_traces:
+            available = next((a for a in self.available_traces if a == trace), False)
+            return bool(available)
+        return True
+
+    def is_target_available(self, target):
+        if self.available_efeatures and target.efeature not in self.available_efeatures:
+            return False
+        return True
 
     @property
     def files_metadata_BPE(self):
@@ -99,6 +130,25 @@ class TargetsConfiguration:
         """In BPE2 input format"""
 
         return [t.as_dict() for t in self.targets]
+
+    @property
+    def is_configuration_valid(self):
+        """Checks that the configuration has targets, traces and that the targets can
+        be found in the traces. This check can only be performed if the ecodes present
+        in each files are known."""
+
+        if not self.targets or not self.files:
+            return False
+
+        ecodes = set(
+            itertools.chain(*[file.ecodes for file in self.files if file.ecodes is not None])
+        )
+
+        for target in self.targets:
+            if ecodes and target.protocol not in ecodes:
+                return False
+
+        return True
 
     def as_dict(self):
 
