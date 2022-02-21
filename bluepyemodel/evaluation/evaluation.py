@@ -95,7 +95,7 @@ def get_evaluator_from_access_point(
     access_point,
     stochasticity=False,
     include_validation_protocols=False,
-    timeout=600.0,
+    timeout=None,
     score_threshold=12.0,
     max_threshold_voltage=-30,
     nseg_frequency=40,
@@ -131,7 +131,7 @@ def get_evaluator_from_access_point(
         nseg_frequency=nseg_frequency,
     )
 
-    timeout = timeout or access_point.pipeline_settings.timeout
+    timeout = timeout or access_point.pipeline_settings.optimisation_timeout
     stochasticity = stochasticity or access_point.pipeline_settings.stochasticity
 
     if isinstance(access_point, LocalAccessPoint):
