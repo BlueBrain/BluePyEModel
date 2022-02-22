@@ -29,6 +29,7 @@ class EFeatureConfiguration:
         recording_name,
         mean,
         std,
+        efeature_name=None,
         efel_settings=None,
         threshold_efeature_std=None,
     ):
@@ -44,6 +45,8 @@ class EFeatureConfiguration:
             recording_name (str): name of the recording of the procol
             mean (float): mean of the efeature.
             std (float): standard deviation of the efeature.
+            efeature_name (str):given name for this specific feature. Can be different
+                from the efel efeature name.
             efel_settings (dict): eFEl settings.
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional).
@@ -56,6 +59,8 @@ class EFeatureConfiguration:
         self.mean = mean
         self.std = _limit_std(mean, std, threshold_efeature_std)
 
+        self.efeature_name = efeature_name
+
         if efel_settings is None:
             self.efel_settings = {"strict_stiminterval": True}
         else:
@@ -63,16 +68,10 @@ class EFeatureConfiguration:
 
     @property
     def name(self):
-        return f"{self.protocol_name}.{self.recording_name}.{self.efel_feature_name}"
+        n = self.efeature_name if self.efeature_name else self.efel_feature_name
+        return f"{self.protocol_name}.{self.recording_name}.{n}"
 
     def as_dict(self):
         """Dictionary form"""
 
-        return {
-            "efel_feature_name": self.efel_feature_name,
-            "protocol_name": self.protocol_name,
-            "recording_name": self.recording_name,
-            "efel_settings": self.efel_settings,
-            "mean": self.mean,
-            "std": self.std,
-        }
+        return vars(self)
