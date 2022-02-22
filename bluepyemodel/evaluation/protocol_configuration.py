@@ -33,8 +33,4 @@ class ProtocolConfiguration:
     def as_dict(self):
         """Dictionary form"""
 
-        out = {}
-        for a in ["name", "stimuli", "recordings", "validation"]:
-            out[a] = getattr(self, a)
-
-        return out
+        return vars(self)

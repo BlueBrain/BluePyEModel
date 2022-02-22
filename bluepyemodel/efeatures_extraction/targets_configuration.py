@@ -40,6 +40,7 @@ class TargetsConfiguration:
                 protocols and current amplitude they should be extracted for. Of
                 the form:
                 [{
+                    "efeature_name": "AP_amplitude_1",
                     "efeature": "AP_amplitude",
                     "protocol": "IDRest",
                     "amplitude": 150.,
