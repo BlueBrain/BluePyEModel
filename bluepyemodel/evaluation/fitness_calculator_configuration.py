@@ -169,6 +169,7 @@ class FitnessCalculatorConfiguration:
             recording_name=recording_name,
             mean=feature["val"][0],
             std=feature["val"][1],
+            efeature_name=feature.get("efeature_name", None),
             efel_settings=feature.get("efel_settings", {}),
             threshold_efeature_std=self.threshold_efeature_std,
         )
@@ -325,6 +326,7 @@ class FitnessCalculatorConfiguration:
             recording_name=recording_name,
             mean=feature["val"][0],
             std=feature["val"][1],
+            efeature_name=feature.get("efeature_name", None),
             efel_settings=feature.get("efel_settings", {}),
             threshold_efeature_std=self.threshold_efeature_std,
         )

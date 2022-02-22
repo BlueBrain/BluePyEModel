@@ -14,6 +14,7 @@ class Target:
         protocol,
         amplitude,
         tolerance,
+        efeature_name=None,
         efel_settings=None,
     ):
         """Constructor
@@ -30,6 +31,8 @@ class Target:
                 an experimental recording will be seen as a hit during
                 efeatures extraction (expressed as a percentage of the
                 threshold amplitude (rheobase))
+            efeature_name (str): given name for this specific target. Can be different
+                from the efel efeature name.
             efel_settings (dict): target specific efel settings.
         """
 
@@ -38,6 +41,8 @@ class Target:
 
         self.amplitude = amplitude
         self.tolerance = tolerance
+
+        self.efeature_name = efeature_name
 
         if efel_settings is None:
             self.efel_settings = {"strict_stiminterval": True}

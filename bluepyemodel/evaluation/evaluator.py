@@ -156,6 +156,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
 
     recording_names = {"": f"{feature_config.protocol_name}.{feature_config.recording_name}"}
 
+    print(feature_config.name)
     efeature = eFELFeatureBPEM(
         feature_config.name,
         efel_feature_name=feature_config.efel_feature_name,
