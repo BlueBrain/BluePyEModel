@@ -3,7 +3,6 @@
 import getpass
 import logging
 import pathlib
-import time
 
 import jwt
 from entity_management.state import refresh_token
@@ -42,7 +41,7 @@ NEXUS_TYPE_TO_CLASS = {
     "EModelChannelDistribution": DistributionConfiguration,
 }
 
-NEXUS_ENTRIES = ["objectOfStudy", "contribution", "type", "id", "distribution"]
+NEXUS_ENTRIES = ["objectOfStudy", "contribution", "type", "id", "distribution", "@type"]
 
 
 class AccessPointException(Exception):
@@ -62,11 +61,13 @@ class NexusForgeAccessPoint:
         debug=False,
         cross_bucket=True,
         access_token=None,
+        search_endpoint="elastic",
     ):
 
         self.limit = limit
         self.debug = debug
         self.cross_bucket = cross_bucket
+        self.search_endpoint = search_endpoint
 
         self.access_token = access_token
         if not self.access_token:
@@ -182,8 +183,8 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch(self, filters, retries=2):
-        """Fetch resources based on filters. Retry the search if it fails to find any resources.
+    def fetch(self, filters):
+        """Fetch resources based on filters.
 
         Args:
             filters (dict): keys and values used for the "WHERE". Should include "type" or "id".
@@ -197,16 +198,16 @@ class NexusForgeAccessPoint:
 
         logger.debug("Searching: %s", filters)
 
-        for _ in range(retries):
+        resources = self.forge.search(
+            filters,
+            cross_bucket=self.cross_bucket,
+            limit=self.limit,
+            debug=self.debug,
+            search_endpoint=self.search_endpoint,
+        )
 
-            resources = self.forge.search(
-                filters, cross_bucket=self.cross_bucket, limit=self.limit, debug=self.debug
-            )
-
-            if resources:
-                return resources
-
-            time.sleep(0.5)
+        if resources:
+            return resources
 
         logger.debug("No resources for filters: %s", filters)
 
