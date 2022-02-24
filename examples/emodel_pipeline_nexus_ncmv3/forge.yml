@@ -12,6 +12,10 @@ Store:
   searchendpoints:
     sparql:
       endpoint: "https://bbp.epfl.ch/neurosciencegraph/data/62529364-b584-4cc9-82ce-36efd690b111"
+    elastic:
+      endpoint: "https://bbp.epfl.ch/neurosciencegraph/data/views/aggreg-es/dataset"
+      mapping: "https://bbp.epfl.ch/neurosciencegraph/data/views/es/dataset"
+      default_str_keyword_field: "keyword"
   vocabulary:
     metadata:
       iri: "https://bluebrain.github.io/nexus/contexts/metadata.json"
@@ -46,4 +50,5 @@ Resolvers:
 
 Formatters:
   identifier: https://bbp.epfl.ch/neurosciencegraph/data/{}/{}
+
 
