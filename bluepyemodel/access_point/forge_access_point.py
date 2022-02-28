@@ -61,7 +61,7 @@ class NexusForgeAccessPoint:
         debug=False,
         cross_bucket=True,
         access_token=None,
-        search_endpoint="elastic",
+        search_endpoint="sparql",
     ):
 
         self.limit = limit
