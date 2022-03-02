@@ -2,7 +2,6 @@
   "cADpyr_L5TPC": {
     "seed": "1",
     "optimizer": "IBEA",
-    "iteration_tag": "XXXXXX",
     "params": {
       "gSK_E2bar_SK_E2.somatic": 0.02023934993186524,
       "gK_Tstbar_K_Tst.somatic": 0.01315314265442069,
@@ -267,7 +266,6 @@
     "validated": true,
     "optimizer": "IBEA",
     "seed": 1,
-    "iteration_tag": "XXXXXX",
     "pdfs": {
       "traces": [
         null,
@@ -446,7 +444,6 @@
     "optimizer": "IBEA",
     "seed": 1,
     "ttype": null,
-    "iteration_tag": "None",
     "pdfs": {
       "optimisation": null,
       "traces": [
