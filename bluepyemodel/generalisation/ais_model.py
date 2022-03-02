@@ -518,13 +518,13 @@ def get_surface_density(neuron_path, path_bins, neurite_type="basal"):
     return list(bin_data(np.array(dists), np.array(areas), path_bins))
 
 
-def get_surface_profile(df, path_bins, neurite_type="basal"):
+def get_surface_profile(df, path_bins, neurite_type="basal", morphology_path="morphology_path"):
     surface_df = pd.DataFrame()
     with Pool() as pool:
         for gid, res in enumerate(
             pool.map(
                 partial(get_surface_density, path_bins=path_bins, neurite_type=neurite_type),
-                df["morphology_path"],
+                df[morphology_path],
             )
         ):
             for b, s in res:

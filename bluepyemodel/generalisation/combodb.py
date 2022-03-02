@@ -126,17 +126,19 @@ class ComboDB(MorphDB):
 
         etypes = [emodel_etypes_map_dict[emodel] for emodel in emodels]
         emodel_etypes_map["emodel"] = emodels
+        # base_emodel is to remove the _[seed] if multiple models are available
+        emodel_etypes_map["base_emodel"] = ['_'.join(emodel.split('_')[:2]) for emodel in emodels]
         emodel_etypes_map["etype"] = etypes
 
         _me_types = []
         for etype in etypes:
             layer = mtype_emodel_etype_map[
-                emodel_etypes_map.set_index("etype").loc[etype].to_list()[0]
+                emodel_etypes_map.set_index("etype").loc[etype, 'base_emodel'].to_list()[0]
             ]["layer"]
             _me_types.append(me_types[(me_types.etype == etype) & (me_types.layer.isin(layer))])
-
         me_types = pd.concat(_me_types).set_index("etype")
         me_models = me_types.join(emodel_etypes_map.set_index("etype")).reset_index()
+
         return _create_combos_df(self.df, me_models)
 
 

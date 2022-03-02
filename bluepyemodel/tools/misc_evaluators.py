@@ -47,7 +47,8 @@ def single_feature_evaluation(
             partial(synth_soma, params=json.loads(combo["soma_model"]), scale=combo["soma_scaler"]),
         )
 
-    emodel_db.set_emodel(combo["emodel"])
+    # we do that here to fetch parameters for emodel with seed
+    emodel_db.emodel_metadata.emodel = combo["emodel"]
     evaluator = get_evaluator_from_access_point(
         emodel_db,
         stochasticity=stochasticity,
@@ -56,7 +57,6 @@ def single_feature_evaluation(
         max_threshold_voltage=max_threshold_voltage,
         nseg_frequency=nseg_frequency,
         dt=dt,
-        strict_holding_bounds=False,
     )
     params = emodel_db.get_emodel().parameters
     if "new_parameters" in combo:

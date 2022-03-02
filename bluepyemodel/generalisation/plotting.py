@@ -197,6 +197,7 @@ def plot_resistance_models(fit_df, models, pdf_filename="resistance_model.pdf", 
                 me_mask = fit_df.emodel == emodel
                 if mtype != "all":
                     me_mask = me_mask & (fit_df.mtype == mtype)
+                print(fit_df[me_mask])
                 plt.figure(figsize=(5, 3))
                 fit_df[me_mask].plot(x=f"{_tpe}_scaler", y=f"rin_{tpe}", marker="+", ax=plt.gca())
                 plt.plot(
@@ -226,7 +227,7 @@ def plot_target_rhos(df, target_rhos, target_rho_axons, pdf_filename="scan_rho.p
         for emodel in df.emodel.unique():
 
             plt.figure(figsize=(5, 3))
-            _df = df[df.for_optimisation]
+            _df = df[df.for_optimisation == 1]
             plt.scatter(df.rho, df.rho_axon, c=df.median_score, s=20)
             plt.scatter(_df.rho, _df.rho_axon, marker="+", c="r", s=30, label="exemplar")
             plt.scatter(
@@ -273,7 +274,7 @@ def plot_synth_ais_evaluations(
                 score_df[score] = morphs_combos_df["scores_raw"].apply(
                     lambda s, score=score: json.loads(s)[score]
                 )
-            morphs_combos_df[mask & morphs_combos_df.for_optimisation].plot(
+            morphs_combos_df[mask & (morphs_combos_df.for_optimisation == 1)].plot(
                 x="rho_axon",
                 y="median_score",
                 c="r",
@@ -517,7 +518,7 @@ def plot_surface_comparison(surf_df, df, pdf_filename="surface_profile.pdf"):
         plt.plot(surf_df.columns, mean, c="r", lw=3, label="mean area")
         plt.plot(
             surf_df.columns,
-            surf_df.loc[df.for_optimisation].to_numpy()[0],
+            surf_df.loc[df.for_optimisation == 1].to_numpy()[0],
             c="g",
             lw=3,
             label="exemplar",
@@ -541,7 +542,7 @@ def plot_surface_comparison(surf_df, df, pdf_filename="surface_profile.pdf"):
             plt.plot(surf_df.columns, surf_df.loc[gid] - mean, c=c, lw=0.5)
         plt.plot(
             surf_df.columns,
-            surf_df.loc[df.for_optimisation].to_numpy()[0] - mean,
+            surf_df.loc[df.for_optimisation == 1].to_numpy()[0] - mean,
             c="g",
             lw=3,
             label="exemplar",

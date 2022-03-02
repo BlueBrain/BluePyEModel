@@ -36,10 +36,6 @@ class SomaShapeModel(BaseTask):
         """ """
         return CreateMorphCombosDF()
 
-    def requires(self):
-        """ """
-        return CreateMorphCombosDF()
-
     def run(self):
         """Run."""
         if self.custom_shape_model is None:
@@ -126,10 +122,6 @@ class TargetRho(BaseTask):
     morphology_path = luigi.Parameter(default="morphology_path")
     custom_target_rhos_path = luigi.Parameter(default="custom_target_rhos.yaml")
     rho_df_path = luigi.Parameter(default="csv/rho_scan_df.csv")
-<<<<<<< HEAD
-=======
-
->>>>>>> 7c27002 (clening)
     target_path = luigi.Parameter(default="target_rhos/target_rhos.yaml")
 
     def requires(self):
@@ -183,10 +175,6 @@ class AisShapeModel(BaseTask):
     with_taper = luigi.BoolParameter(default=True)
     target_path = luigi.Parameter(default="ais_shape_model.yaml")
     custom_shape_model = luigi.Parameter(default=None)
-
-    def requires(self):
-        """ """
-        return CreateMorphCombosDF()
 
     def requires(self):
         """ """
@@ -282,7 +270,6 @@ class TargetRhoAxon(BaseTask):
     morphology_path = luigi.Parameter(default="morphology_path")
     custom_target_rho_axons_path = luigi.Parameter(default="custom_target_rho_axons.yaml")
     rho_axon_df_path = luigi.Parameter(default="csv/rho_axon_scan_df.csv")
-
     target_path = luigi.Parameter(default="target_rhos/target_rho_axons.yaml")
 
     def requires(self):
@@ -297,7 +284,7 @@ class TargetRhoAxon(BaseTask):
 
         parallel_factory = init_parallel_factory(self.parallel_lib)
         target_rho_axons, rho_axon_df = find_target_rho_axon(
-            morphs_combos_df,
+            morphs_combos_df[morphs_combos_df.emodel == self.emodel],
             self.emodel_db,
             self.emodel,
             morphology_path=self.morphology_path,
