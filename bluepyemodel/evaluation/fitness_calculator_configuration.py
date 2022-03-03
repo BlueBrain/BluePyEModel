@@ -82,6 +82,7 @@ class FitnessCalculatorConfiguration:
         name_rin_protocol=None,
         threshold_efeature_std=None,
         validation_protocols=None,
+        ion_currents=None,
     ):
         """Init.
 
@@ -107,12 +108,15 @@ class FitnessCalculatorConfiguration:
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional).
             validation_protocols (list of str): name of the protocols used for validation only.
+            ion_currents (list of str): ion current names for all available mechanisms
         """
+
+        self.ion_currents = ion_currents
 
         if protocols is None:
             self.protocols = []
         else:
-            self.protocols = [ProtocolConfiguration(**p) for p in protocols]
+            self.protocols = [ProtocolConfiguration(**p, ion_currents=self.ion_currents) for p in protocols]
 
         if efeatures is None:
             self.efeatures = []
@@ -153,7 +157,7 @@ class FitnessCalculatorConfiguration:
         validation = protocol_name in self.validation_protocols
 
         tmp_protocol = ProtocolConfiguration(
-            name=protocol_name, stimuli=[stimulus], recordings=recordings, validation=validation
+            name=protocol_name, stimuli=[stimulus], recordings=recordings, validation=validation, ion_currents=self.ion_currents
         )
 
         self.protocols.append(tmp_protocol)
@@ -310,7 +314,7 @@ class FitnessCalculatorConfiguration:
         validation = protocol_name in self.validation_protocols
 
         tmp_protocol = ProtocolConfiguration(
-            name=protocol_name, stimuli=[stimulus], recordings=recordings, validation=validation
+            name=protocol_name, stimuli=[stimulus], recordings=recordings, validation=validation, ion_currents=self.ion_currents
         )
 
         self.protocols.append(tmp_protocol)

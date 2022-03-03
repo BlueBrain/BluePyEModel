@@ -308,6 +308,22 @@ class LocalAccessPoint(DataAccessPoint):
 
         return None
 
+    def get_mechanism_ion(self, mech_file):
+        """Parse the mech mod file to get the mechanism ion."""
+        ions = []
+        with open(mech_file, "r") as f:
+            mod_lines = f.readlines()
+        for line in mod_lines:
+            if "WRITE " in line:
+                ion = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
+                if ion[0] != "i":
+                    logger.warning(f"Mod file {mech_file} writes variable {ion} " 
+                        "that is suspected to not be an ion current.")
+                ions.append(ion)
+
+        return ions
+
+
     def get_available_mechanisms(self):
         """Get the list of names of the available mechanisms"""
 
@@ -317,8 +333,9 @@ class LocalAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for mech_file in glob.glob(str(Path(mech_dir) / "*.mod")):
+            ions = self.get_mechanism_ion(mech_file)
             available_mechanisms.append(
-                MechanismConfiguration(name=Path(mech_file).stem, location=None)
+                MechanismConfiguration(name=Path(mech_file).stem, location=None, ions=ions)
             )
 
         return available_mechanisms
@@ -416,6 +433,8 @@ class LocalAccessPoint(DataAccessPoint):
 
         legacy = "efeatures" not in config_dict and "protocols" not in config_dict
 
+        ion_currents = self.get_ion_currents()
+
         if legacy:
 
             efeatures = self._get_json("features")
@@ -434,6 +453,7 @@ class LocalAccessPoint(DataAccessPoint):
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
+                ion_currents=ion_currents,
             )
 
             if from_bpe:
@@ -449,6 +469,7 @@ class LocalAccessPoint(DataAccessPoint):
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
+                ion_currents=ion_currents,
             )
 
         return configuration

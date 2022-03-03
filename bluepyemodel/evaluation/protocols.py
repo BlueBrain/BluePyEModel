@@ -4,6 +4,8 @@ import time
 from collections import OrderedDict
 
 from bluepyopt import ephys
+from extract_currs.recordings import check_recordings
+from extract_currs.recordings import RecordingCustom
 
 from ..ecode import eCodes
 
@@ -44,6 +46,12 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
 
         self.features = []
 
+    def instantiate(self, sim=None, icell=None):
+        """Check recordings, then instantiate."""
+        self.recordings = check_recordings(self.recordings, icell, sim)
+
+        super(BPEM_Protocol, self).instantiate(sim, icell)
+    
     def stim_start(self):
         """Time stimulus starts"""
         return self.stimulus.stim_start
@@ -115,7 +123,7 @@ class RMPProtocol:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            ephys.recordings.CompRecording(
+            RecordingCustom(
                 name=self.recording_name,
                 location=self.location,
                 variable="v",
@@ -168,7 +176,7 @@ class RinProtocol:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            ephys.recordings.CompRecording(
+            RecordingCustom(
                 name=self.recording_name,
                 location=self.location,
                 variable="v",
@@ -248,7 +256,7 @@ class SearchHoldingCurrent:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            ephys.recordings.CompRecording(
+            RecordingCustom(
                 name=self.target_voltage.recording_names[""],
                 location=self.location,
                 variable="v",
@@ -428,7 +436,7 @@ class SearchThresholdCurrent:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            ephys.recordings.CompRecording(
+            RecordingCustom(
                 name=f"SearchThresholdCurrent.{self.location.name}.v",
                 location=self.location,
                 variable="v",
@@ -671,8 +679,9 @@ class MainProtocol(ephys.protocols.Protocol):
             and self.search_threshold_protocol
         ):
 
+            print("pre run")
             for pre_run in [self.run_RMP, self.run_holding, self.run_rin, self.run_threshold]:
-
+                print(pre_run)
                 t1 = time.time()
                 response, score = pre_run(
                     cell_model, responses, sim=sim, isolate=isolate, timeout=timeout

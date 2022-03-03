@@ -9,8 +9,8 @@ from bluepyopt.ephys.locations import NrnSecSomaDistanceCompLocation
 from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
 from bluepyopt.ephys.objectives import SingletonObjective
 from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
-from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.simulators import NrnSimulator
+from extract_currs.recordings import RecordingCustom
 
 from ..ecode import eCodes
 from .efel_feature_bpem import eFELFeatureBPEM
@@ -95,7 +95,7 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
         else:
             variable = rec_def["var"]
 
-        recording = CompRecording(
+        recording = RecordingCustom(
             name=rec_def["name"],
             location=location,
             variable=variable,
@@ -139,6 +139,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     stim_end = None
 
     if protocol:
+        print(f"protocol anmplitude: {protocol.amplitude}")
         stim_amp = protocol.amplitude
 
     if feature_config.efel_settings.get("stim_start", None) is not None:
@@ -343,6 +344,11 @@ def define_main_protocol(
             else:
                 raise Exception(f"Could not find protocol named {feature_def.protocol_name}")
 
+        print(f"f name : {feature_def.efel_feature_name}")
+        print(f"prot name : {feature_def.protocol_name}")
+        # print(p)
+        if protocol is not None:
+            print(protocol.name)
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
     rmp_protocol = None
@@ -357,6 +363,9 @@ def define_main_protocol(
 
     for feature in efeatures:
         if feature.efel_feature_name not in ["bpo_holding_current", "bpo_threshold_current"]:
+            print(feature.efel_feature_name)
+            print(feature.stimulus_current)
+
             assert feature.stim_start is not None
             assert feature.stim_end is not None
             assert feature.stimulus_current is not None
