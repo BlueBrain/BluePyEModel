@@ -521,7 +521,7 @@ class LocalAccessPoint(DataAccessPoint):
             etype=model_data.get("etype", None),
             ttype=model_data.get("ttype", None),
             mtype=model_data.get("mtype", None),
-            species=model_data.get("seed", None),
+            species=model_data.get("species", None),
             brain_region=model_data.get("brain_region", None),
             iteration_tag=iteration_tag,
         )
@@ -540,14 +540,7 @@ class LocalAccessPoint(DataAccessPoint):
         return emodel
 
     def get_emodel(self):
-        """Get dict with parameter of single emodel (including seed if any)
-
-        WARNING: this search is based on the name of the model and not the name of the emodel
-        despite the name of the variable. To search by emodel name use get_emodels.
-
-        Args:
-            emodel (str): name of the emodels.
-        """
+        """Get dict with parameter of single emodel (including seed if any)"""
 
         final = self.get_final()
 
@@ -559,7 +552,7 @@ class LocalAccessPoint(DataAccessPoint):
         return None
 
     def get_emodels(self, emodels=None):
-        """Get the list of emodels dictionaries.
+        """Get a list of emodels
 
         Args:
             emodels (list): list of names of the emodels.
@@ -570,10 +563,21 @@ class LocalAccessPoint(DataAccessPoint):
 
         models = []
         for mod_data in self.get_final().values():
+
             if mod_data["emodel"] in emodels:
                 models.append(self.format_emodel_data(mod_data))
 
-        return models
+        filtered_models = []
+        api_metadata = self.emodel_metadata.for_resource()
+        for m in models:
+            model_metadata = m.emodel_metadata.for_resource()
+            for f, v in api_metadata.items():
+                if f in model_metadata and v != model_metadata[f]:
+                    break
+            else:
+                filtered_models.append(m)
+
+        return filtered_models
 
     def has_fitness_calculator_configuration(self):
         """Check if the fitness calculator configuration exists"""
