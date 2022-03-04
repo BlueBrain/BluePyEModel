@@ -28,7 +28,7 @@ def save_fig(figures_dir, figure_name):
     plt.clf()
 
 
-def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures"):
+def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures", write_fig=True):
     """Create plots related to a BluePyOpt optimization"""
 
     make_dir(figures_dir)
@@ -53,10 +53,14 @@ def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures"):
     figure_name += ".pdf"
 
     plt.tight_layout()
-    save_fig(figures_dir, figure_name)
+
+    if write_fig:
+        save_fig(figures_dir, figure_name)
+
+    return fig, axs
 
 
-def scores(model, figures_dir="./figures"):
+def scores(model, figures_dir="./figures", write_fig=True):
     """Plot the scores of a model"""
     make_dir(figures_dir)
 
@@ -84,10 +88,14 @@ def scores(model, figures_dir="./figures"):
     fname = model.emodel_metadata.as_string(model.seed) + "__scores.pdf"
 
     plt.tight_layout()
-    save_fig(figures_dir, fname)
+
+    if write_fig:
+        save_fig(figures_dir, fname)
+
+    return fig, axs
 
 
-def traces(model, responses, stimuli={}, figures_dir="./figures"):
+def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True):
     """Plot the traces of a model"""
     make_dir(figures_dir)
 
@@ -164,10 +172,14 @@ def traces(model, responses, stimuli={}, figures_dir="./figures"):
     fname = model.emodel_metadata.as_string(model.seed) + "__traces.pdf"
 
     plt.tight_layout()
-    save_fig(figures_dir, fname)
+
+    if write_fig:
+        save_fig(figures_dir, fname)
+
+    return fig, axs
 
 
-def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
+def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", write_fig=True):
     """Plot the distribution of the parameters across several models"""
     make_dir(figures_dir)
 
@@ -216,7 +228,11 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures"):
     fname = models[0].emodel_metadata.as_string() + "__parameters_distribution.pdf"
 
     plt.tight_layout()
-    save_fig(figures_dir, fname)
+
+    if write_fig:
+        save_fig(figures_dir, fname)
+
+    return fig, axs
 
 
 def plot_models(
