@@ -317,7 +317,6 @@ def plot_models(
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
             currentscape(mo.responses, config=config, figures_dir=figures_dir_currentscape)
 
-
     return emodels
 
 def get_ordered_currentscape_keys(keys):
@@ -397,7 +396,6 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
         fnames = [str(Path(filepath).stem) for filepath in glob.glob(str(Path(output_dir) / "*.dat"))]
         ordered_keys = get_ordered_currentscape_keys(fnames)
 
-    print(ordered_keys)
     for prot, locs in ordered_keys.items():
         for loc, key_dict in locs.items():
             if responses is not None:
