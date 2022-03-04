@@ -33,6 +33,8 @@ class EModelPipelineSettings:
         name_rmp_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
+        plot_currentscape=False,
+        currentscape_config=None,
     ):
         """Init
 
@@ -89,6 +91,11 @@ class EModelPipelineSettings:
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
+            plot_currentscape (bool): should the EModel currentscapes be plotted
+            currentscape_config (dict): currentscape config according to the currentscape documentation
+                (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config)
+                Note that current.names, output.savefig, output.fname and output.dir
+                do not need to be set, since they are automatically rewritten by BPEM.
         """
 
         # Settings related to E-features extraction
@@ -128,6 +135,10 @@ class EModelPipelineSettings:
         self.optimisation_batch_size = optimisation_batch_size
         self.max_n_batch = max_n_batch
         self.name_gene_map = name_gene_map
+
+        # Settings specific to the currentscape plotting
+        self.plot_currentscape = plot_currentscape
+        self.currentscape_config = currentscape_config
 
     def as_dict(self):
         return vars(self)

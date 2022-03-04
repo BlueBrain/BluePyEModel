@@ -1,12 +1,83 @@
 """ Emodels evaluation functions """
 import copy
+import glob
 import logging
+import numpy
+from pathlib import Path
+
+from bluepyopt.ephys.responses import TimeVoltageResponse
 
 from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.model import model
+from bluepyemodel.tools.utils import make_dir
 
 logger = logging.getLogger(__name__)
+
+
+def locally_store_responses(emodel):
+    """Locally store the responses.
+    
+    Arguments:
+        emodel (EModel): the emodel which responses are to be stored
+    """
+    output_dir = f"./recordings/{emodel.emodel_metadata.as_string(emodel.seed)}"
+    make_dir(output_dir)
+    for key, resp in emodel.responses.items():
+        if not ("holding_current" in key or "threshold_current" in key or "bpo" in key):
+            output_path = Path(output_dir) / ".".join((key, "dat"))
+
+            time = numpy.array(resp["time"])
+            data = numpy.array(resp["voltage"])  # even current will be named voltage here
+
+            numpy.savetxt(output_path, numpy.transpose(numpy.vstack((time, data))))
+
+def check_local_responses_presence(emodels, cell_eval):
+    """Returns True if there is a local response file for each emodel.
+    
+    Arguments:
+        emodels (list of EModel): the emodel that need a response to be checked.
+        cell_eval (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
+    """
+    for emodel in emodels:
+        output_dir = f"./recordings/{emodel.emodel_metadata.as_string(emodel.seed)}"
+        if not Path(output_dir).is_dir():
+            return False
+
+        # only check voltage, since some currents are not recorded because non existent depending on location
+        if not all([(Path(output_dir) / ".".join((rec.name, "dat"))).is_file() for prot in cell_eval.fitness_protocols["main_protocol"].threshold_protocols.values() for rec in prot.recordings if rec.variable == "v"]):
+            return False
+
+        if not all([(Path(output_dir) / ".".join((rec.name, "dat"))).is_file() for prot in cell_eval.fitness_protocols["main_protocol"].other_protocols.values() for rec_name in prot.recordings if rec.variable == "v"]):
+            return False
+        
+    return True
+
+
+def load_responses_from_local_files(emodels, cell_eval):
+    """Returns responses from locally stored files.
+    
+    Arguments:
+        emodels (list of EModel): the emodel that need a response to be checked.
+        cell_eval (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
+    """
+    responses_list = []
+    for emodel in emodels:
+        responses = {}
+        output_dir = f"./recordings/{emodel.emodel_metadata.as_string(emodel.seed)}"
+
+        for filepath in glob.glob(str(Path(output_dir) / "*.dat")):
+            response_key = Path(filepath).stem
+            response_name = response_key.split(".")[0]
+            data = numpy.loadtxt(filepath)
+            responses[response_key] = TimeVoltageResponse(name=response_name, time=data[:,0], voltage=data[:,1])
+        responses["evaluator"] = copy.deepcopy(cell_eval)
+
+        responses_list.append(responses)
+
+    return responses_list
+    
+
 
 
 def get_responses(to_run):
@@ -34,6 +105,7 @@ def compute_responses(
     map_function,
     seeds=None,
     preselect_for_validation=False,
+    store_responses=False,
 ):
     """Compute the responses of the emodel to the optimisation and validation protocols.
 
@@ -47,6 +119,7 @@ def compute_responses(
         seeds (list): if not None, filter emodels to keep only the ones with these seeds.
         preselect_for_validation (bool): if True,
             only select models that have not been through validation yet.
+        store_responses (bool): whether to locally store the responses.
     Returns:
         emodels (list): list of emodels.
     """
@@ -77,11 +150,19 @@ def compute_responses(
                 }
             )
 
-        responses = list(map_function(get_responses, to_run))
+        if check_local_responses_presence(emodels, cell_evaluator):
+            logging.info("Local responses file found. "
+                "Loading them from files instead of recomputing them")
+            responses = load_responses_from_local_files(emodels, cell_evaluator)
+        else:
+            responses = list(map_function(get_responses, to_run))
 
         for mo, r in zip(emodels, responses):
             mo.responses = r
             mo.evaluator = r.pop("evaluator")
+            if store_responses:
+                print("storing responses")
+                locally_store_responses(mo)
 
     else:
         logger.warning(

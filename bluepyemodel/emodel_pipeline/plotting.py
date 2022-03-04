@@ -259,8 +259,13 @@ def plot_models(
         include_validation_protocols=True,
     )
 
+    if plot_currentscape:
+        store_responses = True
+    else:
+        store_responses = False
+
     if plot_traces or plot_currentscape:
-        emodels = compute_responses(access_point, cell_evaluator, mapper, seeds)
+        emodels = compute_responses(access_point, cell_evaluator, mapper, seeds, store_responses=store_responses)
     else:
         emodels = access_point.get_emodels([access_point.emodel_metadata.emodel])
         if seeds:
@@ -308,8 +313,9 @@ def plot_models(
             traces(mo, mo.responses, stimuli, figures_dir_traces)
         if plot_currentscape:
             # get config
+            config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
-            currentscape(mo.responses, config, figures_dir=figures_dir_currentscape)
+            currentscape(mo.responses, config=config, figures_dir=figures_dir_currentscape)
 
 
     return emodels
@@ -327,16 +333,17 @@ def get_ordered_currentscape_keys(keys):
         {"protocol_name": {"loc_name": {"voltage_key": str, "current_keys": [], "current_names": []}}}
     """
     # RMP and Rin only have voltage data, no currents, so they are skipped
-    to_skip = ["RMPProtocol", "RinProtocol"]
+    to_skip = ["RMPProtocol", "RinProtocol", "bpo_rmp", "bpo_rin", "bpo_holding_current", "bpo_threshold_current"]
 
     ordered_keys = {}
     for name in keys:
         n = name.split(".")
-        assert len(n) == 3
         prot_name = n[0]
-        loc_name = n[1]
-        curr_name = n[2]
         if not prot_name in to_skip:
+            assert len(n) == 3
+            loc_name = n[1]
+            curr_name = n[2]
+            
             if not prot_name in ordered_keys:
                 ordered_keys[prot_name] = {}
             if not loc_name in ordered_keys[prot_name]:
@@ -375,6 +382,8 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
     if responses is None and output_dir is None:
         raise Exception("Responses or output directory must be set.")
 
+    make_dir(figures_dir)
+
     if config is None:
         config = {}
     if "currents" not in config:
@@ -388,6 +397,7 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
         fnames = [str(Path(filepath).stem) for filepath in glob.glob(str(Path(output_dir) / "*.dat"))]
         ordered_keys = get_ordered_currentscape_keys(fnames)
 
+    print(ordered_keys)
     for prot, locs in ordered_keys.items():
         for loc, key_dict in locs.items():
             if responses is not None:
