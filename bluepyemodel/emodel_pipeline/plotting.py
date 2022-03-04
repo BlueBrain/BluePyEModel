@@ -254,9 +254,15 @@ def plot_models(
 
     figures_dir = Path(figures_dir)
 
+    if plot_currentscape:
+        use_fixed_dt_recordings = True
+    else:
+        use_fixed_dt_recordings = False
+
     cell_evaluator = get_evaluator_from_access_point(
         access_point,
         include_validation_protocols=True,
+        use_fixed_dt_recordings=use_fixed_dt_recordings,
     )
 
     if plot_currentscape:
@@ -312,7 +318,6 @@ def plot_models(
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             traces(mo, mo.responses, stimuli, figures_dir_traces)
         if plot_currentscape:
-            # get config
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
             currentscape(mo.responses, config=config, figures_dir=figures_dir_currentscape)
@@ -415,6 +420,5 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
             if "dir" not in config["output"]:
                 config["output"]["dir"] = figures_dir
             
-            logging.info(f"Plotting currentscape for {name}")
-            print(f"Plotting currentscape for {name}")
+            logger.info(f"Plotting currentscape for {name}")
             plot_currentscape(voltage, currents, config, time=time)

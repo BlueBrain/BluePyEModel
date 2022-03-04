@@ -202,5 +202,7 @@ class DataAccessPoint:
             (list of str): ion current names for all available mechanisms
         """
         mechs = self.get_available_mechanisms()
+        if mechs is None:
+            return None
         return list(chain.from_iterable([mech.get_ion_current() for mech in mechs]))
 

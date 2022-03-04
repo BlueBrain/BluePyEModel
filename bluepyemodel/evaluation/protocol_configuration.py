@@ -32,19 +32,20 @@ class ProtocolConfiguration:
         for recording in recordings:
             self.recordings.append(recording)
 
-            for ion in ion_currents:
-                new_rec = recording.copy()
+            if ion_currents is not None:
+                for ion in ion_currents:
+                    new_rec = recording.copy()
 
-                if "variable" in recording:
-                    new_rec["variable"] = ion
-                elif "var" in recording:
-                    new_rec["var"] = ion
-                else:
-                    raise KeyError("Expected 'var' or 'variable' in recording list.")
+                    if "variable" in recording:
+                        new_rec["variable"] = ion
+                    elif "var" in recording:
+                        new_rec["var"] = ion
+                    else:
+                        raise KeyError("Expected 'var' or 'variable' in recording list.")
 
-                new_rec["name"] = ".".join(new_rec["name"].split(".")[:-1] + [ion])
+                    new_rec["name"] = ".".join(new_rec["name"].split(".")[:-1] + [ion])
 
-                self.recordings.append(new_rec)
+                    self.recordings.append(new_rec)
 
         self.validation = validation
 

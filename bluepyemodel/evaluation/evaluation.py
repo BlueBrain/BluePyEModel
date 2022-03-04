@@ -151,7 +151,7 @@ def compute_responses(
             )
 
         if check_local_responses_presence(emodels, cell_evaluator):
-            logging.info("Local responses file found. "
+            logger.info("Local responses file found. "
                 "Loading them from files instead of recomputing them")
             responses = load_responses_from_local_files(emodels, cell_evaluator)
         else:
@@ -161,7 +161,6 @@ def compute_responses(
             mo.responses = r
             mo.evaluator = r.pop("evaluator")
             if store_responses:
-                print("storing responses")
                 locally_store_responses(mo)
 
     else:
@@ -182,6 +181,7 @@ def get_evaluator_from_access_point(
     nseg_frequency=40,
     dt=None,
     strict_holding_bounds=True,
+    use_fixed_dt_recordings=False,
 ):
     """Create an evaluator for the emodel.
 
@@ -197,6 +197,7 @@ def get_evaluator_from_access_point(
             bound in the threshold current search
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
+        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
 
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
@@ -233,4 +234,5 @@ def get_evaluator_from_access_point(
         threshold_based_evaluator=access_point.pipeline_settings.threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
         mechanisms_directory=mechanisms_directory,
+        use_fixed_dt_recordings=use_fixed_dt_recordings,
     )

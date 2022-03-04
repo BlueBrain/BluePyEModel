@@ -6,6 +6,28 @@ from collections import OrderedDict
 from bluepyopt import ephys
 from extract_currs.recordings import check_recordings
 from extract_currs.recordings import RecordingCustom
+from extract_currs.recordings import get_loc_ion_list
+
+class LooseRecordingCustom(RecordingCustom):
+    """Recording that can be checked, but that do not records at fixed dt."""
+
+    def instantiate(self, sim=None, icell=None):
+        """Instantiate recording."""
+        logger.debug(
+            "Adding compartment recording of %s at %s", self.variable, self.location
+        )
+
+        self.varvector = sim.neuron.h.Vector()
+        seg = self.location.instantiate(sim=sim, icell=icell)
+        self.varvector.record(getattr(seg, "_ref_%s" % self.variable))
+
+        self.segment_area = seg.area()
+        self.local_ion_list = get_loc_ion_list(seg.sec)
+
+        self.tvector = sim.neuron.h.Vector()
+        self.tvector.record(sim.neuron.h._ref_t)  # pylint: disable=W0212
+
+        self.instantiated = True
 
 from ..ecode import eCodes
 
@@ -123,7 +145,7 @@ class RMPProtocol:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            RecordingCustom(
+            LooseRecordingCustom(
                 name=self.recording_name,
                 location=self.location,
                 variable="v",
@@ -176,7 +198,7 @@ class RinProtocol:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            RecordingCustom(
+            LooseRecordingCustom(
                 name=self.recording_name,
                 location=self.location,
                 variable="v",
@@ -256,7 +278,7 @@ class SearchHoldingCurrent:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            RecordingCustom(
+            LooseRecordingCustom(
                 name=self.target_voltage.recording_names[""],
                 location=self.location,
                 variable="v",
@@ -436,7 +458,7 @@ class SearchThresholdCurrent:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            RecordingCustom(
+            LooseRecordingCustom(
                 name=f"SearchThresholdCurrent.{self.location.name}.v",
                 location=self.location,
                 variable="v",
@@ -678,10 +700,7 @@ class MainProtocol(ephys.protocols.Protocol):
             and self.search_holding_protocol
             and self.search_threshold_protocol
         ):
-
-            print("pre run")
             for pre_run in [self.run_RMP, self.run_holding, self.run_rin, self.run_threshold]:
-                print(pre_run)
                 t1 = time.time()
                 response, score = pre_run(
                     cell_model, responses, sim=sim, isolate=isolate, timeout=timeout
