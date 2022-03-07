@@ -80,8 +80,7 @@ def get_mechanism_ion(mech_file):
             ion = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
             if ion[0] != "i":
                 logger.warning(
-                    "Mod file %s writes variable %s "
-                    "that is suspected to not be an ion current.",
+                    "Mod file %s writes variable %s " "that is suspected to not be an ion current.",
                     mech_file,
                     ion,
                 )
