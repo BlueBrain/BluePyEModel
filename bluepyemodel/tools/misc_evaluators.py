@@ -38,8 +38,6 @@ def single_feature_evaluation(
                 synth_axon, params=json.loads(combo["AIS_model"])["popt"], scale=combo["AIS_scaler"]
             )
         ]
-    else:
-        emodel_db.pipeline_settings.morph_modifiers = [replace_axon_with_taper]
 
     if "soma_scaler" in combo and isinstance(combo["soma_model"], str):
         emodel_db.pipeline_settings.morph_modifiers.insert(
@@ -70,7 +68,7 @@ def single_feature_evaluation(
         if isinstance(val, np.ndarray) and len(val) > 0:
             try:
                 features[f] = np.nanmean(val)
-            except AttributeError:
+            except (AttributeError, TypeError):
                 features[f] = None
         else:
             features[f] = None

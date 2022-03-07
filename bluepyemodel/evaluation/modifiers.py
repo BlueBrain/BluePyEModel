@@ -217,29 +217,29 @@ def remove_soma(sim=None, icell=None):
     sec = list(icell.axonal)[0]
     for section in icell.basal:
         if section.parentseg().sec in list(icell.soma):
-            sim.neuron.h.disconnect(section)
+            section.disconnect()
             section.connect(sec, 0, 0)
 
     for section in icell.apical:
         if section.parentseg().sec in list(icell.soma):
-            sim.neuron.h.disconnect(section)
+            section.disconnect()
             section.connect(sec, 0, 0)
 
     for i, section in enumerate(icell.axonal):
         if i > 0:
             if section.parentseg().sec in list(icell.soma):
-                sim.neuron.h.disconnect(section)
+                section.disconnect()
                 section.connect(sec, 0, 0)
 
     for section in icell.apical:
         if section.parentseg().sec in list(icell.soma):
-            sim.neuron.h.disconnect(section)
+            section.disconnect()
             section.connect(sec, 0, 0)
 
     for i, section in enumerate(icell.axonal):
         if i > 0:
             if section.parentseg().sec in list(icell.soma):
-                sim.neuron.h.disconnect(section)
+                section.disconnect()
                 section.connect(sec, 0, 0)
 
     for section in icell.soma:

@@ -425,8 +425,8 @@ class FitnessCalculatorConfiguration:
         """"""
 
         cell = deepcopy(_cell)
-        cell.params = None
-        cell.mechanisms = None
+        cell.params = {}
+        cell.mechanisms = []
         cell.instantiate(sim=simulator)
 
         # TODO: THE SAME FOR STIMULI
@@ -457,6 +457,7 @@ class FitnessCalculatorConfiguration:
                         efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
 
         self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove] + efeatures
+        cell.destroy(sim=simulator)
 
     def as_dict(self):
         """Used for the storage of the configuration"""
