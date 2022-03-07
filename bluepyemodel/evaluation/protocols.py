@@ -1,33 +1,11 @@
-"""Module with protocoal classes."""
+"""Module with protocol classes."""
 import logging
 import time
 from collections import OrderedDict
 
 from bluepyopt import ephys
-from extract_currs.recordings import check_recordings
-from extract_currs.recordings import RecordingCustom
-from extract_currs.recordings import get_loc_ion_list
-
-class LooseRecordingCustom(RecordingCustom):
-    """Recording that can be checked, but that do not records at fixed dt."""
-
-    def instantiate(self, sim=None, icell=None):
-        """Instantiate recording."""
-        logger.debug(
-            "Adding compartment recording of %s at %s", self.variable, self.location
-        )
-
-        self.varvector = sim.neuron.h.Vector()
-        seg = self.location.instantiate(sim=sim, icell=icell)
-        self.varvector.record(getattr(seg, "_ref_%s" % self.variable))
-
-        self.segment_area = seg.area()
-        self.local_ion_list = get_loc_ion_list(seg.sec)
-
-        self.tvector = sim.neuron.h.Vector()
-        self.tvector.record(sim.neuron.h._ref_t)  # pylint: disable=W0212
-
-        self.instantiated = True
+from .recordings import check_recordings
+from .recordings import LooseDtRecordingCustom
 
 from ..ecode import eCodes
 
@@ -72,8 +50,8 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
         """Check recordings, then instantiate."""
         self.recordings = check_recordings(self.recordings, icell, sim)
 
-        super(BPEM_Protocol, self).instantiate(sim, icell)
-    
+        super().instantiate(sim, icell)
+
     def stim_start(self):
         """Time stimulus starts"""
         return self.stimulus.stim_start
@@ -145,7 +123,7 @@ class RMPProtocol:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            LooseRecordingCustom(
+            LooseDtRecordingCustom(
                 name=self.recording_name,
                 location=self.location,
                 variable="v",
@@ -198,7 +176,7 @@ class RinProtocol:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            LooseRecordingCustom(
+            LooseDtRecordingCustom(
                 name=self.recording_name,
                 location=self.location,
                 variable="v",
@@ -278,7 +256,7 @@ class SearchHoldingCurrent:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            LooseRecordingCustom(
+            LooseDtRecordingCustom(
                 name=self.target_voltage.recording_names[""],
                 location=self.location,
                 variable="v",
@@ -458,7 +436,7 @@ class SearchThresholdCurrent:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            LooseRecordingCustom(
+            LooseDtRecordingCustom(
                 name=f"SearchThresholdCurrent.{self.location.name}.v",
                 location=self.location,
                 variable="v",

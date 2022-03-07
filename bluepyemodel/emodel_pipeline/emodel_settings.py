@@ -92,7 +92,8 @@ class EModelPipelineSettings:
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
             plot_currentscape (bool): should the EModel currentscapes be plotted
-            currentscape_config (dict): currentscape config according to the currentscape documentation
+            currentscape_config (dict): currentscape config
+                according to the currentscape documentation
                 (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config)
                 Note that current.names, output.savefig, output.fname and output.dir
                 do not need to be set, since they are automatically rewritten by BPEM.

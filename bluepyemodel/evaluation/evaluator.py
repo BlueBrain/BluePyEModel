@@ -10,17 +10,17 @@ from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
 from bluepyopt.ephys.objectives import SingletonObjective
 from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.simulators import NrnSimulator
-from extract_currs.recordings import RecordingCustom
 
 from ..ecode import eCodes
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEM_Protocol
-from .protocols import LooseRecordingCustom
 from .protocols import MainProtocol
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
 from .protocols import SearchHoldingCurrent
 from .protocols import SearchThresholdCurrent
+from .recordings import FixedDtRecordingCustom
+from .recordings import LooseDtRecordingCustom
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,12 @@ def define_location(definition):
     raise Exception(f"Unknown recording type {definition['type']}")
 
 
-def define_protocol(protocol_configuration, stochasticity=False, threshold_based=False, use_fixed_dt_recordings=False):
+def define_protocol(
+    protocol_configuration,
+    stochasticity=False,
+    threshold_based=False,
+    use_fixed_dt_recordings=False,
+):
     """Create the protocol.
 
     Args:
@@ -98,13 +103,13 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
             variable = rec_def["var"]
 
         if use_fixed_dt_recordings:
-            recording = RecordingCustom(
+            recording = FixedDtRecordingCustom(
                 name=rec_def["name"],
                 location=location,
                 variable=variable,
             )
         else:
-            recording = LooseRecordingCustom(
+            recording = LooseDtRecordingCustom(
                 name=rec_def["name"],
                 location=location,
                 variable=variable,
@@ -332,7 +337,9 @@ def define_main_protocol(
         if not include_validation_protocols and protocols_def.validation:
             continue
 
-        protocol = define_protocol(protocols_def, stochasticity, threshold_based_evaluator, use_fixed_dt_recordings)
+        protocol = define_protocol(
+            protocols_def, stochasticity, threshold_based_evaluator, use_fixed_dt_recordings
+        )
 
         if threshold_based_evaluator:
             threshold_protocols[protocols_def.name] = protocol

@@ -116,7 +116,9 @@ class FitnessCalculatorConfiguration:
         if protocols is None:
             self.protocols = []
         else:
-            self.protocols = [ProtocolConfiguration(**p, ion_currents=self.ion_currents) for p in protocols]
+            self.protocols = [
+                ProtocolConfiguration(**p, ion_currents=self.ion_currents) for p in protocols
+            ]
 
         if efeatures is None:
             self.efeatures = []
@@ -157,7 +159,11 @@ class FitnessCalculatorConfiguration:
         validation = protocol_name in self.validation_protocols
 
         tmp_protocol = ProtocolConfiguration(
-            name=protocol_name, stimuli=[stimulus], recordings=recordings, validation=validation, ion_currents=self.ion_currents
+            name=protocol_name,
+            stimuli=[stimulus],
+            recordings=recordings,
+            validation=validation,
+            ion_currents=self.ion_currents,
         )
 
         self.protocols.append(tmp_protocol)
@@ -314,7 +320,11 @@ class FitnessCalculatorConfiguration:
         validation = protocol_name in self.validation_protocols
 
         tmp_protocol = ProtocolConfiguration(
-            name=protocol_name, stimuli=[stimulus], recordings=recordings, validation=validation, ion_currents=self.ion_currents
+            name=protocol_name,
+            stimuli=[stimulus],
+            recordings=recordings,
+            validation=validation,
+            ion_currents=self.ion_currents,
         )
 
         self.protocols.append(tmp_protocol)

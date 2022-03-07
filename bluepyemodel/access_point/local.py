@@ -317,12 +317,15 @@ class LocalAccessPoint(DataAccessPoint):
             if "WRITE " in line:
                 ion = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
                 if ion[0] != "i":
-                    logger.warning(f"Mod file {mech_file} writes variable {ion} " 
-                        "that is suspected to not be an ion current.")
+                    logger.warning(
+                        "Mod file %s writes variable %s "
+                        "that is suspected to not be an ion current.",
+                        mech_file,
+                        ion,
+                    )
                 ions.append(ion)
 
         return ions
-
 
     def get_available_mechanisms(self):
         """Get the list of names of the available mechanisms"""

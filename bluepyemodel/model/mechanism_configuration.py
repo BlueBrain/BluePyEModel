@@ -39,7 +39,7 @@ class MechanismConfiguration:
         for ion in self.ions:
             ion_current.append(f"{ion}_{self.name}")
         return ion_current
-    
+
     def as_dict(self):
 
         return {

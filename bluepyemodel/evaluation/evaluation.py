@@ -2,8 +2,9 @@
 import copy
 import glob
 import logging
-import numpy
 from pathlib import Path
+
+import numpy
 
 from bluepyopt.ephys.responses import TimeVoltageResponse
 
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def locally_store_responses(emodel):
     """Locally store the responses.
-    
+
     Arguments:
         emodel (EModel): the emodel which responses are to be stored
     """
@@ -32,9 +33,10 @@ def locally_store_responses(emodel):
 
             numpy.savetxt(output_path, numpy.transpose(numpy.vstack((time, data))))
 
+
 def check_local_responses_presence(emodels, cell_eval):
     """Returns True if there is a local response file for each emodel.
-    
+
     Arguments:
         emodels (list of EModel): the emodel that need a response to be checked.
         cell_eval (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
@@ -44,19 +46,36 @@ def check_local_responses_presence(emodels, cell_eval):
         if not Path(output_dir).is_dir():
             return False
 
-        # only check voltage, since some currents are not recorded because non existent depending on location
-        if not all([(Path(output_dir) / ".".join((rec.name, "dat"))).is_file() for prot in cell_eval.fitness_protocols["main_protocol"].threshold_protocols.values() for rec in prot.recordings if rec.variable == "v"]):
+        # only check voltage, since some currents are not recorded
+        # because non existent depending on location
+        if not all(
+            (
+                (Path(output_dir) / ".".join((rec.name, "dat"))).is_file()
+                for prot in cell_eval.fitness_protocols[
+                    "main_protocol"
+                ].threshold_protocols.values()
+                for rec in prot.recordings
+                if rec.variable == "v"
+            )
+        ):
             return False
 
-        if not all([(Path(output_dir) / ".".join((rec.name, "dat"))).is_file() for prot in cell_eval.fitness_protocols["main_protocol"].other_protocols.values() for rec_name in prot.recordings if rec.variable == "v"]):
+        if not all(
+            (
+                (Path(output_dir) / ".".join((rec.name, "dat"))).is_file()
+                for prot in cell_eval.fitness_protocols["main_protocol"].other_protocols.values()
+                for rec in prot.recordings
+                if rec.variable == "v"
+            )
+        ):
             return False
-        
+
     return True
 
 
 def load_responses_from_local_files(emodels, cell_eval):
     """Returns responses from locally stored files.
-    
+
     Arguments:
         emodels (list of EModel): the emodel that need a response to be checked.
         cell_eval (CellEvaluator): evaluator for the cell model/protocols/e-feature set.
@@ -70,14 +89,14 @@ def load_responses_from_local_files(emodels, cell_eval):
             response_key = Path(filepath).stem
             response_name = response_key.split(".")[0]
             data = numpy.loadtxt(filepath)
-            responses[response_key] = TimeVoltageResponse(name=response_name, time=data[:,0], voltage=data[:,1])
+            responses[response_key] = TimeVoltageResponse(
+                name=response_name, time=data[:, 0], voltage=data[:, 1]
+            )
         responses["evaluator"] = copy.deepcopy(cell_eval)
 
         responses_list.append(responses)
 
     return responses_list
-    
-
 
 
 def get_responses(to_run):
@@ -151,8 +170,9 @@ def compute_responses(
             )
 
         if check_local_responses_presence(emodels, cell_evaluator):
-            logger.info("Local responses file found. "
-                "Loading them from files instead of recomputing them")
+            logger.info(
+                "Local responses file found. " "Loading them from files instead of recomputing them"
+            )
             responses = load_responses_from_local_files(emodels, cell_evaluator)
         else:
             responses = list(map_function(get_responses, to_run))

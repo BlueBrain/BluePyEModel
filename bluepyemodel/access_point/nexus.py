@@ -554,7 +554,12 @@ class NexusAccessPoint(DataAccessPoint):
                 elif isinstance(r.mod["write"], list):
                     ions = r.mod["write"]
             mech = MechanismConfiguration(
-                r.name, location=None, stochastic=stochastic, version=version, parameters=parameters, ions=ions
+                r.name,
+                location=None,
+                stochastic=stochastic,
+                version=version,
+                parameters=parameters,
+                ions=ions,
             )
 
             available_mechanisms.append(mech)
