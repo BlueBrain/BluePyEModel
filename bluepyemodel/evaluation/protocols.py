@@ -1,4 +1,4 @@
-"""Module with protocoal classes."""
+"""Module with protocol classes."""
 import logging
 import time
 from collections import OrderedDict
@@ -6,6 +6,8 @@ from collections import OrderedDict
 from bluepyopt import ephys
 
 from ..ecode import eCodes
+from .recordings import LooseDtRecordingCustom
+from .recordings import check_recordings
 
 # pylint: disable=W0613
 
@@ -43,6 +45,13 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
         self.threshold_based = threshold_based
 
         self.features = []
+
+    def instantiate(self, sim=None, icell=None):
+        """Check recordings, then instantiate."""
+        if not all(rec.checked for rec in self.recordings):
+            self.recordings = check_recordings(self.recordings, icell, sim)
+
+        super().instantiate(sim, icell)
 
     def stim_start(self):
         """Time stimulus starts"""
@@ -115,7 +124,7 @@ class RMPProtocol:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            ephys.recordings.CompRecording(
+            LooseDtRecordingCustom(
                 name=self.recording_name,
                 location=self.location,
                 variable="v",
@@ -168,7 +177,7 @@ class RinProtocol:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            ephys.recordings.CompRecording(
+            LooseDtRecordingCustom(
                 name=self.recording_name,
                 location=self.location,
                 variable="v",
@@ -248,7 +257,7 @@ class SearchHoldingCurrent:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            ephys.recordings.CompRecording(
+            LooseDtRecordingCustom(
                 name=self.target_voltage.recording_names[""],
                 location=self.location,
                 variable="v",
@@ -428,7 +437,7 @@ class SearchThresholdCurrent:
         stimulus = eCodes["step"](location=self.location, **stimulus_definition)
 
         recordings = [
-            ephys.recordings.CompRecording(
+            LooseDtRecordingCustom(
                 name=f"SearchThresholdCurrent.{self.location.name}.v",
                 location=self.location,
                 variable="v",
@@ -670,9 +679,7 @@ class MainProtocol(ephys.protocols.Protocol):
             and self.search_holding_protocol
             and self.search_threshold_protocol
         ):
-
             for pre_run in [self.run_RMP, self.run_holding, self.run_rin, self.run_threshold]:
-
                 t1 = time.time()
                 response, score = pre_run(
                     cell_model, responses, sim=sim, isolate=isolate, timeout=timeout

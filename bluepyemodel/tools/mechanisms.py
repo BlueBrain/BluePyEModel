@@ -1,7 +1,10 @@
 """Mechanisms related functions"""
+import logging
 import os
 import shutil
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def copy_mechs(mechanism_paths, out_dir):
@@ -65,3 +68,22 @@ def copy_and_compile_mechanisms(access_point):
         # when calling this function
         _ = access_point.get_model_configuration()
         compile_mechs("./mechanisms")
+
+
+def get_mechanism_ion(mech_file):
+    """Parse the mech mod file to get the mechanism ion."""
+    ions = []
+    with open(mech_file, "r") as f:
+        mod_lines = f.readlines()
+    for line in mod_lines:
+        if "WRITE " in line:
+            ion = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
+            if ion[0] != "i":
+                logger.warning(
+                    "Mod file %s writes variable %s " "that is suspected to not be an ion current.",
+                    mech_file,
+                    ion,
+                )
+            ions.append(ion)
+
+    return ions

@@ -9,7 +9,6 @@ from bluepyopt.ephys.locations import NrnSecSomaDistanceCompLocation
 from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
 from bluepyopt.ephys.objectives import SingletonObjective
 from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
-from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.simulators import NrnSimulator
 
 from ..ecode import eCodes
@@ -20,6 +19,8 @@ from .protocols import RinProtocol
 from .protocols import RMPProtocol
 from .protocols import SearchHoldingCurrent
 from .protocols import SearchThresholdCurrent
+from .recordings import FixedDtRecordingCustom
+from .recordings import LooseDtRecordingCustom
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,12 @@ def define_location(definition):
     raise Exception(f"Unknown recording type {definition['type']}")
 
 
-def define_protocol(protocol_configuration, stochasticity=False, threshold_based=False):
+def define_protocol(
+    protocol_configuration,
+    stochasticity=False,
+    threshold_based=False,
+    use_fixed_dt_recordings=False,
+):
     """Create the protocol.
 
     Args:
@@ -81,6 +87,7 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
             deterministic
         threshold_based (bool): is the protocol being instantiated a threshold-based or a
             fix protocol.
+        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
 
     Returns:
         Protocol
@@ -95,11 +102,18 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
         else:
             variable = rec_def["var"]
 
-        recording = CompRecording(
-            name=rec_def["name"],
-            location=location,
-            variable=variable,
-        )
+        if use_fixed_dt_recordings:
+            recording = FixedDtRecordingCustom(
+                name=rec_def["name"],
+                location=location,
+                variable=variable,
+            )
+        else:
+            recording = LooseDtRecordingCustom(
+                name=rec_def["name"],
+                location=location,
+                variable=variable,
+            )
 
         recordings.append(recording)
 
@@ -287,6 +301,7 @@ def define_main_protocol(
     max_threshold_voltage=-30,
     threshold_based_evaluator=True,
     strict_holding_bounds=True,
+    use_fixed_dt_recordings=False,
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
 
@@ -307,6 +322,7 @@ def define_main_protocol(
         threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
             by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
+        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
     """
 
     threshold_protocols = {}
@@ -321,7 +337,9 @@ def define_main_protocol(
         if not include_validation_protocols and protocols_def.validation:
             continue
 
-        protocol = define_protocol(protocols_def, stochasticity, threshold_based_evaluator)
+        protocol = define_protocol(
+            protocols_def, stochasticity, threshold_based_evaluator, use_fixed_dt_recordings
+        )
 
         if threshold_based_evaluator:
             threshold_protocols[protocols_def.name] = protocol
@@ -451,6 +469,7 @@ def create_evaluator(
     threshold_based_evaluator=True,
     strict_holding_bounds=True,
     mechanisms_directory=None,
+    use_fixed_dt_recordings=False,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -477,6 +496,7 @@ def create_evaluator(
             by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is current is outside
         mechanisms_directory (str or Path): path to the directory containing the mechanisms
+        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
 
     Returns:
         CellEvaluator
@@ -495,6 +515,7 @@ def create_evaluator(
         max_threshold_voltage=max_threshold_voltage,
         threshold_based_evaluator=threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
+        use_fixed_dt_recordings=use_fixed_dt_recordings,
     )
 
     fitness_calculator = define_fitness_calculator(features)

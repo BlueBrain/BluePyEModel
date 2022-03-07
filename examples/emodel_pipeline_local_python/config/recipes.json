@@ -18,7 +18,11 @@
                 "offspring_size": 4
             },
             "validation_threshold": 5,
-            "optimisation_batch_size": 5
+            "optimisation_batch_size": 5,
+            "plot_currentscape": true,
+            "currentscape_config": {
+                "title": "L5PC"
+            }
         }
     }
 }

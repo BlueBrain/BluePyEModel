@@ -1,11 +1,13 @@
 """API to reproduce Singlecell repositories."""
 
+import glob
 import logging
 from pathlib import Path
 
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import numpy
+from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
@@ -227,6 +229,7 @@ def plot_models(
     plot_distributions=True,
     plot_scores=True,
     plot_traces=True,
+    plot_currentscape=False,
     only_validated=False,
 ):
     """Plot the traces, scores and parameter distributions for all the models
@@ -241,6 +244,7 @@ def plot_models(
         plot_distributions (bool): True to plot the parameters distributions
         plot_scores (bool): True to plot the scores
         plot_traces (bool): True to plot the traces
+        plot_currentscape (bool): True to plot the currentscapes
         only_validated (bool): True to only plot validated models
 
     Returns:
@@ -252,10 +256,13 @@ def plot_models(
     cell_evaluator = get_evaluator_from_access_point(
         access_point,
         include_validation_protocols=True,
+        use_fixed_dt_recordings=plot_currentscape,
     )
 
-    if plot_traces:
-        emodels = compute_responses(access_point, cell_evaluator, mapper, seeds)
+    if plot_traces or plot_currentscape:
+        emodels = compute_responses(
+            access_point, cell_evaluator, mapper, seeds, store_responses=plot_currentscape
+        )
     else:
         emodels = access_point.get_emodels([access_point.emodel_metadata.emodel])
         if seeds:
@@ -301,5 +308,130 @@ def plot_models(
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             traces(mo, mo.responses, stimuli, figures_dir_traces)
+        if plot_currentscape:
+            config = access_point.pipeline_settings.currentscape_config
+            figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
+            currentscape(mo.responses, config=config, figures_dir=figures_dir_currentscape)
 
     return emodels
+
+
+def get_ordered_currentscape_keys(keys):
+    """Get responses keys (also filename strings) ordered by protocols and locations.
+
+    Arguments:
+        keys (list of str): list of responses keys (or filename stems).
+            Each item should have the shape protocol.location.current
+
+    Returns:
+        dict: containing voltage key, current keys and current names. Should have the shape:
+
+        {
+            "protocol_name": {
+                "loc_name": {"voltage_key": str, "current_keys": [], "current_names": []}
+            }
+        }
+    """
+    # RMP and Rin only have voltage data, no currents, so they are skipped
+    to_skip = [
+        "RMPProtocol",
+        "RinProtocol",
+        "bpo_rmp",
+        "bpo_rin",
+        "bpo_holding_current",
+        "bpo_threshold_current",
+    ]
+
+    ordered_keys = {}
+    for name in keys:
+        n = name.split(".")
+        prot_name = n[0]
+        if prot_name not in to_skip:
+            assert len(n) == 3
+            loc_name = n[1]
+            curr_name = n[2]
+
+            if prot_name not in ordered_keys:
+                ordered_keys[prot_name] = {}
+            if loc_name not in ordered_keys[prot_name]:
+                ordered_keys[prot_name][loc_name] = {
+                    "voltage_key": None,
+                    "current_keys": [],
+                    "current_names": [],
+                }
+
+            if curr_name == "v":
+                ordered_keys[prot_name][loc_name]["voltage_key"] = name
+            else:
+                ordered_keys[prot_name][loc_name]["current_keys"].append(name)
+                ordered_keys[prot_name][loc_name]["current_names"].append(curr_name)
+
+    return ordered_keys
+
+
+def get_voltage_currents_from_files(key_dict, output_dir):
+    """Get time, voltage, and currents from output files"""
+    v_path = Path(output_dir) / ".".join((key_dict["voltage_key"], "dat"))
+    time = numpy.loadtxt(v_path)[:, 0]
+    voltage = numpy.loadtxt(v_path)[:, 1]
+
+    curr_paths = [
+        Path(output_dir) / ".".join((curr_key, "dat")) for curr_key in key_dict["current_keys"]
+    ]
+    currents = [numpy.loadtxt(curr_path)[:, 1] for curr_path in curr_paths]
+
+    return time, voltage, currents
+
+
+def currentscape(responses=None, output_dir=None, config=None, figures_dir="./figures"):
+    """Plot the currentscapes for all protocols.
+
+    Arguments:
+        responses (dict): dict containing the current and voltage responses.
+        output_dur (str): path to the output dir containing the voltage and current responses.
+            Will not be used if responses is set.
+        config (dict): currentscape config. See currentscape package for more info.
+        figures_dir (str): path to the directory where to put the figures.
+
+    """
+    if responses is None and output_dir is None:
+        raise Exception("Responses or output directory must be set.")
+
+    make_dir(figures_dir)
+
+    if config is None:
+        config = {}
+    if "currents" not in config:
+        config["current"] = {}
+    if "output" not in config:
+        config["output"] = {}
+
+    if responses is not None:
+        ordered_keys = get_ordered_currentscape_keys(responses.keys())
+    else:
+        fnames = [
+            str(Path(filepath).stem) for filepath in glob.glob(str(Path(output_dir) / "*.dat"))
+        ]
+        ordered_keys = get_ordered_currentscape_keys(fnames)
+
+    for prot, locs in ordered_keys.items():
+        for loc, key_dict in locs.items():
+            if responses is not None:
+                time = responses[key_dict["voltage_key"]]["time"]
+                voltage = responses[key_dict["voltage_key"]]["voltage"]
+                # current data has also voltage for a key
+                currents = [responses[key]["voltage"] for key in key_dict["current_keys"]]
+            else:
+                time, voltage, currents = get_voltage_currents_from_files(key_dict, output_dir)
+
+            name = ".".join((prot, loc))
+
+            # adapt config
+            config["current"]["names"] = key_dict["current_names"]
+            config["output"]["savefig"] = True
+            config["output"]["fname"] = name
+            if "dir" not in config["output"]:
+                config["output"]["dir"] = figures_dir
+
+            logger.info("Plotting currentscape for %s", name)
+            plot_currentscape_fct(voltage, currents, config, time=time)
