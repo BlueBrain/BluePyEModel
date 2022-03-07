@@ -35,6 +35,10 @@ EXTRA_GENERALISATION = [
     "seaborn>=0.11"
 ]
 
+EXTRA_CURRENTSCAPE = [
+    "currentscape>=0.0.11"
+]
+
 EXTRA_TEST = [
     "pytest>=6.2",
     "dictdiffer>=0.8"
@@ -75,13 +79,13 @@ setup(
         "neuron>=8.0",
         "morph_tool>=2.8",
         "fasteners>=0.16",
-        "currentscape>=0.0.11",
     ],
     extras_require={
-        "luigi": EXTRA_LUIGI,
+        "luigi": EXTRA_LUIGI + EXTRA_CURRENTSCAPE,
         "generalisation": EXTRA_GENERALISATION,
         "nexus": EXTRA_NEXUS,
-        "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS + EXTRA_TEST,
+        "currentscape": EXTRA_CURRENTSCAPE,
+        "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS + EXTRA_TEST + EXTRA_CURRENTSCAPE,
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
     },
