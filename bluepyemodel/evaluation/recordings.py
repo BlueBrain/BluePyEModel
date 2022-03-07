@@ -3,7 +3,6 @@
 import logging
 
 import numpy
-
 from bluepyopt import ephys
 
 logger = logging.getLogger(__name__)

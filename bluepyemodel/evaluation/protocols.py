@@ -4,10 +4,10 @@ import time
 from collections import OrderedDict
 
 from bluepyopt import ephys
-from .recordings import check_recordings
-from .recordings import LooseDtRecordingCustom
 
 from ..ecode import eCodes
+from .recordings import LooseDtRecordingCustom
+from .recordings import check_recordings
 
 # pylint: disable=W0613
 

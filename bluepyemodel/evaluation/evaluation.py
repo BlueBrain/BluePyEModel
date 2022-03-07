@@ -5,7 +5,6 @@ import logging
 from pathlib import Path
 
 import numpy
-
 from bluepyopt.ephys.responses import TimeVoltageResponse
 
 from bluepyemodel.access_point.local import LocalAccessPoint

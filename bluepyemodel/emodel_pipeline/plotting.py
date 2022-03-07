@@ -7,7 +7,6 @@ from pathlib import Path
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import numpy
-
 from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
 from bluepyemodel.evaluation.evaluation import compute_responses
