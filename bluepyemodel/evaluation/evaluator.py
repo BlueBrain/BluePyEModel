@@ -469,7 +469,6 @@ def create_evaluator(
     threshold_based_evaluator=True,
     strict_holding_bounds=True,
     mechanisms_directory=None,
-    use_fixed_dt_recordings=False,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -496,7 +495,6 @@ def create_evaluator(
             by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is current is outside
         mechanisms_directory (str or Path): path to the directory containing the mechanisms
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
 
     Returns:
         CellEvaluator
@@ -515,7 +513,7 @@ def create_evaluator(
         max_threshold_voltage=max_threshold_voltage,
         threshold_based_evaluator=threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
-        use_fixed_dt_recordings=use_fixed_dt_recordings,
+        use_fixed_dt_recordings=(dt is not None),
     )
 
     fitness_calculator = define_fitness_calculator(features)

@@ -62,6 +62,7 @@ def check_recordings(recordings, icell, sim):
 
         # keep recording if its variable is available in its location
         if rec.variable in local_varlist:
+            rec.checked = True
             new_recs.append(rec)
 
     return new_recs
@@ -84,6 +85,7 @@ class LooseDtRecordingCustom(ephys.recordings.CompRecording):
         self.segment_area = None
         # important to detect ion concentration variable
         self.local_ion_list = None
+        self.checked = False
 
     def instantiate(self, sim=None, icell=None):
         """Instantiate recording."""

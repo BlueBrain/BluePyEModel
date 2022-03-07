@@ -18,6 +18,7 @@ from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
+from bluepyemodel.tools.mechanisms import get_mechanism_ion
 
 logger = logging.getLogger(__name__)
 
@@ -308,25 +309,6 @@ class LocalAccessPoint(DataAccessPoint):
 
         return None
 
-    def get_mechanism_ion(self, mech_file):
-        """Parse the mech mod file to get the mechanism ion."""
-        ions = []
-        with open(mech_file, "r") as f:
-            mod_lines = f.readlines()
-        for line in mod_lines:
-            if "WRITE " in line:
-                ion = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
-                if ion[0] != "i":
-                    logger.warning(
-                        "Mod file %s writes variable %s "
-                        "that is suspected to not be an ion current.",
-                        mech_file,
-                        ion,
-                    )
-                ions.append(ion)
-
-        return ions
-
     def get_available_mechanisms(self):
         """Get the list of names of the available mechanisms"""
 
@@ -336,7 +318,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for mech_file in glob.glob(str(Path(mech_dir) / "*.mod")):
-            ions = self.get_mechanism_ion(mech_file)
+            ions = get_mechanism_ion(mech_file)
             available_mechanisms.append(
                 MechanismConfiguration(name=Path(mech_file).stem, location=None, ions=ions)
             )

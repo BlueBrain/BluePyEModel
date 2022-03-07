@@ -200,7 +200,6 @@ def get_evaluator_from_access_point(
     nseg_frequency=40,
     dt=None,
     strict_holding_bounds=True,
-    use_fixed_dt_recordings=False,
 ):
     """Create an evaluator for the emodel.
 
@@ -216,7 +215,6 @@ def get_evaluator_from_access_point(
             bound in the threshold current search
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
 
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
@@ -253,5 +251,4 @@ def get_evaluator_from_access_point(
         threshold_based_evaluator=access_point.pipeline_settings.threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
         mechanisms_directory=mechanisms_directory,
-        use_fixed_dt_recordings=use_fixed_dt_recordings,
     )

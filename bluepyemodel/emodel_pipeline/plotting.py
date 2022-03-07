@@ -253,15 +253,20 @@ def plot_models(
 
     figures_dir = Path(figures_dir)
 
+    if plot_currentscape:
+        dt = 0.025
+    else:
+        dt = None
+
     cell_evaluator = get_evaluator_from_access_point(
         access_point,
         include_validation_protocols=True,
-        use_fixed_dt_recordings=bool(plot_currentscape),
+        dt=dt,
     )
 
     if plot_traces or plot_currentscape:
         emodels = compute_responses(
-            access_point, cell_evaluator, mapper, seeds, store_responses=bool(plot_currentscape)
+            access_point, cell_evaluator, mapper, seeds, store_responses=plot_currentscape
         )
     else:
         emodels = access_point.get_emodels([access_point.emodel_metadata.emodel])
@@ -317,7 +322,7 @@ def plot_models(
 
 
 def get_ordered_currentscape_keys(keys):
-    """Get responses keys (also filename strings) oredred by protocols and locations.
+    """Get responses keys (also filename strings) ordered by protocols and locations.
 
     Arguments:
         keys (list of str): list of responses keys (or filename stems).
