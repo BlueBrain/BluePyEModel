@@ -2,6 +2,7 @@
 import logging
 import pathlib
 import pickle
+from itertools import chain
 
 import efel
 from bluepyopt.deapext.algorithms import _check_stopping_criteria
@@ -193,3 +194,15 @@ class DataAccessPoint:
             return False
 
         raise Exception(f"Unknown optimizer: {optimizer}")
+
+    def get_ion_currents(self):
+        """Get all ion currents.
+
+        Returns:
+            (list of str): ion current names for all available mechanisms
+        """
+        # pylint: disable=assignment-from-no-return
+        mechs = self.get_available_mechanisms()
+        if mechs is None:
+            return None
+        return list(chain.from_iterable([mech.get_ion_current() for mech in mechs]))

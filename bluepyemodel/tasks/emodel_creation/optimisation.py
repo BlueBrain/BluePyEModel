@@ -864,6 +864,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         """ """
 
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
+        plot_currentscape = self.access_point.pipeline_settings.plot_currentscape
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
 
         mapper = self.get_mapper()
@@ -875,6 +876,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             plot_distributions=plot_optimisation,
             plot_traces=plot_optimisation,
             plot_scores=plot_optimisation,
+            plot_currentscape=plot_currentscape,
         )
 
     def output(self):

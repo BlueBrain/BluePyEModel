@@ -5,7 +5,7 @@ class ProtocolConfiguration:
 
     """Container for the definition of a protocol"""
 
-    def __init__(self, name, stimuli, recordings, validation=False):
+    def __init__(self, name, stimuli, recordings, validation=False, ion_currents=None):
         """Init.
 
         The arguments efeatures and protocols are expected to be in the format used for the
@@ -16,6 +16,7 @@ class ProtocolConfiguration:
             name (str): name of the protocol
             stimuli (list of dict):
             recordings (list of dict):
+            ion_currents (list of str): ion current names for all available mechanisms
         """
 
         self.name = name
@@ -24,9 +25,27 @@ class ProtocolConfiguration:
         if isinstance(self.stimuli, dict):
             self.stimuli = [self.stimuli]
 
-        self.recordings = recordings
-        if isinstance(self.recordings, dict):
-            self.recordings = [self.recordings]
+        if isinstance(recordings, dict):
+            recordings = [recordings]
+
+        self.recordings = []
+        for recording in recordings:
+            self.recordings.append(recording)
+
+            if ion_currents is not None:
+                for ion in ion_currents:
+                    new_rec = recording.copy()
+
+                    if "variable" in recording:
+                        new_rec["variable"] = ion
+                    elif "var" in recording:
+                        new_rec["var"] = ion
+                    else:
+                        raise KeyError("Expected 'var' or 'variable' in recording list.")
+
+                    new_rec["name"] = ".".join(new_rec["name"].split(".")[:-1] + [ion])
+
+                    self.recordings.append(new_rec)
 
         self.validation = validation
 
