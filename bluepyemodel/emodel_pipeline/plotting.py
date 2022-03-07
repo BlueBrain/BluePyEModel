@@ -253,15 +253,10 @@ def plot_models(
 
     figures_dir = Path(figures_dir)
 
-    if plot_currentscape:
-        dt = 0.025
-    else:
-        dt = None
-
     cell_evaluator = get_evaluator_from_access_point(
         access_point,
         include_validation_protocols=True,
-        dt=dt,
+        use_fixed_dt_recordings=plot_currentscape,
     )
 
     if plot_traces or plot_currentscape:
