@@ -292,7 +292,7 @@ class LocalAccessPoint(DataAccessPoint):
         if path is None:
             path = Path(self.get_recipes()["params"])
 
-        path.mkdir(parents=True, exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             json.dump(configuration.as_dict(), f, indent=2)
 
