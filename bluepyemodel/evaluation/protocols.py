@@ -139,7 +139,9 @@ class RMPProtocol:
         response = rmp_protocol.run(
             cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
-        response["bpo_rmp"] = self.target_voltage.calculate_feature(response)[0]
+
+        bpo_rmp = self.target_voltage.calculate_feature(response)
+        response["bpo_rmp"] = bpo_rmp if bpo_rmp is None else bpo_rmp[0]
 
         return response
 

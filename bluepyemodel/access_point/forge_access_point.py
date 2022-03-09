@@ -8,6 +8,7 @@ import jwt
 from entity_management.state import refresh_token
 from kgforge.core import KnowledgeGraphForge
 from kgforge.core import Resource
+from kgforge.core.commons.strategies import ResolvingStrategy
 from kgforge.specializations.resources import Dataset
 
 from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
@@ -122,6 +123,23 @@ class NexusForgeAccessPoint:
                 resource.contribution = Resource(type="Contribution", agent=self.agent)
 
         return resource
+
+    def resolve(self, text, scope="ontology", strategy="all", limit=1):
+        """Resolves a string to find the matching ontology"""
+
+        if strategy == "all":
+            resolving_strategy = ResolvingStrategy.ALL_MATCHES
+        elif strategy == "best":
+            resolving_strategy = ResolvingStrategy.BEST_MATCH
+        elif strategy == "exact":
+            resolving_strategy = ResolvingStrategy.EXACT_MATCH
+        else:
+            raise Exception(
+                f"Resolving strategy {strategy} does not exist. "
+                "Strategy should be 'all', 'best' or 'exact'"
+            )
+
+        return self.forge.resolve(text, scope=scope, strategy=resolving_strategy, limit=limit)
 
     def register(
         self,
@@ -367,3 +385,45 @@ class NexusForgeAccessPoint:
                 objects_.append(self.resource_to_object(type_, resource, metadata))
 
         return objects_
+
+
+def ontology_forge_access_point(access_token=None):
+    """Returns an access point targeting the project containing the ontology for the
+    species and brain regions"""
+
+    if access_token is None:
+        access_token = getpass.getpass()
+
+    access_point = NexusForgeAccessPoint(
+        project="datamodels",
+        organisation="neurosciencegraph",
+        endpoint="https://bbp.epfl.ch/nexus/v1",
+        forge_path=None,
+        access_token=access_token,
+    )
+
+    return access_point
+
+
+def get_all_brain_regions(access_token=None):
+    """Returns a list of all the brain regions available"""
+
+    access_point = ontology_forge_access_point(access_token)
+
+    filters = {
+        "isDefinedBy": {"id": "http://bbp.epfl.ch/neurosciencegraph/ontologies/mba"},
+        "type": "Class",
+    }
+
+    resources = access_point.forge.search(filters, limit=10000, cross_bucket=True)
+
+    return sorted(set(r.label for r in resources))
+
+
+def get_all_species(access_token=None):
+
+    access_point = ontology_forge_access_point(access_token)
+
+    resources = access_point.forge.search({"subClassOf": "nsg:Species"}, limit=100)
+
+    return sorted(set(r.label for r in resources))

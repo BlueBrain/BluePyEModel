@@ -27,9 +27,9 @@ class MechanismConfiguration:
             self.stochastic = "Stoch" in self.name
 
         if parameters is None:
-            self.parameters = []
+            self.parameters = {}
         elif isinstance(parameters, str):
-            self.parameters = [parameters]
+            self.parameters = {parameters: [None, None]}
         else:
             self.parameters = parameters
 
