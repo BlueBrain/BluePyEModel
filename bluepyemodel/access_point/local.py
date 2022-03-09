@@ -356,7 +356,8 @@ class LocalAccessPoint(DataAccessPoint):
         except KeyError:
             parameters = self._get_json("params")
 
-        parameters["parameters"].pop("__comment", None)
+        if isinstance(parameters["parameters"], dict):
+            parameters["parameters"].pop("__comment", None)
 
         if self.unfrozen_params is not None:
             self._freeze_params(parameters["parameters"])

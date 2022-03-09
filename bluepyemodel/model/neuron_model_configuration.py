@@ -218,7 +218,7 @@ class NeuronModelConfiguration:
         )
 
         if any(tmp_distribution.name == d.name for d in self.distributions):
-            raise Exception(f"Distribution {tmp_distribution.name} already exists")
+            logger.warning(f"Distribution {tmp_distribution.name} already exists")
 
         self.distributions.append(tmp_distribution)
 
@@ -325,14 +325,16 @@ class NeuronModelConfiguration:
 
         locations = self._format_locations(locations)
 
-        if mechanism_name != "pas" and not self.is_mechanism_available(mechanism_name, version):
+        if mechanism_name not in ["pas", "hh"] and not self.is_mechanism_available(
+            mechanism_name, version
+        ):
             raise Exception(
                 f"You are trying to add mechanism {mechanism_name} (version {version}) "
                 "but it is not available on Nexus or local."
             )
 
         for loc in locations:
-            if self.available_mechanisms and mechanism_name != "pas":
+            if self.available_mechanisms and mechanism_name not in ["pas", "hh"]:
                 mechanism_parameters = next(
                     m.parameters for m in self.available_mechanisms if m.name == mechanism_name
                 )
