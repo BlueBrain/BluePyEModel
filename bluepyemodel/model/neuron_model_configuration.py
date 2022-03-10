@@ -218,7 +218,7 @@ class NeuronModelConfiguration:
         )
 
         if any(tmp_distribution.name == d.name for d in self.distributions):
-            logger.warning(f"Distribution {tmp_distribution.name} already exists")
+            logger.warning("Distribution %s already exists", tmp_distribution.name)
 
         self.distributions.append(tmp_distribution)
 
