@@ -4,6 +4,32 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def list_ecodes_per_traces(traces, threshold_count=0):
+    """Utility method. Return the list of ecodes available for each trace. Only
+    the ecodes present more than threshold_count times are considered."""
+
+    ecodes_per_traces = {}
+    all_ = []
+    for t in traces:
+        if t.ecodes:
+            ecodes = [str(e) for e in t.ecodes]
+            ecodes_per_traces[t.cell_name] = ecodes
+            all_ += ecodes
+        else:
+            ecodes_per_traces[t.cell_name] = []
+
+    ecodes_per_traces["all"] = sorted(list(set(all_)))
+
+    count_ecodes = {e: all_.count(e) for e in ecodes_per_traces["all"]}
+
+    for t in ecodes_per_traces:
+        ecodes_per_traces[t] = list(
+            set(e for e in ecodes_per_traces[t] if e and count_ecodes[e] > threshold_count)
+        )
+
+    return ecodes_per_traces
+
+
 class TraceFile:
 
     """Contains the metadata of a trace file"""

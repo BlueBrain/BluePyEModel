@@ -538,21 +538,26 @@ class NexusAccessPoint(DataAccessPoint):
             version = r.modelid if hasattr(r, "modelid") else None
             stochastic = r.stochastic if hasattr(r, "stochastic") else None
 
-            parameters = []
-            if hasattr(r.mod, "gbar"):
-                parameters.append(f"{r.mod.gbar}_{r.mod.suffix}")
-            if hasattr(r.mod, "parameters"):
-                if isinstance(r.mod.parameters, list):
-                    parameters += [f"{pn}_{r.mod.suffix}" for pn in r.mod.parameters]
-                else:
-                    parameters.append(f"{r.mod.parameters}_{r.mod.suffix}")
+            parameters = {}
+            if hasattr(r, "exposesParameters"):
+
+                exposes_parameters = r.exposesParameters
+                if not isinstance(exposes_parameters, list):
+                    exposes_parameters = [exposes_parameters]
+
+                for ep in exposes_parameters:
+                    if ep.type == "NmodlRangeVariable":
+                        lower_limit = ep.lowerLimit if hasattr(ep, "lowerLimit") else None
+                        upper_limit = ep.upperLimit if hasattr(ep, "upperLimit") else None
+                        parameters[f"{ep.name}_{r.mod.suffix}"] = [lower_limit, upper_limit]
 
             ions = []
-            if "write" in r.mod:
-                if isinstance(r.mod["write"], str):
-                    ions = [r.mod["write"]]
-                elif isinstance(r.mod["write"], list):
-                    ions = r.mod["write"]
+            if hasattr(r.mod, "write"):
+                if isinstance(r.mod.write, str):
+                    ions = [r.mod.write]
+                elif isinstance(r.mod.write, list):
+                    ions = r.mod.write
+
             mech = MechanismConfiguration(
                 r.name,
                 location=None,
