@@ -33,6 +33,7 @@ class EModelPipelineSettings:
         name_rmp_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
+        cvode_minstep=0.0,
     ):
         """Init
 
@@ -111,6 +112,7 @@ class EModelPipelineSettings:
         if self.optimisation_params is None:
             self.optimisation_params = {"offspring_size": 100}
         self.optimisation_timeout = optimisation_timeout
+        self.cvode_minstep = cvode_minstep
         self.threshold_efeature_std = threshold_efeature_std
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation

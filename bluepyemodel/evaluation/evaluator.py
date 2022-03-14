@@ -401,7 +401,7 @@ def define_fitness_calculator(features):
     return ObjectivesCalculator(objectives)
 
 
-def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None):
+def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None, cvode_minstep=0.0):
     """Get NrnSimulator
 
     Args:
@@ -409,6 +409,7 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None)
         cell_model (CellModel): used to check if any stochastic channels are present
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
         mechanisms_directory (str or Path): path to the directory containing the mechanisms
+        cvode_minstep (float): minimum time step allowed for a CVODE step.
     """
 
     if stochasticity:
@@ -433,7 +434,7 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None)
         mechs_parent_dir = None
 
     if dt is None:
-        return NrnSimulator(mechanisms_directory=mechs_parent_dir)
+        return NrnSimulator(mechanisms_directory=mechs_parent_dir, cvode_minstep=cvode_minstep)
 
     return NrnSimulator(dt=dt, cvode_active=False, mechanisms_directory=mechs_parent_dir)
 
@@ -451,6 +452,7 @@ def create_evaluator(
     threshold_based_evaluator=True,
     strict_holding_bounds=True,
     mechanisms_directory=None,
+    cvode_minstep=0.0,
 ):
     """Creates an evaluator for a cell model/protocols/e-feature set
 
@@ -477,12 +479,13 @@ def create_evaluator(
             by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is current is outside
         mechanisms_directory (str or Path): path to the directory containing the mechanisms
+        cvode_minstep (float): minimum time step allowed for a CVODE step
 
     Returns:
         CellEvaluator
     """
 
-    simulator = get_simulator(stochasticity, cell_model, dt, mechanisms_directory)
+    simulator = get_simulator(stochasticity, cell_model, dt, mechanisms_directory, cvode_minstep)
 
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
