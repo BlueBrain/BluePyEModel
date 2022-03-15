@@ -254,4 +254,5 @@ def get_evaluator_from_access_point(
         strict_holding_bounds=strict_holding_bounds,
         mechanisms_directory=mechanisms_directory,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
+        cvode_minstep=access_point.pipeline_settings.cvode_minstep,
     )

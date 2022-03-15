@@ -35,6 +35,7 @@ class EModelPipelineSettings:
         name_gene_map=None,
         plot_currentscape=False,
         currentscape_config=None,
+        cvode_minstep=0.0,
     ):
         """Init
 
@@ -97,6 +98,7 @@ class EModelPipelineSettings:
                 (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config)
                 Note that current.names, output.savefig, output.fname and output.dir
                 do not need to be set, since they are automatically rewritten by BPEM.
+            cvode_minstep (float): minimum time step allowed for a CVODE step.
         """
 
         # Settings related to E-features extraction
@@ -119,6 +121,7 @@ class EModelPipelineSettings:
         if self.optimisation_params is None:
             self.optimisation_params = {"offspring_size": 100}
         self.optimisation_timeout = optimisation_timeout
+        self.cvode_minstep = cvode_minstep
         self.threshold_efeature_std = threshold_efeature_std
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation

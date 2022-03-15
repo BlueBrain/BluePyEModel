@@ -48,7 +48,7 @@ def test_get_me_combos_currents():
         rtol=1e-6,
     )
     npt.assert_allclose(
-        df["@dynamics:threshold_current"].to_list(), [0.1159453125, 0.131859375], rtol=1e-6
+        df["@dynamics:threshold_current"].to_list(), [0.115187, 0.131859375], rtol=1e-5
     )
 
 
