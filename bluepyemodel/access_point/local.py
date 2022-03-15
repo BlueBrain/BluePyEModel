@@ -471,10 +471,13 @@ class LocalAccessPoint(DataAccessPoint):
 
         recipes = self.get_recipes()
 
-        morph_def = recipes["morphology"][0]
+        if isinstance(recipes["morphology"], str):
+            morph_file = recipes["morphology"]
+        else:
+            morph_file = recipes["morphology"][0][1]
 
         if self.morph_path is None:
-            self.morph_path = Path(recipes["morph_path"]) / morph_def[1]
+            self.morph_path = Path(recipes["morph_path"]) / morph_file
             if not self.morph_path.is_absolute():
                 self.morph_path = Path(self.emodel_dir) / self.morph_path
         else:
