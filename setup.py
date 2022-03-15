@@ -31,7 +31,7 @@ EXTRA_NEXUS = [
 
 EXTRA_GENERALISATION = [
     "bluepyparallel>=0.0.3",
-    "bglibpy>4.4",
+    "bglibpy>=4.6.1",
     "seaborn>=0.11"
 ]
 

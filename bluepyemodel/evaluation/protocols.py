@@ -358,6 +358,9 @@ class SearchHoldingCurrent:
             timeout=timeout,
         )
 
+        if voltage is None:
+            return None
+
         if voltage > self.target_voltage.exp_mean:
             return self.bisection_search(
                 cell_model,
