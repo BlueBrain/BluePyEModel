@@ -108,7 +108,10 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
     rin = None
 
     for resp_name, response in responses.items():
-
+        
+        if resp_name.split(".")[-1] != "v":
+            continue
+        
         if not (isinstance(response, float)):
             traces_name.append(resp_name)
 
@@ -122,7 +125,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
                 rmp = response
             elif resp_name == "bpo_rin":
                 rin = response
-
+    
     fig, axs = plt.subplots(
         len(traces_name), 1, figsize=(10, 2 + (1.6 * len(traces_name))), squeeze=False
     )
@@ -133,7 +136,8 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
         axs[idx, 0].set_title(t)
 
         if responses[t]:
-            # Plot voltage
+
+            # Plot responses (voltage, current, etc.)
             axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
             axs[idx, 0].set_ylabel("Voltage (mV)")
@@ -150,7 +154,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
 
                     axs_c.append(axs[idx, 0].twinx())
                     axs_c[-1].set_xlabel("Time (ms)")
-                    axs_c[-1].set_ylabel("Current (nA)")
+                    axs_c[-1].set_ylabel("Stim Current (nA)")
 
                     time, current = stimuli[basename].stimulus.generate()
                     axs_c[-1].plot(time, current, color="gray", alpha=0.6)
@@ -274,7 +278,7 @@ def plot_models(
         include_validation_protocols=True,
         use_fixed_dt_recordings=plot_currentscape,
     )
-
+    
     if plot_traces or plot_currentscape:
         emodels = compute_responses(
             access_point, cell_evaluator, mapper, seeds, store_responses=plot_currentscape
@@ -324,6 +328,7 @@ def plot_models(
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             traces(mo, mo.responses, stimuli, figures_dir_traces)
+        
         if plot_currentscape:
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf

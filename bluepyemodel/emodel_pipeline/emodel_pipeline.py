@@ -212,6 +212,7 @@ class EModel_pipeline:
             plot_distributions=True,
             plot_scores=True,
             plot_traces=True,
+            plot_currentscape=True,
             only_validated=only_validated,
         )
 
