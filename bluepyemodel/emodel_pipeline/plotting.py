@@ -133,10 +133,14 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
         axs[idx, 0].set_title(t)
 
         if responses[t]:
-            # Plot voltage
+            variable = t.split(".")[-1]
+            # Plot responses (voltage, current, etc.)
             axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
-            axs[idx, 0].set_ylabel("Voltage (mV)")
+            if variable == "v":
+               axs[idx, 0].set_ylabel("Voltage (mV)")
+            elif variable[0] == "i":
+                axs[idx, 0].set_ylabel("Current (pA)")
 
             # Plot current
             basename = t.split(".")[0]
@@ -150,7 +154,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
 
                     axs_c.append(axs[idx, 0].twinx())
                     axs_c[-1].set_xlabel("Time (ms)")
-                    axs_c[-1].set_ylabel("Current (nA)")
+                    axs_c[-1].set_ylabel("Stim Current (nA)")
 
                     time, current = stimuli[basename].stimulus.generate()
                     axs_c[-1].plot(time, current, color="gray", alpha=0.6)
