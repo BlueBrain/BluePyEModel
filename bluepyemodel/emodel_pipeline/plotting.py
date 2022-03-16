@@ -138,7 +138,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
             axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
             if variable == "v":
-               axs[idx, 0].set_ylabel("Voltage (mV)")
+                axs[idx, 0].set_ylabel("Voltage (mV)")
             elif variable[0] == "i":
                 axs[idx, 0].set_ylabel("Current (pA)")
 
