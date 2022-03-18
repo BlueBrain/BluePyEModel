@@ -329,6 +329,7 @@ class FitnessCalculatorConfiguration:
 
         self.protocols.append(tmp_protocol)
 
+
     def _add_legacy_efeature(self, feature, protocol_name, recording):
         """"""
 
@@ -481,6 +482,10 @@ class FitnessCalculatorConfiguration:
         return {
             "efeatures": [e.as_dict() for e in self.efeatures],
             "protocols": [p.as_dict() for p in self.protocols],
+            "name_rmp_protocol": self.name_rmp_protocol,
+            "name_rin_protocol": self.name_rin_protocol,
+            "threshold_efeature_std": self.threshold_efeature_std,
+            "validation_protocols": self.validation_protocols,
         }
 
     def __str__(self):

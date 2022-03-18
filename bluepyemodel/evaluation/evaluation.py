@@ -225,10 +225,17 @@ def get_evaluator_from_access_point(
     model_configuration = access_point.get_model_configuration()
     fitness_calculator_configuration = access_point.get_fitness_calculator_configuration()
 
+    if model_configuration.morph_modifiers:
+        morph_modifiers = model_configuration.morph_modifiers
+    elif access_point.pipeline_settings:
+        morph_modifiers = access_point.pipeline_settings.morph_modifiers
+    else:
+        morph_modifiers = None
+
     cell_model = model.create_cell_model(
         name=access_point.emodel_metadata.emodel,
         model_configuration=model_configuration,
-        morph_modifiers=access_point.pipeline_settings.morph_modifiers,
+        morph_modifiers=morph_modifiers,
         nseg_frequency=nseg_frequency,
     )
 
@@ -250,7 +257,6 @@ def get_evaluator_from_access_point(
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
         dt=dt,
-        threshold_based_evaluator=access_point.pipeline_settings.threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
         mechanisms_directory=mechanisms_directory,
         use_fixed_dt_recordings=use_fixed_dt_recordings,

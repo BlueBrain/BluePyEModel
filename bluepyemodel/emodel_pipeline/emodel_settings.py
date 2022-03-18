@@ -1,6 +1,9 @@
 """EModelPipelineSettings class"""
+import logging
 
 # pylint: disable=too-many-arguments,too-many-locals
+
+logger = logging.getLogger(__name__)
 
 
 class EModelPipelineSettings:
@@ -15,7 +18,7 @@ class EModelPipelineSettings:
         efel_settings=None,
         stochasticity=False,
         morph_modifiers=None,
-        threshold_based_evaluator=True,
+        threshold_based_evaluator=None,
         optimizer="IBEA",
         optimisation_params=None,
         optimisation_timeout=600.0,
@@ -51,9 +54,7 @@ class EModelPipelineSettings:
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
-            threshold_based_evaluator (bool): if the evaluator is threshold-based. All
-                protocol's amplitude and holding current will be rescaled by the ones of the
-                models. If True, name_Rin_protocol and name_rmp_protocol have to be informed.
+            threshold_based_evaluator (bool): not used. To be deprecated.
             optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
                 "MO-CMA" (use cma option in pip install for CMA optimizers).
             optimisation_params (dict): optimisation parameters. Keys have to match the
@@ -109,13 +110,10 @@ class EModelPipelineSettings:
         if self.efel_settings is None:
             self.efel_settings = {"interp_step": 0.025, "strict_stiminterval": True}
         self.path_extract_config = path_extract_config  # only when using local access point
-        self.name_Rin_protocol = name_Rin_protocol  # only when using local access point
-        self.name_rmp_protocol = name_rmp_protocol  # only when using local access point
 
         # Settings related to the optimisation
-        self.threshold_based_evaluator = threshold_based_evaluator
         self.stochasticity = stochasticity
-        self.morph_modifiers = morph_modifiers
+
         self.optimizer = optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:
@@ -143,6 +141,30 @@ class EModelPipelineSettings:
         # Settings specific to the currentscape plotting
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
+
+        # One the way to deprecation:
+        self.name_Rin_protocol = name_Rin_protocol  # only when using local access point
+        if name_Rin_protocol is not None:
+            logger.warning(
+                "Setting name_Rin_protocol has been moved to the "
+                "FitnessCalculatorConfiguration and will be deprecated"
+            )
+        self.name_rmp_protocol = name_rmp_protocol  # only when using local access point
+        if name_rmp_protocol is not None:
+            logger.warning(
+                "Setting name_rmp_protocol has been moved to the "
+                "FitnessCalculatorConfiguration and will be deprecated"
+            )
+        if threshold_based_evaluator is not None:
+            logger.warning(
+                "Setting threshold_based_evaluator is not used anymore and will be deprecated"
+            )
+        self.morph_modifiers = morph_modifiers
+        if morph_modifiers is not None:
+            logger.warning(
+                "Setting morph_modifiers has been moved to the "
+                "NeuronModelConfiguration and will be deprecated"
+            )
 
     def as_dict(self):
         return vars(self)

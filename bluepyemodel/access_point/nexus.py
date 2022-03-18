@@ -85,7 +85,7 @@ class NexusAccessPoint(DataAccessPoint):
                 metadata=self.emodel_metadata_ontology.for_resource(),
             )
         except AccessPointException:
-            return None
+            return EModelPipelineSettings()
 
     def store_pipeline_settings(
         self,
@@ -282,10 +282,10 @@ class NexusAccessPoint(DataAccessPoint):
             metadata=self.emodel_metadata_ontology.for_resource(),
         )
 
-        configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
-        configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
-        configuration.threshold_efeature_std = self.pipeline_settings.threshold_efeature_std
-        configuration.validation_protocols = self.pipeline_settings.validation_protocols
+        if configuration.name_rmp_protocol is None:
+            configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
+        if configuration.name_rin_protocol is None:
+            configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
 
         return configuration
 
@@ -518,7 +518,9 @@ class NexusAccessPoint(DataAccessPoint):
         """Get the list of t-types available for the present emodel"""
 
         df, _ = self.load_channel_gene_expression(table_name)
-        return df.loc[self.emodel].index.get_level_values("t-type").unique().tolist()
+        return (
+            df.loc[self.emodel_metadata.emodel].index.get_level_values("t-type").unique().tolist()
+        )
 
     def get_available_morphologies(self):
         """Get the list of names of the available morphologies"""

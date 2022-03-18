@@ -6,6 +6,7 @@ import logging
 from bluepyopt import ephys
 from bluepyopt.ephys.morphologies import NrnFileMorphology
 
+from bluepyemodel.evaluation import modifiers
 from bluepyemodel.evaluation.modifiers import replace_axon_hoc
 from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
 
@@ -199,7 +200,7 @@ def define_morphology(
         bluepyopt.ephys.morphologies.NrnFileMorphology: a morphology object
     """
 
-    if morph_modifiers is None:
+    if morph_modifiers is None or morph_modifiers == [None]:
         morph_modifiers = [replace_axon_with_taper]
         morph_modifiers_hoc = [replace_axon_hoc]  # TODO: check the hoc is correct
         logger.debug("No morphology modifiers provided, replace_axon_with_taper will be used.")
@@ -208,9 +209,12 @@ def define_morphology(
             if isinstance(morph_modifier, list):
                 modifier_module = importlib.import_module(morph_modifier[0])
                 morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
-
+            elif isinstance(morph_modifier, str):
+                morph_modifiers[i] = getattr(modifiers, morph_modifier)
             elif not callable(morph_modifier):
-                raise Exception("A morph modifier is not callable nor a list of two str")
+                raise Exception(
+                    "A morph modifier is not callable nor a list of two str nor a string"
+                )
 
     return NrnFileMorphology(
         morphology_path=model_configuration.morphology.path,

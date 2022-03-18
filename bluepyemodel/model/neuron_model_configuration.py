@@ -29,6 +29,7 @@ class NeuronModelConfiguration:
         mechanisms=None,
         distributions=None,
         morphology=None,
+        morph_modifiers=None,
         available_mechanisms=None,
         available_morphologies=None,
     ):
@@ -36,6 +37,9 @@ class NeuronModelConfiguration:
         mechanisms and a morphology.
 
         Args:
+            morph_modifiers (list): List of morphology modifiers. Each modifier has to be
+                informed by the path the file containing the modifier and the name of the
+                function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
             available_mechanisms (list of MechanismConfiguration): list of the names (
                 and optionally versions) of the available mechanisms in the "./mechanisms"
                 directory for the local access point or on Nexus for the Nexus access point.
@@ -75,6 +79,9 @@ class NeuronModelConfiguration:
             self.distributions.append(DistributionConfiguration(name="uniform"))
 
         self.morphology = MorphologyConfiguration(**morphology) if morphology else None
+        self.morph_modifiers = (
+            morph_modifiers if isinstance(morph_modifiers, list) else [morph_modifiers]
+        )
 
         # TODO: actually use this:
         self.mapping_multilocation = None
@@ -495,6 +502,7 @@ class NeuronModelConfiguration:
             ],
             "parameters": [p.as_dict() for p in self.parameters],
             "morphology": self.morphology.as_dict(),
+            "morph_modifiers": self.morph_modifiers,
         }
 
     def __str__(self):

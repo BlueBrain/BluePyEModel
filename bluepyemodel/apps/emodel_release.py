@@ -584,7 +584,7 @@ def _single_evaluation(
             partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
         ]
 
-    emodel_db.emodel = combo["emodel"]
+    emodel_db.emodel_metadata.emodel = combo["emodel"]
     evaluator = get_evaluator_from_access_point(
         emodel_db,
         stochasticity=stochasticity,
@@ -608,7 +608,7 @@ def _single_evaluation(
 
     if trace_data_path is not None:
         Path(trace_data_path).mkdir(exist_ok=True, parents=True)
-        stimuli = evaluator.fitness_protocols["main_protocol"].subprotocols()
+        stimuli = evaluator.fitness_protocols["main_protocol"].protocols
         hash_id = sha256(json.dumps(combo).encode()).hexdigest()
         trace_data_path = f"{trace_data_path}/trace_data_{hash_id}.pkl"
         pickle.dump([stimuli, responses], open(trace_data_path, "wb"))

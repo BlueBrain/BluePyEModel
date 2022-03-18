@@ -38,6 +38,7 @@ def _debug_plot(p, scale_min, scale_max, rin_ais, scale, mtype, task_id):
 
 def _synth_combo(combo, ais_models, target_rhos, scale_min, scale_max):
     """compute AIS  scale."""
+
     mtype = combo["mtype"]
     emodel = combo["emodel"]
     if mtype not in ais_models:
