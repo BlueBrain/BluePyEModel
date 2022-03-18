@@ -608,7 +608,7 @@ def _single_evaluation(
 
     if trace_data_path is not None:
         Path(trace_data_path).mkdir(exist_ok=True, parents=True)
-        stimuli = evaluator.fitness_protocols["main_protocol"].subprotocols()
+        stimuli = evaluator.fitness_protocols["main_protocol"].protocols
         hash_id = sha256(json.dumps(combo).encode()).hexdigest()
         trace_data_path = f"{trace_data_path}/trace_data_{hash_id}.pkl"
         pickle.dump([stimuli, responses], open(trace_data_path, "wb"))

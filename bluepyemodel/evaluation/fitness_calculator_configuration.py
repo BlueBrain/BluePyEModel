@@ -345,15 +345,6 @@ class FitnessCalculatorConfiguration:
             threshold_efeature_std=self.threshold_efeature_std,
         )
 
-        if protocol_name == "Rin":
-            if feature["feature"] == "ohmic_input_resistance_vb_ssse":
-                tmp_feature.protocol_name = "RinProtocol"
-            elif feature["feature"] == "voltage_base":
-                tmp_feature.protocol_name = "SearchHoldingCurrent"
-                tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
-            else:
-                return
-
         if protocol_name == "RMP":
             if feature["feature"] == "voltage_base":
                 tmp_feature.protocol_name = "RMPProtocol"
@@ -364,10 +355,25 @@ class FitnessCalculatorConfiguration:
             else:
                 return
 
+        if protocol_name.startswith("Rin") and "HoldCurrent" not in protocol_name:
+            suffix = protocol_name.replace("Rin", "")
+            if feature["feature"] == "ohmic_input_resistance_vb_ssse":
+                tmp_feature.protocol_name = f"RinProtocol{suffix}"
+            elif feature["feature"] == "voltage_base":
+                tmp_feature.protocol_name = f"SearchHoldingCurrent{suffix}"
+                tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
+            else:
+                return
+
         if protocol_name == "RinHoldCurrent":
-            tmp_feature.protocol_name = "SearchHoldingCurrent"
+            suffix = protocol_name.replace("RinHoldCurrent", "")
+            tmp_feature.protocol_name = f"SearchHoldingCurrent{suffix}"
         if protocol_name == "Threshold":
-            tmp_feature.protocol_name = "SearchThresholdCurrent"
+            suffix = protocol_name.replace("Threshold", "")
+            tmp_feature.protocol_name = f"SearchThresholdCurrent{suffix}"
+        if protocol_name.startswith("ThresholdDetection"):
+            suffix = protocol_name.replace("ThresholdDetection", "")
+            tmp_feature.protocol_name = f"SearchThresholdCurrent{suffix}"
 
         if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(protocol_name):
             raise Exception(

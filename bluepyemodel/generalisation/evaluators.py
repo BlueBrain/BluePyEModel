@@ -177,24 +177,16 @@ def _rin_evaluation(
     cell_model.freeze(emodel_params)
     sim = get_simulator(stochasticity, cell_model)
 
-    if with_currents:
-        responses = {}
-        for pre_run in [
-            main_protocol.run_RMP,
-            main_protocol.run_holding,
-            main_protocol.run_rin,
-            main_protocol.run_threshold,
-        ]:
-            responses.update(pre_run(cell_model, responses, sim=sim, timeout=timeout)[0])
+    responses = {}
+    for pre_run in main_protocol.pre_protocols.values():
+        responses.update(pre_run.run(cell_model, responses, sim=sim, timeout=timeout)[0])
+    cell_model.unfreeze(emodel_params.keys())
 
-        cell_model.unfreeze(emodel_params.keys())
+    if with_currents:
         return {
             key + "holding_current": responses["bpo_holding_current"],
             key + "threshold_current": responses["bpo_threshold_current"],
         }
-
-    responses = main_protocol.run_rin(cell_model, {}, sim=sim, timeout=timeout)[0]
-    cell_model.unfreeze(emodel_params.keys())
 
     return {key: responses["bpo_rin"]}
 
@@ -210,11 +202,11 @@ def evaluate_ais_rin(
     """Compute the input resistance of the ais (axon).
 
     Args:
-        morphs_combos_df (DataFrame): each row reprensents a computation
+        morphs_combos_df (DataFrame): each row represents a computation
         emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         resume (bool): if True, it will use only compute the empty rows of the database,
-            if False, it will ecrase or generate the database
+            if False, it will erase or generate the database
         db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
@@ -249,14 +241,14 @@ def evaluate_somadend_rin(
     db_url="eval_db.sql",
     parallel_factory=None,
 ):
-    """Compute the input resistance of the soma and dentrites.
+    """Compute the input resistance of the soma and dendrites.
 
     Args:
-        morphs_combos_df (DataFrame): each row reprensents a computation
+        morphs_combos_df (DataFrame): each row represents a computation
         emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         resume (bool): if True, it will use only compute the empty rows of the database,
-            if False, it will ecrase or generate the database
+            if False, it will erase or generate the database
         db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
@@ -292,11 +284,11 @@ def evaluate_rho_axon(
     """Compute the input resistances and rho factor.
 
     Args:
-        morphs_combos_df (DataFrame): each row reprensents a computation
+        morphs_combos_df (DataFrame): each row represents a computation
         emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         rersume (bool): if True, it will use only compute the empty rows of the database,
-            if False, it will ecrase or generate the database
+            if False, it will erase or generate the database
         db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
@@ -338,13 +330,13 @@ def evaluate_combos_rho(
     """Evaluate me-combos and rho axons.
 
     Args:
-        morphs_combos_df (DataFrame): each row reprensents a computation
+        morphs_combos_df (DataFrame): each row represents a computation
         emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         save_traces (bool): save responses as pickles to plot traces
         trace_folder (str): folder name to save traces pickles
         resume (bool): if True, it will use only compute the empty rows of the database,
-            if False, it will ecrase or generate the database
+            if False, it will erase or generate the database
         db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 
@@ -385,11 +377,11 @@ def evaluate_currents(
     """Compute the threshold and holding currents.
 
     Args:
-        morphs_combos_df (DataFrame): each row reprensents a computation
+        morphs_combos_df (DataFrame): each row represents a computation
         emodel_db (DataAccessPoint): object which contains API to access emodel data
         morphology_path (str): entry from dataframe with morphology paths
         resume (bool): if True, it will use only compute the empty rows of the database,
-            if False, it will ecrase or generate the database
+            if False, it will erase or generate the database
         db_url (str): filename/url for the sql database
         parallel_factory (ParallelFactory): parallel factory instance
 

@@ -250,7 +250,6 @@ def get_evaluator_from_access_point(
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
         dt=dt,
-        threshold_based_evaluator=access_point.pipeline_settings.threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
         mechanisms_directory=mechanisms_directory,
         use_fixed_dt_recordings=use_fixed_dt_recordings,

@@ -282,10 +282,11 @@ class NexusAccessPoint(DataAccessPoint):
             metadata=self.emodel_metadata_ontology.for_resource(),
         )
 
-        configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
-        configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
-        configuration.threshold_efeature_std = self.pipeline_settings.threshold_efeature_std
-        configuration.validation_protocols = self.pipeline_settings.validation_protocols
+        if self.pipeline_settings:
+            configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
+            configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
+            configuration.threshold_efeature_std = self.pipeline_settings.threshold_efeature_std
+            configuration.validation_protocols = self.pipeline_settings.validation_protocols
 
         return configuration
 

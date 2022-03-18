@@ -14,6 +14,7 @@ from bluepyopt.ephys.simulators import NrnSimulator
 from ..ecode import eCodes
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEM_Protocol
+from .protocols import BPEM_ThresholdProtocol
 from .protocols import MainProtocol
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
@@ -35,6 +36,12 @@ seclist_to_sec = {
     "apical": "apic",
     "axonal": "axon",
     "myelinated": "myelin",
+}
+
+
+protocol_type_to_class = {
+    "Protocol": BPEM_Protocol,
+    "ThresholdBasedProtocol": BPEM_ThresholdProtocol,
 }
 
 
@@ -73,20 +80,13 @@ def define_location(definition):
     raise Exception(f"Unknown recording type {definition['type']}")
 
 
-def define_protocol(
-    protocol_configuration,
-    stochasticity=False,
-    threshold_based=False,
-    use_fixed_dt_recordings=False,
-):
+def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_recordings=False):
     """Create the protocol.
 
     Args:
         protocol_configuration (ProtocolConfiguration): configuration of the protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
-        threshold_based (bool): is the protocol being instantiated a threshold-based or a
-            fix protocol.
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
 
     Returns:
@@ -131,12 +131,16 @@ def define_protocol(
             "names"
         )
 
-    return BPEM_Protocol(
+    suffix = ""
+    if protocol_configuration.name.endswith("_dep") or protocol_configuration.name.endswith("_hyp"):
+        suffix = protocol_configuration.name[-4:]
+
+    return protocol_type_to_class[protocol_configuration.protocol_type](
         name=protocol_configuration.name,
         stimulus=stimulus,
         recordings=recordings,
         stochasticity=stochasticity,
-        threshold_based=threshold_based,
+        suffix=suffix
     )
 
 
@@ -236,29 +240,30 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     raise Exception("Couldn't find the Rin feature associated to the Rin protocol")
 
 
-def define_holding_protocol(efeatures, strict_bounds=False):
+def define_holding_protocol(efeatures, strict_bounds=False, suffix=""):
     """Define the search holding current protocol"""
 
     target_voltage = next(
         f
         for f in efeatures
-        if "SearchHoldingCurrent" in f.recording_names[""]
+        if f"SearchHoldingCurrent{suffix}" in f.recording_names[""]
         and f.efel_feature_name == "steady_state_voltage_stimend"
     )
     target_current = next(
         f
         for f in efeatures
-        if "SearchHoldingCurrent" in f.recording_names[""]
-        and f.efel_feature_name == "bpo_holding_current"
+        if f"SearchHoldingCurrent{suffix}" in f.recording_names[""]
+        and f.efel_feature_name == f"bpo_holding_current{suffix}"
     )
 
     if target_voltage and target_current:
         return SearchHoldingCurrent(
-            name="SearchHoldingCurrent",
+            name=f"SearchHoldingCurrent{suffix}",
             location=soma_loc,
             target_voltage=target_voltage,
             target_holding=target_current,
             strict_bounds=strict_bounds,
+            suffix=suffix
         )
 
     raise Exception(
@@ -267,22 +272,23 @@ def define_holding_protocol(efeatures, strict_bounds=False):
     )
 
 
-def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
+def define_threshold_protocol(efeatures, max_threshold_voltage=-30, suffix=""):
     """Define the search threshold current protocol"""
 
     target_current = next(
         f
         for f in efeatures
-        if "SearchThresholdCurrent" in f.recording_names[""]
-        and f.efel_feature_name == "bpo_threshold_current"
+        if f"SearchThresholdCurrent{suffix}" in f.recording_names[""]
+        and f.efel_feature_name == f"bpo_threshold_current{suffix}"
     )
 
     if target_current:
         return SearchThresholdCurrent(
-            name="SearchThresholdCurrent",
+            name=f"SearchThresholdCurrent{suffix}",
             location=soma_loc,
             target_threshold=target_current,
             max_threshold_voltage=max_threshold_voltage,
+            suffix=suffix
         )
 
     raise Exception(
@@ -299,7 +305,6 @@ def define_main_protocol(
     efel_settings=None,
     score_threshold=12.0,
     max_threshold_voltage=-30,
-    threshold_based_evaluator=True,
     strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
 ):
@@ -319,14 +324,11 @@ def define_main_protocol(
         efel_settings (dict): eFEl settings.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
-        threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
-            by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
     """
 
-    threshold_protocols = {}
-    other_protocols = {}
+    protocols = {}
 
     validation_protocols = [
         p.name for p in fitness_calculator_configuration.protocols if p.validation
@@ -337,14 +339,9 @@ def define_main_protocol(
         if not include_validation_protocols and protocols_def.validation:
             continue
 
-        protocol = define_protocol(
-            protocols_def, stochasticity, threshold_based_evaluator, use_fixed_dt_recordings
+        protocols[protocols_def.name] = define_protocol(
+            protocols_def, stochasticity, use_fixed_dt_recordings
         )
-
-        if threshold_based_evaluator:
-            threshold_protocols[protocols_def.name] = protocol
-        else:
-            other_protocols[protocols_def.name] = protocol
 
     efeatures = []
     for feature_def in fitness_calculator_configuration.efeatures:
@@ -354,7 +351,7 @@ def define_main_protocol(
 
         protocol = None
         if feature_def.protocol_name not in PRE_PROTOCOLS:
-            for p in list(threshold_protocols.values()) + list(other_protocols.values()):
+            for p in protocols.values():
                 if p.name == feature_def.protocol_name:
                     protocol = p
                     break
@@ -363,15 +360,31 @@ def define_main_protocol(
 
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
-    rmp_protocol = None
-    rin_protocol = None
-    search_holding_protocol = None
-    search_threshold_protocol = None
-    if threshold_based_evaluator:
+    pre_protocols = {}
+
+    if any(p.name.endswith("_dep") for p in fitness_calculator_configuration.protocols):
+        logger.warning("Suffix detected in protocols names, will use Thalamus-like evaluator")
+        for pp in [
+            define_RMP_protocol(efeatures),
+            define_Rin_protocol(efeatures, ais_recording),
+            define_holding_protocol(efeatures, strict_holding_bounds, suffix="_dep"),
+            define_threshold_protocol(efeatures, max_threshold_voltage, suffix="_dep"),
+            define_holding_protocol(efeatures, strict_holding_bounds, suffix="_hyp"),
+            define_threshold_protocol(efeatures, max_threshold_voltage, suffix="_hyp")
+        ]:
+            pre_protocols[pp.name] = pp
+
+    elif any(
+        p.protocol_type == "ThresholdBasedProtocol"
+        for p in fitness_calculator_configuration.protocols
+    ):
+        logger.warning("Will instantiate threshold based evaluator")
         rmp_protocol = define_RMP_protocol(efeatures)
         rin_protocol = define_Rin_protocol(efeatures, ais_recording)
         search_holding_protocol = define_holding_protocol(efeatures, strict_holding_bounds)
         search_threshold_protocol = define_threshold_protocol(efeatures, max_threshold_voltage)
+        for pp in [rmp_protocol, rin_protocol, search_holding_protocol, search_threshold_protocol]:
+            pre_protocols[pp.name] = pp
 
     for feature in efeatures:
         if feature.efel_feature_name not in ["bpo_holding_current", "bpo_threshold_current"]:
@@ -380,13 +393,9 @@ def define_main_protocol(
             assert feature.stimulus_current is not None
 
     main_protocol = MainProtocol(
-        "Main",
-        rmp_protocol,
-        rin_protocol,
-        search_holding_protocol,
-        search_threshold_protocol,
-        threshold_protocols=threshold_protocols,
-        other_protocols=other_protocols,
+        name="Main",
+        pre_protocols=pre_protocols,
+        protocols=protocols,
         score_threshold=score_threshold,
     )
 
@@ -414,9 +423,7 @@ def define_fitness_calculator(features):
         ObjectivesCalculator
     """
 
-    objectives = [SingletonObjective(feat.name, feat) for feat in features]
-
-    return ObjectivesCalculator(objectives)
+    return ObjectivesCalculator([SingletonObjective(feat.name, feat) for feat in features])
 
 
 def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None, cvode_minstep=0.0):
@@ -467,7 +474,6 @@ def create_evaluator(
     score_threshold=12.0,
     max_threshold_voltage=-30,
     dt=None,
-    threshold_based_evaluator=True,
     strict_holding_bounds=True,
     mechanisms_directory=None,
     use_fixed_dt_recordings=False,
@@ -494,8 +500,6 @@ def create_evaluator(
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
-        threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
-            by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is current is outside
         mechanisms_directory (str or Path): path to the directory containing the mechanisms
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
@@ -516,7 +520,6 @@ def create_evaluator(
         efel_settings=efel_settings,
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
-        threshold_based_evaluator=threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
     )
