@@ -22,7 +22,7 @@ def single_feature_evaluation(
     timeout=1000000,
     trace_data_path=None,
     score_threshold=12.0,
-    max_threshold_voltage=0,
+    max_threshold_voltage=-30,
     nseg_frequency=40,
     dt=None,
 ):

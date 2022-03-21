@@ -53,11 +53,10 @@ def define_location(definition):
         )
 
     if definition["type"] == "somadistanceapic":
-        return NrnSecSomaDistanceCompLocation(
+        return NrnSomaDistanceCompLocation(
             name=definition["name"],
             soma_distance=definition["somadistance"],
-            sec_index=definition.get("sec_index", None),
-            sec_name=definition["seclist_name"],
+            seclist_name=definition["seclist_name"],
         )
 
     if definition["type"] == "nrnseclistcomp":

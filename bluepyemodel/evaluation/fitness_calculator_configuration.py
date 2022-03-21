@@ -21,7 +21,6 @@ def _get_apical_point(cell):
     from morphio import Morphology
 
     point = apical_point.apical_point_position(Morphology(cell.morphology.morphology_path))
-
     return nrnhines.point_to_section_end(cell.icell.apical, point)
 
 
@@ -39,7 +38,8 @@ def _set_morphology_dependent_locations(stimulus, cell):
     new_stims = []
     if stimulus["type"] == "somadistanceapic":
         new_stims = [deepcopy(stimulus)]
-        new_stims[0]["sec_index"] = _get_apical_point(cell)
+        # tmp hack to prevent failinngg if section is above apical point
+        #new_stims[0]["sec_index"] = _get_apical_point(cell)
         new_stims[0]["sec_name"] = seclist_to_sec.get(
             stimulus["seclist_name"], stimulus["seclist_name"]
         )

@@ -32,7 +32,7 @@ def plot_traces(trace_df, trace_path="traces", pdf_filename="traces.pdf"):
         trace_path (str): path to folder with traces in .pkl
         pdf_filename (str): name of pdf to save
     """
-    COLORS = cycle([f"C{i}" for i in range(10)])
+    COLORS = cycle(['r'] + [f"C{i}" for i in range(10)])
 
     if "trace_highlight" not in trace_df.columns:
         trace_df["trace_highlight"] = True
@@ -62,7 +62,7 @@ def plot_traces(trace_df, trace_path="traces", pdf_filename="traces.pdf"):
                         lw = 0.5
                         zorder = -1
 
-                    plt.figure(protocol)
+                    plt.figure(protocol, figsize=(15, 7))
                     plt.plot(
                         response["time"],
                         response["voltage"],

@@ -180,7 +180,7 @@ def _rin_evaluation(
     timeout=1000,
     ais_recording=False,
 ):
-    """Evaluating rin protocol."""
+    """Evaluating rin protocol as holding -0.02."""
 
     cell_model, fitness_calculator_configuration, emodel_params = get_emodel_data(
         emodel_db, combo, morphology_path, copy(morph_modifiers)
@@ -192,8 +192,8 @@ def _rin_evaluation(
 
     cell_model.freeze(emodel_params)
     sim = get_simulator(stochasticity, cell_model)
-
-    responses = main_protocol.run_rin(cell_model, {}, sim=sim, timeout=timeout)[0]
+    responses = main_protocol.run_holding(cell_model, {}, sim=sim, timeout=timeout)[0]
+    responses.update(main_protocol.run_rin(cell_model, responses, sim=sim, timeout=timeout)[0])
 
     if with_currents:
         responses.update(main_protocol.run_RMP(cell_model, responses, sim=sim, timeout=timeout)[0])
