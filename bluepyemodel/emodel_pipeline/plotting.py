@@ -109,6 +109,9 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
 
     for resp_name, response in responses.items():
 
+        if resp_name.split(".")[-1] != "v":
+            continue
+
         if not (isinstance(response, float)):
             traces_name.append(resp_name)
 
@@ -133,14 +136,11 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
         axs[idx, 0].set_title(t)
 
         if responses[t]:
-            variable = t.split(".")[-1]
+
             # Plot responses (voltage, current, etc.)
             axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
-            if variable == "v":
-                axs[idx, 0].set_ylabel("Voltage (mV)")
-            elif variable[0] == "i":
-                axs[idx, 0].set_ylabel("Current (pA)")
+            axs[idx, 0].set_ylabel("Voltage (mV)")
 
             # Plot current
             basename = t.split(".")[0]
