@@ -421,7 +421,11 @@ class LocalAccessPoint(DataAccessPoint):
         legacy = "efeatures" not in config_dict and "protocols" not in config_dict
 
         # contains ion currents and ionic concentrations to be recorded
-        ion_variables = list(chain.from_iterable(self.get_ion_currents_concentrations()))
+        ion_currents, ionic_concentrations = self.get_ion_currents_concentrations()
+        if ion_currents is not None and ionic_concentrations is not None:
+            ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
+        else:
+            ion_variables = None
 
         if legacy:
 
