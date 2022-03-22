@@ -78,12 +78,7 @@ def get_mechanism_ion(mech_file):
     for line in mod_lines:
         if "WRITE " in line:
             ion = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
-            if ion[0] != "i":
-                logger.warning(
-                    "Mod file %s writes variable %s " "that is suspected to not be an ion current.",
-                    mech_file,
-                    ion,
-                )
-            ions.append(ion)
+            if ion[0] == "i":
+                ions.append(ion)
 
     return ions

@@ -4,7 +4,16 @@
 class MechanismConfiguration:
     """Contains the information related to the definition and configuration of a mechanism"""
 
-    def __init__(self, name, location, stochastic=None, version=None, parameters=None, ions=None):
+    def __init__(
+        self,
+        name,
+        location,
+        stochastic=None,
+        version=None,
+        parameters=None,
+        ions=None,
+        ionic_concentrations=None,
+    ):
         """Init
 
         Args:
@@ -15,12 +24,21 @@ class MechanismConfiguration:
              version (str): version id of the mod file.
              parameters (list): list of the possible parameter for this mechanism.
              ions (list): list of the ion(s) that this mechanism writes.
+             ionic_concentrations (list): list of the ionic concentration linked to the ion current
+                If None, will be deduced from the ions list.
         """
 
         self.name = name
         self.location = location
         self.version = version
         self.ions = ions
+        self.ionic_concentrations = ionic_concentrations
+        if self.ionic_concentrations is None:
+            self.ionic_concentrations = []
+            if self.ions is not None:
+                for ion in self.ions:
+                    # remove 'i' in the front and put 'i' at the back to make it a concentration
+                    self.ionic_concentrations.append(f"{ion[1:]}i")
 
         self.stochastic = stochastic
         if self.stochastic is None:
