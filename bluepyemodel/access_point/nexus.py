@@ -553,10 +553,12 @@ class NexusAccessPoint(DataAccessPoint):
 
             ions = []
             if hasattr(r.mod, "write"):
-                if isinstance(r.mod.write, str):
-                    ions = [r.mod.write]
-                elif isinstance(r.mod.write, list):
-                    ions = r.mod.write
+                ions_ = r.mod.write
+                if isinstance(ions_, str):
+                    if ions_[0] == "i":
+                        ions = [ions_]
+                elif isinstance(ions_, list):
+                    ions = [ion for ion in ions_ if ion[0] == "i"]
 
             mech = MechanismConfiguration(
                 r.name,

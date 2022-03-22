@@ -3,6 +3,7 @@
 import glob
 import json
 import logging
+from itertools import chain
 from pathlib import Path
 
 import fasteners
@@ -419,7 +420,8 @@ class LocalAccessPoint(DataAccessPoint):
 
         legacy = "efeatures" not in config_dict and "protocols" not in config_dict
 
-        ion_currents = self.get_ion_currents()
+        # contains ion currents and ionic concentrations to be recorded
+        ion_variables = list(chain.from_iterable(self.get_ion_currents_concentrations()))
 
         if legacy:
 
@@ -439,7 +441,7 @@ class LocalAccessPoint(DataAccessPoint):
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
-                ion_currents=ion_currents,
+                ion_variables=ion_variables,
             )
 
             if from_bpe:
@@ -455,7 +457,7 @@ class LocalAccessPoint(DataAccessPoint):
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
-                ion_currents=ion_currents,
+                ion_variables=ion_variables,
             )
 
         return configuration

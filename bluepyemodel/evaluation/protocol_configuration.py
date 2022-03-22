@@ -5,7 +5,7 @@ class ProtocolConfiguration:
 
     """Container for the definition of a protocol"""
 
-    def __init__(self, name, stimuli, recordings, validation=False, ion_currents=None):
+    def __init__(self, name, stimuli, recordings, validation=False, ion_variables=None):
         """Init.
 
         The arguments efeatures and protocols are expected to be in the format used for the
@@ -16,7 +16,8 @@ class ProtocolConfiguration:
             name (str): name of the protocol
             stimuli (list of dict):
             recordings (list of dict):
-            ion_currents (list of str): ion current names for all available mechanisms
+            ion_variables (list of str): ion current names and ionic concentration anmes
+                for all available mechanisms
         """
 
         self.name = name
@@ -32,8 +33,8 @@ class ProtocolConfiguration:
         for recording in recordings:
             self.recordings.append(recording)
 
-            if ion_currents is not None:
-                for ion in ion_currents:
+            if ion_variables is not None:
+                for ion in ion_variables:
                     new_rec = recording.copy()
 
                     if "variable" in recording:
