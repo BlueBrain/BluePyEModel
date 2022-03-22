@@ -344,11 +344,16 @@ def get_ordered_currentscape_keys(keys):
             Each item should have the shape protocol.location.current
 
     Returns:
-        dict: containing voltage key, current keys and current names. Should have the shape:
+        dict: containing voltage key, ion current and ionic concentration keys,
+
+        and ion current and ionic concentration names. Should have the shape:
 
         {
             "protocol_name": {
-                "loc_name": {"voltage_key": str, "current_keys": [], "current_names": []}
+                "loc_name": {
+                    "voltage_key": str, "current_keys": [], "current_names": [],
+                    "ion_conc_keys": [], "ion_conc_names": [],
+                }
             }
         }
     """
@@ -378,19 +383,24 @@ def get_ordered_currentscape_keys(keys):
                     "voltage_key": None,
                     "current_keys": [],
                     "current_names": [],
+                    "ion_conc_keys": [],
+                    "ion_conc_names": [],
                 }
 
             if curr_name == "v":
                 ordered_keys[prot_name][loc_name]["voltage_key"] = name
-            else:
+            elif curr_name[0] == "i":
                 ordered_keys[prot_name][loc_name]["current_keys"].append(name)
                 ordered_keys[prot_name][loc_name]["current_names"].append(curr_name)
+            elif curr_name[-1] == "i":
+                ordered_keys[prot_name][loc_name]["ion_conc_keys"].append(name)
+                ordered_keys[prot_name][loc_name]["ion_conc_names"].append(curr_name)
 
     return ordered_keys
 
 
 def get_voltage_currents_from_files(key_dict, output_dir):
-    """Get time, voltage, and currents from output files"""
+    """Get time, voltage, currents and ionic concentrations from output files"""
     v_path = Path(output_dir) / ".".join((key_dict["voltage_key"], "dat"))
     time = numpy.loadtxt(v_path)[:, 0]
     voltage = numpy.loadtxt(v_path)[:, 1]
@@ -400,7 +410,13 @@ def get_voltage_currents_from_files(key_dict, output_dir):
     ]
     currents = [numpy.loadtxt(curr_path)[:, 1] for curr_path in curr_paths]
 
-    return time, voltage, currents
+    ion_conc_paths = [
+        Path(output_dir) / ".".join((ion_conc_key, "dat"))
+        for ion_conc_key in key_dict["ion_conc_keys"]
+    ]
+    ionic_concentrations = [numpy.loadtxt(ion_conc_path)[:, 1] for ion_conc_path in ion_conc_paths]
+
+    return time, voltage, currents, ionic_concentrations
 
 
 def currentscape(responses=None, output_dir=None, config=None, figures_dir="./figures"):
@@ -421,8 +437,10 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
 
     if config is None:
         config = {}
-    if "currents" not in config:
+    if "current" not in config:
         config["current"] = {}
+    if "ions" not in config:
+        config["ions"] = {}
     if "output" not in config:
         config["output"] = {}
 
@@ -441,17 +459,25 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
                 voltage = responses[key_dict["voltage_key"]]["voltage"]
                 # current data has also voltage for a key
                 currents = [responses[key]["voltage"] for key in key_dict["current_keys"]]
+                ionic_concentrations = [
+                    responses[key]["voltage"] for key in key_dict["ion_conc_keys"]
+                ]
             else:
-                time, voltage, currents = get_voltage_currents_from_files(key_dict, output_dir)
+                time, voltage, currents, ionic_concentrations = get_voltage_currents_from_files(
+                    key_dict, output_dir
+                )
 
             name = ".".join((prot, loc))
 
             # adapt config
             config["current"]["names"] = key_dict["current_names"]
+            config["ions"]["names"] = key_dict["ion_conc_names"]
             config["output"]["savefig"] = True
             config["output"]["fname"] = name
             if "dir" not in config["output"]:
                 config["output"]["dir"] = figures_dir
 
             logger.info("Plotting currentscape for %s", name)
-            plot_currentscape_fct(voltage, currents, config, time=time)
+            plot_currentscape_fct(
+                voltage, currents, config, ions_data=ionic_concentrations, time=time
+            )

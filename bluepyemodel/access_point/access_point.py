@@ -195,14 +195,21 @@ class DataAccessPoint:
 
         raise Exception(f"Unknown optimizer: {optimizer}")
 
-    def get_ion_currents(self):
-        """Get all ion currents.
+    def get_ion_currents_concentrations(self):
+        """Get all ion currents and ion concentrations.
 
         Returns:
+            tuple containing:
+
             (list of str): ion current names for all available mechanisms
+            (list of str): ionic concentration names for all available mechanisms
         """
         # pylint: disable=assignment-from-no-return
         mechs = self.get_available_mechanisms()
         if mechs is None:
-            return None
-        return list(chain.from_iterable([mech.get_ion_current() for mech in mechs]))
+            return None, None
+        ion_currents = list(chain.from_iterable([mech.get_ion_current() for mech in mechs]))
+        ionic_concentrations = list(
+            chain.from_iterable([mech.ionic_concentrations for mech in mechs])
+        )
+        return ion_currents, ionic_concentrations
