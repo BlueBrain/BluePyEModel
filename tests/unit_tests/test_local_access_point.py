@@ -102,6 +102,8 @@ def test_get_ion_currents_concentrations(db):
         "ina_Nap_Et2",
         "ik_SK_E2",
         "ik_SKv3_1",
+        "ihcn_Ih",
+        "i_pas",
     }
     expected_ionic_concentrations = {
         "cai",

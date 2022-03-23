@@ -276,6 +276,7 @@ def plot_models(
         access_point,
         include_validation_protocols=True,
         use_fixed_dt_recordings=plot_currentscape,
+        record_ions_and_currents=plot_currentscape,
     )
 
     if plot_traces or plot_currentscape:

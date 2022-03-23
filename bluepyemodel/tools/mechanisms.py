@@ -70,15 +70,20 @@ def copy_and_compile_mechanisms(access_point):
         compile_mechs("./mechanisms")
 
 
-def get_mechanism_ion(mech_file):
-    """Parse the mech mod file to get the mechanism ion."""
-    ions = []
+def get_mechanism_currents(mech_file):
+    """Parse the mech mod file to get the mechanism ion and non-specific currents if any."""
+    ion_currs = []
+    nonspecific_currents = []
     with open(mech_file, "r") as f:
         mod_lines = f.readlines()
     for line in mod_lines:
         if "WRITE " in line:
-            ion = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
-            if ion[0] == "i":
-                ions.append(ion)
+            current = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
+            if current[0] == "i":
+                ion_currs.append(current)
+        elif "NONSPECIFIC_CURRENT" in line:
+            current = line.split("NONSPECIFIC_CURRENT ")[1].rstrip("\n").split(" ")[0]
+            if current[0] == "i":
+                nonspecific_currents.append(current)
 
-    return ions
+    return ion_currs, nonspecific_currents
