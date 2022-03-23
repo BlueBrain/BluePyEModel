@@ -211,7 +211,6 @@ def define_morphology(
 
             elif not callable(morph_modifier):
                 raise Exception("A morph modifier is not callable nor a list of two str")
-
     return NrnFileMorphology(
         morphology_path=model_configuration.morphology.path,
         do_replace_axon=False,

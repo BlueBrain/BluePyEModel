@@ -1,0 +1,208 @@
+{
+    "cADpyr_L5TPC": {
+        "mm_recipe": "cADpyr_L5TPC",
+        "etype": "cADpyr",
+        "layer": ["5"]
+    },
+    "cADpyr_L4TPC": {
+        "mm_recipe": "cADpyr_L4TPC",
+        "etype": "cADpyr",
+        "layer": ["4"]
+    },
+    "cADpyr_L4UPC": {
+        "mm_recipe": "cADpyr_L4UPC",
+        "etype": "cADpyr",
+        "layer": ["4"]
+    },
+    "cADpyr_L6IPC": {
+        "mm_recipe": "cADpyr_L6IPC",
+        "etype": "cADpyr",
+        "layer": ["6"],
+        "mtype": "L6_IPC"
+    },
+    "cADpyr_L6BPC": {
+        "mm_recipe": "cADpyr_L6BPC",
+        "etype": "cADpyr",
+        "layer": ["6"]
+    },
+    "cADpyr_L6UPC": {
+        "mm_recipe": "cADpyr_L6UPC",
+        "etype": "cADpyr",
+        "layer": ["6"],
+        "mtype": "L6_UPC"
+    },
+    "cADpyr_L6HPC": {
+        "mm_recipe": "cADpyr_L6HPC",
+        "etype": "cADpyr",
+        "layer": ["6"]
+    },
+    "cADpyr_L2TPC": {
+        "mm_recipe": "cADpyr_L2TPC",
+        "etype": "cADpyr",
+        "layer": ["2", "3"]
+    },
+    "cADpyr_L2IPC": {
+        "mm_recipe": "cADpyr_L2IPC",
+        "etype": "cADpyr",
+        "layer": ["2"]
+    },
+    "cADpyr_L3TPC": {
+        "mm_recipe": "cADpyr_L3TPC",
+        "etype": "cADpyr",
+        "layer": ["2", "3"]
+    },
+    "bNAC_L23SBC": {
+        "mm_recipe": "bNAC_L23SBC",
+        "etype": "bNAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bNAC_L23NGC": {
+        "mm_recipe": "bNAC_L23NGC",
+        "etype": "bNAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bAC_L23BTC": {
+        "mm_recipe": "bAC_L23BTC",
+        "etype": "bAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bAC_L6BTC": {
+        "mm_recipe": "bAC_L6BTC",
+        "etype": "bAC",
+        "layer": ["1", "2", "3", "4", "5", "6"],
+        "mtype": "L6_BTC"
+    },
+    "cACint_L23MC": {
+        "mm_recipe": "cACint_L23MC",
+        "etype": "cACint",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cACint_L4CHC": {
+        "mm_recipe": "cACint_L4CHC",
+        "etype": "cACint",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cNAC_L23BTC": {
+        "mm_recipe": "cNAC_L23BTC",
+        "etype": "cNAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cNAC_L6BTC": {
+        "mm_recipe": "cNAC_L6BTC",
+        "etype": "cNAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cNAC_L4CHC": {
+        "mm_recipe": "cNAC_L4CHC",
+        "etype": "cNAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cNAC_L23NGC": {
+        "mm_recipe": "cNAC_L23NGC",
+        "etype": "cNAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cNAC_L6NGC": {
+        "mm_recipe": "cNAC_L6NGC",
+        "etype": "cNAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "dNAC_L23SBC": {
+        "mm_recipe": "dNAC_L23SBC",
+        "etype": "dNAC",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cIR_L2SBC": {
+        "mm_recipe": "cIR_L2SBC",
+        "etype": "cIR",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cIR_L4DBC": {
+        "mm_recipe": "cIR_L4DBC",
+        "etype": "cIR",
+        "layer": ["1", "2", "3", "4", "5", "6"],
+        "mtype": "L4_DBC"
+    },
+    "cIR_L5DBC": {
+        "mm_recipe": "cIR_L5DBC",
+        "etype": "cIR",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bIR_L23BTC": {
+        "mm_recipe": "bIR_L23BTC",
+        "etype": "bIR",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bIR_L23BP": {
+        "mm_recipe": "bIR_L23BP",
+        "etype": "bIR",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bIR_L5BP": {
+        "mm_recipe": "bIR_L5BP",
+        "etype": "bIR",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bIR_L4BP": {
+        "mm_recipe": "bIR_L4BP",
+        "etype": "bIR",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bIR_L5DBC": {
+        "mm_recipe": "bIR_L5DBC",
+        "etype": "bIR",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bIR_L4BTC": {
+        "mm_recipe": "bIR_L4BTC",
+        "etype": "bIR",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bIR_L4DBC": {
+        "mm_recipe": "bIR_L4DBC",
+        "etype": "bIR",
+        "layer": ["1", "2", "3", "4", "5", "6"],
+        "mtype": "L4_DBC"
+    },
+    "cSTUT_L5NBC": {
+        "mm_recipe": "cSTUT_L5NBC",
+        "etype": "cSTUT",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cSTUT_L23NGC": {
+        "mm_recipe": "cSTUT_L23NGC",
+        "etype": "cSTUT",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "cSTUT_L6NGC": {
+        "mm_recipe": "cSTUT_L6NGC",
+        "etype": "cSTUT",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "bSTUT_L5NBC": {
+        "mm_recipe": "bSTUT_L5NBC",
+        "etype": "bSTUT",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "dSTUT_L2SBC": {
+        "mm_recipe": "dSTUT_L2SBC",
+        "etype": "dSTUT",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "dSTUT_L5BP": {
+        "mm_recipe": "dSTUT_L5BP",
+        "etype": "dSTUT",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    },
+    "dSTUT_L4BP": {
+        "mm_recipe": "dSTUT_L4BP",
+        "etype": "dSTUT",
+        "layer": ["1", "2", "3", "4", "5", "6"],
+        "mtype": "L4_BP"
+    },
+    "dSTUT_L23BP": {
+        "mm_recipe": "dSTUT_L23BP",
+        "etype": "dSTUT",
+        "layer": ["1", "2", "3", "4", "5", "6"]
+    }
+}

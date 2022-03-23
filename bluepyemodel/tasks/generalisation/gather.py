@@ -5,8 +5,9 @@ import yaml
 
 from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
 from bluepyemodel.tasks.generalisation.ais_model import AisShapeModel
+from bluepyemodel.tasks.generalisation.ais_model import TargetRho
 from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
-from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAis
+from bluepyemodel.tasks.generalisation.ais_synthesis import SynthesizeAisSoma
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import GatherLocalTarget
 from bluepyemodel.tasks.generalisation.config import ScaleConfig
@@ -63,29 +64,60 @@ class GatherAisModels(BaseTask):
         return GatherLocalTarget(self.target_path)
 
 
-class GatherTargetRhoAxon(BaseTask):
-    """Gather all target rho axons in a single yaml file."""
+class GatherTargetRho(BaseTask):
+    """Gather all target rho in a single yaml file."""
 
     emodels = luigi.ListParameter()
-    target_path = luigi.Parameter(default="target_rhos.yaml")
+    target_path = luigi.Parameter(default="target_rho.yaml")
 
     def requires(self):
         """Requires."""
         tasks = {}
         for emodel in self.emodels:
-            tasks["target_rho_" + emodel] = TargetRhoAxon(emodel=emodel)
+            tasks["target_rho_" + emodel] = TargetRho(emodel=emodel)
         return tasks
 
     def run(self):
         """Run."""
-        target_rhos = {}
+        target_rho = {}
         for emodel in self.emodels:
             with self.input()["target_rho_" + emodel].open() as f:
-                target_rhos[emodel] = yaml.full_load(f)[emodel]
+                rhos = yaml.full_load(f)
+                target_rho[emodel] = rhos[emodel]
 
         ensure_dir(self.output().path)
         with self.output().open("w") as f:
-            yaml.dump(target_rhos, f)
+            yaml.dump(target_rho, f)
+
+    def output(self):
+        """ """
+        return GatherLocalTarget(self.target_path)
+
+
+class GatherTargetRhoAxon(BaseTask):
+    """Gather all target rho axons in a single yaml file."""
+
+    emodels = luigi.ListParameter()
+    target_path = luigi.Parameter(default="target_rho_axons.yaml")
+
+    def requires(self):
+        """Requires."""
+        tasks = {}
+        for emodel in self.emodels:
+            tasks["target_rho_axon_" + emodel] = TargetRhoAxon(emodel=emodel)
+        return tasks
+
+    def run(self):
+        """Run."""
+        target_rho_axons = {}
+        for emodel in self.emodels:
+            with self.input()["target_rho_axon_" + emodel].open() as f:
+                rhos = yaml.full_load(f)
+                target_rho_axons[emodel] = rhos[emodel]
+
+        ensure_dir(self.output().path)
+        with self.output().open("w") as f:
+            yaml.dump(target_rho_axons, f)
 
     def output(self):
         """ """
@@ -100,7 +132,7 @@ class GatherSynthAis(BaseTask):
 
     def requires(self):
         """ """
-        return {emodel: SynthesizeAis(emodel=emodel) for emodel in self.emodels}
+        return {emodel: SynthesizeAisSoma(emodel=emodel) for emodel in self.emodels}
 
     def run(self):
         """ """

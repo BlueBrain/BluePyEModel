@@ -55,11 +55,10 @@ def define_location(definition):
         )
 
     if definition["type"] == "somadistanceapic":
-        return NrnSecSomaDistanceCompLocation(
+        return NrnSomaDistanceCompLocation(
             name=definition["name"],
             soma_distance=definition["somadistance"],
-            sec_index=definition.get("sec_index", None),
-            sec_name=definition["seclist_name"],
+            seclist_name=definition["seclist_name"],
         )
 
     if definition["type"] == "nrnseclistcomp":
@@ -167,6 +166,10 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
             stim_end = protocol.total_duration
         else:
             stim_end = protocol.stim_end
+    if feature_config.name == "RMPProtocol.soma.v.Spikecount":
+        stim_start = 0
+        stim_end = 1700
+        stim_amp = 0
 
     recording_names = {"": f"{feature_config.protocol_name}.{feature_config.recording_name}"}
 
@@ -228,7 +231,6 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     )
 
     if target_rin:
-
         location = soma_loc if not ais_recording else ais_loc
 
         return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
@@ -236,7 +238,7 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     raise Exception("Couldn't find the Rin feature associated to the Rin protocol")
 
 
-def define_holding_protocol(efeatures, strict_bounds=False):
+def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False):
     """Define the search holding current protocol"""
 
     target_voltage = next(
@@ -253,9 +255,11 @@ def define_holding_protocol(efeatures, strict_bounds=False):
     )
 
     if target_voltage and target_current:
+        location = soma_loc if not ais_recording else ais_loc
+
         return SearchHoldingCurrent(
             name="SearchHoldingCurrent",
-            location=soma_loc,
+            location=location,
             target_voltage=target_voltage,
             target_holding=target_current,
             strict_bounds=strict_bounds,
@@ -360,7 +364,6 @@ def define_main_protocol(
                     break
             else:
                 raise Exception(f"Could not find protocol named {feature_def.protocol_name}")
-
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
     rmp_protocol = None
@@ -370,7 +373,9 @@ def define_main_protocol(
     if threshold_based_evaluator:
         rmp_protocol = define_RMP_protocol(efeatures)
         rin_protocol = define_Rin_protocol(efeatures, ais_recording)
-        search_holding_protocol = define_holding_protocol(efeatures, strict_holding_bounds)
+        search_holding_protocol = define_holding_protocol(
+            efeatures, strict_holding_bounds, ais_recording
+        )
         search_threshold_protocol = define_threshold_protocol(efeatures, max_threshold_voltage)
 
     for feature in efeatures:

@@ -5,8 +5,9 @@ import luigi
 from luigi_tools.task import WorkflowTask
 from luigi_tools.task import WorkflowWrapperTask
 
-from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.tasks.generalisation.config import EmodelAPIConfig
+
+from .utils import get_database
 
 
 class EmodelAwareTask:
@@ -14,15 +15,7 @@ class EmodelAwareTask:
 
     def get_database(self):
         """Fetch emodel AP."""
-        if EmodelAPIConfig().api == "local":
-            return LocalAccessPoint(
-                emodel="cADpyr_L5TPC",
-                emodel_dir=EmodelAPIConfig().emodel_dir,
-                final_path=EmodelAPIConfig().final_path,
-                legacy_dir_structure=True,
-                with_seeds=True,
-            )
-        raise NotImplementedError(f"api {EmodelAPIConfig().api} is not implemented")
+        return get_database(EmodelAPIConfig())
 
     def __init__(self, *args, **kwargs):
         """ """
@@ -52,8 +45,8 @@ class BaseTask(EmodelAwareTask, WorkflowTask):
 
     def set_tmp(self, path, tmp_path="tmp"):
         """Add tmp_path to hide files in tmp folders."""
-        # pylint: disable=no-member,protected-access
-        return self.output()._prefix / Path(tmp_path) / path
+        # pylint: disable=no-member
+        return self.output().super_prefix() / self.output().get_prefix() / Path(tmp_path) / path
 
 
 class BaseWrapperTask(EmodelAwareTask, WorkflowWrapperTask):

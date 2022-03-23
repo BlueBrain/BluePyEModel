@@ -21,7 +21,6 @@ def _get_apical_point(cell):
     from morphio import Morphology
 
     point = apical_point.apical_point_position(Morphology(cell.morphology.morphology_path))
-
     return nrnhines.point_to_section_end(cell.icell.apical, point)
 
 
@@ -39,7 +38,8 @@ def _set_morphology_dependent_locations(stimulus, cell):
     new_stims = []
     if stimulus["type"] == "somadistanceapic":
         new_stims = [deepcopy(stimulus)]
-        new_stims[0]["sec_index"] = _get_apical_point(cell)
+        # tmp hack to prevent failinngg if section is above apical point
+        #new_stims[0]["sec_index"] = _get_apical_point(cell)
         new_stims[0]["sec_name"] = seclist_to_sec.get(
             stimulus["seclist_name"], stimulus["seclist_name"]
         )
@@ -173,7 +173,6 @@ class FitnessCalculatorConfiguration:
         """"""
 
         recording_name = "soma.v" if recording == "soma" else recording
-
         tmp_feature = EFeatureConfiguration(
             efel_feature_name=feature["feature"],
             protocol_name=protocol_name,
@@ -443,8 +442,8 @@ class FitnessCalculatorConfiguration:
         """"""
 
         cell = deepcopy(_cell)
-        cell.params = None
-        cell.mechanisms = None
+        cell.params = {}
+        cell.mechanisms = []
         cell.instantiate(sim=simulator)
 
         # TODO: THE SAME FOR STIMULI
@@ -475,6 +474,7 @@ class FitnessCalculatorConfiguration:
                         efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
 
         self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove] + efeatures
+        cell.destroy(sim=simulator)
 
     def as_dict(self):
         """Used for the storage of the configuration"""

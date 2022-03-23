@@ -4,20 +4,29 @@ from pathlib import Path
 
 import luigi
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import yaml
 from matplotlib.backends.backend_pdf import PdfPages
 
+from bluepyemodel.generalisation.ais_model import get_bins
+from bluepyemodel.generalisation.ais_model import get_surface_profile
 from bluepyemodel.generalisation.plotting import plot_ais_resistance_models
 from bluepyemodel.generalisation.plotting import plot_ais_taper_models
 from bluepyemodel.generalisation.plotting import plot_feature_select
 from bluepyemodel.generalisation.plotting import plot_feature_summary_select
 from bluepyemodel.generalisation.plotting import plot_frac_exceptions
+from bluepyemodel.generalisation.plotting import plot_soma_resistance_models
+from bluepyemodel.generalisation.plotting import plot_soma_shape_models
 from bluepyemodel.generalisation.plotting import plot_summary_select
+from bluepyemodel.generalisation.plotting import plot_surface_comparison
 from bluepyemodel.generalisation.plotting import plot_synth_ais_evaluations
-from bluepyemodel.generalisation.plotting import plot_target_rho_axon
+from bluepyemodel.generalisation.plotting import plot_target_rhos
 from bluepyemodel.tasks.generalisation.ais_model import AisResistanceModel
 from bluepyemodel.tasks.generalisation.ais_model import AisShapeModel
+from bluepyemodel.tasks.generalisation.ais_model import SomaResistanceModel
+from bluepyemodel.tasks.generalisation.ais_model import SomaShapeModel
+from bluepyemodel.tasks.generalisation.ais_model import TargetRho
 from bluepyemodel.tasks.generalisation.ais_model import TargetRhoAxon
 from bluepyemodel.tasks.generalisation.base_task import BaseTask
 from bluepyemodel.tasks.generalisation.config import PlotLocalTarget
@@ -30,6 +39,53 @@ from bluepyemodel.tasks.generalisation.select import SelectGenericCombos
 from bluepyemodel.tasks.generalisation.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
+
+
+class PlotSomaShapeModel(BaseTask):
+    """Plot the soma shape models."""
+
+    target_path = luigi.Parameter(default="soma_shape_models.pdf")
+
+    def requires(self):
+        """ """
+        return SomaShapeModel()
+
+    def run(self):
+        """ """
+        ensure_dir(self.output().path)
+        with self.input().open() as soma_model_file:
+            plot_soma_shape_models(yaml.safe_load(soma_model_file), self.output().path)
+
+    def output(self):
+        """ """
+        return PlotLocalTarget(self.target_path)
+
+
+class PlotSomaResistanceModel(BaseTask):
+    """Plot the soma shape models."""
+
+    emodel = luigi.Parameter()
+    target_path = luigi.Parameter(default="resistance_models/soma_resistance_model.pdf")
+
+    def requires(self):
+        """ """
+        return SomaResistanceModel(emodel=self.emodel)
+
+    def run(self):
+        """ """
+        _task = SomaResistanceModel(emodel=self.emodel)
+        fit_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.fit_df_path)))
+        ensure_dir(self.output().path)
+        with self.input().open() as soma_models_file:
+            plot_soma_resistance_models(
+                fit_df,
+                yaml.safe_load(soma_models_file),
+                pdf_filename=self.output().path,
+            )
+
+    def output(self):
+        """ """
+        return PlotLocalTarget(self.add_emodel(self.target_path))
 
 
 class PlotAisShapeModel(BaseTask):
@@ -87,26 +143,31 @@ class PlotTargetRhoAxon(BaseTask):
 
     def requires(self):
         """ """
-        return TargetRhoAxon(emodel=self.emodel)
+        return {
+            "target_rho_axon": TargetRhoAxon(emodel=self.emodel),
+            "target_rho": TargetRho(emodel=self.emodel),
+            "evaluation": EvaluateGeneric(emodel=self.emodel),
+        }
 
     def run(self):
         """ """
-        try:
-            _task = TargetRhoAxon(emodel=self.emodel)
-            rho_scan_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.rho_scan_df_path)))
+        _task = TargetRhoAxon(emodel=self.emodel)
+        rho_axon_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.rho_axon_df_path)))
 
-            ensure_dir(self.output().path)
-            with self.input().open() as target_rhos_file:
-                plot_target_rho_axon(
-                    rho_scan_df,
-                    yaml.safe_load(target_rhos_file),
-                    original_morphs_combos_path=None,
-                    pdf_filename=self.output().path,
-                )
-        except FileNotFoundError:
-            ensure_dir(self.output().path)
-            with open(self.output().path, "w") as f:
-                f.write("no plot for linear_fit mode")
+        _task = TargetRho(emodel=self.emodel)
+        rho_df = pd.read_csv(_task.set_tmp(self.add_emodel(_task.rho_df_path)))
+
+        df = pd.read_csv(self.input()["evaluation"].path)
+
+        ensure_dir(self.output().path)
+        with self.input()["target_rho"].open() as target_rhos_file:
+            target_rhos = yaml.safe_load(target_rhos_file)
+        with self.input()["target_rho_axon"].open() as target_rho_axons_file:
+            target_rho_axons = yaml.safe_load(target_rho_axons_file)
+
+        df["rho"] = rho_df["rho"]
+        df["rho_axon"] = rho_axon_df["rho_axon"]
+        plot_target_rhos(df, target_rhos, target_rho_axons, pdf_filename=self.output().path)
 
     def output(self):
         """ """
@@ -133,6 +194,44 @@ class PlotSynthesisEvaluation(BaseTask):
             threshold=self.threshold,
             pdf_filename=self.output().path,
         )
+
+    def output(self):
+        """ """
+        return PlotLocalTarget(self.add_emodel(self.target_path))
+
+
+class PlotSurfaceComparison(BaseTask):
+    """Make the surface area comparison plots."""
+
+    emodel = luigi.Parameter()
+    threshold = luigi.FloatParameter(default=5)
+    target_path = luigi.Parameter(default="surfaces_comparison/surface.pdf")
+
+    def requires(self):
+        """ """
+        return {
+            "synthesis": EvaluateSynthesis(emodel=self.emodel),
+            "generic": EvaluateGeneric(emodel=self.emodel),
+        }
+
+    def run(self):
+        """ """
+        ensure_dir(self.output().path)
+        df = pd.read_csv(self.input()["synthesis"].path)
+        df = df[df.emodel == self.emodel]
+        bin_params = {"min": 0, "max": 1500, "n": 100}
+        clip = 3
+        path_bins = get_bins(bin_params)
+        df["median_score"] = np.clip(df.median_score, 0, clip)
+        df = df.reset_index()
+        surf_df = get_surface_profile(df, path_bins, "basal")
+        surf_df += get_surface_profile(df, path_bins, "apical")
+
+        df_generic = pd.read_csv(self.input()["generic"].path)
+        df["generic_median_score"] = df_generic["median_score"]
+        df["generic_max_score"] = df_generic["max_score"]
+
+        plot_surface_comparison(surf_df, df, pdf_filename=self.output().path)
 
     def output(self):
         """ """

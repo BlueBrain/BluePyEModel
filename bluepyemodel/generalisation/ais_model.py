@@ -1,20 +1,23 @@
 """Repair functions for cell morphologies, given an emodel."""
 import json
 import logging
+from functools import partial
+from multiprocessing.pool import Pool
 
+import neurom as nm
 import numpy as np
 import pandas as pd
+from morph_tool.neuron_surface import get_NEURON_surface
 from morphio import SectionType
 from morphio.mut import Morphology
-from scipy.ndimage.filters import gaussian_filter
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
 from bluepyemodel.generalisation.evaluators import evaluate_ais_rin
+from bluepyemodel.generalisation.evaluators import evaluate_rho
 from bluepyemodel.generalisation.evaluators import evaluate_rho_axon
-from bluepyemodel.generalisation.evaluators import evaluate_scores
+from bluepyemodel.generalisation.evaluators import evaluate_soma_rin
 from bluepyemodel.generalisation.utils import get_mtypes
-from bluepyemodel.generalisation.utils import get_scores
 
 logger = logging.getLogger(__name__)
 POLYFIT_DEGREE = 10
@@ -26,6 +29,167 @@ RHO_FACTOR_FEATURES = [
     "inv_time_to_first_spike",
     "AHP_depth",
 ]
+
+
+def build_soma_model(morphology_paths):
+    """Build soma model.
+
+    Using only surface area for now.
+    """
+    soma_surfaces = [float(get_NEURON_surface(path)) for path in tqdm(morphology_paths)]
+    soma_radii = [
+        float(nm.get("soma_radius", nm.load_morphology(path))) for path in morphology_paths
+    ]
+    return {
+        "soma_model": {
+            "soma_surface": float(np.mean(soma_surfaces)),
+            "soma_radius": float(np.mean(soma_radii)),
+        },
+        "soma_data": {
+            "soma_radii": soma_radii,
+            "soma_surfaces": soma_surfaces,
+        },
+    }
+
+
+def build_soma_models(
+    morphs_df, mtypes=None, morphology_path="morphology_path", mtype_dependent=False
+):
+    """Build soma models from data, and plot the results.
+
+    Args:
+        morphs_df (dataframe): dataframe with morphologies data
+        mtypes (str): mtypes to use, can be == 'all'
+        morphology_path (str): column name of dataframe for paths to morphologies
+        mtype_dependent (bool): if True, we will try to build a model per mtype
+    Returns:
+        (dict, dict): dictionaries of models and data for plotting
+    """
+    logger.info("Building soma models from data")
+
+    if not mtype_dependent:
+        if mtypes is not None:
+            morphs_df = morphs_df[morphs_df.mtype.isin(mtypes)]
+            if "for_optimisation" in morphs_df.columns:
+                morphs_df = morphs_df[morphs_df.for_optimisation]
+        return {"all": build_soma_model(morphs_df[morphology_path].to_list())}
+
+    models = {}
+    mtypes = get_mtypes(morphs_df, mtypes)
+    for mtype in tqdm(mtypes):
+        morphologies = morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
+        model = build_soma_model(morphologies)
+        models[mtype] = model
+
+    return models
+
+
+def _prepare_soma_scaled_combos(morphs_combos_df, soma_models, scales_params, emodel):
+    """Prepare combos with scaled soma."""
+    scales = get_scales(scales_params)
+
+    fit_df = pd.DataFrame()
+    mask = morphs_combos_df.emodel == emodel
+    if len(morphs_combos_df[mask]) > 0:
+        logger.info("Creating combos for %s", emodel)
+        df_tmp = morphs_combos_df[mask].iloc[0]
+        for scale in scales:
+            df_tmp["soma_scaler"] = scale
+            df_tmp["soma_model"] = json.dumps(soma_models["all"]["soma_model"])
+            df_tmp["for_optimisation"] = False
+            fit_df = fit_df.append(df_tmp.copy())
+    return fit_df.reset_index(drop=True)
+
+
+def build_soma_resistance_models(
+    morphs_combos_df,
+    emodel_db,
+    emodel,
+    soma_models,
+    scales_params,
+    morphology_path="morphology_path",
+    parallel_factory=None,
+    resume=False,
+    db_url="eval_db.sql",
+):
+    """Build Soma resistance models for an emodel.
+
+    Args:
+        morphs_combos_df (dataframe): data for me combos
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
+        emodel (str): emodel to consider
+        ais_models: (dict): dict with ais models
+        scales_params (dict): parmeter for scales of AIS to use
+        resume (bool): to ecrase previous AIS Rin computations
+    Returns:
+        (dataframe, dict): dataframe with Rin results and models for plotting
+    """
+    fit_df = _prepare_soma_scaled_combos(morphs_combos_df, soma_models, scales_params, emodel)
+    fit_df = evaluate_soma_rin(
+        fit_df,
+        emodel_db,
+        resume=resume,
+        db_url=db_url,
+        morphology_path=morphology_path,
+        parallel_factory=parallel_factory,
+    )
+
+    mtype = "all"
+
+    mask = fit_df.emodel == emodel
+    if len(fit_df[mask]) > 0:
+        if "resistance" not in soma_models[mtype]:
+            soma_models[mtype]["resistance"] = {}
+        soma_scaler = fit_df[mask].soma_scaler.to_numpy()
+        rin_soma = fit_df[mask].rin_soma.to_numpy()
+        soma_scaler = soma_scaler[rin_soma > 0]
+        rin_soma = rin_soma[rin_soma > 0]
+        if len(rin_soma) != len(fit_df[mask].soma_scaler.to_numpy()):
+            logger.warning("Some soma Rin are < 0, we will drop these!")
+        soma_models[mtype]["resistance"][emodel] = {
+            "polyfit_params": np.polyfit(
+                np.log10(soma_scaler),
+                np.log10(rin_soma),
+                POLYFIT_DEGREE,
+            ).tolist()
+        }
+
+    return fit_df, soma_models
+
+
+def find_target_rho(
+    morphs_combos_df,
+    emodel_db,
+    emodel,
+    morphology_path="morphology_path",
+    resume=False,
+    parallel_factory=None,
+):
+    """Find the target rho for an emodel from exemplar.
+
+    Args:
+        morphs_combos_df (dataframe): data for me combos
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
+        emodel (str): emodel to consider
+        soma_models (str): path to yaml with ais models
+        scales_params (dict): parameter for scales of AIS to use
+        resume (bool): to ecrase previous AIS Rin computations
+        filter_sigma (float): sigma for guassian smoothing of mean scores,
+            using (scipy.ndimage.filters.gaussian_filter)
+
+    Returns:
+        (dataframe, dict): dataframe with results and dict target rhos for plots
+    """
+    rho_df = evaluate_rho(
+        morphs_combos_df,
+        emodel_db,
+        morphology_path=morphology_path,
+        resume=resume,
+        db_url=None,
+        parallel_factory=parallel_factory,
+    )
+
+    return {emodel: {"all": float(rho_df[rho_df.for_optimisation].rho.median())}}, rho_df
 
 
 def get_ais(neuron):
@@ -93,12 +257,12 @@ def build_ais_diameter_model(morphology_paths, bin_size=2, total_length=60, with
 
     model = {}
     # first value is the length of AIS
-    model["AIS"] = {
+    model["AIS_model"] = {
         "popt_names": ["length"] + list(taper_function.__code__.co_varnames[1:]),
         "popt": [total_length] + popt.tolist(),
     }
 
-    model["data"] = {
+    model["AIS_data"] = {
         "distances": np.array(distances).tolist(),
         "diameters": np.array(diameters).tolist(),
         "bins": np.array(bins).tolist(),
@@ -113,7 +277,7 @@ def build_ais_diameter_models(
     mtypes="all",
     morphology_path="morphology_path",
     mtype_dependent=False,
-    with_taper=True,
+    with_taper=False,
 ):
     """Build ais diameter models from data, and plot the results.
 
@@ -129,7 +293,9 @@ def build_ais_diameter_models(
 
     mtypes = get_mtypes(morphs_df, mtypes)
     logger.info("Extracting model from all axons")
-    morphologies_all = morphs_df.loc[:, morphology_path].to_list()
+    if "for_optimisation" in morphs_df.columns:
+        morphs_df = morphs_df[morphs_df.for_optimisation]
+    morphologies_all = morphs_df[morphology_path].to_list()
 
     models = {}
     models["all"] = build_ais_diameter_model(morphologies_all, with_taper=with_taper)
@@ -167,7 +333,7 @@ def get_scales(scales_params, with_unity=False):
     return scales
 
 
-def _prepare_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel):
+def _prepare_ais_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel):
     """Prepare combos with scaled AIS."""
     scales = get_scales(scales_params)
 
@@ -178,7 +344,7 @@ def _prepare_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel):
         df_tmp = morphs_combos_df[mask].iloc[0]
         for scale in scales:
             df_tmp["AIS_scaler"] = scale
-            df_tmp["AIS_model"] = json.dumps(ais_models["all"]["AIS"])
+            df_tmp["AIS_model"] = json.dumps(ais_models["all"]["AIS_model"])
             df_tmp["for_optimisation"] = False
             fit_df = fit_df.append(df_tmp.copy())
     return fit_df.reset_index(drop=True)
@@ -207,7 +373,7 @@ def build_ais_resistance_models(
     Returns:
         (dataframe, dict): dataframe with Rin results and models for plotting
     """
-    fit_df = _prepare_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel)
+    fit_df = _prepare_ais_scaled_combos(morphs_combos_df, ais_models, scales_params, emodel)
     fit_df = evaluate_ais_rin(
         fit_df,
         emodel_db,
@@ -246,7 +412,6 @@ def _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel
 
     mask = morphs_combos_df.emodel == emodel
     rho_scan_df = pd.DataFrame()
-
     if len(morphs_combos_df[mask]) > 0:
         logger.info("creating rows for %s", emodel)
         new_row = morphs_combos_df[mask & morphs_combos_df.for_optimisation].copy()
@@ -257,7 +422,7 @@ def _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel
             for scale in scales:
                 new_row["mtype"] = "all"
                 new_row["AIS_scaler"] = scale
-                new_row["AIS_model"] = json.dumps(ais_models["all"]["AIS"])
+                new_row["AIS_model"] = json.dumps(ais_models["all"]["AIS_model"])
                 new_row["for_optimisation"] = False
                 rho_scan_df = rho_scan_df.append(new_row.copy())
         else:
@@ -297,63 +462,73 @@ def find_target_rho_axon(
     morphs_combos_df,
     emodel_db,
     emodel,
-    ais_models,
-    scales_params,
     morphology_path="morphology_path",
     resume=False,
     parallel_factory=None,
-    filter_sigma=2.0,
-    db_url="rho_scan_db.sql",
 ):
-    """Find the target rho axons for an emodel.
+    """Find the target rho axons for an emodel from exemplar.
 
     Args:
         morphs_combos_df (dataframe): data for me combos
         emodel_db (DataAccessPoint): object which contains API to access emodel data
         emodel (str): emodel to consider
-        ais_models_file (str): path to yaml with ais models
-        scales_params (dict): parameter for scales of AIS to use
         resume (bool): to ecrase previous AIS Rin computations
-        filter_sigma (float): sigma for guassian smoothing of mean scores,
-            using (scipy.ndimage.filters.gaussian_filter)
 
     Returns:
         (dataframe, dict): dataframe with results and dict target rhos for plots
     """
-    rho_scan_df = _prepare_scan_rho_combos(morphs_combos_df, ais_models, scales_params, emodel)
-    rho_scan_df = evaluate_rho_axon(
-        rho_scan_df,
+    rho_df = evaluate_rho_axon(
+        morphs_combos_df,
         emodel_db,
         morphology_path=morphology_path,
         resume=resume,
-        db_url=str(db_url) + ".rho",
+        db_url=None,
         parallel_factory=parallel_factory,
     )
 
-    rho_scan_df = evaluate_scores(
-        rho_scan_df,
-        emodel_db,
-        save_traces=False,
-        resume=resume,
-        db_url=str(db_url) + ".scores",
-        morphology_path=morphology_path,
-        parallel_factory=parallel_factory,
-    )
+    return {emodel: {"all": float(rho_df[rho_df.for_optimisation].rho_axon.median())}}, rho_df
 
-    rho_scan_df = get_scores(rho_scan_df, features_to_keep=RHO_FACTOR_FEATURES, clip=5)
-    mtype = "all"
 
-    mask = rho_scan_df.emodel == emodel
-    target_rhos = {}
-    if len(rho_scan_df[mask]) > 0:
-        scale_mask = rho_scan_df.AIS_scaler == 1
-        median_scores = rho_scan_df[mask & ~scale_mask].median_score.to_numpy()
-        smooth_score = gaussian_filter(median_scores, filter_sigma)
-        rho_scan_df.loc[mask & ~scale_mask, "smooth_score"] = smooth_score
-        best_score_id = rho_scan_df[mask & ~scale_mask].smooth_score.idxmin()
+def get_bins(bin_params):
+    """Compute path lenghs bins from parameters."""
+    _b = np.linspace(bin_params["min"], bin_params["max"], bin_params["n"] + 1)
+    return [[_b[i], _b[i + 1]] for i in range(bin_params["n"] - 1)]
 
-        if emodel not in target_rhos:
-            target_rhos[emodel] = {}
-        target_rhos[emodel][mtype] = float(rho_scan_df.loc[best_score_id, "rho_axon"])
 
-    return rho_scan_df, target_rhos
+def bin_data(distances, data, path_bins):
+    """Bin data using distances."""
+    for _bin in path_bins:
+        bin_center = 0.5 * (_bin[0] + _bin[1])
+        mean_data = data[(_bin[0] <= distances) & (distances < _bin[1])].sum() / (_bin[1] - _bin[0])
+        yield bin_center, mean_data
+
+
+def get_surface_density(neuron_path, path_bins, neurite_type="basal"):
+    """Compute the binned surface densities of a neuron."""
+
+    neuron = nm.load_morphology(neuron_path)
+
+    _types = {"apical": nm.NeuriteType.apical_dendrite, "basal": nm.NeuriteType.basal_dendrite}
+
+    areas, dists = [], []
+    for neurite in neuron.neurites:
+        if neurite.type == _types[neurite_type]:
+            areas += list(nm.get("segment_areas", neurite))
+            dists += list(nm.get("segment_path_lengths", neurite))
+    return list(bin_data(np.array(dists), np.array(areas), path_bins))
+
+
+def get_surface_profile(df, path_bins, neurite_type="basal", morphology_path="morphology_path"):
+    surface_df = pd.DataFrame()
+    with Pool() as pool:
+        for gid, res in enumerate(
+            pool.map(
+                partial(get_surface_density, path_bins=path_bins, neurite_type=neurite_type),
+                df[morphology_path],
+            )
+        ):
+            for b, s in res:
+                surface_df.loc[gid, b] = s
+    surface_df[surface_df.isna()] = 0
+
+    return surface_df

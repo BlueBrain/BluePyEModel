@@ -12,6 +12,18 @@ def taper_function(distance, strength, taper_scale, terminal_diameter, scale=1.0
     return strength * np.exp(-distance / taper_scale) + terminal_diameter * scale
 
 
+def synth_soma(sim=None, icell=None, params=None, scale=1.0):  # pylint: disable=unused-argument
+    """Synthesize a simple soma with given scale and parameters."""
+    L = 2.0 * params["soma_radius"]
+    area = params["soma_surface"]
+    nseg = params.get("nseg", 3)
+    diam = area / (np.pi * L) * nseg
+    soma_sec = icell.soma[0]
+    soma_sec.pt3dclear()
+    for i in range(nseg):
+        soma_sec.pt3dadd(0, scale * i * L / (nseg - 1), 0, diam / nseg)
+
+
 def synth_axon(sim=None, icell=None, params=None, scale=1.0):
     """Replace axon with tappered axon initial segment.
 
@@ -48,7 +60,7 @@ def synth_axon(sim=None, icell=None, params=None, scale=1.0):
     icell.all.append(sec=icell.myelin[0])
     icell.myelin[0].nseg = 5
     icell.myelin[0].L = 1000
-    icell.myelin[0].diam = diameters[-1]  # this assigns the value of terminal_diameter
+    icell.myelin[0].diam = 1.0  # diameters[-1]  # this assigns the value of terminal_diameter
     icell.myelin[0].connect(icell.axon[1], 1.0, 0.0)
 
 
@@ -136,7 +148,6 @@ def replace_axon_with_taper(sim=None, icell=None):
 
     diams = []
     lens = []
-
     count = 0
     for section in icell.axonal:
         L = section.L
@@ -197,24 +208,43 @@ def replace_axon_with_taper(sim=None, icell=None):
 
 
 def remove_soma(sim=None, icell=None):
-    """Remove the soma and connect dendrites together.
+    """Remove the soma and connect dendrites together at the axon.
 
     For this to work, we leave the soma connected to the axon,
     and with diameter 1e-6. BluePyOp requires a soma for
     parameter scaling, and NEURON fails is the soma size is =0.
     """
+    sec = list(icell.axonal)[0]
     for section in icell.basal:
         if section.parentseg().sec in list(icell.soma):
-            sim.neuron.h.disconnect(section)
-            section.connect(icell.axon[0])
+            sim.neuron.h.disconnect(sec=section)
+            section.connect(sec, 0, 0)
 
     for section in icell.apical:
         if section.parentseg().sec in list(icell.soma):
-            sim.neuron.h.disconnect(section)
-            section.connect(icell.axon[0])
+            sim.neuron.h.disconnect(sec=section)
+            section.connect(sec, 0, 0)
+
+    for i, section in enumerate(icell.axonal):
+        if i > 0:
+            if section.parentseg().sec in list(icell.soma):
+                sim.neuron.h.disconnect(sec=section)
+                section.connect(sec, 0, 0)
+
+    for section in icell.apical:
+        if section.parentseg().sec in list(icell.soma):
+            sim.neuron.h.disconnect(sec=section)
+            section.connect(sec, 0, 0)
+
+    for i, section in enumerate(icell.axonal):
+        if i > 0:
+            if section.parentseg().sec in list(icell.soma):
+                sim.neuron.h.disconnect(sec=section)
+                section.connect(sec, 0, 0)
 
     for section in icell.soma:
         section.diam = ZERO
+        section.L = ZERO
 
     logger.debug("Remove soma")
 
@@ -232,14 +262,11 @@ def isolate_soma(sim=None, icell=None):
 
 
 def remove_axon(sim=None, icell=None):  # pylint: disable=unused-argument
-    """Remove the axon.
-
-    Removing the axonal branches breaks the code, so we set it to ZERO
-    """
+    """Remove the axon."""
     for section in icell.myelin:
         sim.neuron.h.delete_section(sec=section)
     for section in icell.axonal:
-        section.diam = ZERO
+        sim.neuron.h.delete_section(sec=section)
 
 
 def isolate_axon(sim=None, icell=None):
@@ -249,6 +276,8 @@ def isolate_axon(sim=None, icell=None):
     for section in icell.apical:
         sim.neuron.h.delete_section(sec=section)
     for section in icell.soma:
+        sim.neuron.h.delete_section(sec=section)
+    for section in icell.myelin:
         sim.neuron.h.delete_section(sec=section)
 
 

@@ -9,7 +9,9 @@ import numpy as np
 from bluepyparallel import evaluate
 
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
 from bluepyemodel.evaluation.modifiers import synth_axon
+from bluepyemodel.evaluation.modifiers import synth_soma
 
 
 def single_feature_evaluation(
@@ -20,20 +22,31 @@ def single_feature_evaluation(
     timeout=1000000,
     trace_data_path=None,
     score_threshold=12.0,
-    max_threshold_voltage=0,
+    max_threshold_voltage=-30,
     nseg_frequency=40,
     dt=None,
 ):
     """Evaluating single protocol and save traces."""
     emodel_db.set_emodel(combo["emodel"])
+
     if morphology_path in combo:
         emodel_db.morph_path = combo[morphology_path]
-    if "AIS_scaler" in combo and "AIS_params" in combo:
+
+    if "AIS_scaler" in combo and isinstance(combo["AIS_model"], str):
         emodel_db.pipeline_settings.morph_modifiers = [
-            partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
+            partial(
+                synth_axon, params=json.loads(combo["AIS_model"])["popt"], scale=combo["AIS_scaler"]
+            )
         ]
 
-    emodel_db.set_emodel(combo["emodel"])
+    if "soma_scaler" in combo and isinstance(combo["soma_model"], str):
+        emodel_db.pipeline_settings.morph_modifiers.insert(
+            0,
+            partial(synth_soma, params=json.loads(combo["soma_model"]), scale=combo["soma_scaler"]),
+        )
+
+    # we do that here to fetch parameters for emodel with seed
+    emodel_db.emodel_metadata.emodel = combo["emodel"]
     evaluator = get_evaluator_from_access_point(
         emodel_db,
         stochasticity=stochasticity,
@@ -42,11 +55,10 @@ def single_feature_evaluation(
         max_threshold_voltage=max_threshold_voltage,
         nseg_frequency=nseg_frequency,
         dt=dt,
-        strict_holding_bounds=False,
     )
     params = emodel_db.get_emodel().parameters
     if "new_parameters" in combo:
-        params.update(combo["new_parameters"])
+        params.update(json.loads(combo["new_parameters"]))
 
     responses = evaluator.run_protocols(evaluator.fitness_protocols.values(), params)
     features = evaluator.fitness_calculator.calculate_values(responses)
@@ -56,7 +68,7 @@ def single_feature_evaluation(
         if isinstance(val, np.ndarray) and len(val) > 0:
             try:
                 features[f] = np.nanmean(val)
-            except AttributeError:
+            except (AttributeError, TypeError):
                 features[f] = None
         else:
             features[f] = None
@@ -64,7 +76,8 @@ def single_feature_evaluation(
     if trace_data_path is not None:
         Path(trace_data_path).mkdir(exist_ok=True, parents=True)
         stimuli = evaluator.fitness_protocols["main_protocol"].subprotocols()
-        hash_id = sha256(json.dumps(combo).encode()).hexdigest()
+        _combo = combo if isinstance(combo, dict) else combo.to_dict()
+        hash_id = sha256(json.dumps(_combo).encode()).hexdigest()
         trace_data_path = f"{trace_data_path}/trace_data_{hash_id}.pkl"
         with open(trace_data_path, "wb") as handle:
             pickle.dump([stimuli, responses], handle)

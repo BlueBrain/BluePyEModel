@@ -14,10 +14,14 @@ from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.evaluation.evaluator import define_main_protocol
 from bluepyemodel.evaluation.evaluator import get_simulator
 from bluepyemodel.evaluation.modifiers import isolate_axon
+from bluepyemodel.evaluation.modifiers import isolate_soma
 from bluepyemodel.evaluation.modifiers import remove_axon
+from bluepyemodel.evaluation.modifiers import remove_soma
 from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
 from bluepyemodel.evaluation.modifiers import synth_axon
+from bluepyemodel.evaluation.modifiers import synth_soma
 from bluepyemodel.model.model import create_cell_model
+from bluepyemodel.tools.misc_evaluators import feature_evaluation
 
 logger = logging.getLogger(__name__)
 
@@ -28,15 +32,27 @@ def _get_synth_modifiers(combo, morph_modifiers=None):
     """
     if morph_modifiers is None:
         morph_modifiers = []
-    if "AIS_scaler" in combo and combo["AIS_scaler"] is not None:
+
+    if "soma_model" in combo and isinstance(combo["soma_model"], str):
+        morph_modifiers.insert(
+            0,
+            partial(
+                synth_soma,
+                params=json.loads(combo["soma_model"]),
+                scale=combo.get("soma_scaler", 1),
+            ),
+        )
+
+    if "AIS_model" in combo and isinstance(combo["AIS_model"], str):
         morph_modifiers.insert(
             0,
             partial(
                 synth_axon,
                 params=json.loads(combo["AIS_model"])["popt"],
-                scale=combo["AIS_scaler"],
+                scale=combo.get("AIS_scaler", 1),
             ),
         )
+
     elif replace_axon_with_taper not in morph_modifiers:
         morph_modifiers.insert(0, replace_axon_with_taper)
     return morph_modifiers
@@ -164,7 +180,7 @@ def _rin_evaluation(
     timeout=1000,
     ais_recording=False,
 ):
-    """Evaluating rin protocol."""
+    """Evaluating rin protocol as holding -0.02."""
 
     cell_model, fitness_calculator_configuration, emodel_params = get_emodel_data(
         emodel_db, combo, morphology_path, copy(morph_modifiers)
@@ -176,27 +192,106 @@ def _rin_evaluation(
 
     cell_model.freeze(emodel_params)
     sim = get_simulator(stochasticity, cell_model)
+    responses = main_protocol.run_holding(cell_model, {}, sim=sim, timeout=timeout)[0]
+    responses.update(main_protocol.run_rin(cell_model, responses, sim=sim, timeout=timeout)[0])
 
     if with_currents:
-        responses = {}
-        for pre_run in [
-            main_protocol.run_RMP,
-            main_protocol.run_holding,
-            main_protocol.run_rin,
-            main_protocol.run_threshold,
-        ]:
-            responses.update(pre_run(cell_model, responses, sim=sim, timeout=timeout)[0])
-
+        responses.update(main_protocol.run_RMP(cell_model, responses, sim=sim, timeout=timeout)[0])
+        responses.update(
+            main_protocol.run_threshold(cell_model, responses, sim=sim, timeout=timeout)[0]
+        )
         cell_model.unfreeze(emodel_params.keys())
         return {
             key + "holding_current": responses["bpo_holding_current"],
             key + "threshold_current": responses["bpo_threshold_current"],
         }
 
-    responses = main_protocol.run_rin(cell_model, {}, sim=sim, timeout=timeout)[0]
     cell_model.unfreeze(emodel_params.keys())
-
     return {key: responses["bpo_rin"]}
+
+
+def evaluate_rin_no_soma(
+    morphs_combos_df,
+    emodel_db,
+    morphology_path="morphology_path",
+    resume=False,
+    db_url="eval_db.sql",
+    parallel_factory=None,
+):
+    """Compute the input resistance of cell without soma.
+
+    Args:
+        morphs_combos_df (DataFrame): each row reprensents a computation
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
+        morphology_path (str): entry from dataframe with morphology paths
+        resume (bool): if True, it will use only compute the empty rows of the database,
+            if False, it will ecrase or generate the database
+        db_url (str): filename/url for the sql database
+        parallel_factory (ParallelFactory): parallel factory instance
+
+    Returns:
+        pandas.DataFrame: original combos with computed rin of ais
+    """
+    key = "rin_no_soma"
+
+    rin_ais_evaluation = partial(
+        _rin_evaluation,
+        emodel_db=emodel_db,
+        morph_modifiers=[remove_soma],
+        key=key,
+        morphology_path=morphology_path,
+        ais_recording=True,
+    )
+    return evaluate(
+        morphs_combos_df,
+        rin_ais_evaluation,
+        new_columns=[[key, 0.0]],
+        resume=resume,
+        parallel_factory=parallel_factory,
+        db_url=db_url,
+    )
+
+
+def evaluate_soma_rin(
+    morphs_combos_df,
+    emodel_db,
+    morphology_path="morphology_path",
+    resume=False,
+    db_url="eval_db.sql",
+    parallel_factory=None,
+):
+    """Compute the input resistance of the ais (axon).
+
+    Args:
+        morphs_combos_df (DataFrame): each row reprensents a computation
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
+        morphology_path (str): entry from dataframe with morphology paths
+        resume (bool): if True, it will use only compute the empty rows of the database,
+            if False, it will ecrase or generate the database
+        db_url (str): filename/url for the sql database
+        parallel_factory (ParallelFactory): parallel factory instance
+
+    Returns:
+        pandas.DataFrame: original combos with computed rin of ais
+    """
+    key = "rin_soma"
+
+    rin_ais_evaluation = partial(
+        _rin_evaluation,
+        emodel_db=emodel_db,
+        morph_modifiers=[isolate_soma],
+        key=key,
+        morphology_path=morphology_path,
+        ais_recording=False,
+    )
+    return evaluate(
+        morphs_combos_df,
+        rin_ais_evaluation,
+        new_columns=[[key, 0.0]],
+        resume=resume,
+        parallel_factory=parallel_factory,
+        db_url=db_url,
+    )
 
 
 def evaluate_ais_rin(
@@ -281,6 +376,50 @@ def evaluate_somadend_rin(
     )
 
 
+def evaluate_rho(
+    morphs_combos_df,
+    emodel_db,
+    morphology_path="morphology_path",
+    resume=False,
+    db_url="eval_db.sql",
+    parallel_factory=None,
+):
+    """Compute the input resistances and rho factor.
+
+    Args:
+        morphs_combos_df (DataFrame): each row reprensents a computation
+        emodel_db (DataAccessPoint): object which contains API to access emodel data
+        morphology_path (str): entry from dataframe with morphology paths
+        rersume (bool): if True, it will use only compute the empty rows of the database,
+            if False, it will ecrase or generate the database
+        db_url (str): filename/url for the sql database
+        parallel_factory (ParallelFactory): parallel factory instance
+
+    Returns:
+        pandas.DataFrame: original combos with computed rho axon
+    """
+    morphs_combos_df = evaluate_soma_rin(
+        morphs_combos_df,
+        emodel_db,
+        morphology_path=morphology_path,
+        resume=resume,
+        db_url=db_url,
+        parallel_factory=parallel_factory,
+    )
+
+    morphs_combos_df = evaluate_rin_no_soma(
+        morphs_combos_df,
+        emodel_db,
+        morphology_path=morphology_path,
+        resume=resume,
+        db_url=db_url,
+        parallel_factory=parallel_factory,
+    )
+
+    morphs_combos_df["rho"] = morphs_combos_df.rin_soma / morphs_combos_df.rin_no_soma
+    return morphs_combos_df
+
+
 def evaluate_rho_axon(
     morphs_combos_df,
     emodel_db,
@@ -360,15 +499,14 @@ def evaluate_combos_rho(
         parallel_factory=parallel_factory,
     )
 
-    morphs_combos_df = evaluate_scores(
+    morphs_combos_df = feature_evaluation(
         morphs_combos_df,
         emodel_db,
-        save_traces=save_traces,
-        trace_folder=trace_folder,
         resume=resume,
-        db_url=str(db_url) + ".scores",
         morphology_path=morphology_path,
         parallel_factory=parallel_factory,
+        score_threshold=100,
+        trace_data_path=trace_folder if save_traces else None,
     )
 
     return morphs_combos_df

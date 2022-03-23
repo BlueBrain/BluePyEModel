@@ -1,4 +1,5 @@
 """ComboDB class to manage combos."""
+import json
 import logging
 
 import pandas as pd
@@ -52,8 +53,8 @@ class ComboDB(MorphDB):
         label="default",
         morphology_folder=None,
         cell_composition=None,
+        emodel_etype_map=None,
         emodel_db=None,
-        filter_pc=True,
     ):
         """Constructor from neurondb.
 
@@ -63,59 +64,80 @@ class ComboDB(MorphDB):
             morphology_folder (str): path to morphologies
             cell_composition (str|dict): path or dict with cell_composition.yaml
             emodel_db (BluePyEmodel.api.DataAccessPoint): emodel database
-            filter_pc (bool): only assing emodels with corresponding layers for cADpyr
         """
         obj = MorphDB.from_neurondb(neurondb, label=label, morphology_folder=morphology_folder)
         if cell_composition is not None and emodel_db is not None:
             obj.combo_df = cls._set_combo_df(
-                obj, cell_composition=cell_composition, emodel_db=emodel_db, filter_pc=filter_pc
+                obj,
+                cell_composition=cell_composition,
+                mtype_emodel_etype_map=emodel_etype_map,
+                emodel_db=emodel_db,
             )
         return obj
 
     @classmethod
-    def from_dataframe(cls, df, cell_composition=None, emodel_db=None, filter_pc=True):
+    def from_dataframe(
+        cls, df, cell_composition=None, emodel_etype_map=None, emodel_db=None, emodels=None
+    ):
         """Constructor from dataframe.
 
         Args:
             neurondb (str): path to neurondb
             morphology_folder (str): path to morphologies
             cell_composition (str|dict): path or dict with cell_composition.yaml
+            emodel_etype_map (dict): dict or path to emodel-etype mapping
             emodel_db (BluePyEmodel.api.DataAccessPoint): emodel database
-            filter_pc (bool): only assing emodels with corresponding layers for cADpyr
+            emodels (list): list of emodels to use, if None, we will use all available
         """
         obj = MorphDB()
         obj.df = df
         if cell_composition is not None and emodel_db is not None:
             obj.combo_df = cls._set_combo_df(
-                obj, cell_composition=cell_composition, emodel_db=emodel_db, filter_pc=filter_pc
+                obj,
+                cell_composition=cell_composition,
+                mtype_emodel_etype_map=emodel_etype_map,
+                emodel_db=emodel_db,
+                emodels=emodels,
             )
         return obj
 
-    def _set_combo_df(self, cell_composition, emodel_db, filter_pc=True):
+    def _set_combo_df(self, cell_composition, mtype_emodel_etype_map, emodel_db, emodels=None):
         """Create combo_df.
 
         Args:
             cell_composition (str|dict): path or dict with cell_composition.yaml
             emodel_db (BluePyEmodel.api.DataAccessPoint): emodel database
-            filter_pc (bool): only assing emodels with corresponding layers for cADpyr
         """
         if isinstance(cell_composition, str):
             with open(cell_composition, "r") as f:
                 cell_composition = yaml.safe_load(f)
+        if isinstance(mtype_emodel_etype_map, str):
+            with open(mtype_emodel_etype_map, "r") as map_file:
+                mtype_emodel_etype_map = json.load(map_file)
 
-        me_types = _get_metypes(cell_composition).set_index("etype")
+        me_types = _get_metypes(cell_composition)
         emodel_etypes_map_dict = emodel_db.get_emodel_etype_map()
         emodel_etypes_map = pd.DataFrame()
-        emodel_etypes_map["emodel"] = list(emodel_etypes_map_dict.keys())
-        emodel_etypes_map["etype"] = list(emodel_etypes_map_dict.values())
-        me_models = me_types.join(emodel_etypes_map.set_index("etype")).reset_index()
+        if emodels is None:
+            emodels = list(emodel_etypes_map_dict.keys())
+        else:
+            allowed_emodels = list(emodel_etypes_map_dict.keys())
+            emodels = [emodel for emodel in emodels if emodel in allowed_emodels]
 
-        if filter_pc:
-            gids = []
-            for gid in me_models[me_models.etype == "cADpyr"].index:
-                if me_models.loc[gid, "mtype"][1] != me_models.loc[gid, "emodel"].split("_")[1][1]:
-                    gids.append(gid)
-            me_models = me_models.drop(gids).reset_index()
+        etypes = [emodel_etypes_map_dict[emodel] for emodel in emodels]
+        emodel_etypes_map["emodel"] = emodels
+        # base_emodel is to remove the _[seed] if multiple models are available
+        emodel_etypes_map["base_emodel"] = ['_'.join(emodel.split('_')[:2]) for emodel in emodels]
+        emodel_etypes_map["etype"] = etypes
+
+        _me_types = []
+        for etype in etypes:
+            layer = mtype_emodel_etype_map[
+                emodel_etypes_map.set_index("etype").loc[etype, 'base_emodel'].to_list()[0]
+            ]["layer"]
+            _me_types.append(me_types[(me_types.etype == etype) & (me_types.layer.isin(layer))])
+        me_types = pd.concat(_me_types).set_index("etype")
+        me_models = me_types.join(emodel_etypes_map.set_index("etype")).reset_index()
 
         return _create_combos_df(self.df, me_models)
 

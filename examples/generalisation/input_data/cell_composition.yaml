@@ -1,0 +1,638 @@
+version: v2.0
+neurons:
+- density: '{[cell_density]L1_DAC}'
+  region: '@1$'
+  traits:
+    layer: 1
+    mtype: L1_DAC
+    etype:
+      bNAC: 0.3333
+      cNAC: 0.6667
+- density: '{[cell_density]L1_HAC}'
+  region: '@1$'
+  traits:
+    layer: 1
+    mtype: L1_HAC
+    etype:
+      bNAC: 0.2
+      cIR: 0.1
+      cNAC: 0.7
+- density: '{[cell_density]L1_LAC}'
+  region: '@1$'
+  traits:
+    layer: 1
+    mtype: L1_LAC
+    etype:
+      cNAC: 1.0
+- density: '{[cell_density]L1_NGC-DA}'
+  region: '@1$'
+  traits:
+    layer: 1
+    mtype: L1_NGC-DA
+    etype:
+      bNAC: 0.1
+      cACint: 0.1
+      cNAC: 0.7
+      cSTUT: 0.1
+#ask if the following are good etype values
+- density: '{[cell_density]L1_NGC-SA}'
+  region: '@1$'
+  traits:
+    layer: 1
+    mtype: L1_NGC-SA
+    etype:
+      bNAC: 0.1
+      cACint: 0.1
+      cNAC: 0.7
+      cSTUT: 0.1
+- density: '{[cell_density]L1_SAC}'
+  region: '@1$'
+  traits:
+    layer: 1
+    mtype: L1_SAC
+    etype:
+      bNAC: 0.3333
+      cACint: 0.1667
+      cNAC: 0.5
+- density: '{[cell_density]L23_BP}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_BP
+    etype:
+      bAC: 0.0714
+      bIR: 0.1429
+      bNAC: 0.2857
+      cACint: 0.2857
+      cNAC: 0.1429
+      dSTUT: 0.0714
+- density: '{[cell_density]L23_BTC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_BTC
+    etype:
+      bAC: 0.1389
+      bIR: 0.0556
+      bNAC: 0.2222
+      cACint: 0.4167
+      cNAC: 0.1667
+- density: '{[cell_density]L23_CHC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_CHC
+    etype:
+      cACint: 0.375
+      cNAC: 0.375
+      dNAC: 0.25
+- density: '{[cell_density]L23_DBC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_DBC
+    etype:
+      bAC: 0.0588
+      bIR: 0.1765
+      bNAC: 0.4118
+      cACint: 0.3529
+- density: '{[cell_density]L23_LBC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_LBC
+    etype:
+      bAC: 0.0746
+      bNAC: 0.0597
+      cACint: 0.2388
+      cNAC: 0.1642
+      cSTUT: 0.0448
+      dNAC: 0.4179
+- density: '{[cell_density]L23_MC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_MC
+    etype:
+      bAC: 0.0244
+      bNAC: 0.0244
+      cACint: 0.8292
+      cNAC: 0.0976
+      dNAC: 0.0244
+- density: '{[cell_density]L23_NBC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_NBC
+    etype:
+      bAC: 0.0462
+      bNAC: 0.0154
+      cACint: 0.2462
+      cIR: 0.0154
+      cNAC: 0.3077
+      dNAC: 0.3692
+- density: '{[cell_density]L23_NGC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_NGC
+    etype:
+      bNAC: 0.0714
+      cACint: 0.0714
+      cNAC: 0.7858
+      cSTUT: 0.0714
+- density: '{[cell_density]L23_SBC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L23_SBC
+    etype:
+      bNAC: 0.3571
+      cACint: 0.3571
+      dNAC: 0.2857
+- density: '{[cell_density]L2_IPC}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L2_IPC
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L2_TPC:A}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L2_TPC:A
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L2_TPC:B}'
+  region: '@2$'
+  traits:
+    layer: 2
+    mtype: L2_TPC:B
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L23_BP}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_BP
+    etype:
+      bAC: 0.0714
+      bIR: 0.1429
+      bNAC: 0.2857
+      cACint: 0.2857
+      cNAC: 0.1429
+      dSTUT: 0.0714
+- density: '{[cell_density]L23_BTC}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_BTC
+    etype:
+      bAC: 0.1389
+      bIR: 0.0556
+      bNAC: 0.2222
+      cACint: 0.4167
+      cNAC: 0.1667
+- density: '{[cell_density]L23_CHC}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_CHC
+    etype:
+      cACint: 0.375
+      cNAC: 0.375
+      dNAC: 0.25
+- density: '{[cell_density]L23_DBC}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_DBC
+    etype:
+      bAC: 0.0588
+      bIR: 0.1765
+      bNAC: 0.4118
+      cACint: 0.3529
+- density: '{[cell_density]L23_LBC}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_LBC
+    etype:
+      bAC: 0.0746
+      bNAC: 0.0597
+      cACint: 0.2388
+      cNAC: 0.1642
+      cSTUT: 0.0448
+      dNAC: 0.4179
+- density: '{[cell_density]L23_MC}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_MC
+    etype:
+      bAC: 0.0244
+      bNAC: 0.0244
+      cACint: 0.8292
+      cNAC: 0.0976
+      dNAC: 0.0244
+- density: '{[cell_density]L23_NBC}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_NBC
+    etype:
+      bAC: 0.0462
+      bNAC: 0.0154
+      cACint: 0.2462
+      cIR: 0.0154
+      cNAC: 0.3077
+      dNAC: 0.3692
+- density: '{[cell_density]L23_NGC}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_NGC
+    etype:
+      bNAC: 0.0714
+      cACint: 0.0714
+      cNAC: 0.7858
+      cSTUT: 0.0714
+- density: '{[cell_density]L23_SBC}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L23_SBC
+    etype:
+      bNAC: 0.3571
+      cACint: 0.3571
+      dNAC: 0.2857
+- density: '{[cell_density]L3_TPC:A}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L3_TPC:A
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L3_TPC:C}'
+  region: '@3$'
+  traits:
+    layer: 3
+    mtype: L3_TPC:C
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L4_BP}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_BP
+    etype:
+      bAC: 0.0714
+      bIR: 0.1429
+      bNAC: 0.2857
+      cACint: 0.2857
+      cNAC: 0.1429
+      dSTUT: 0.0714
+- density: '{[cell_density]L4_BTC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_BTC
+    etype:
+      bAC: 0.0769
+      bIR: 0.0769
+      bSTUT: 0.0769
+      cACint: 0.5386
+      cNAC: 0.1538
+      dNAC: 0.0769
+#L4_CHC : copied from the rat
+- density: '{[cell_density]L4_CHC}'
+  region: '@4$'
+  traits:
+    etype: 
+      cACint: 0.375 
+      cNAC: 0.375
+      dNAC: 0.25
+    layer: 4
+    mtype: L4_CHC
+- density: '{[cell_density]L4_DBC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_DBC
+    etype:
+      bAC: 0.0909
+      bIR: 0.3636
+      bNAC: 0.0909
+      bSTUT: 0.0909
+      cACint: 0.0909
+      cIR: 0.1818
+      cNAC: 0.0909
+- density: '{[cell_density]L4_LBC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_LBC
+    etype:
+      cACint: 0.1786
+      cNAC: 0.1071
+      cSTUT: 0.25
+      dNAC: 0.3929
+      dSTUT: 0.0714
+- density: '{[cell_density]L4_MC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_MC
+    etype:
+      bAC: 0.0882
+      bNAC: 0.0294
+      cACint: 0.7059
+      cNAC: 0.1471
+      dNAC: 0.0294
+- density: '{[cell_density]L4_NBC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_NBC
+    etype:
+      cACint: 0.0952
+      cIR: 0.0476
+      cNAC: 0.4762
+      dNAC: 0.381
+- density: '{[cell_density]L4_SBC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_SBC
+    etype:
+      bNAC: 0.3571
+      cACint: 0.3571
+      dNAC: 0.2857
+- density: '{[cell_density]L4_SSC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_SSC
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L4_TPC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_TPC
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L4_UPC}'
+  region: '@4$'
+  traits:
+    layer: 4
+    mtype: L4_UPC
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L5_BP}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_BP
+    etype:
+      bAC: 0.0714
+      bIR: 0.1429
+      bNAC: 0.2857
+      cACint: 0.2857
+      cNAC: 0.1429
+      dSTUT: 0.0714
+- density: '{[cell_density]L5_BTC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_BTC
+    etype:
+      bAC: 0.1667
+      cACint: 0.6666
+      cNAC: 0.1667
+- density: '{[cell_density]L5_CHC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_CHC
+    etype:
+      cACint: 0.375
+      cNAC: 0.375
+      dNAC: 0.25
+- density: '{[cell_density]L5_DBC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_DBC
+    etype:
+      bAC: 0.0909
+      bIR: 0.3636
+      bNAC: 0.0909
+      bSTUT: 0.0909
+      cACint: 0.0909
+      cIR: 0.1818
+      cNAC: 0.0909
+- density: '{[cell_density]L5_LBC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_LBC
+    etype:
+      bAC: 0.0588
+      cACint: 0.1176
+      cIR: 0.0588
+      cNAC: 0.1765
+      cSTUT: 0.1765
+      dNAC: 0.1765
+      dSTUT: 0.2353
+- density: '{[cell_density]L5_MC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_MC
+    etype:
+      bAC: 0.3704
+      bIR: 0.1111
+      bSTUT: 0.037
+      cACint: 0.3704
+      cNAC: 0.037
+      cSTUT: 0.037
+      dNAC: 0.037
+- density: '{[cell_density]L5_NBC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_NBC
+    etype:
+      bAC: 0.0667
+      bIR: 0.0667
+      bSTUT: 0.1333
+      cACint: 0.2
+      cIR: 0.0667
+      cNAC: 0.2
+      cSTUT: 0.2
+      dSTUT: 0.0667
+- density: '{[cell_density]L5_NGC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_NGC
+    etype:
+      cACint: 0.0714
+      cNAC: 0.8572
+      cSTUT: 0.0714
+- density: '{[cell_density]L5_SBC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_SBC
+    etype:
+      bNAC: 0.3571
+      cACint: 0.3571
+      dNAC: 0.2857
+- density: '{[cell_density]L5_TPC:A}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_TPC:A
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L5_TPC:B}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_TPC:B
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L5_TPC:C}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_TPC:C
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L5_UPC}'
+  region: '@5$'
+  traits:
+    layer: 5
+    mtype: L5_UPC
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L6_BPC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_BPC
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L6_BTC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_BTC
+    etype:
+      bAC: 0.1667
+      cACint: 0.6666
+      cNAC: 0.1667
+- density: '{[cell_density]L6_CHC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_CHC
+    etype:
+      cACint: 0.375
+      cNAC: 0.375
+      dNAC: 0.25
+- density: '{[cell_density]L6_HPC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_HPC
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L6_IPC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_IPC
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L6_LBC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_LBC
+    etype:
+      bAC: 0.1818
+      bIR: 0.2727
+      bNAC: 0.0909
+      bSTUT: 0.2727
+      cNAC: 0.0909
+      cSTUT: 0.0909
+- density: '{[cell_density]L6_MC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_MC
+    etype:
+      bAC: 0.12
+      bIR: 0.44
+      bNAC: 0.04
+      bSTUT: 0.04
+      cACint: 0.28
+      cIR: 0.04
+      cNAC: 0.04
+- density: '{[cell_density]L6_NBC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_NBC
+    etype:
+      bAC: 0.0667
+      bIR: 0.0667
+      bSTUT: 0.1333
+      cACint: 0.2
+      cIR: 0.0667
+      cNAC: 0.2
+      cSTUT: 0.2
+      dSTUT: 0.0667
+- density: '{[cell_density]L6_NGC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_NGC
+    etype:
+      cACint: 0.0714
+      cNAC: 0.8572
+      cSTUT: 0.0714
+- density: '{[cell_density]L6_SBC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_SBC
+    etype:
+      bNAC: 0.3571
+      cACint: 0.3571
+      dNAC: 0.2857
+- density: '{[cell_density]L6_TPC:A}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_TPC:A
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L6_TPC:C}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_TPC:C
+    etype:
+      cADpyr: 1.0
+- density: '{[cell_density]L6_UPC}'
+  region: '@6[ab]?$'
+  traits:
+    layer: 6
+    mtype: L6_UPC
+    etype:
+      cADpyr: 1.0
