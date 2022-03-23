@@ -109,10 +109,9 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
 
     for resp_name, response in responses.items():
 
-        if resp_name.split(".")[-1] != "v":
-            continue
-
         if not (isinstance(response, float)):
+            if resp_name.split(".")[-1] != "v":
+                continue
             traces_name.append(resp_name)
 
         else:
