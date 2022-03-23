@@ -418,7 +418,7 @@ class LocalAccessPoint(DataAccessPoint):
         with open(str(config_path), "w") as f:
             f.write(json.dumps(configuration.as_dict(), indent=2, cls=NumpyEncoder))
 
-    def get_fitness_calculator_configuration(self):
+    def get_fitness_calculator_configuration(self, record_ions_and_currents=False):
         """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
         config_dict = self._get_json("features")
@@ -426,11 +426,11 @@ class LocalAccessPoint(DataAccessPoint):
         legacy = "efeatures" not in config_dict and "protocols" not in config_dict
 
         # contains ion currents and ionic concentrations to be recorded
-        ion_currents, ionic_concentrations = self.get_ion_currents_concentrations()
-        if ion_currents is not None and ionic_concentrations is not None:
-            ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
-        else:
-            ion_variables = None
+        ion_variables = None
+        if record_ions_and_currents:
+            ion_currents, ionic_concentrations = self.get_ion_currents_concentrations()
+            if ion_currents is not None and ionic_concentrations is not None:
+                ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
 
         if legacy:
 

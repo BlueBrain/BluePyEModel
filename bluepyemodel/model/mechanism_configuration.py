@@ -59,7 +59,11 @@ class MechanismConfiguration:
     def get_current(self):
         """Return the ion current names."""
         current = []
-        for curr in list(chain.from_iterable((self.ion_currents, self.nonspecific_currents))):
+        ion_currents = self.ion_currents if self.ion_currents is not None else []
+        nonspecific_currents = (
+            self.nonspecific_currents if self.nonspecific_currents is not None else []
+        )
+        for curr in list(chain.from_iterable((ion_currents, nonspecific_currents))):
             current.append(f"{curr}_{self.name}")
         return current
 

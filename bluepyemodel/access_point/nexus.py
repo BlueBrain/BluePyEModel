@@ -274,7 +274,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         self.store_object(configuration)
 
-    def get_fitness_calculator_configuration(self):
+    def get_fitness_calculator_configuration(self, record_ions_and_currents=False):
         """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
         configuration = self.access_point.nexus_to_object(

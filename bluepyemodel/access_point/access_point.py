@@ -120,7 +120,7 @@ class DataAccessPoint:
     def store_fitness_calculator_configuration(self, configuration):
         """Store a fitness calculator configuration"""
 
-    def get_fitness_calculator_configuration(self):
+    def get_fitness_calculator_configuration(self, record_ions_and_currents=False):
         """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
     def get_mechanisms_directory(self):

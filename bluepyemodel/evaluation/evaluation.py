@@ -179,7 +179,7 @@ def compute_responses(
         for mo, r in zip(emodels, responses):
             mo.responses = r
             mo.evaluator = r.pop("evaluator")
-            if store_responses:
+            if store_responses and not check_local_responses_presence(emodels, cell_evaluator):
                 locally_store_responses(mo)
 
     else:
@@ -201,6 +201,7 @@ def get_evaluator_from_access_point(
     dt=None,
     strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
+    record_ions_and_currents=False,
 ):
     """Create an evaluator for the emodel.
 
@@ -217,13 +218,17 @@ def get_evaluator_from_access_point(
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+        record_ions_and_currents (bool): whether to add the ion and non-specific currents
+            and the ionic concentration to the recordings.
 
     Returns:
         bluepyopt.ephys.evaluators.CellEvaluator
     """
 
     model_configuration = access_point.get_model_configuration()
-    fitness_calculator_configuration = access_point.get_fitness_calculator_configuration()
+    fitness_calculator_configuration = access_point.get_fitness_calculator_configuration(
+        record_ions_and_currents=record_ions_and_currents
+    )
 
     cell_model = model.create_cell_model(
         name=access_point.emodel_metadata.emodel,
