@@ -321,7 +321,12 @@ class LocalAccessPoint(DataAccessPoint):
         for mech_file in glob.glob(str(Path(mech_dir) / "*.mod")):
             ion_currents, nonspecific_currents = get_mechanism_currents(mech_file)
             available_mechanisms.append(
-                MechanismConfiguration(name=Path(mech_file).stem, location=None, ion_currents=ion_currents, nonspecific_currents=nonspecific_currents)
+                MechanismConfiguration(
+                    name=Path(mech_file).stem,
+                    location=None,
+                    ion_currents=ion_currents,
+                    nonspecific_currents=nonspecific_currents,
+                )
             )
 
         return available_mechanisms

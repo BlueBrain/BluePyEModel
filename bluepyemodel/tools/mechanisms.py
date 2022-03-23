@@ -71,7 +71,7 @@ def copy_and_compile_mechanisms(access_point):
 
 
 def get_mechanism_currents(mech_file):
-    """Parse the mech mod file to get the mechanism ion and nonspecific currents if any."""
+    """Parse the mech mod file to get the mechanism ion and non-specific currents if any."""
     ion_currs = []
     nonspecific_currents = []
     with open(mech_file, "r") as f:

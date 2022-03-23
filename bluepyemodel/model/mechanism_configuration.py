@@ -27,7 +27,7 @@ class MechanismConfiguration:
              version (str): version id of the mod file.
              parameters (list): list of the possible parameter for this mechanism.
              ion_currents (list): list of the ion currents that this mechanism writes.
-             nonspecific_currents (list): list of nonspecific ion currents
+             nonspecific_currents (list): list of non-specific currents
              ionic_concentrations (list): list of the ionic concentration linked to the ion current
                 If None, will be deduced from the ions list.
         """
