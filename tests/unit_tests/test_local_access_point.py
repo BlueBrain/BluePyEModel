@@ -50,9 +50,9 @@ def test_get_model_configuration(db):
     expected_mechanisms = json.load(open(DATA / "test_mechanisms.json", "r"))
 
     for p in configuration.parameters:
-        assert p.location in expected_parameters['parameters']
-        for ep in expected_parameters['parameters'][p.location]:
-            if ep['name'] == p.name and ep['val'] == p.value:
+        assert p.location in expected_parameters["parameters"]
+        for ep in expected_parameters["parameters"][p.location]:
+            if ep["name"] == p.name and ep["val"] == p.value:
                 break
         else:
             raise Exception("missing parameter")
@@ -90,3 +90,24 @@ def test_get_model_name_for_final(db):
     assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
     db.emodel_metadata.iteration = "hash"
     assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__hash__42"
+
+
+def test_get_ion_currents_concentrations(db):
+    expected_ion_currents = {
+        "ica_Ca_HVA2",
+        "ica_Ca_LVAst",
+        "ik_K_Pst",
+        "ik_K_Tst",
+        "ina_NaTg",
+        "ina_Nap_Et2",
+        "ik_SK_E2",
+        "ik_SKv3_1",
+    }
+    expected_ionic_concentrations = {
+        "cai",
+        "ki",
+        "nai",
+    }
+    ion_currents, ionic_concentrations = db.get_ion_currents_concentrations()
+    assert set(ion_currents) == expected_ion_currents
+    assert set(ionic_concentrations) == expected_ionic_concentrations
