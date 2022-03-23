@@ -1,5 +1,7 @@
 """Mechanism Configuration"""
 
+from itertools import chain
+
 
 class MechanismConfiguration:
     """Contains the information related to the definition and configuration of a mechanism"""
@@ -11,7 +13,8 @@ class MechanismConfiguration:
         stochastic=None,
         version=None,
         parameters=None,
-        ions=None,
+        ion_currents=None,
+        nonspecific_currents=None,
         ionic_concentrations=None,
     ):
         """Init
@@ -23,7 +26,8 @@ class MechanismConfiguration:
              stochastic (bool): Can the mechanisms behave stochastically (optional).
              version (str): version id of the mod file.
              parameters (list): list of the possible parameter for this mechanism.
-             ions (list): list of the ion(s) that this mechanism writes.
+             ion_currents (list): list of the ion currents that this mechanism writes.
+             nonspecific_currents (list): list of non-specific currents
              ionic_concentrations (list): list of the ionic concentration linked to the ion current
                 If None, will be deduced from the ions list.
         """
@@ -31,12 +35,13 @@ class MechanismConfiguration:
         self.name = name
         self.location = location
         self.version = version
-        self.ions = ions
+        self.ion_currents = ion_currents
+        self.nonspecific_currents = nonspecific_currents
         self.ionic_concentrations = ionic_concentrations
         if self.ionic_concentrations is None:
             self.ionic_concentrations = []
-            if self.ions is not None:
-                for ion in self.ions:
+            if self.ion_currents is not None:
+                for ion in self.ion_currents:
                     # remove 'i' in the front and put 'i' at the back to make it a concentration
                     self.ionic_concentrations.append(f"{ion[1:]}i")
 
@@ -51,12 +56,16 @@ class MechanismConfiguration:
         else:
             self.parameters = parameters
 
-    def get_ion_current(self):
+    def get_current(self):
         """Return the ion current names."""
-        ion_current = []
-        for ion in self.ions:
-            ion_current.append(f"{ion}_{self.name}")
-        return ion_current
+        current = []
+        ion_currents = self.ion_currents if self.ion_currents is not None else []
+        nonspecific_currents = (
+            self.nonspecific_currents if self.nonspecific_currents is not None else []
+        )
+        for curr in list(chain.from_iterable((ion_currents, nonspecific_currents))):
+            current.append(f"{curr}_{self.name}")
+        return current
 
     def as_dict(self):
 
