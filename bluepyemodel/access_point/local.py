@@ -19,7 +19,7 @@ from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
-from bluepyemodel.tools.mechanisms import get_mechanism_ion
+from bluepyemodel.tools.mechanisms import get_mechanism_currents
 
 logger = logging.getLogger(__name__)
 
@@ -319,9 +319,9 @@ class LocalAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for mech_file in glob.glob(str(Path(mech_dir) / "*.mod")):
-            ions = get_mechanism_ion(mech_file)
+            ion_currents, nonspecific_currents = get_mechanism_currents(mech_file)
             available_mechanisms.append(
-                MechanismConfiguration(name=Path(mech_file).stem, location=None, ions=ions)
+                MechanismConfiguration(name=Path(mech_file).stem, location=None, ion_currents=ion_currents, nonspecific_currents=nonspecific_currents)
             )
 
         return available_mechanisms

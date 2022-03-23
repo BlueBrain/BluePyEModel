@@ -551,14 +551,14 @@ class NexusAccessPoint(DataAccessPoint):
                         upper_limit = ep.upperLimit if hasattr(ep, "upperLimit") else None
                         parameters[f"{ep.name}_{r.mod.suffix}"] = [lower_limit, upper_limit]
 
-            ions = []
+            ion_currents = []
             if hasattr(r.mod, "write"):
                 ions_ = r.mod.write
                 if isinstance(ions_, str):
                     if ions_[0] == "i":
-                        ions = [ions_]
+                        ion_currents = [ions_]
                 elif isinstance(ions_, list):
-                    ions = [ion for ion in ions_ if ion[0] == "i"]
+                    ion_currents = [ion for ion in ions_ if ion[0] == "i"]
 
             mech = MechanismConfiguration(
                 r.name,
@@ -566,7 +566,7 @@ class NexusAccessPoint(DataAccessPoint):
                 stochastic=stochastic,
                 version=version,
                 parameters=parameters,
-                ions=ions,
+                ion_currents=ion_currents,
             )
 
             available_mechanisms.append(mech)

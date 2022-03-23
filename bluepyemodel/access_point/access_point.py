@@ -201,15 +201,17 @@ class DataAccessPoint:
         Returns:
             tuple containing:
 
-            (list of str): ion current names for all available mechanisms
+            (list of str): current (ion and non-specific) names for all available mechanisms
             (list of str): ionic concentration names for all available mechanisms
         """
         # pylint: disable=assignment-from-no-return
         mechs = self.get_available_mechanisms()
         if mechs is None:
             return None, None
-        ion_currents = list(chain.from_iterable([mech.get_ion_current() for mech in mechs]))
+        ion_currents = list(chain.from_iterable([mech.get_current() for mech in mechs]))
         ionic_concentrations = list(
             chain.from_iterable([mech.ionic_concentrations for mech in mechs])
         )
+        # append i_pas which is present by default
+        ion_currents.append("i_pas")
         return ion_currents, ionic_concentrations
