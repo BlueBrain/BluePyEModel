@@ -31,6 +31,7 @@ class NeuronModelConfiguration:
         morphology=None,
         available_mechanisms=None,
         available_morphologies=None,
+        morph_modifiers=None,
     ):
         """Creates a model configuration, which includes the model parameters, distributions,
         mechanisms and a morphology.
@@ -42,6 +43,9 @@ class NeuronModelConfiguration:
             available_morphologies (list of str): list of the names of the available morphology in
                 the "./morphology" directory for the local access point or on Nexus for the
                 Nexus access point.
+            morph_modifiers (list): List of morphology modifiers. Each modifier has to be
+                informed by the path the file containing the modifier and the name of the
+                function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
         """
 
         if isinstance(parameters, dict):
@@ -81,6 +85,8 @@ class NeuronModelConfiguration:
 
         self.available_mechanisms = available_mechanisms
         self.available_morphologies = available_morphologies
+
+        self.morph_modifiers = morph_modifiers
 
     @property
     def mechanism_names(self):
@@ -495,6 +501,7 @@ class NeuronModelConfiguration:
             ],
             "parameters": [p.as_dict() for p in self.parameters],
             "morphology": self.morphology.as_dict(),
+            "morph_modifiers": self.morph_modifiers,
         }
 
     def __str__(self):

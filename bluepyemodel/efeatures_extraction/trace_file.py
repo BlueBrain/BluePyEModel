@@ -22,7 +22,7 @@ def list_ecodes_per_traces(traces, threshold_count=0):
 
     count_ecodes = {e: all_.count(e) for e in ecodes_per_traces["all"]}
 
-    for t in ecodes_per_traces:
+    for t in ecodes_per_traces.copy().keys():
         ecodes_per_traces[t] = list(
             set(e for e in ecodes_per_traces[t] if e and count_ecodes[e] > threshold_count)
         )

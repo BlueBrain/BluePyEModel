@@ -11,6 +11,7 @@ from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.evaluation.protocols import BPEM_ThresholdProtocol
 from bluepyemodel.optimisation.optimisation import read_checkpoint
 from bluepyemodel.tools.utils import make_dir
 
@@ -147,7 +148,11 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
 
                 if hasattr(stimuli[basename], "stimulus"):
 
-                    if stimuli[basename].threshold_based and threshold and holding:
+                    if (
+                        isinstance(stimuli[basename], BPEM_ThresholdProtocol)
+                        and threshold
+                        and holding
+                    ):
                         stimuli[basename].stimulus.holding_current = holding
                         stimuli[basename].stimulus.threshold_current = threshold
 

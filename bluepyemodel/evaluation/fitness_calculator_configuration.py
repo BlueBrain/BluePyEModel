@@ -320,12 +320,17 @@ class FitnessCalculatorConfiguration:
 
         validation = protocol_name in self.validation_protocols
 
+        protocol_type = "Protocol"
+        if "type" in protocol and protocol["type"] == "StepThresholdProtocol":
+            protocol_type = "ThresholdBasedProtocol"
+
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
             recordings=recordings,
             validation=validation,
             ion_variables=self.ion_variables,
+            protocol_type=protocol_type,
         )
 
         self.protocols.append(tmp_protocol)
