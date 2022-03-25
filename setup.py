@@ -79,6 +79,7 @@ setup(
         "neuron>=8.0",
         "morph_tool>=2.8",
         "fasteners>=0.16",
+        "jinja2==3.0.3"
     ],
     extras_require={
         "luigi": EXTRA_LUIGI + EXTRA_CURRENTSCAPE,

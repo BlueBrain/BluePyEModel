@@ -48,7 +48,7 @@ def protocol():
         }
     )
 
-    return define_protocol(protocol_configuration, stochasticity=True, threshold_based=True)
+    return define_protocol(protocol_configuration, stochasticity=True)
 
 
 def test_define_protocol(protocol):

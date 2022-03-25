@@ -16,11 +16,9 @@ logger = logging.getLogger(__name__)
 
 class BPEM_Protocol(ephys.protocols.SweepProtocol):
 
-    """Protocol having rheobase-rescaling and stochasticity capabilities"""
+    """Protocol with stochasticity capabilities"""
 
-    def __init__(
-        self, name=None, stimulus=None, recordings=None, stochasticity=False, threshold_based=False
-    ):
+    def __init__(self, name=None, stimulus=None, recordings=None, stochasticity=False):
         """Constructor
 
         Args:
@@ -30,8 +28,6 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
                 protocol
             stochasticity (bool): turns on or off the channels that can be
                 stochastic
-            threshold_based (bool): should the amplitude of the protocol be
-                rescaled based on the rheobase
         """
 
         super().__init__(
@@ -42,7 +38,6 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
 
         self.stimulus = stimulus
         self.stochasticity = stochasticity
-        self.threshold_based = threshold_based
 
         self.features = []
 
@@ -63,10 +58,35 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
     def amplitude(self):
         return self.stimulus.amplitude
 
-    def run(  # pylint: disable=arguments-differ
+    def run(  # pylint: disable=arguments-differ, arguments-renamed
         self,
         cell_model,
-        param_values,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+    ):
+        """Run protocol"""
+
+        if param_values is None:
+            param_values = {}
+
+        # Set the stochasticity
+        if not self.stochasticity:
+            for mechanism in cell_model.mechanisms:
+                mechanism.deterministic = True
+
+        return super().run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+
+
+class BPEM_ThresholdProtocol(BPEM_Protocol):
+
+    """Protocol having rheobase-rescaling and stochasticity capabilities"""
+
+    def run(  # pylint: disable=arguments-differ, arguments-renamed
+        self,
+        cell_model,
+        param_values=None,
         holding_current=None,
         threshold_current=None,
         sim=None,
@@ -74,21 +94,17 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
         timeout=None,
     ):
         """Run protocol"""
-        # Set the holding and threshold currents
-        if self.threshold_based:
 
-            if holding_current is None or threshold_current is None:
-                raise Exception("StepProtocol: holding or threshold current is None")
+        if param_values is None:
+            param_values = {}
 
-            self.stimulus.holding_current = holding_current
-            self.stimulus.threshold_current = threshold_current
+        if holding_current is None or threshold_current is None:
+            raise Exception("BPEM_ThresholdProtocol: holding or threshold current is None")
 
-        # Set the stochasticity
-        if not (self.stochasticity):
-            for mechanism in cell_model.mechanisms:
-                mechanism.deterministic = True
+        self.stimulus.holding_current = holding_current
+        self.stimulus.threshold_current = threshold_current
 
-        return super().run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+        return super().run(cell_model, param_values, sim, isolate, timeout)
 
 
 class RMPProtocol:

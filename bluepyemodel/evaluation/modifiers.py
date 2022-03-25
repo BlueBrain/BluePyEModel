@@ -349,3 +349,157 @@ replace_axon_hoc = """
         }
     }
 """
+
+
+def replace_axon_legacy(sim=None, icell=None):
+    """Replace axon used in legacy thalamus project"""
+
+    L_target = 60  # length of stub axon
+    nseg0 = 5  # number of segments for each of the two axon sections
+
+    nseg_total = nseg0 * 2
+    chunkSize = L_target / nseg_total
+
+    diams = []
+    lens = []
+
+    count = 0
+    for section in icell.axonal:
+        L = section.L
+        nseg = 1 + int(L / chunkSize / 2.0) * 2  # nseg to get diameter
+        section.nseg = nseg
+
+        for seg in section:
+            diams.append(seg.diam)
+            lens.append(L / nseg)
+            if count == nseg_total:
+                break
+        if count == nseg_total:
+            break
+
+    # Work-around if axon is too short
+    lasti = -2  # Last diam. may be bigger if axon cut
+
+    if len(diams) < nseg_total:
+        diams = diams + [diams[lasti]] * (nseg_total - len(diams))
+        lens = lens + [lens[lasti]] * (nseg_total - len(lens))
+        if nseg_total - len(diams) > 5:
+            logger.debug("Axon too short, adding more than 5 sections with fixed diam")
+
+    for section in icell.axonal:
+        sim.neuron.h.delete_section(sec=section)
+
+    #  new axon array
+    sim.neuron.h.execute("create axon[2]", icell)
+
+    L_real = 0
+    count = 0
+
+    for section in icell.axon:
+        section.nseg = nseg_total // 2
+        section.L = L_target / 2
+
+        for seg in section:
+            seg.diam = diams[count]
+            L_real = L_real + lens[count]
+            count = count + 1
+            # print seg.x, seg.diam
+        icell.axonal.append(sec=section)
+        icell.all.append(sec=section)
+
+    icell.axon[0].connect(icell.soma[0], 1.0, 0.0)
+    icell.axon[1].connect(icell.axon[0], 1.0, 0.0)
+
+    logger.debug("Replace axon with tapered AIS")
+
+
+replace_axon_legacy_hoc = """
+proc replace_axon(){
+
+    local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSize, L_real localobj   diams, lens
+
+    L_target = 60  // length of stub axon
+    nseg0 = 5  // number of segments for each of the two axon sections
+
+    nseg_total = nseg0 * 2
+    chunkSize = L_target/nseg_total
+
+    nSec = 0
+    forsec axonal{nSec = nSec + 1}
+
+    // Try to grab info from original axon
+    //At least two axon sections have to be present!
+    if(nSec < 1){
+        execerror("Less than two axon sections are present! Add an axon to the morphology and try again!")
+    } else {
+
+        diams = new Vector()
+        lens = new Vector()
+
+        access axon[0]
+        i1 = v(0.0001) // used when serializing sections prior to sim start
+                        access axon[1]
+        i2 = v(0.0001) // used when serializing sections prior to sim start
+
+        count = 0
+        forsec axonal{ // loop through all axon sections
+
+            nseg = 1 + int(L/chunkSize/2.)*2  //nseg to get diameter
+
+            for (x) {
+                if (x > 0 && x < 1) {
+                    count = count + 1
+                    diams.resize(count)
+                    diams.x[count-1] = diam(x)
+                    lens.resize(count)
+                    lens.x[count-1] = L/nseg
+                    if( count == nseg_total ){
+                        break
+                    }
+                }
+            }
+            if( count == nseg_total ){
+                break
+            }
+        }
+
+        // get rid of the old axon
+        forsec axonal{delete_section()}
+        execute1("create axon[2]", CellRef)
+
+        L_real = 0
+        count = 0
+
+        // new axon dependant on old diameters
+        for i=0,1{
+
+            access axon[i]
+            L =  L_target/2
+            nseg = nseg_total/2
+
+            for (x) {
+                if (x > 0 && x < 1) {
+                    diam(x) = diams.x[count]
+                    L_real = L_real+lens.x[count]
+                    count = count + 1
+                }
+            }
+
+            all.append()
+            axonal.append()
+
+            if (i == 0) {
+                v(0.0001) = i1
+            } else {
+                v(0.0001) = i2
+            }
+        }
+
+        nSecAxonal = 2
+        soma[0] connect axon[0](0), 1
+        axon[0] connect axon[1](0), 1
+
+        //print 'Target stub axon length:', L_target, 'um, equivalent length: ', L_real 'um'
+    }
+}
+"""

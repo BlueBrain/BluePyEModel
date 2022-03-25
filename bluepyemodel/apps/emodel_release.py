@@ -584,7 +584,7 @@ def _single_evaluation(
             partial(synth_axon, params=combo["AIS_params"], scale=combo["AIS_scaler"])
         ]
 
-    emodel_db.emodel = combo["emodel"]
+    emodel_db.emodel_metadata.emodel = combo["emodel"]
     evaluator = get_evaluator_from_access_point(
         emodel_db,
         stochasticity=stochasticity,
