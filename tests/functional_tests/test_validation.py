@@ -59,5 +59,5 @@ def test_validation(db):
         access_point=db,
         mapper=map,
     )
-
+    
     assert emodels[0].passed_validation

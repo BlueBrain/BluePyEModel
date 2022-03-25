@@ -50,7 +50,7 @@ def test_protocols(db, evaluator):
     responses = evaluator.run_protocols(
         protocols=evaluator.fitness_protocols.values(), param_values=params
     )
-
+    
     assert_allclose(responses["bpo_rin"], 37.372735, rtol=1e-06)
     assert_allclose(responses["bpo_rmp"], -77.232155, rtol=1e-06)
     assert_allclose(responses["bpo_holding_current"], -0.14453125, rtol=1e-06)

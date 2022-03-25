@@ -261,6 +261,8 @@ class SearchHoldingCurrent:
         self.target_voltage.stim_end = self.stimulus_duration
         self.target_voltage.stimulus_current = 0.0
 
+        self.response = {"SearchHoldingCurrent.soma.v": None}
+
     def create_protocol(self, holding_current):
         """Create a one-time use protocol made of a holding and step current"""
         # Create the stimuli and recording
@@ -290,6 +292,8 @@ class SearchHoldingCurrent:
         protocol = self.create_protocol(holding_current=holding_current)
         response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
 
+        self.response = response
+
         return self.target_voltage.calculate_feature(response)
 
     def run(
@@ -301,6 +305,9 @@ class SearchHoldingCurrent:
         timeout=None,
     ):
         """Run protocol"""
+
+        self.response = {"SearchHoldingCurrent.soma.v": None}
+
         if not self.strict_bounds:
             # first readjust the bounds if needed
             voltage_min = 1e10
@@ -331,17 +338,20 @@ class SearchHoldingCurrent:
                     self.upper_bound += 0.2
                     self.max_depth += 1
 
-        return {
-            "bpo_holding_current": self.bisection_search(
-                cell_model,
-                param_values,
-                sim=sim,
-                isolate=isolate,
-                upper_bound=self.upper_bound,
-                lower_bound=self.lower_bound,
-                timeout=timeout,
-            )
-        }
+        self.response["bpo_holding_current"] = self.bisection_search(
+            cell_model,
+            param_values,
+            sim=sim,
+            isolate=isolate,
+            upper_bound=self.upper_bound,
+            lower_bound=self.lower_bound,
+            timeout=timeout,
+        )
+
+        print()
+        print(self.response)
+        print()
+        return self.response
 
     def bisection_search(
         self,
@@ -443,6 +453,8 @@ class SearchThresholdCurrent:
         )
         self.flag_spike_detected = False
 
+        self.response = {"SearchThresholdCurrent.{self.location.name}.v": None}
+
     def create_protocol(self, holding_current, step_current):
         """Create a one-time use protocol made of a holding and step current"""
         # Create the stimuli and recording
@@ -484,6 +496,8 @@ class SearchThresholdCurrent:
     ):
         """Run protocol"""
 
+        self.response = {f"SearchThresholdCurrent.{self.location.name}.v": None}
+
         # Calculate max threshold current
         max_threshold_current = self.max_threshold_current(rin=rin, rmp=rmp)
         threshold = self.bisection_search(
@@ -496,7 +510,10 @@ class SearchThresholdCurrent:
             lower_bound=holding_current,
             timeout=timeout,
         )
-        return {"bpo_threshold_current": threshold if self.flag_spike_detected else None}
+
+        self.response["bpo_threshold_current"] = threshold if self.flag_spike_detected else None
+
+        return self.response
 
     def max_threshold_current(self, rin, rmp):
         """Find the current necessary to get to max_threshold_voltage"""
@@ -530,6 +547,7 @@ class SearchThresholdCurrent:
         protocol = self.create_protocol(holding_current, mid_bound)
         response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         spikecount = self.spike_feature.calculate_feature(response)
+        self.response = response
 
         if spikecount is None:
             return None
@@ -647,6 +665,7 @@ class MainProtocol(ephys.protocols.Protocol):
         response = self.search_holding_protocol.run(
             cell_model, {}, sim=sim, isolate=isolate, timeout=timeout
         )
+
         score = self.search_holding_protocol.target_holding.calculate_score(response)
 
         return response, score
