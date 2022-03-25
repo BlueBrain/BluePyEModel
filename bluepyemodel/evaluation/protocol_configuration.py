@@ -5,7 +5,15 @@ class ProtocolConfiguration:
 
     """Container for the definition of a protocol"""
 
-    def __init__(self, name, stimuli, recordings, validation=False, ion_variables=None):
+    def __init__(
+        self,
+        name,
+        stimuli,
+        recordings,
+        validation=False,
+        ion_variables=None,
+        protocol_type="ThresholdBasedProtocol",
+    ):
         """Init.
 
         The arguments efeatures and protocols are expected to be in the format used for the
@@ -18,6 +26,8 @@ class ProtocolConfiguration:
             recordings (list of dict):
             ion_variables (list of str): ion current names and ionic concentration anmes
                 for all available mechanisms
+            protocol_type (str): type of the protocol. Can be "ThresholdBasedProtocol" or
+                "Protocol".
         """
 
         self.name = name
@@ -49,6 +59,7 @@ class ProtocolConfiguration:
                     self.recordings.append(new_rec)
 
         self.validation = validation
+        self.protocol_type = protocol_type
 
     def as_dict(self):
         """Dictionary form"""

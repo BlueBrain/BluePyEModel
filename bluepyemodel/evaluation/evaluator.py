@@ -14,6 +14,7 @@ from bluepyopt.ephys.simulators import NrnSimulator
 from ..ecode import eCodes
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEM_Protocol
+from .protocols import BPEM_ThresholdProtocol
 from .protocols import MainProtocol
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
@@ -35,6 +36,11 @@ seclist_to_sec = {
     "apical": "apic",
     "axonal": "axon",
     "myelinated": "myelin",
+}
+
+protocol_type_to_class = {
+    "Protocol": BPEM_Protocol,
+    "ThresholdBasedProtocol": BPEM_ThresholdProtocol,
 }
 
 
@@ -76,7 +82,6 @@ def define_location(definition):
 def define_protocol(
     protocol_configuration,
     stochasticity=False,
-    threshold_based=False,
     use_fixed_dt_recordings=False,
 ):
     """Create the protocol.
@@ -85,8 +90,6 @@ def define_protocol(
         protocol_configuration (ProtocolConfiguration): configuration of the protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
-        threshold_based (bool): is the protocol being instantiated a threshold-based or a
-            fix protocol.
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
 
     Returns:
@@ -126,17 +129,16 @@ def define_protocol(
             break
     else:
         raise KeyError(
-            f"There is no eCode linked to the stimulus name {protocol_configuration.lower()}. "
+            f"There is no eCode linked to the stimulus name {protocol_configuration.name.lower()}. "
             "See ecode/__init__.py for the available stimuli "
             "names"
         )
 
-    return BPEM_Protocol(
+    return protocol_type_to_class[protocol_configuration.protocol_type](
         name=protocol_configuration.name,
         stimulus=stimulus,
         recordings=recordings,
         stochasticity=stochasticity,
-        threshold_based=threshold_based,
     )
 
 
@@ -299,7 +301,6 @@ def define_main_protocol(
     efel_settings=None,
     score_threshold=12.0,
     max_threshold_voltage=-30,
-    threshold_based_evaluator=True,
     strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
 ):
@@ -319,8 +320,6 @@ def define_main_protocol(
         efel_settings (dict): eFEl settings.
         threshold_efeature_std (float): if informed, compute the std as
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
-        threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
-            by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
     """
@@ -337,11 +336,9 @@ def define_main_protocol(
         if not include_validation_protocols and protocols_def.validation:
             continue
 
-        protocol = define_protocol(
-            protocols_def, stochasticity, threshold_based_evaluator, use_fixed_dt_recordings
-        )
+        protocol = define_protocol(protocols_def, stochasticity, use_fixed_dt_recordings)
 
-        if threshold_based_evaluator:
+        if isinstance(protocol, BPEM_ThresholdProtocol):
             threshold_protocols[protocols_def.name] = protocol
         else:
             other_protocols[protocols_def.name] = protocol
@@ -367,7 +364,7 @@ def define_main_protocol(
     rin_protocol = None
     search_holding_protocol = None
     search_threshold_protocol = None
-    if threshold_based_evaluator:
+    if len(threshold_protocols):
         rmp_protocol = define_RMP_protocol(efeatures)
         rin_protocol = define_Rin_protocol(efeatures, ais_recording)
         search_holding_protocol = define_holding_protocol(efeatures, strict_holding_bounds)
@@ -467,7 +464,6 @@ def create_evaluator(
     score_threshold=12.0,
     max_threshold_voltage=-30,
     dt=None,
-    threshold_based_evaluator=True,
     strict_holding_bounds=True,
     mechanisms_directory=None,
     use_fixed_dt_recordings=False,
@@ -494,8 +490,6 @@ def create_evaluator(
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
-        threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
-            by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is current is outside
         mechanisms_directory (str or Path): path to the directory containing the mechanisms
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
@@ -516,7 +510,6 @@ def create_evaluator(
         efel_settings=efel_settings,
         score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
-        threshold_based_evaluator=threshold_based_evaluator,
         strict_holding_bounds=strict_holding_bounds,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
     )
