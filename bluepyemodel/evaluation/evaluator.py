@@ -387,17 +387,6 @@ def define_main_protocol(
         score_threshold=score_threshold,
     )
 
-    # TODO: find a more elegant way to get ride of this efeature (or return the full response
-    # for the SearchHoldingCurrent and SearchThresholdCurrent)
-    efeatures = [
-        e
-        for e in efeatures
-        if not (
-            "SearchHoldingCurrent" in e.recording_names[""]
-            and e.efel_feature_name == "steady_state_voltage_stimend"
-        )
-    ]
-
     return main_protocol, efeatures
 
 
