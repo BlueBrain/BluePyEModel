@@ -2,8 +2,6 @@
 import logging
 from copy import deepcopy
 
-import numpy
-
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
@@ -205,33 +203,6 @@ class FitnessCalculatorConfiguration:
 
         self.efeatures.append(tmp_feature)
 
-    def _add_bluepyefe_rmp_from_all_protocol(self, efeatures):
-        """Add a RMP efeature computed from the voltage base of all protocols"""
-
-        voltage_bases = []
-
-        for protocol_name in efeatures:
-            for recording in efeatures[protocol_name]:
-                for feature in efeatures[protocol_name][recording]:
-                    if feature["feature"] == "voltage_base":
-                        voltage_bases.append(feature["val"])
-
-        if not voltage_bases:
-            raise Exception("name_rmp_protocol is 'all' but no voltage_base were extracted.")
-
-        voltage_bases = numpy.asarray(voltage_bases)
-
-        self.efeatures.append(
-            EFeatureConfiguration(
-                efel_feature_name="steady_state_voltage_stimend",
-                protocol_name="RMPProtocol",
-                recording_name="soma.v",
-                mean=numpy.mean(voltage_bases[:, 0]),
-                std=numpy.mean(voltage_bases[:, 1]),
-                threshold_efeature_std=self.threshold_efeature_std,
-            )
-        )
-
     def init_from_bluepyefe(self, efeatures, protocols, currents):
         """Fill the configuration using the output of BluePyEfe"""
 
@@ -260,11 +231,6 @@ class FitnessCalculatorConfiguration:
             for recording in efeatures[protocol_name]:
                 for feature in efeatures[protocol_name][recording]:
                     self._add_bluepyefe_efeature(feature, protocol_name, recording)
-
-        # Handle case where the rmp current is to be computed from the voltage_base of all
-        # the protocols
-        if self.name_rmp_protocol == "all":
-            self._add_bluepyefe_rmp_from_all_protocol(efeatures)
 
         # Add the current related features
         if currents:
