@@ -461,18 +461,17 @@ class NexusAccessPoint(DataAccessPoint):
             if filepath.stem != mechanism:
                 filepath.rename(pathlib.Path(filepath.parent / mod_file_name))
 
-    def download_morphology(self, name, format):
+    def download_morphology(self, name, format_=None):
         """Download a morphology by name if not already downloaded"""
 
         resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
-
         filepath = pathlib.Path(self.access_point.download(resource.id, "./nexus_temp/"))
 
         # Some morphologies have .h5 attached and we don't want that:
-        if format:
-            filepath = filepath.with_suffix(format)
-        elif filepath.suffix == "h5":
-            for suffix in ["swc", "asc"]:
+        if format_:
+            filepath = filepath.with_suffix("." + format_)
+        elif filepath.suffix == ".h5":
+            for suffix in [".swc", ".asc"]:
                 if filepath.with_suffix(suffix).is_file():
                     filepath = filepath.with_suffix(suffix)
                     break
