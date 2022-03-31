@@ -200,7 +200,7 @@ def define_morphology(
         bluepyopt.ephys.morphologies.NrnFileMorphology: a morphology object
     """
 
-    if morph_modifiers is None or morph_modifiers == [None]:
+    if morph_modifiers is None:
         morph_modifiers = [replace_axon_with_taper]
         morph_modifiers_hoc = [replace_axon_hoc]  # TODO: check the hoc is correct
         logger.debug("No morphology modifiers provided, replace_axon_with_taper will be used.")
@@ -208,7 +208,7 @@ def define_morphology(
         if isinstance(morph_modifiers, str):
             morph_modifiers = [morph_modifiers]
         for i, morph_modifier in enumerate(morph_modifiers):
-            if isinstance(morph_modifier, list):
+            if isinstance(morph_modifier, list) and morph_modifier:
                 modifier_module = importlib.import_module(morph_modifier[0])
                 morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
             elif isinstance(morph_modifier, str):
