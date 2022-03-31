@@ -37,9 +37,4 @@ class EModelWorkflow:
 
     def as_dict(self):
         """Used for the storage of the object"""
-        return {
-            "targets_configuration_id": self.targets_configuration_id,
-            "pipeline_settings_id": self.pipeline_settings_id,
-            "emodel_configuration_id": self.emodel_configuration_id,
-            "state": self.state,
-        }
+        return vars(self)

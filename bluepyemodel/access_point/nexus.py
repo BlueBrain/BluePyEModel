@@ -365,8 +365,8 @@ class NexusAccessPoint(DataAccessPoint):
 
     def check_emodel_workflow_configurations(self, emodel_workflow):
         """Return True if the emodel workflow's configurations are on nexus, and False otherwise"""
-        for id in emodel_workflow.get_configuration_ids():
-            if self.access_point.retrieve(id) is None:
+        for id_ in emodel_workflow.get_configuration_ids():
+            if self.access_point.retrieve(id_) is None:
                 return False
         return True
 
