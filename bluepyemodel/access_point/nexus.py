@@ -306,7 +306,9 @@ class NexusAccessPoint(DataAccessPoint):
             type_="EModelConfiguration", metadata=self.emodel_metadata_ontology.for_resource()
         )
 
-        morph_path = self.download_morphology(configuration.morphology.name)
+        morph_path = self.download_morphology(
+            configuration.morphology.name, configuration.morphology.format
+        )
         self.download_mechanisms(configuration.mechanisms)
 
         configuration.morphology.path = morph_path
@@ -459,12 +461,22 @@ class NexusAccessPoint(DataAccessPoint):
             if filepath.stem != mechanism:
                 filepath.rename(pathlib.Path(filepath.parent / mod_file_name))
 
-    def download_morphology(self, name):
+    def download_morphology(self, name, format_=None):
         """Download a morphology by name if not already downloaded"""
 
         resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
+        filepath = pathlib.Path(self.access_point.download(resource.id, "./nexus_temp/"))
 
-        return self.access_point.download(resource.id, "./nexus_temp/")
+        # Some morphologies have .h5 attached and we don't want that:
+        if format_:
+            filepath = filepath.with_suffix("." + format_)
+        elif filepath.suffix == ".h5":
+            for suffix in [".swc", ".asc"]:
+                if filepath.with_suffix(suffix).is_file():
+                    filepath = filepath.with_suffix(suffix)
+                    break
+
+        return str(filepath)
 
     def download_trace(self, id_=None, name=None):
         """Does not actually download the Trace since traces are already stored on Nexus"""
