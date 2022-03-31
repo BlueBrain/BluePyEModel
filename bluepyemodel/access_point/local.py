@@ -14,6 +14,7 @@ from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfi
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
@@ -470,6 +471,27 @@ class LocalAccessPoint(DataAccessPoint):
             )
 
         return configuration
+
+    def create_emodel_workflow(self, state="not launched"):
+        """Create an empty EModelWorkflow instance. EModel workflow should not be used in local"""
+        return EModelWorkflow(
+            None,
+            None,
+            None,
+            state=state,
+        )
+
+    def get_emodel_workflow(self):
+        """Emodel workflow is not used in local, so return None here"""
+        return None
+
+    def check_emodel_workflow_configurations(self, emodel_workflow):
+        """Emodel workflow is not used in local, so always return True to let the workflow proceed"""
+        return True
+
+    def store_or_update_emodel_workflow(self, emodel_workflow):
+        """Emodel workflow is not used in local, so pass"""
+        pass
 
     def get_morphologies(self):
         """Get the name and path to the morphologies from the recipes.

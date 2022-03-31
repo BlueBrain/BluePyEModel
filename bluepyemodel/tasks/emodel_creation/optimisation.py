@@ -6,6 +6,7 @@ from pathlib import Path
 
 import luigi
 
+from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline.plotting import optimization
 from bluepyemodel.emodel_pipeline.plotting import plot_models
@@ -619,8 +620,26 @@ class EModelCreationTarget(WorkflowTarget):
             iteration_tag=iteration_tag,
         )
 
+    def update_emodel_workflow(self, state="done"):
+        """Update emodel workflow state on nexus"""
+        # get / create
+        emodel_workflow = self.access_point.get_emodel_workflow()
+        if emodel_workflow is None:
+            emodel_workflow = self.access_point.create_emodel_workflow()
+
+        # store / update
+        # this function might be called several times by luigi, so
+        # only update the resource when necessary
+        if emodel_workflow.state != state:
+            emodel_workflow.state = state
+            self.access_point.store_or_update_emodel_workflow(emodel_workflow)
+
     def exists(self):
         """Check if the model is completed."""
+        exist = self.access_point.is_validated()
+        if exist:
+            # only for nexus access_point
+            self.update_emodel_workflow(state="done")
 
         return self.access_point.is_validated()
 
@@ -642,6 +661,28 @@ class EModelCreation(WorkflowTask):
     seed = luigi.IntParameter(default=1)
     graceful_killer = multiprocessing.Event()
 
+    def check_and_update_emodel_workflow(self, state="running"):
+        """Get or create emodel workflow, check its configuration, and update its state on nexus"""
+        # get / create
+        emodel_workflow = self.access_point.get_emodel_workflow()
+        if emodel_workflow is None:
+            emodel_workflow = self.access_point.create_emodel_workflow()
+
+        # check
+        has_configuration = self.access_point.check_emodel_workflow_configurations(emodel_workflow)
+        if not has_configuration:
+            raise AccessPointException(
+                "There are configuration files missing on nexus for the workflow."
+                "Please check that you have registered on nexus the following resources:\n"
+                "ExtractionTargetsConfiguration\n"
+                "EModelPipelineSettings\n"
+                "EModelConfiguration"
+            )
+
+        # store / update
+        emodel_workflow.state = state
+        self.access_point.store_or_update_emodel_workflow(emodel_workflow)
+
     def run(self):
         """Optimize e-models by batches of batch_size until one is validated."""
 
@@ -649,6 +690,9 @@ class EModelCreation(WorkflowTask):
 
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
         max_n_batch = self.access_point.pipeline_settings.max_n_batch
+
+        # only for nexus access_point
+        self.check_and_update_emodel_workflow(state="running")
 
         while not self.output().exists() and not self.graceful_killer.is_set():
             # limit the number of batch

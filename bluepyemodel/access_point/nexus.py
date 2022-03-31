@@ -11,6 +11,7 @@ from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
 
 # pylint: disable=too-many-arguments,unused-argument,too-many-locals
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
@@ -329,6 +330,63 @@ class NexusAccessPoint(DataAccessPoint):
         """Store a channel distribution as a resource of type EModelChannelDistribution"""
 
         self.store_object(distribution, metadata={})
+
+    def create_emodel_workflow(self, state="not launched"):
+        """Create an EModelWorkflow instance filled with the appropriate configuration"""
+        targets_configuration_id = self.access_point.get_nexus_id(
+            type_="ExtractionTargetsConfiguration",
+            metadata=self.emodel_metadata_ontology.for_resource(),
+        )
+        pipeline_settings_id = self.access_point.get_nexus_id(
+            type_="EModelPipelineSettings", metadata=self.emodel_metadata_ontology.for_resource()
+        )
+        emodel_configuration_id = self.access_point.get_nexus_id(
+            type_="EModelConfiguration", metadata=self.emodel_metadata_ontology.for_resource()
+        )
+
+        return EModelWorkflow(
+            targets_configuration_id,
+            pipeline_settings_id,
+            emodel_configuration_id,
+            state=state,
+        )
+
+    def get_emodel_workflow(self):
+        """Get the emodel workflow, containing configuration data and workflow status
+
+        Returns None if the emodel workflow is not present on nexus."""
+
+        emodel_workflow = self.access_point.nexus_to_objects(
+            type_="EModelWorkflow", metadata=self.emodel_metadata_ontology.for_resource()
+        )
+        if emodel_workflow:
+            return emodel_workflow[0]
+        return None
+
+    def check_emodel_workflow_configurations(self, emodel_workflow):
+        """Return True if the emodel workflow's configurations are on nexus, and False otherwise"""
+        for id in emodel_workflow.get_configuration_ids():
+            if self.access_point.retrieve(id) is None:
+                return False
+        return True
+
+    def store_or_update_emodel_workflow(self, emodel_workflow):
+        """If emodel workflow is not on nexus, store it. If it is, fetch it and update its state"""
+        type_ = "EModelWorkflow"
+        metadata = self.emodel_metadata_ontology.for_resource()
+
+        filters = {"type": type_}
+        filters.update(metadata)
+        resources = self.access_point.fetch(filters)
+
+        # not present on nexus yet -> store it
+        if resources is None:
+            self.access_point.object_to_nexus(emodel_workflow, metadata, replace=False)
+        # if present on nexus -> update its state
+        else:
+            resource = resources[0]
+            resource.state = emodel_workflow.state
+            self.access_point.forge.update(resource)
 
     def get_emodel(self, seed=None):
         """Fetch an emodel"""
