@@ -486,12 +486,12 @@ class LocalAccessPoint(DataAccessPoint):
         return None
 
     def check_emodel_workflow_configurations(self, emodel_workflow):
-        """Emodel workflow is not used in local, so always return True to let the workflow proceed"""
+        """Emodel workflow is not used in local, so always return True to let the workflow run"""
+        # pylint: disable=unused-argument
         return True
 
     def store_or_update_emodel_workflow(self, emodel_workflow):
         """Emodel workflow is not used in local, so pass"""
-        pass
 
     def get_morphologies(self):
         """Get the name and path to the morphologies from the recipes.
