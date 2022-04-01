@@ -27,10 +27,11 @@ def locally_store_responses(emodel):
         if not ("holding_current" in key or "threshold_current" in key or "bpo" in key):
             output_path = Path(output_dir) / ".".join((key, "dat"))
 
-            time = numpy.array(resp["time"])
-            data = numpy.array(resp["voltage"])  # even current will be named voltage here
+            if resp["time"] is not None and resp["voltage"] is not None:
+                time = numpy.array(resp["time"])
+                data = numpy.array(resp["voltage"])  # even current will be named voltage here
 
-            numpy.savetxt(output_path, numpy.transpose(numpy.vstack((time, data))))
+                numpy.savetxt(output_path, numpy.transpose(numpy.vstack((time, data))))
 
 
 def check_local_responses_presence(emodels, cell_eval):
