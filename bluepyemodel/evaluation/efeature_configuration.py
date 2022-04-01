@@ -40,9 +40,10 @@ class EFeatureConfiguration:
         use the method init_from_bluepyefe.
 
         Args:
-            efel_feature_name (str): name of the efel feature.
-            protocol_name (str): name of the protocol to which the efeature is associated.
-            recording_name (str): name of the recording of the procol
+            efel_feature_name (str): name of the eFEl feature.
+            protocol_name (str): name of the protocol to which the efeature is associated. For
+                example "Step_200".
+            recording_name (str): name of the recording of the protocol. For example: "soma.v"
             mean (float): mean of the efeature.
             std (float): standard deviation of the efeature.
             efeature_name (str):given name for this specific feature. Can be different

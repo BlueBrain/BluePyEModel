@@ -89,16 +89,18 @@ class FitnessCalculatorConfiguration:
         use the method init_from_bluepyefe.
 
         Args:
-            efeatures (list of dict): definition of the efeatures. Of the format:
-            [
-                {"efel_feature_name": str, "protocol_name": str, "recording_name": str,
-                "mean": float, "std": float, "efel_settings": dict}
-            ]
-            protocols (list of dict): definition of the protocols. Of the format:
-            [
-                {"name": str, "stimuli": list of dict, "recordings": list of dict,
-                "validation": bool}
-            ]
+            efeatures (list of dict): contains the description of the efeatures of the model
+                in the format returned by the method as_dict of the EFeatureConfiguration class:
+                [
+                    {"efel_feature_name": str, "protocol_name": str, "recording_name": str,
+                    "mean": float, "std": float, "efel_settings": dict}
+                ]
+            protocols (list of dict): contains the description of the protocols of the model
+                in the format returned by the method as_dict of the ProtocolConfiguration class:
+                [
+                    {"name": str, "stimuli": list of dict, "recordings": list of dict,
+                    "validation": bool}
+                ]
             name_rmp_protocol (str): name of protocol whose features are to be used as targets for
                 the search of the RMP.
             name_rin_protocol (str): name of protocol whose features are to be used as targets for
