@@ -416,16 +416,6 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None,
         cvode_minstep (float): minimum time step allowed for a CVODE step.
     """
 
-    if stochasticity:
-        for mechanism in cell_model.mechanisms:
-            if not mechanism.deterministic:
-                return NrnSimulator(dt=dt or 0.025, cvode_active=False)
-
-        logger.warning(
-            "Stochasticity is True but no mechanisms are stochastic. Switching to "
-            "non-stochastic."
-        )
-
     if mechanisms_directory is not None:
         # To avoid double loading the same mechanisms:
         cwd = pathlib.Path(os.getcwd())
@@ -436,6 +426,18 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None,
             mechs_parent_dir = str(mech_dir.parents[0])
     else:
         mechs_parent_dir = None
+
+    if stochasticity:
+        for mechanism in cell_model.mechanisms:
+            if not mechanism.deterministic:
+                return NrnSimulator(
+                    dt=dt or 0.025, cvode_active=False, mechanisms_directory=mechs_parent_dir
+                )
+
+        logger.warning(
+            "Stochasticity is True but no mechanisms are stochastic. Switching to "
+            "non-stochastic."
+        )
 
     if dt is None:
         return NrnSimulator(mechanisms_directory=mechs_parent_dir, cvode_minstep=cvode_minstep)
