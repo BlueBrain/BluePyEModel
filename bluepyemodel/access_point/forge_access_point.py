@@ -341,6 +341,8 @@ class NexusForgeAccessPoint:
 
         distributions = payload.pop("nexus_distributions", None)
 
+        print(payload)
+
         self.register(
             payload,
             filters_existance=payload_existance,

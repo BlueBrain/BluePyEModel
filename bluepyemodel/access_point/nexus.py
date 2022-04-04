@@ -378,12 +378,18 @@ class NexusAccessPoint(DataAccessPoint):
         filters = {"type": type_}
         filters.update(metadata)
         resources = self.access_point.fetch(filters)
+        if resources is None:
+            print("is None")
+        else:
+            print(f"len resources = {len(resources)}")
 
         # not present on nexus yet -> store it
         if resources is None:
+            logger.warning("not present -> register")
             self.access_point.object_to_nexus(emodel_workflow, metadata, replace=False)
         # if present on nexus -> update its state
         else:
+            logger.warning("present -> update")
             resource = resources[0]
             resource.state = emodel_workflow.state
             self.access_point.forge.update(resource)
