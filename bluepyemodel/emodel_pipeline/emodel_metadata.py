@@ -33,7 +33,11 @@ class EModelMetadata:
 
         for k, v in vars(self).items():
             if v and v != "None":
-                metadata[k] = v
+                # rename species into subject
+                if k == "species":
+                    metadata["subject"] = v
+                else:
+                    metadata[k] = v
 
         return metadata
 
