@@ -63,13 +63,24 @@ def plot(df1, df2, threshold=5, pdf_filename="evaluations.pdf", feat_set=None):
                         c="C0",
                         label="scaled adapted",
                     )
-                    plt.plot(_df2.index, np.clip(_df2[feat], 0, clip), "-", c="C1", label="scaled")
+                    try:
+                        plt.plot(
+                            _df2.index, np.clip(_df2[feat], 0, clip), "-", c="C1", label="scaled"
+                        )
+                    except:
+                        pass
                     plt.plot(
                         df1.area[0], np.clip(__df1.head(1)[feat], 0, clip), "or", label="exemplar"
                     )
-                    plt.plot(
-                        df2.area[0], np.clip(__df2.head(1)[feat], 0, clip), "or", label="exemplar"
-                    )
+                    try:
+                        plt.plot(
+                            df2.area[0],
+                            np.clip(__df2.head(1)[feat], 0, clip),
+                            "or",
+                            label="exemplar",
+                        )
+                    except:
+                        pass
 
                     plt.suptitle(feat)
                     plt.legend()
@@ -84,5 +95,5 @@ if __name__ == "__main__":
     df_scaled = pd.read_csv("out/evaluations/synth_combos_with_scores_df_cADpyr_L5TPC.csv")
     df_orig = pd.read_csv("data.csv")
     df_orig = get_scores(df_orig)
-    plot(df_scaled, df_orig, feat_set="Step_200", pdf_filename="evaluations_step_200.pdf")
+    # plot(df_scaled, df_orig, feat_set="Step_200", pdf_filename="evaluations_step_200.pdf")
     plot(df_scaled, df_orig, pdf_filename="evaluations.pdf")
