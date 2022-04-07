@@ -22,9 +22,23 @@ class ProtocolConfiguration:
 
         Args:
             name (str): name of the protocol
-            stimuli (list of dict):
-            recordings (list of dict):
-            ion_variables (list of str): ion current names and ionic concentration anmes
+            stimuli (list of dict): contains the description of the stimuli. The exact format has
+                to match what is expected by the related eCode class (see the classes defined
+                in bluepyemodel.ecodes for more information). For example, for a Step protocol,
+                the format will be:
+                [{
+                    'amp': float, 'thresh_perc': float, 'holding_current': float, 'delay': float,
+                    'duration': float, 'totduration': float
+                }]
+            recordings (list of dict): contains the description of the recordings. For a recording
+                at a given compartment, the format is for example:
+                [{
+                    "type": "CompRecording",
+                    "name": f"{protocol_name}.soma.v",
+                    "location": "soma",
+                    "variable": "v",
+                }]
+            ion_variables (list of str): ion current names and ionic concentration names
                 for all available mechanisms
             protocol_type (str): type of the protocol. Can be "ThresholdBasedProtocol" or
                 "Protocol".

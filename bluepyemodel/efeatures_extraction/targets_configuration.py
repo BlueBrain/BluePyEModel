@@ -103,26 +103,31 @@ class TargetsConfiguration:
         used_protocols = set([t.protocol for t in self.targets] + self.protocols_rheobase)
 
         for f in self.files:
+            for protocol in f.ecodes:
+                if protocol in used_protocols:
 
-            if f.cell_name not in files_metadata:
-                files_metadata[f.cell_name] = {}
+                    if f.cell_name not in files_metadata:
+                        files_metadata[f.cell_name] = {}
+                    if protocol not in files_metadata[f.cell_name]:
+                        files_metadata[f.cell_name][protocol] = []
 
-            for p in used_protocols:
+                    ecodes_metadata = {
+                        **f.ecodes.get(protocol, {}),
+                        **f.other_metadata,
+                        "filepath": f.filepath,
+                    }
 
-                if p not in files_metadata[f.cell_name]:
-                    files_metadata[f.cell_name][p] = []
+                    files_metadata[f.cell_name][protocol].append(ecodes_metadata)
 
-                ecodes_metadata = {**f.ecodes.get(p, {}), **f.other_metadata}
-                ecodes_metadata["filepath"] = f.filepath
-
-                files_metadata[f.cell_name][p].append(ecodes_metadata)
-
+        for cell_name, protocols in files_metadata.items():
             for protocol in self.protocols_rheobase:
-                if protocol not in files_metadata[f.cell_name]:
-                    raise Exception(
-                        f"{protocol} is part of the protocols_rheobase but it has"
-                        f" no associated ephys data for cell {f.cell_name}"
-                    )
+                if protocol in protocols:
+                    break
+            else:
+                raise Exception(
+                    f"{protocol} is part of the protocols_rheobase but it has"
+                    f" no associated ephys data for cell {cell_name}"
+                )
 
         return files_metadata
 

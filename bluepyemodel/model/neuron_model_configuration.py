@@ -36,7 +36,23 @@ class NeuronModelConfiguration:
         """Creates a model configuration, which includes the model parameters, distributions,
         mechanisms and a morphology.
 
+        WARNING: If you create a new NeuronModelConfiguration, do not specify the parameters,
+        mechanisms, distributions and morphology here at instantiation. Instead, create an empty
+        configuration and then use the class method: add_distribution, add_parameter, etc.
+        Example::
+            config = NeuronModelConfiguration()
+            config.add_parameter(parameter_name, locations, value, mechanism)
+            config.morphology = MorphologyConfiguration(morph_name, format=".swc")
+
         Args:
+            parameters (list of dict): contains the description of the parameters of the model
+                in the format returned by the method as_dict of the ParameterConfiguration class.
+            mechanisms (list of dict): contains the description of the mechanisms of the model
+                in the format returned by the method as_dict of the MechanismConfiguration class.
+            distributions (list of dict): contains the description of the distributions of the model
+                in the format returned by the method as_dict of the DistributionConfiguration class.
+            morphology (dict):  contains the description of the morphology of the model in the
+                format returned by the method as_dict of the morphology class.
             available_mechanisms (list of MechanismConfiguration): list of the names (
                 and optionally versions) of the available mechanisms in the "./mechanisms"
                 directory for the local access point or on Nexus for the Nexus access point.
