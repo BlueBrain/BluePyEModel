@@ -625,30 +625,19 @@ class EModelCreationTarget(WorkflowTarget):
         # get / create
         emodel_workflow = self.access_point.get_emodel_workflow()
         if emodel_workflow is None:
-            import logging
-
-            logging.warning("create it")
             emodel_workflow = self.access_point.create_emodel_workflow()
-
-        print(self.access_point.emodel_metadata_ontology.for_resource())
 
         # store / update
         # this function might be called several times by luigi, so
         # only update the resource when necessary
-
-        # if emodel_workflow.state != state:
-        if True:
-            emodel_workflow.state = "test"
+        if emodel_workflow.state != state:
+            emodel_workflow.state = state
             self.access_point.store_or_update_emodel_workflow(emodel_workflow)
 
     def exists(self):
         """Check if the model is completed."""
         exist = self.access_point.is_validated()
-        import logging
-
-        logging.warning("in exist")
         if exist:
-            logging.warning("exist")
             # only for nexus access_point
             self.update_emodel_workflow(state="done")
 
