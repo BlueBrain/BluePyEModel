@@ -107,7 +107,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
     holding = None
     rmp = None
     rin = None
-
+    
     for resp_name, response in responses.items():
 
         if not (isinstance(response, float)):

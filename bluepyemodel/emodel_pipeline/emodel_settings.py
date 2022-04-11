@@ -39,6 +39,7 @@ class EModelPipelineSettings:
         plot_currentscape=False,
         currentscape_config=None,
         cvode_minstep=0.0,
+        max_threshold_voltage=-30.
     ):
         """Init
 
@@ -100,6 +101,8 @@ class EModelPipelineSettings:
                 Note that current.names, output.savefig, output.fname and output.dir
                 do not need to be set, since they are automatically rewritten by BPEM.
             cvode_minstep (float): minimum time step allowed for a CVODE step.
+            max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol will
+                search for the rheobase.
         """
 
         # Settings related to E-features extraction
@@ -121,6 +124,7 @@ class EModelPipelineSettings:
         self.optimisation_timeout = optimisation_timeout
         self.cvode_minstep = cvode_minstep
         self.threshold_efeature_std = threshold_efeature_std
+        self.max_threshold_voltage = max_threshold_voltage
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms

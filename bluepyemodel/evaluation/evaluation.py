@@ -260,7 +260,7 @@ def get_evaluator_from_access_point(
         timeout=timeout,
         efel_settings=access_point.pipeline_settings.efel_settings,
         score_threshold=score_threshold,
-        max_threshold_voltage=max_threshold_voltage,
+        max_threshold_voltage=access_point.pipeline_settings.max_threshold_voltage,
         dt=dt,
         strict_holding_bounds=strict_holding_bounds,
         mechanisms_directory=mechanisms_directory,

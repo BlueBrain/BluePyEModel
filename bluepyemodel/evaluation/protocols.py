@@ -212,7 +212,7 @@ class RinProtocol:
             cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
         response["bpo_rin"] = self.target_rin.calculate_feature(response)[0]
-
+        
         return response
 
 
@@ -420,7 +420,7 @@ class SearchThresholdCurrent:
         target_threshold=None,
         max_depth=7,
         stimulus_duration=1000.0,
-        max_threshold_voltage=-30,
+        max_threshold_voltage=-30.,
     ):
         """Constructor
 
@@ -497,6 +497,7 @@ class SearchThresholdCurrent:
 
         # Calculate max threshold current
         max_threshold_current = self.max_threshold_current(rin=rin, rmp=rmp)
+
         threshold = self.bisection_search(
             cell_model,
             param_values,
@@ -524,6 +525,7 @@ class SearchThresholdCurrent:
         """Find the current necessary to get to max_threshold_voltage"""
         max_threshold_current = (self.max_threshold_voltage - rmp) / rin
         logger.debug("Max threshold current: %.6g", max_threshold_current)
+
         return max_threshold_current
 
     def bisection_search(
@@ -548,7 +550,7 @@ class SearchThresholdCurrent:
         mid_bound = (upper_bound + lower_bound) * 0.5
         if depth >= self.max_depth:
             return mid_bound
-
+        
         protocol = self.create_protocol(holding_current, mid_bound)
         response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         spikecount = self.spike_feature.calculate_feature(response)
