@@ -110,7 +110,7 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
             break
     else:
         raise KeyError(
-            f"There is no eCode linked to the stimulus name {protocol_configuration.lower()}. "
+            f"There is no eCode linked to the stimulus name {protocol_configuration.name.lower()}. "
             "See ecode/__init__.py for the available stimuli "
             "names"
         )

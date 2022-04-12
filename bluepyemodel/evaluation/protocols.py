@@ -139,7 +139,7 @@ class RinProtocol:
     """Protocol used to find the input resistance of a model"""
 
     def __init__(
-        self, name, location, target_rin, amp=-0.001, stimulus_delay=500.0, stimulus_duration=500.0
+        self, name, location, target_rin, amp=-0.01, stimulus_delay=500.0, stimulus_duration=500.0
     ):
 
         self.name = name

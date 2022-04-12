@@ -16,6 +16,7 @@ from .sinespec import SineSpec
 from .spikerec import SpikeRecMultiSpikes
 from .subwhitenoise import SubWhiteNoise
 from .whitenoise import WhiteNoise
+from .synstim import EPSP, BAC
 
 # The ecode names have to be lower case only, to avoid having to
 # define duplicates.
@@ -50,4 +51,6 @@ eCodes = {
     "noiseou3": NoiseOU3,
     "whitenoise": WhiteNoise,
     "highfreq": Comb,
+    "epsp": EPSP,
+    "bac": BAC,
 }
