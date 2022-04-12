@@ -366,6 +366,7 @@ def get_ordered_currentscape_keys(keys):
     to_skip = [
         "RMPProtocol",
         "RinProtocol",
+        "SearchHoldingCurrent",
         "bpo_rmp",
         "bpo_rin",
         "bpo_holding_current",
