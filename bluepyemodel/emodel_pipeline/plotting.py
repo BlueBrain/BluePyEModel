@@ -484,7 +484,9 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
                 config["output"]["dir"] = figures_dir
 
             if len(voltage) == 0 or len(currents) == 0:
-                logger.warning("Could not plot currentscape for %s: voltage or currents is empty.", name)
+                logger.warning(
+                    "Could not plot currentscape for %s: voltage or currents is empty.", name
+                )
             else:
                 logger.info("Plotting currentscape for %s", name)
                 plot_currentscape_fct(
