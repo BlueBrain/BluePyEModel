@@ -300,9 +300,9 @@ class SearchHoldingCurrent:
                     timeout=timeout,
                 )
                 if voltage_min is None:
-                    raise Exception("There are spikes at the lower bound, we better stop here")
+                    raise Exception("cannot compute holding, we spike at lower bound")
 
-                elif voltage_min > self.target_voltage.exp_mean:
+                if voltage_min > self.target_voltage.exp_mean:
                     self.lower_bound -= 0.2
 
             voltage_max = -1e10
@@ -474,6 +474,13 @@ class SearchThresholdCurrent:
 
         # Calculate max threshold current
         max_threshold_current = self.max_threshold_current(rin=rin, rmp=rmp)
+
+        protocol = self.create_protocol(holding_current, max_threshold_current)
+        response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+        spikecount = self.spike_feature.calculate_feature(response)
+        if spikecount == 0:
+            return {"bpo_threshold_current": None}
+
         threshold = self.bisection_search(
             cell_model,
             param_values,
@@ -484,7 +491,7 @@ class SearchThresholdCurrent:
             lower_bound=holding_current,
             timeout=timeout,
         )
-        return {"bpo_threshold_current": threshold if self.flag_spike_detected else None}
+        return {"bpo_threshold_current": threshold}
 
     def max_threshold_current(self, rin, rmp):
         """Find the current necessary to get to max_threshold_voltage"""
@@ -512,10 +519,6 @@ class SearchThresholdCurrent:
         response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         spikecount = self.spike_feature.calculate_feature(response)
 
-        if spikecount == 1:
-            self.flag_spike_detected = True
-            return mid_bound
-
         if spikecount == 0:
             return self.bisection_search(
                 cell_model,
@@ -528,20 +531,16 @@ class SearchThresholdCurrent:
                 timeout=timeout,
             )
 
-        if spikecount > 1:
-            self.flag_spike_detected = True
-            return self.bisection_search(
-                cell_model,
-                param_values,
-                holding_current,
-                sim=sim,
-                isolate=isolate,
-                lower_bound=lower_bound,
-                upper_bound=mid_bound,
-                timeout=timeout,
-            )
-
-        return None
+        return self.bisection_search(
+            cell_model,
+            param_values,
+            holding_current,
+            sim=sim,
+            isolate=isolate,
+            lower_bound=lower_bound,
+            upper_bound=mid_bound,
+            timeout=timeout,
+        )
 
 
 class MainProtocol(ephys.protocols.Protocol):
