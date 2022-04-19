@@ -181,6 +181,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
         exp_mean=feature_config.mean,
         exp_std=feature_config.std,
         stimulus_current=stim_amp,
+        threshold=efel_settings.get("Threshold", None),
         efel_settings=efel_settings,
     )
 
@@ -216,7 +217,12 @@ def define_RMP_protocol(efeatures):
 
         return rmp_protocol
 
-    raise Exception("Couldn't find the voltage feature associated to the RMP protocol")
+    raise Exception(
+        "Couldn't find the efeature 'steady_state_voltage_stimend' associated to "
+        "the 'RMPProtocol' in your FitnessCalculatorConfiguration. It might not have"
+        "been extracted from the ephys data you have available or the name of the"
+        " protocol to use for RMP (setting 'name_rmp_protocol') might be wrong."
+    )
 
 
 def define_Rin_protocol(efeatures, ais_recording=False):
@@ -235,7 +241,12 @@ def define_Rin_protocol(efeatures, ais_recording=False):
 
         return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
 
-    raise Exception("Couldn't find the Rin feature associated to the Rin protocol")
+    raise Exception(
+        "Couldn't find the efeature 'ohmic_input_resistance_vb_ssse' associated to "
+        "the 'RinProtocol' in your FitnessCalculatorConfiguration. It might not have"
+        "been extracted from the ephys data you have available or the name of the"
+        " protocol to use for Rin (setting 'name_Rin_protocol') might be wrong."
+    )
 
 
 def define_holding_protocol(efeatures, strict_bounds=False):
@@ -264,8 +275,8 @@ def define_holding_protocol(efeatures, strict_bounds=False):
         )
 
     raise Exception(
-        "Couldn't find the voltage feature or holding current feature associated "
-        "to the SearchHoldingCurrent protocol"
+        "Couldn't find the efeature 'bpo_holding_current' associated to "
+        "the 'SearchHoldingCurrent' protocol in your FitnessCalculatorConfiguration."
     )
 
 
@@ -288,8 +299,11 @@ def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
         )
 
     raise Exception(
-        "Couldn't find the threshold current feature associated "
-        "to the SearchThresholdCurrent protocol"
+        "Couldn't find the efeature 'bpo_threshold_current' or "
+        "'bpo_holding_current' associated to the 'SearchHoldingCurrent'"
+        " in your FitnessCalculatorConfiguration. It might not have"
+        "been extracted from the ephys data you have available or the name of the"
+        " protocol to use for Rin (setting 'name_Rin_protocol') might be wrong."
     )
 
 
