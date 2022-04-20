@@ -395,7 +395,7 @@ class SearchThresholdCurrent:
         name,
         location,
         target_threshold=None,
-        current_precision=1e-4,
+        current_precision=1e-2,
         stimulus_duration=1000.0,
         max_threshold_voltage=-30,
     ):
@@ -471,13 +471,17 @@ class SearchThresholdCurrent:
         timeout=None,
     ):
         """Run protocol"""
+        self.sim = sim
+        self.isolate = isolate
+        self.timeout = timeout
+        self.cell_model = cell_model
+        self.holding_current = holding_current
+        self.param_values = param_values
 
         # Calculate max threshold current
         max_threshold_current = self.max_threshold_current(rin=rin, rmp=rmp)
 
-        protocol = self.create_protocol(holding_current, max_threshold_current)
-        response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
-        spikecount = self.spike_feature.calculate_feature(response)
+        spikecount = self.get_spikecount(max_threshold_current)
         if spikecount == 0:
             return {"bpo_threshold_current": None}
 
@@ -499,6 +503,18 @@ class SearchThresholdCurrent:
         logger.debug("Max threshold current: %.6g", max_threshold_current)
         return max_threshold_current
 
+    def get_spikecount(self, current):
+
+        protocol = self.create_protocol(self.holding_current, current)
+        response = protocol.run(
+            self.cell_model,
+            self.param_values,
+            sim=self.sim,
+            isolate=self.isolate,
+            timeout=self.timeout,
+        )
+        return self.spike_feature.calculate_feature(response)
+
     def bisection_search(
         self,
         cell_model,
@@ -512,13 +528,11 @@ class SearchThresholdCurrent:
     ):
         """Do bisection search to find threshold current"""
         mid_bound = (upper_bound + lower_bound) * 0.5
+
         if abs(lower_bound - upper_bound) < self.current_precision:
             return mid_bound
 
-        protocol = self.create_protocol(holding_current, mid_bound)
-        response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
-        spikecount = self.spike_feature.calculate_feature(response)
-
+        spikecount = self.get_spikecount(mid_bound)
         if spikecount == 0:
             return self.bisection_search(
                 cell_model,
@@ -530,17 +544,17 @@ class SearchThresholdCurrent:
                 upper_bound=upper_bound,
                 timeout=timeout,
             )
-
-        return self.bisection_search(
-            cell_model,
-            param_values,
-            holding_current,
-            sim=sim,
-            isolate=isolate,
-            lower_bound=lower_bound,
-            upper_bound=mid_bound,
-            timeout=timeout,
-        )
+        if spikecount > 0:
+            return self.bisection_search(
+                cell_model,
+                param_values,
+                holding_current,
+                sim=sim,
+                isolate=isolate,
+                lower_bound=lower_bound,
+                upper_bound=mid_bound,
+                timeout=timeout,
+            )
 
 
 class MainProtocol(ephys.protocols.Protocol):
