@@ -197,7 +197,7 @@ def get_evaluator_from_access_point(
     include_validation_protocols=False,
     timeout=None,
     score_threshold=12.0,
-    max_threshold_voltage=-30,
+    max_threshold_voltage=None,
     nseg_frequency=40,
     dt=None,
     strict_holding_bounds=True,
@@ -247,6 +247,9 @@ def get_evaluator_from_access_point(
 
     timeout = timeout or access_point.pipeline_settings.optimisation_timeout
     stochasticity = stochasticity or access_point.pipeline_settings.stochasticity
+
+    if max_threshold_voltage is None:
+        max_threshold_voltage = access_point.pipeline_settings.max_threshold_voltage
 
     if isinstance(access_point, LocalAccessPoint):
         mechanisms_directory = None

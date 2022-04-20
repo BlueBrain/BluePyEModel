@@ -366,6 +366,7 @@ def get_ordered_currentscape_keys(keys):
     to_skip = [
         "RMPProtocol",
         "RinProtocol",
+        "SearchHoldingCurrent",
         "bpo_rmp",
         "bpo_rin",
         "bpo_holding_current",
@@ -482,7 +483,12 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
             if "dir" not in config["output"]:
                 config["output"]["dir"] = figures_dir
 
-            logger.info("Plotting currentscape for %s", name)
-            plot_currentscape_fct(
-                voltage, currents, config, ions_data=ionic_concentrations, time=time
-            )
+            if len(voltage) == 0 or len(currents) == 0:
+                logger.warning(
+                    "Could not plot currentscape for %s: voltage or currents is empty.", name
+                )
+            else:
+                logger.info("Plotting currentscape for %s", name)
+                plot_currentscape_fct(
+                    voltage, currents, config, ions_data=ionic_concentrations, time=time
+                )
