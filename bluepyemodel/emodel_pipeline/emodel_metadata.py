@@ -14,10 +14,17 @@ class EModelMetadata:
         species=None,
         brain_region=None,
         iteration_tag=None,
+        morph_class=None,
+        synapse_class=None,
+        layer=None,
     ):
 
         if emodel is None and etype is None:
             raise Exception("At least emodel or etype should be informed")
+        if morph_class not in ["PYR", "INT", None]:
+            raise Exception("morph_class should be 'PYR' or 'INT'")
+        if synapse_class not in ["EXC", "INH", None]:
+            raise Exception("synapse_class should be 'EXC' or 'INH'")
 
         self.emodel = emodel
         self.etype = None if etype == "None" else etype
@@ -26,6 +33,9 @@ class EModelMetadata:
         self.species = None if species == "None" else species
         self.brain_region = None if brain_region == "None" else brain_region
         self.iteration = None if iteration_tag == "None" else iteration_tag
+        self.morph_class = morph_class
+        self.synapse_class = synapse_class
+        self.layer = layer
 
     def for_resource(self):
 
@@ -47,7 +57,8 @@ class EModelMetadata:
 
         s = ""
 
-        for k, v in vars(self).items():
+        for k in ["emodel", "etype", "ttype", "mtype", "species", "brain_region", "iteration"]:
+            v = getattr(self, k)
             if v:
                 if isinstance(v, int):
                     v = str(v)

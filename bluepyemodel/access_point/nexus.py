@@ -32,6 +32,9 @@ class NexusAccessPoint(DataAccessPoint):
         species=None,
         brain_region=None,
         iteration_tag=None,
+        morph_class=None,
+        synapse_class=None,
+        layer=None,
         project="emodel_pipeline",
         organisation="demo",
         endpoint="https://bbp.epfl.ch/nexus/v1",
@@ -56,7 +59,18 @@ class NexusAccessPoint(DataAccessPoint):
             access_token (str): Nexus connection token.
         """
 
-        super().__init__(emodel, etype, ttype, mtype, species, brain_region, iteration_tag)
+        super().__init__(
+            emodel,
+            etype,
+            ttype,
+            mtype,
+            species,
+            brain_region,
+            iteration_tag,
+            morph_class,
+            synapse_class,
+            layer,
+        )
 
         self.access_point = NexusForgeAccessPoint(
             project=project,

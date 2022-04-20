@@ -7,6 +7,7 @@ import pathlib
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
+from bluepyemodel.export_emodel.export_emodel import export_emodels
 from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
@@ -30,6 +31,9 @@ class EModel_pipeline:
         species=None,
         brain_region=None,
         iteration_tag=None,
+        morph_class=None,
+        synapse_class=None,
+        layer=None,
         recipes_path=None,
         forge_path=None,
         nexus_organisation=None,
@@ -42,13 +46,23 @@ class EModel_pipeline:
         Args:
             emodel (str): name of the emodel. Has to match the name of the emodel under which the
                 configuration data are stored.
-            species (str): name of the species.
-            brain_region (str): name of the brain region.
             data_access_point (str): name of the access_point used to access the data,
                 can be "nexus" or "local".
                 "local" expect the configuration to be  defined in a "config" directory
                 containing recipes as in proj38. "nexus" expect the configuration to be defined
                 on Nexus using NexusForge, see bluepyemodel/api/nexus.py.
+            etype (str): name of the etype.
+            ttype (str): name of the t-type. Required if using the gene expression or IC selector.
+            mtype (str): name of the mtype.
+            species (str): name of the species.
+            brain_region (str): name of the brain region.
+            iteration_tag (str): tag associated to the current run. If used with the local access
+                point,the pipeline will work in the directory working_dir/run/iteration.
+                If used with the Nexus access point, it will be used to tag the resources
+                generated during the run.
+            morph_class (str): name of the morphology class, has to be "PYR", "INT".
+            synapse_class (str): name of the synapse class, has to be "EXC", "INH".
+            layer (str): layer of the model.
             recipes_path (str): path of the recipes.json, only needed if the data access point is
                 "local".
             forge_path (str): path to the .yml used to connect to Nexus Forge, only needed if
@@ -58,46 +72,15 @@ class EModel_pipeline:
             nexus_project (str): name of the Nexus project to which the forge will connect to
                 retrieve the data
             nexus_endpoint (str): Nexus endpoint ("prod" or "staging")
-            ttype (str): name of the t-type. Required if using the gene expression or IC selector.
-            iteration_tag (str): tag associated to the current run. If used with the local access
-                point,the pipeline will work in the directory working_dir/run/iteration.
-                If used with the Nexus access point, it will be used to tag the resources
-                generated during the run.
             use_ipyparallel (bool): should the parallelization map be base on ipyparallel.
         """
 
-        self.emodel = emodel
-        self.etype = etype
-        self.ttype = ttype
-        self.mtype = mtype
-        self.species = species
-        self.brain_region = brain_region
-        self.iteration_tag = iteration_tag
+        # pylint: disable=too-many-arguments
 
         if use_ipyparallel:
             self.mapper = ipyparallel_map_function()
         else:
             self.mapper = map
-
-        self.access_point = self.init_access_point(
-            data_access_point,
-            recipes_path,
-            forge_path,
-            nexus_organisation,
-            nexus_endpoint,
-            nexus_project,
-        )
-
-    def init_access_point(
-        self,
-        data_access_point,
-        recipes_path,
-        forge_path,
-        nexus_organisation,
-        nexus_endpoint,
-        nexus_project,
-    ):
-        """Instantiate a data access point, either to Nexus or GPFS"""
 
         endpoint = None
         if nexus_endpoint == "prod":
@@ -106,17 +89,20 @@ class EModel_pipeline:
             endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
 
         emodel_dir = "./"
-        if self.iteration_tag and data_access_point == "local":
-            emodel_dir = str(pathlib.Path("./") / "run" / self.iteration_tag)
+        if iteration_tag and data_access_point == "local":
+            emodel_dir = str(pathlib.Path("./") / "run" / iteration_tag)
 
-        return get_access_point(
-            emodel=self.emodel,
-            etype=self.etype,
-            ttype=self.ttype,
-            mtype=self.mtype,
-            species=self.species,
-            brain_region=self.brain_region,
-            iteration_tag=self.iteration_tag,
+        self.access_point = get_access_point(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+            morph_class=morph_class,
+            synapse_class=synapse_class,
+            layer=layer,
             access_point=data_access_point,
             emodel_dir=emodel_dir,
             recipes_path=recipes_path,
@@ -160,7 +146,7 @@ class EModel_pipeline:
 
         for chkp_path in glob.glob("./checkpoints/*.pkl"):
 
-            if self.emodel not in chkp_path:
+            if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
 
             if (
@@ -190,7 +176,7 @@ class EModel_pipeline:
 
         for chkp_path in glob.glob("./checkpoints/*.pkl"):
 
-            if self.emodel not in chkp_path:
+            if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
 
             if (
@@ -201,20 +187,26 @@ class EModel_pipeline:
 
             plotting.optimization(
                 checkpoint_path=chkp_path,
-                figures_dir=pathlib.Path("./figures") / self.emodel / "optimisation",
+                figures_dir=pathlib.Path("./figures")
+                / self.access_point.emodel_metadata.emodel
+                / "optimisation",
             )
 
         return plotting.plot_models(
             access_point=self.access_point,
             mapper=self.mapper,
             seeds=None,
-            figures_dir=pathlib.Path("./figures") / self.emodel,
+            figures_dir=pathlib.Path("./figures") / self.access_point.emodel_metadata.emodel,
             plot_distributions=True,
             plot_scores=True,
             plot_traces=True,
             plot_currentscape=False,
             only_validated=only_validated,
         )
+
+    def export_emodels(self, only_validated=False, seeds=None):
+
+        export_emodels(self.access_point, only_validated, seeds=seeds, map_function=self.mapper)
 
 
 def sanitize_gitignore():
