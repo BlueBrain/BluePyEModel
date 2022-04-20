@@ -33,9 +33,11 @@ class EModelMetadata:
 
         for k, v in vars(self).items():
             if v and v != "None":
-                # rename species into subject
+                # rename species into subject and brain_region into brainLocation
                 if k == "species":
                     metadata["subject"] = v
+                elif k == "brain_region":
+                    metadata["brainLocation"] = v
                 else:
                     metadata[k] = v
 
