@@ -14,6 +14,7 @@ from kgforge.specializations.resources import Dataset
 from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
+from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
@@ -31,6 +32,7 @@ CLASS_TO_NEXUS_TYPE = {
     "NeuronModelConfiguration": "EModelConfiguration",
     "EModel": "EModel",
     "DistributionConfiguration": "EModelChannelDistribution",
+    "EModelWorkflow": "EModelWorkflow",
 }
 
 NEXUS_TYPE_TO_CLASS = {
@@ -40,6 +42,7 @@ NEXUS_TYPE_TO_CLASS = {
     "EModelConfiguration": NeuronModelConfiguration,
     "EModel": EModel,
     "EModelChannelDistribution": DistributionConfiguration,
+    "EModelWorkflow": EModelWorkflow,
 }
 
 NEXUS_ENTRIES = ["objectOfStudy", "contribution", "type", "id", "distribution", "@type"]
@@ -385,6 +388,15 @@ class NexusForgeAccessPoint:
                 objects_.append(self.resource_to_object(type_, resource, metadata))
 
         return objects_
+
+    def get_nexus_id(self, type_, metadata):
+        """Search for a single Resource matching the type_ and metadata and return its id"""
+        filters = {"type": type_}
+        filters.update(metadata)
+
+        resource = self.fetch_one(filters)
+
+        return resource.id
 
 
 def ontology_forge_access_point(access_token=None):
