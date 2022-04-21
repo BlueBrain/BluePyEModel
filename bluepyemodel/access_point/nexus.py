@@ -9,6 +9,7 @@ import pandas
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
+from bluepyemodel.access_point.forge_access_point import get_brain_region
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
@@ -227,24 +228,11 @@ class NexusAccessPoint(DataAccessPoint):
 
     def get_nexus_brain_region(self, brain_region):
         """Get the ontology of the brain location."""
-
-        # TODO:
-        # if not self.access_token:
-        #    self.access_token = get_access_token()
-
-        # forge_CCFv3 = connect_forge(bucket, endpoint, self.access_token)
-        # forge.resolve(
-        #    "CA1",
-        #    scope="brainRegion",
-        #    strategy=ResolvingStrategy.EXACT_MATCH
-        # )
+        brain_region_from_nexus = get_brain_region(brain_region)
 
         return {
             "type": "BrainLocation",
-            "brainRegion": {
-                # "id": "http://purl.obolibrary.org/obo/UBERON_0003881",
-                "label": brain_region
-            },
+            "brainRegion": brain_region_from_nexus,
         }
 
     def store_object(self, object_, metadata=None):

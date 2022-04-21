@@ -432,6 +432,80 @@ def get_all_brain_regions(access_token=None):
     return sorted(set(r.label for r in resources))
 
 
+def raise_brain_region_exception(base_text, brain_region, access_point):
+    """Raise an exception mentioning the possible brain region names available on nexus
+
+    Arguments:
+        base_text (str): text to display in the Exception
+        brain_region (str): name of the brain region to search for
+        access_point (NexusForgeAccessPoint)
+    """
+    if not base_text.endswith("."):
+        base_text = f"{base_text}."
+    resources = access_point.resolve(brain_region, strategy="all", limit=20)
+    if resources is None:
+        raise AccessPointException(base_text)
+
+    # make sure that resources is iterable
+    if not isinstance(resources, list):
+        resources = [resources]
+    brain_regions = "\n".join(
+        set(
+            r.label
+            for r in resources
+            if hasattr(r, "subClassOf") and r.subClassOf == "nsg:BrainRegion"
+        )
+    )
+    raise AccessPointException(f"{base_text} Maybe you meant one of those:\n{brain_regions}")
+
+
+def get_brain_region(brain_region, access_token=None):
+    """Returns a json dict of the resource corresponding to the brain region
+
+    If the brain region name is not present in nexus,
+    raise an exception mentioning the possible brain region names available on nexus
+
+    Arguments:
+        brain_region (str): name of the brain region to search for
+        access_token (str): nexus connection token
+
+    Returns:
+        the nexus resource of the brain region as a json dict
+    """
+
+    access_point = ontology_forge_access_point(access_token)
+
+    if brain_region in ["SSCX", "sscx"]:
+        brain_region = "somatosensory areas"
+
+    resource = access_point.resolve(brain_region, strategy="exact")
+    # try with capital 1st letter, or every letter lowercase
+    if resource is None:
+        # do not use capitalize, because it also make every other letter lowercase
+        if len(brain_region) > 1:
+            brain_region = f"{brain_region[0].upper()}{brain_region[1:]}"
+        elif len(brain_region) == 1:
+            brain_region.upper()
+        resource = access_point.resolve(brain_region, strategy="exact")
+
+        if resource is None:
+            brain_region.lower()
+            resource = access_point.resolve(brain_region, strategy="exact")
+
+    # raise Exception if resource was not found
+    if resource is None:
+        base_text = f"Could not find any brain region with name {brain_region}"
+        raise_brain_region_exception(base_text, brain_region, access_point)
+
+    # if resource found but not a brain region, also raise Exception
+    if not hasattr(resource, "subClassOf") or resource.subClassOf != "nsg:BrainRegion":
+        base_text = f"Resource {brain_region} is not a brain region"
+        raise_brain_region_exception(base_text, brain_region, access_point)
+
+    # if no exception was raised, return brain region as a json dict
+    return access_point.forge.as_json(resource)
+
+
 def get_all_species(access_token=None):
 
     access_point = ontology_forge_access_point(access_token)
