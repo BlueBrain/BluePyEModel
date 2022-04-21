@@ -45,6 +45,9 @@ class LocalAccessPoint(DataAccessPoint):
         species=None,
         brain_region=None,
         iteration_tag=None,
+        morph_class=None,
+        synapse_class=None,
+        layer=None,
         final_path=None,
         recipes_path=None,
         legacy_dir_structure=False,
@@ -75,7 +78,20 @@ class LocalAccessPoint(DataAccessPoint):
             with_seed (bool): allows for emodel_seed type of emodel names in final.json
         """
 
-        super().__init__(emodel, etype, ttype, mtype, species, brain_region, iteration_tag)
+        # pylint: disable=too-many-arguments
+
+        super().__init__(
+            emodel,
+            etype,
+            ttype,
+            mtype,
+            species,
+            brain_region,
+            iteration_tag,
+            morph_class,
+            synapse_class,
+            layer,
+        )
 
         self.emodel_dir = Path(emodel_dir)
         self.recipes_path = recipes_path
