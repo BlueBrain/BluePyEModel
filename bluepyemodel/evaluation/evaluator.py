@@ -313,7 +313,6 @@ def define_main_protocol(
     stochasticity=True,
     ais_recording=False,
     efel_settings=None,
-    score_threshold=12.0,
     max_threshold_voltage=-30,
     strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
@@ -374,15 +373,16 @@ def define_main_protocol(
 
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
-    rmp_protocol = None
-    rin_protocol = None
-    search_holding_protocol = None
-    search_threshold_protocol = None
+    pre_protocols = {}
     if len(threshold_protocols):
-        rmp_protocol = define_RMP_protocol(efeatures)
-        rin_protocol = define_Rin_protocol(efeatures, ais_recording)
-        search_holding_protocol = define_holding_protocol(efeatures, strict_holding_bounds)
-        search_threshold_protocol = define_threshold_protocol(efeatures, max_threshold_voltage)
+        pre_protocols = {
+            "rmp_protocol": define_RMP_protocol(efeatures),
+            "search_holding_protocol": define_holding_protocol(efeatures, strict_holding_bounds),
+            "rin_protocol": define_Rin_protocol(efeatures, ais_recording),
+            "search_threshold_protocol": define_threshold_protocol(
+                efeatures, max_threshold_voltage
+            ),
+        }
 
     for feature in efeatures:
         if feature.efel_feature_name not in ["bpo_holding_current", "bpo_threshold_current"]:
@@ -391,14 +391,9 @@ def define_main_protocol(
             assert feature.stimulus_current is not None
 
     main_protocol = MainProtocol(
-        "Main",
-        rmp_protocol,
-        rin_protocol,
-        search_holding_protocol,
-        search_threshold_protocol,
+        pre_protocols=pre_protocols,
         threshold_protocols=threshold_protocols,
         other_protocols=other_protocols,
-        score_threshold=score_threshold,
     )
 
     return main_protocol, efeatures
@@ -466,7 +461,6 @@ def create_evaluator(
     stochasticity=True,
     timeout=None,
     efel_settings=None,
-    score_threshold=12.0,
     max_threshold_voltage=-30,
     dt=None,
     strict_holding_bounds=True,
@@ -490,8 +484,7 @@ def create_evaluator(
             allowed to run
         efel_settings (dict): efel settings in the form
             {setting_name: setting_value}. If settings are also informed
-            in the targets per efeature, the latter will have priority.
-        score_threshold (float): threshold for score of protocols to stop evaluations
+            in the targets per efeature, the latter will have priority
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
@@ -513,7 +506,6 @@ def create_evaluator(
         include_validation_protocols,
         stochasticity,
         efel_settings=efel_settings,
-        score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
         strict_holding_bounds=strict_holding_bounds,
         use_fixed_dt_recordings=use_fixed_dt_recordings,

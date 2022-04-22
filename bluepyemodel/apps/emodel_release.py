@@ -564,7 +564,6 @@ def _single_evaluation(
     morphology_path="morphology_path",
     stochasticity=False,
     timeout=1000,
-    score_threshold=100.0,
     trace_data_path=None,
 ):
     """Evaluating single protocol and save traces."""
@@ -589,7 +588,6 @@ def _single_evaluation(
         emodel_db,
         stochasticity=stochasticity,
         timeout=timeout,
-        score_threshold=score_threshold,
     )
     responses = evaluator.run_protocols(
         evaluator.fitness_protocols.values(), emodel_db.get_emodel().parameters
@@ -627,7 +625,6 @@ def _evaluate_exemplars(
     parallel_factory,
     emodel,
     trace_data_path,
-    score_threshold=12.0,
 ):
     """Evaluate exemplars."""
     emodel_path = Path(emodel_path)
@@ -653,7 +650,6 @@ def _evaluate_exemplars(
         final_path=final_path,
         trace_data_path=trace_data_path,
         stochasticity=False,
-        score_threshold=score_threshold,
     )
 
     return evaluate(
@@ -677,7 +673,6 @@ def _evaluate_emodels(
     seed,
     parallel_factory,
     trace_data_path,
-    score_threshold=100.0,
 ):
     """Evaluate emodels."""
 
@@ -716,7 +711,6 @@ def _evaluate_emodels(
         final_path=final_path,
         trace_data_path=trace_data_path,
         stochasticity=False,
-        score_threshold=score_threshold,
     )
 
     return evaluate(
@@ -1005,7 +999,6 @@ def evaluate_emodels(
     report_folder,
     plot_only,
     trace_data_path,
-    score_threshold=100.0,
 ):
     """Evaluate exemplars and emodels."""
     parallel_factory = init_parallel_factory(parallel_factory)
@@ -1020,7 +1013,6 @@ def evaluate_emodels(
             parallel_factory,
             emodel,
             trace_data_path,
-            score_threshold=score_threshold,
         )
         exemplar_df.to_csv(exemplar_path, index=False)
     else:
@@ -1049,7 +1041,6 @@ def evaluate_emodels(
                 seed,
                 parallel_factory,
                 trace_data_path,
-                score_threshold=score_threshold,
             )
             result_df.to_csv(_result_path / "results.csv", index=False)
         else:

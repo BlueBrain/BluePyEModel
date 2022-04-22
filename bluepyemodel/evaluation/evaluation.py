@@ -196,7 +196,6 @@ def get_evaluator_from_access_point(
     stochasticity=False,
     include_validation_protocols=False,
     timeout=None,
-    score_threshold=12.0,
     max_threshold_voltage=None,
     nseg_frequency=40,
     dt=None,
@@ -213,7 +212,6 @@ def get_evaluator_from_access_point(
             and validation efeatures be added to the evaluator.
         timeout (float): duration (in second) after which the evaluation of a
             protocol will be interrupted.
-        score_threshold (float): threshold for score of protocols to stop evaluations
         max_threshold_voltage (float): maximum voltage used as upper
             bound in the threshold current search
         dt (float): if not None, cvode will be disabled and fixed timesteps used.
@@ -263,7 +261,6 @@ def get_evaluator_from_access_point(
         stochasticity=stochasticity,
         timeout=timeout,
         efel_settings=access_point.pipeline_settings.efel_settings,
-        score_threshold=score_threshold,
         max_threshold_voltage=max_threshold_voltage,
         dt=dt,
         strict_holding_bounds=strict_holding_bounds,
