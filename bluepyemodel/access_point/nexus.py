@@ -603,7 +603,11 @@ class NexusAccessPoint(DataAccessPoint):
 
         resources = self.access_point.fetch({"type": "NeuronMorphology"})
 
-        return {r.name for r in resources}
+        if resources:
+            return {r.name for r in resources}
+
+        logger.warning("Did not find any available morphologies.")
+        return set()
 
     def get_available_mechanisms(self):
         """Get all the available mechanisms"""
