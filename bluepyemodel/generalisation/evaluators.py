@@ -179,13 +179,10 @@ def _rin_evaluation(
 
     if with_currents:
         responses = {}
-        for pre_run in [
-            main_protocol.run_RMP,
-            main_protocol.run_holding,
-            main_protocol.run_rin,
-            main_protocol.run_threshold,
-        ]:
-            responses.update(pre_run(cell_model, responses, sim=sim, timeout=timeout)[0])
+        for protocol in main_protocol.pre_protocols:
+            responses.update(
+                protocol(cell_model, responses, sim=sim, timeout=timeout, responses=responses)
+            )
 
         cell_model.unfreeze(emodel_params.keys())
         return {
@@ -193,7 +190,9 @@ def _rin_evaluation(
             key + "threshold_current": responses["bpo_threshold_current"],
         }
 
-    responses = main_protocol.run_rin(cell_model, {}, sim=sim, timeout=timeout)[0]
+    responses = main_protocol.pre_protocols["rin_protocol"](
+        cell_model, {}, sim=sim, timeout=timeout
+    )
     cell_model.unfreeze(emodel_params.keys())
 
     return {key: responses["bpo_rin"]}

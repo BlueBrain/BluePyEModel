@@ -1,6 +1,5 @@
 """Module with protocol classes."""
 import logging
-import time
 from collections import OrderedDict
 
 from bluepyopt import ephys
@@ -59,12 +58,7 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
         return self.stimulus.amplitude
 
     def run(  # pylint: disable=arguments-differ, arguments-renamed
-        self,
-        cell_model,
-        param_values=None,
-        sim=None,
-        isolate=None,
-        timeout=None,
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
 
@@ -83,26 +77,26 @@ class BPEM_ThresholdProtocol(BPEM_Protocol):
 
     """Protocol having rheobase-rescaling and stochasticity capabilities"""
 
-    def run(  # pylint: disable=arguments-differ, arguments-renamed
-        self,
-        cell_model,
-        param_values=None,
-        holding_current=None,
-        threshold_current=None,
-        sim=None,
-        isolate=None,
-        timeout=None,
+    def return_none_responses(self):
+        return {k.name: None for k in self.recordings}
+
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
 
-        if param_values is None:
-            param_values = {}
+        param_values = {} if param_values is None else param_values
+        responses = {} if responses is None else responses
 
-        if holding_current is None or threshold_current is None:
-            raise Exception("BPEM_ThresholdProtocol: holding or threshold current is None")
+        if (
+            responses.get("bpo_holding_current", None) is None
+            or responses.get("bpo_threshold_current", None) is None
+        ):
+            logger.warning("BPEM_ThresholdProtocol: holding or threshold current is None")
+            return self.return_none_responses()
 
-        self.stimulus.holding_current = holding_current
-        self.stimulus.threshold_current = threshold_current
+        self.stimulus.holding_current = responses["bpo_holding_current"]
+        self.stimulus.threshold_current = responses["bpo_threshold_current"]
 
         return super().run(cell_model, param_values, sim, isolate, timeout)
 
@@ -148,8 +142,9 @@ class RMPProtocol:
         ]
         return BPEM_Protocol(name="RMPProtocol", stimulus=stimulus, recordings=recordings)
 
-    def run(self, cell_model, param_values, sim, isolate, timeout):
+    def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
         """Compute the RMP"""
+
         rmp_protocol = self.create_protocol()
 
         response = rmp_protocol.run(
@@ -204,8 +199,15 @@ class RinProtocol:
 
         return BPEM_Protocol(name="RinProtocol", stimulus=stimulus, recordings=recordings)
 
-    def run(self, cell_model, param_values, holding_current, sim, isolate, timeout):
+    def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
         """Compute input resistance"""
+
+        holding_current = responses.get("bpo_holding_current", 0)
+
+        if holding_current is None:
+            logger.warning("RinProtocol: holding current is None")
+            return {self.recording_name: None, "bpo_rin": None}
+
         rin_protocol = self.create_protocol(holding_current)
 
         response = rin_protocol.run(
@@ -292,14 +294,7 @@ class SearchHoldingCurrent:
 
         return self.target_voltage.calculate_feature(response)
 
-    def run(
-        self,
-        cell_model,
-        param_values,
-        sim,
-        isolate=None,
-        timeout=None,
-    ):
+    def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
         """Run protocol"""
 
         if not self.strict_bounds:
@@ -482,18 +477,19 @@ class SearchThresholdCurrent:
             recordings=recordings,
         )
 
-    def run(
-        self,
-        cell_model,
-        param_values,
-        holding_current,
-        rin,
-        rmp,
-        sim,
-        isolate=None,
-        timeout=None,
-    ):
+    def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
         """Run protocol"""
+
+        holding_current = responses.get("bpo_holding_current", None)
+        rin = responses.get("bpo_rin", None)
+        rmp = responses.get("bpo_rmp", None)
+
+        if holding_current is None or rin is None or rmp is None:
+            logger.warning("SearchThresholdCurrent: rmp, rin or holding current is None")
+            return {
+                "bpo_threshold_current": None,
+                f"SearchThresholdCurrent.{self.location.name}.v": None,
+            }
 
         # Calculate max threshold current
         max_threshold_current = self.max_threshold_current(rin=rin, rmp=rmp)
@@ -591,180 +587,60 @@ class SearchThresholdCurrent:
 
 
 class MainProtocol(ephys.protocols.Protocol):
-    """Holding and threshold current search protocol.
+    """Umbrella protocol that can run normal protocols but also Threshold protocols whose holding
+    current and step current can be computed on the go.
 
     Pseudo code:
+        Run the none-threshold based protocols
         Find resting membrane potential
         Find input resistance
         Find holding current
         Find threshold current (lowest current inducing an AP)
         Run the other protocols
-        Run the none-threshold based protocols
     """
 
     def __init__(
         self,
-        name,
-        rmp_protocol,
-        rin_protocol,
-        search_holding_protocol,
-        search_threshold_protocol,
+        name="Main",
+        pre_protocols=None,
         threshold_protocols=None,
         other_protocols=None,
-        score_threshold=12.0,
     ):
         """Constructor
 
         Args:
             name (str): name of this object
-            rmp_protocol (Protocol): protocol that will be used to
-                compute the RMP
-            rin_protocol (Protocol): protocol used to compute Rin
-            search_holding_protocol (Protocol): protocol that will be used
-                to find the holding current of the cell.
-            search_threshold_protocol (Protocol): protocol that will be used
-                to find the firing threshold (rheobase) of the cell.
+            pre_protocols (dict) special protocols used to compute the RMP, Rin, holding
+                and threshold(rheobase current), to be ran before the threshold protocols
             threshold_protocols (dict): protocols that will use the automatic
                 computation of the RMP, holding_current and threshold_current
             other_protocols (dict): additional regular protocols
-            score_threshold (int): threshold above which the computation of
-                the RMP, holding_current and threshold_current has failed,
-                if None, the computations will proceed without this check
         """
 
         super().__init__(name=name)
 
         self.name = name
 
-        self.threshold_protocols = threshold_protocols
-        self.other_protocols = other_protocols
-        self.score_threshold = score_threshold
+        self.pre_protocols = pre_protocols if pre_protocols else {}
+        self.threshold_protocols = threshold_protocols if threshold_protocols else {}
+        self.other_protocols = other_protocols if other_protocols else {}
 
-        self.RMP_protocol = rmp_protocol
-        self.rin_protocol = rin_protocol
-        self.search_holding_protocol = search_holding_protocol
-        self.search_threshold_protocol = search_threshold_protocol
+    def all_subprotocols(self):
+        """Return all the protocols contained in MainProtocol"""
+        return {**self.pre_protocols, **self.threshold_protocols, **self.other_protocols}
 
     def subprotocols(self):
-        """Return all the subprotocols contained in MainProtocol"""
-        subprotocols = {}
-
-        if self.threshold_protocols is not None:
-            subprotocols.update(self.threshold_protocols)
-
-        if self.other_protocols is not None:
-            subprotocols.update(self.other_protocols)
-
-        return subprotocols
-
-    def run_RMP(self, cell_model, responses, sim=None, isolate=None, timeout=None):
-        """Compute resting membrane potential"""
-        response = self.RMP_protocol.run(cell_model, {}, sim=sim, isolate=isolate, timeout=timeout)
-        score = self.RMP_protocol.target_voltage.calculate_score(response)
-
-        return response, score
-
-    def run_holding(self, cell_model, responses, sim=None, isolate=None, timeout=None):
-        """Compute the holding current"""
-        response = self.search_holding_protocol.run(
-            cell_model, {}, sim=sim, isolate=isolate, timeout=timeout
-        )
-        score = self.search_holding_protocol.target_holding.calculate_score(response)
-
-        return response, score
-
-    def run_rin(self, cell_model, responses, sim=None, isolate=None, timeout=None):
-        """Compute the input resistance"""
-        response = self.rin_protocol.run(
-            cell_model,
-            {},
-            responses.get("bpo_holding_current", 0),
-            sim=sim,
-            isolate=isolate,
-            timeout=timeout,
-        )
-        score = self.rin_protocol.target_rin.calculate_score(response)
-
-        return response, score
-
-    def run_threshold(self, cell_model, responses, sim=None, isolate=None, timeout=None):
-        """Compute the current at rheobase"""
-        response = self.search_threshold_protocol.run(
-            cell_model,
-            {},
-            responses["bpo_holding_current"],
-            responses["bpo_rin"],
-            responses["bpo_rmp"],
-            sim=sim,
-            isolate=isolate,
-            timeout=timeout,
-        )
-        score = self.search_threshold_protocol.target_threshold.calculate_score(response)
-
-        return response, score
+        """Return all the protocols contained in MainProtocol except the pre_protocols"""
+        return {**self.threshold_protocols, **self.other_protocols}
 
     def run(self, cell_model, param_values, sim=None, isolate=None, timeout=None):
         """Run protocol"""
-
         responses = OrderedDict()
         cell_model.freeze(param_values)
 
-        logger.debug("Computing StepProtocols ...")
-        for protocol in self.other_protocols.values():
-            responses.update(
-                protocol.run(cell_model, {}, sim=sim, isolate=isolate, timeout=timeout)
-            )
-
-        logger.debug("Computing pre-protocols ...")
-        if (
-            self.RMP_protocol
-            and self.rin_protocol
-            and self.search_holding_protocol
-            and self.search_threshold_protocol
-        ):
-            for pre_run in [self.run_RMP, self.run_holding, self.run_rin, self.run_threshold]:
-                t1 = time.time()
-                response, score = pre_run(
-                    cell_model, responses, sim=sim, isolate=isolate, timeout=timeout
-                )
-                dt = time.time() - t1
-
-                responses.update(response)
-
-                if score is None:
-                    logger.debug("Score is None. Stopping MainProtocol run.")
-                    cell_model.unfreeze(param_values.keys())
-                    return responses
-
-                logger.debug(
-                    "Computed %s in %s s. Value = %s, Score = %s",
-                    pre_run.__name__,
-                    dt,
-                    list(responses.values())[-1],
-                    score,
-                )
-
-                if score > self.score_threshold:
-                    logger.debug("Score is higher than score_threshold. Stopping MainProtocol run.")
-                    cell_model.unfreeze(param_values.keys())
-                    return responses
-
-            logger.debug("Computing StepThresholdProtocols ...")
-            for protocol in self.threshold_protocols.values():
-
-                logger.debug("Computing protocol %s ...", protocol.name)
-
-                responses.update(
-                    protocol.run(
-                        cell_model,
-                        {},
-                        holding_current=responses["bpo_holding_current"],
-                        threshold_current=responses["bpo_threshold_current"],
-                        sim=sim,
-                        isolate=isolate,
-                        timeout=timeout,
-                    )
-                )
+        for protocol in self.all_subprotocols().values():
+            logger.debug("Computing protocol %s", protocol.name)
+            responses.update(protocol.run(cell_model, {}, sim, isolate, timeout, responses))
 
         cell_model.unfreeze(param_values.keys())
         return responses
