@@ -34,6 +34,7 @@ class EModelPipelineSettings:
         path_extract_config=None,
         name_Rin_protocol=None,
         name_rmp_protocol=None,
+        name_TRN_burst_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
         plot_currentscape=False,
@@ -159,6 +160,7 @@ class EModelPipelineSettings:
                 "Setting name_rmp_protocol has been moved to the "
                 "FitnessCalculatorConfiguration and will be deprecated"
             )
+        self.name_TRN_burst_protocol = name_TRN_burst_protocol
 
         if threshold_based_evaluator is not None:
             logger.warning(
