@@ -203,7 +203,7 @@ class LocalAccessPoint(DataAccessPoint):
             emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
             recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
-            recipes_path = self.recipes_path
+            recipes_path = self.emodel_dir / self.recipes_path
 
         with open(recipes_path, "r") as f:
             return json.load(f)
@@ -213,10 +213,12 @@ class LocalAccessPoint(DataAccessPoint):
 
         See docstring of __init__ for the format of the file of recipes.
         """
+
         if self.with_seeds:
             emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
         else:
             emodel = self.emodel_metadata.emodel
+
         return self.get_all_recipes()[emodel]
 
     def _get_json(self, recipe_entry):
@@ -465,6 +467,8 @@ class LocalAccessPoint(DataAccessPoint):
             configuration = FitnessCalculatorConfiguration(
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
+                name_TRN_burst_protocol=self.pipeline_settings.name_TRN_burst_protocol,
+                name_TRN_noburst_protocol=self.pipeline_settings.name_TRN_noburst_protocol,
                 threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
                 ion_variables=ion_variables,
@@ -481,6 +485,8 @@ class LocalAccessPoint(DataAccessPoint):
                 protocols=config_dict["protocols"],
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
+                name_TRN_burst_protocol=self.pipeline_settings.name_TRN_burst_protocol,
+                name_TRN_noburst_protocol=self.pipeline_settings.name_TRN_noburst_protocol,
                 threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
                 ion_variables=ion_variables,
@@ -617,14 +623,29 @@ class LocalAccessPoint(DataAccessPoint):
 
         return filtered_models
 
+    def has_pipeline_settings(self):
+        """Returns True if pipeline settings are present in the recipes"""
+        
+        return "pipeline_settings" in self.get_recipes()
+
     def has_fitness_calculator_configuration(self):
         """Check if the fitness calculator configuration exists"""
+        
+        recipes = self.get_recipes()
 
-        return (
-            Path(self.emodel_dir, "config", "features", self.emodel_metadata.emodel)
-            .with_suffix(".json")
-            .is_file()
-        )
+        return Path(recipes["features"]).is_file()
+    
+    def has_targets_configuration(self):
+        """Check if the target configuration exists"""
+
+        return self.pipeline_settings.path_extract_config and Path(self.pipeline_settings.path_extract_config).is_file()
+    
+    def has_model_configuration(self):
+        """Check if the model configuration exists"""
+
+        recipes = self.get_recipes()
+
+        return Path(recipes["params"]).is_file()
 
     def get_emodel_etype_map(self):
         final = self.get_final()
@@ -679,3 +700,4 @@ class LocalAccessPoint(DataAccessPoint):
                 n_validated += 1
 
         return n_validated >= self.pipeline_settings.n_model
+    

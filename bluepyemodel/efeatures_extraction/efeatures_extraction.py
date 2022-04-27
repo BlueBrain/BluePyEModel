@@ -89,6 +89,8 @@ def extract_save_features_protocols(access_point, mapper=map):
     fitness_calculator_config = FitnessCalculatorConfiguration(
         name_rmp_protocol=access_point.pipeline_settings.name_rmp_protocol,
         name_rin_protocol=access_point.pipeline_settings.name_Rin_protocol,
+        name_TRN_burst_protocol=access_point.pipeline_settings.name_TRN_burst_protocol,
+        name_TRN_noburst_protocol=access_point.pipeline_settings.name_TRN_noburst_protocol,
         threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std,
         validation_protocols=access_point.pipeline_settings.validation_protocols,
     )

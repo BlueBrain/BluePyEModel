@@ -98,7 +98,7 @@ class ResponseDependencies:
     def set_dependencies(self, responses=None):
         for dep in self.dependencies:
             if responses.get(dep, None) is None:
-                logger.warning("Dependency %s missing", dep)
+                logger.debug("Dependency %s missing", dep)
                 return False
             self.set_attribute(self.dependencies[dep], responses[dep])
         return True
@@ -127,6 +127,53 @@ class BPEM_ThresholdProtocol(BPEM_Protocol, ResponseDependencies):
     ):
 
         if not self.set_dependencies(responses):
+            logger.debug("Not computing %s, some response dependencies are missing", self.name)
+            return self.return_none_responses()
+
+        return super().run(cell_model, param_values, sim, isolate, timeout, responses)
+
+
+class BPEM_DynamicStepProtocol(BPEM_Protocol, ResponseDependencies):
+
+    """Protocol whose holding and step currents are based on 2 specific pre-protocols"""
+
+    def __init__(self, name=None, stimulus=None, recordings=None, stochasticity=False):
+
+        BPEM_Protocol.__init__(self, name, stimulus, recordings, stochasticity)
+
+        suffix = "_noburst" if "noburst" in name else "_burst"
+
+        ResponseDependencies.__init__( 
+            self,
+            dependencies={
+                f"TRNSearchHolding_current{suffix}": "stimulus.holding_current",
+                f"TRNSearchCurrentStep_current{suffix}": "stimulus_amplitude",
+            },
+        )
+
+        self._stimulus_amplitude = None
+
+    @property
+    def stimulus_amplitude(self):
+        return self._stimulus_amplitude
+
+    @stimulus_amplitude.setter
+    def stimulus_amplitude(self, v):
+        """In step eCodes, the step amplitue is defined as holding_current + amplitude. But when
+        searching for the step current in the pre-protocols, we did not use a holding_current,
+        therefore, it need to be substracted"""
+        self._stimulus_amplitude = v - self.stimulus.holding_current
+        self.stimulus.amp = v - self.stimulus.holding_current
+
+    def return_none_responses(self):
+        return {k.name: None for k in self.recordings}
+
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
+
+        if not self.set_dependencies(responses):
+            logger.debug("Not computing %s, some response dependencies are missing", self.name)
             return self.return_none_responses()
 
         return super().run(cell_model, param_values, sim, isolate, timeout, responses)
@@ -231,6 +278,7 @@ class RinProtocol(PreProtocol, ResponseDependencies):
         """Compute input resistance"""
 
         if not self.set_dependencies(responses):
+            logger.debug("Not computing %s, some response dependencies are missing", self.name)
             return self.return_none_responses()
 
         rin_protocol = self.create_one_use_step(
@@ -249,7 +297,7 @@ class RinProtocol(PreProtocol, ResponseDependencies):
         return response
 
 
-class SearchHoldingCurrent(PreProtocol):
+class SearchCurrentForVoltage(PreProtocol):
     """Protocol used to find the holding current of a model"""
 
     def __init__(
@@ -257,12 +305,12 @@ class SearchHoldingCurrent(PreProtocol):
         name,
         location,
         target_voltage=None,
-        target_holding=None,
         max_depth=7,
-        stimulus_duration=500.0,
+        stimulus_duration=1000.0,
         upper_bound=0.2,
-        lower_bound=-0.5,
+        lower_bound=-0.3,
         strict_bounds=True,
+        target_current_name="bpo_holding_current",
     ):
         """Constructor
 
@@ -271,7 +319,6 @@ class SearchHoldingCurrent(PreProtocol):
             location (Location): location on which to perform the search (
                 usually the soma).
             target_voltage (EFeature): target for the voltage at holding_current
-            target_holding (EFeature): target for the holding_current
             max_depth (int): maxium depth for the bisection search
             stimulus_duration (float): length of the protocol
             upper_bound (float): upper bound for the holding current, in pA
@@ -284,7 +331,6 @@ class SearchHoldingCurrent(PreProtocol):
         )
 
         self.target_voltage = target_voltage
-        self.target_holding = target_holding
 
         self.max_depth = max_depth
         self.stimulus_duration = stimulus_duration
@@ -295,6 +341,8 @@ class SearchHoldingCurrent(PreProtocol):
         self.target_voltage.stim_start = self.stimulus_duration - 100.0
         self.target_voltage.stim_end = self.stimulus_duration
         self.target_voltage.stimulus_current = 0.0
+
+        self.target_current_name = target_current_name
 
     def get_voltage_base(
         self, holding_current, cell_model, param_values, sim, isolate, timeout=None
@@ -345,7 +393,7 @@ class SearchHoldingCurrent(PreProtocol):
                     self.max_depth += 1
 
         response = {
-            "bpo_holding_current": self.bisection_search(
+            self.target_current_name: self.bisection_search(
                 cell_model,
                 param_values,
                 sim=sim,
@@ -356,13 +404,13 @@ class SearchHoldingCurrent(PreProtocol):
             )
         }
 
-        if response["bpo_holding_current"] is None:
+        if response[self.target_current_name] is None:
             return response
 
         protocol = self.create_one_use_step(
             duration=self.stimulus_duration,
             totduration=self.stimulus_duration,
-            holding_current=response["bpo_holding_current"],
+            holding_current=response[self.target_current_name],
         )
 
         response.update(
@@ -384,7 +432,8 @@ class SearchHoldingCurrent(PreProtocol):
     ):
         """Do bisection search to find holding current"""
         logger.debug(
-            "Bisection search for Holding current. Depth = %s / %s",
+            "Bisection search for %s. Depth = %s / %s",
+            self.target_current_name,
             depth,
             self.max_depth,
         )
@@ -493,6 +542,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         """Run protocol"""
 
         if not self.set_dependencies(responses):
+            logger.debug("Not computing %s, some response dependencies are missing", self.name)
             return self.return_none_responses()
 
         max_threshold_current = self.max_threshold_current()
@@ -614,7 +664,7 @@ class MainProtocol(ephys.protocols.Protocol):
         self,
         name="Main",
         pre_protocols=None,
-        threshold_protocols=None,
+        dynamic_protocols=None,
         other_protocols=None,
     ):
         """Constructor
@@ -623,23 +673,23 @@ class MainProtocol(ephys.protocols.Protocol):
             name (str): name of this object
             pre_protocols (dict) special protocols used to compute the RMP, Rin, holding
                 and threshold(rheobase current), to be ran before the threshold protocols
-            threshold_protocols (dict): protocols that will use the automatic
-                computation of the RMP, holding_current and threshold_current
+            dynamic_protocols (dict): protocols whose amplitude or holding depends on
+                the responses from the pre_protocols
             other_protocols (dict): additional regular protocols
         """
         super().__init__(name=name)
 
         self.pre_protocols = pre_protocols if pre_protocols else {}
-        self.threshold_protocols = threshold_protocols if threshold_protocols else {}
+        self.dynamic_protocols = dynamic_protocols if dynamic_protocols else {}
         self.other_protocols = other_protocols if other_protocols else {}
 
     def all_subprotocols(self):
         """Return all the protocols contained in MainProtocol"""
-        return {**self.pre_protocols, **self.threshold_protocols, **self.other_protocols}
+        return {**self.pre_protocols, **self.dynamic_protocols, **self.other_protocols}
 
     def subprotocols(self):
         """Return all the protocols contained in MainProtocol except the pre_protocols"""
-        return {**self.threshold_protocols, **self.other_protocols}
+        return {**self.dynamic_protocols, **self.other_protocols}
 
     def run(self, cell_model, param_values, sim=None, isolate=None, timeout=None):
         """Run protocol"""

@@ -11,7 +11,8 @@ from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
-from bluepyemodel.evaluation.protocols import BPEM_ThresholdProtocol
+from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
+from bluepyemodel.evaluation.protocols import BPEM_Protocol, BPEM_ThresholdProtocol, PreProtocol, BPEM_DynamicStepProtocol
 from bluepyemodel.optimisation.optimisation import read_checkpoint
 from bluepyemodel.tools.utils import make_dir
 
@@ -98,7 +99,7 @@ def scores(model, figures_dir="./figures", write_fig=True):
     return fig, axs
 
 
-def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True):
+def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True, include_pre_protocols=True):
     """Plot the traces of a model"""
     make_dir(figures_dir)
 
@@ -111,8 +112,13 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
     for resp_name, response in responses.items():
 
         if not (isinstance(response, float)):
+
             if resp_name.split(".")[-1] != "v":
                 continue
+
+            if not include_pre_protocols and any(p in resp_name for p in PRE_PROTOCOLS):
+                continue
+
             traces_name.append(resp_name)
 
         else:
@@ -127,7 +133,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
                 rin = response
 
     fig, axs = plt.subplots(
-        len(traces_name), 1, figsize=(10, 2 + (1.6 * len(traces_name))), squeeze=False
+        len(traces_name), 1, figsize=(10, 2 + (1.7 * len(traces_name))), squeeze=False
     )
 
     axs_c = []
@@ -145,24 +151,19 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
             # Plot current
             basename = t.split(".")[0]
             if basename in stimuli:
+                
+                current = None
 
-                if hasattr(stimuli[basename], "stimulus"):
+                if ((isinstance(stimuli[basename], BPEM_DynamicStepProtocol) and stimuli[basename].set_dependencies(responses)) or isinstance(stimuli[basename], BPEM_Protocol)):
+                        time, current = stimuli[basename].stimulus.generate()
 
-                    if (
-                        isinstance(stimuli[basename], BPEM_ThresholdProtocol)
-                        and threshold
-                        and holding
-                    ):
-                        stimuli[basename].stimulus.holding_current = holding
-                        stimuli[basename].stimulus.threshold_current = threshold
-
+                if current is not None:
                     axs_c.append(axs[idx, 0].twinx())
                     axs_c[-1].set_xlabel("Time (ms)")
                     axs_c[-1].set_ylabel("Stim Current (nA)")
-
-                    time, current = stimuli[basename].stimulus.generate()
                     axs_c[-1].plot(time, current, color="gray", alpha=0.6)
-                    axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
+                    if not numpy.isnan(numpy.min(current)) and not numpy.isnan(numpy.max(current)):
+                        axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
 
         idx += 1
 
@@ -336,7 +337,12 @@ def plot_models(
         if plot_currentscape:
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
-            currentscape(mo.responses, config=config, figures_dir=figures_dir_currentscape)
+            currentscape(
+                mo.responses,
+                config=config,
+                metadata_str=mo.emodel_metadata.as_string(mo.seed),
+                figures_dir=figures_dir_currentscape
+            )
 
     return emodels
 
@@ -371,6 +377,10 @@ def get_ordered_currentscape_keys(keys):
         "bpo_rin",
         "bpo_holding_current",
         "bpo_threshold_current",
+        "TRNSearchHolding_current_noburst",
+        "TRNSearchCurrentStep_current_noburst",
+        "TRNSearchHolding_current_burst",
+        "TRNSearchCurrentStep_current_burst",
     ]
 
     ordered_keys = {}
@@ -425,7 +435,7 @@ def get_voltage_currents_from_files(key_dict, output_dir):
     return time, voltage, currents, ionic_concentrations
 
 
-def currentscape(responses=None, output_dir=None, config=None, figures_dir="./figures"):
+def currentscape(responses=None, output_dir=None, config=None, metadata_str="", figures_dir="./figures"):
     """Plot the currentscapes for all protocols.
 
     Arguments:
@@ -451,7 +461,9 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
         config["output"] = {}
 
     if responses is not None:
-        ordered_keys = get_ordered_currentscape_keys(responses.keys())
+        ordered_keys = get_ordered_currentscape_keys(
+            key for key, item in responses.items() if item is not None
+        )
     else:
         fnames = [
             str(Path(filepath).stem) for filepath in glob.glob(str(Path(output_dir) / "*.dat"))
@@ -473,7 +485,7 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
                     key_dict, output_dir
                 )
 
-            name = ".".join((prot, loc))
+            name = ".".join((metadata_str, prot, loc))
 
             # adapt config
             config["current"]["names"] = key_dict["current_names"]

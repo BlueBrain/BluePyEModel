@@ -21,10 +21,18 @@ def locally_store_responses(emodel):
     Arguments:
         emodel (EModel): the emodel which responses are to be stored
     """
+    float_resps = [
+        "holding_current",
+        "threshold_current", "bpo",
+        "TRNSearchHolding_current",
+        "TRNSearchCurrentStep_current"
+    ]
     output_dir = f"./recordings/{emodel.emodel_metadata.as_string(emodel.seed)}"
     make_dir(output_dir)
+
     for key, resp in emodel.responses.items():
-        if not ("holding_current" in key or "threshold_current" in key or "bpo" in key):
+        # if response is not a float, but a trace
+        if resp is not None and not any(float_resp in key for float_resp in float_resps):
             output_path = Path(output_dir) / ".".join((key, "dat"))
 
             if resp["time"] is not None and resp["voltage"] is not None:
@@ -53,7 +61,7 @@ def check_local_responses_presence(emodels, cell_eval):
                 (Path(output_dir) / ".".join((rec.name, "dat"))).is_file()
                 for prot in cell_eval.fitness_protocols[
                     "main_protocol"
-                ].threshold_protocols.values()
+                ].dynamic_protocols.values() # do not check for threshold only in TRN branch
                 for rec in prot.recordings
                 if rec.variable == "v"
             )
