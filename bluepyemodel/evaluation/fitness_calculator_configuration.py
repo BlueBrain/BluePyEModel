@@ -78,6 +78,7 @@ class FitnessCalculatorConfiguration:
         protocols=None,
         name_rmp_protocol=None,
         name_rin_protocol=None,
+        name_TRN_burst_protocol=None,
         threshold_efeature_std=None,
         validation_protocols=None,
         ion_variables=None,
@@ -136,6 +137,8 @@ class FitnessCalculatorConfiguration:
 
         self.name_rmp_protocol = name_rmp_protocol
         self.name_rin_protocol = name_rin_protocol
+        self.name_TRN_burst_protocol = name_TRN_burst_protocol
+
         self.threshold_efeature_std = threshold_efeature_std
 
     def protocol_exist(self, protocol_name):
@@ -159,12 +162,18 @@ class FitnessCalculatorConfiguration:
 
         validation = protocol_name in self.validation_protocols
 
+        if self.name_TRN_burst_protocol and self.name_TRN_burst_protocol in protocol_name:
+            protocol_type = "DynamicStepProtocol"
+        else:
+            protocol_type = "ThresholdBasedProtocol"
+
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
             recordings=recordings,
             validation=validation,
             ion_variables=self.ion_variables,
+            protocol_type=protocol_type,
         )
 
         self.protocols.append(tmp_protocol)
@@ -196,6 +205,16 @@ class FitnessCalculatorConfiguration:
             and feature["feature"] == "ohmic_input_resistance_vb_ssse"
         ):
             tmp_feature.protocol_name = "RinProtocol"
+
+        # TRN burst specific pre-protocols
+        if protocol_name == self.name_TRN_burst_protocol and feature["feature"] == "voltage_base":
+            tmp_feature.protocol_name = "TRNSearchHolding"
+            tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
+        if (
+            protocol_name == self.name_TRN_burst_protocol
+            and feature["feature"] == "steady_state_voltage_stimend"
+        ):
+            tmp_feature.protocol_name = "TRNSearchCurrentStep"
 
         if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(protocol_name):
             raise Exception(

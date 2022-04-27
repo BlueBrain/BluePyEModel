@@ -13,12 +13,13 @@ from bluepyopt.ephys.simulators import NrnSimulator
 
 from ..ecode import eCodes
 from .efel_feature_bpem import eFELFeatureBPEM
+from .protocols import BPEM_DynamicStepProtocol
 from .protocols import BPEM_Protocol
 from .protocols import BPEM_ThresholdProtocol
 from .protocols import MainProtocol
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
-from .protocols import SearchHoldingCurrent
+from .protocols import SearchCurrentForVoltage
 from .protocols import SearchThresholdCurrent
 from .recordings import FixedDtRecordingCustom
 from .recordings import LooseDtRecordingCustom
@@ -28,7 +29,14 @@ logger = logging.getLogger(__name__)
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
 
-PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
+PRE_PROTOCOLS = [
+    "SearchHoldingCurrent",
+    "SearchThresholdCurrent",
+    "RMPProtocol",
+    "RinProtocol",
+    "TRNSearchHolding",
+    "TRNSearchCurrentStep",
+]
 LEGACY_PRE_PROTOCOLS = ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]
 
 seclist_to_sec = {
@@ -41,6 +49,7 @@ seclist_to_sec = {
 protocol_type_to_class = {
     "Protocol": BPEM_Protocol,
     "ThresholdBasedProtocol": BPEM_ThresholdProtocol,
+    "DynamicStepProtocol": BPEM_DynamicStepProtocol,
 }
 
 
@@ -249,34 +258,37 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     )
 
 
-def define_holding_protocol(efeatures, strict_bounds=False):
-    """Define the search holding current protocol"""
+def define_current_for_voltage_protocol(
+    efeatures,
+    protocol_name,
+    target_current_name=None,
+    strict_bounds=False,
+    upper_bound=0.2,
+    lower_bound=-0.5,
+):
+    """Define the search of current giving a voltage"""
 
     target_voltage = next(
         f
         for f in efeatures
-        if "SearchHoldingCurrent" in f.recording_names[""]
+        if protocol_name in f.recording_names[""]
         and f.efel_feature_name == "steady_state_voltage_stimend"
     )
-    target_current = next(
-        f
-        for f in efeatures
-        if "SearchHoldingCurrent" in f.recording_names[""]
-        and f.efel_feature_name == "bpo_holding_current"
-    )
 
-    if target_voltage and target_current:
-        return SearchHoldingCurrent(
-            name="SearchHoldingCurrent",
+    if target_voltage:
+        return SearchCurrentForVoltage(
+            name=protocol_name,
             location=soma_loc,
             target_voltage=target_voltage,
-            target_holding=target_current,
             strict_bounds=strict_bounds,
+            upper_bound=upper_bound,
+            lower_bound=lower_bound,
+            target_current_name=target_current_name,
         )
 
     raise Exception(
-        "Couldn't find the efeature 'bpo_holding_current' associated to "
-        "the 'SearchHoldingCurrent' protocol in your FitnessCalculatorConfiguration."
+        "Couldn't find the efeature 'steady_state_voltage_stimend' associated to "
+        f"the {protocol_name} protocol in the FitnessCalculatorConfiguration."
     )
 
 
@@ -319,8 +331,8 @@ def define_main_protocol(
 ):
     """Create the MainProtocol and the list of efeatures to use as objectives.
 
-    The amplitude of the "threshold_protocols" depend on the computation of
-    the current threshold while the "other_protocols" do not.
+    Some characteristics of the "dynamic_protocols" depend on the computation of
+    the pre-protocols while the "other_protocols" do not.
 
     Args:
         fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
@@ -337,7 +349,7 @@ def define_main_protocol(
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
     """
 
-    threshold_protocols = {}
+    dynamic_protocols = {}
     other_protocols = {}
 
     validation_protocols = [
@@ -351,8 +363,8 @@ def define_main_protocol(
 
         protocol = define_protocol(protocols_def, stochasticity, use_fixed_dt_recordings)
 
-        if isinstance(protocol, BPEM_ThresholdProtocol):
-            threshold_protocols[protocols_def.name] = protocol
+        if isinstance(protocol, (BPEM_ThresholdProtocol, BPEM_DynamicStepProtocol)):
+            dynamic_protocols[protocols_def.name] = protocol
         else:
             other_protocols[protocols_def.name] = protocol
 
@@ -364,7 +376,7 @@ def define_main_protocol(
 
         protocol = None
         if feature_def.protocol_name not in PRE_PROTOCOLS:
-            for p in list(threshold_protocols.values()) + list(other_protocols.values()):
+            for p in list(dynamic_protocols.values()) + list(other_protocols.values()):
                 if p.name == feature_def.protocol_name:
                     protocol = p
                     break
@@ -374,25 +386,41 @@ def define_main_protocol(
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
     pre_protocols = {}
-    if len(threshold_protocols):
+    if any(isinstance(p, BPEM_ThresholdProtocol) for p in dynamic_protocols.values()):
         pre_protocols = {
             "rmp_protocol": define_RMP_protocol(efeatures),
-            "search_holding_protocol": define_holding_protocol(efeatures, strict_holding_bounds),
+            "search_holding_protocol": define_current_for_voltage_protocol(
+                efeatures,
+                protocol_name="SearchHoldingCurrent",
+                target_current_name="bpo_holding_current",
+                strict_bounds=strict_holding_bounds,
+            ),
             "rin_protocol": define_Rin_protocol(efeatures, ais_recording),
             "search_threshold_protocol": define_threshold_protocol(
                 efeatures, max_threshold_voltage
             ),
         }
 
-    for feature in efeatures:
-        if feature.efel_feature_name not in ["bpo_holding_current", "bpo_threshold_current"]:
-            assert feature.stim_start is not None
-            assert feature.stim_end is not None
-            assert feature.stimulus_current is not None
+    # TRN specific pre-protocols
+    if any(isinstance(p, BPEM_DynamicStepProtocol) for p in dynamic_protocols.values()):
+        pre_protocols["TRNSearchHolding"] = define_current_for_voltage_protocol(
+            efeatures,
+            protocol_name="TRNSearchHolding",
+            target_current_name="TRNSearchHolding_current",
+            strict_bounds=strict_holding_bounds,
+        )
+        pre_protocols["TRNSearchCurrentStep"] = define_current_for_voltage_protocol(
+            efeatures,
+            protocol_name="TRNSearchCurrentStep",
+            target_current_name="TRNSearchCurrentStep_current",
+            upper_bound=0.1,
+            lower_bound=-0.4,
+            strict_bounds=strict_holding_bounds,
+        )
 
     main_protocol = MainProtocol(
         pre_protocols=pre_protocols,
-        threshold_protocols=threshold_protocols,
+        dynamic_protocols=dynamic_protocols,
         other_protocols=other_protocols,
     )
 
