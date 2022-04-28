@@ -71,8 +71,6 @@ def get_scores(morphs_combos_df, features_to_ignore=None, features_to_keep=None,
         else np.nan
     )
     morphs_combos_df["cost"] = morphs_combos_df["scores"].apply(
-        lambda score: np.sum(list(score.values()))
-        if isinstance(score, dict)
-        else np.nan
+        lambda score: np.sum(list(score.values())) if isinstance(score, dict) else np.nan
     )
     return morphs_combos_df

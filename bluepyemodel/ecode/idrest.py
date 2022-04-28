@@ -19,7 +19,6 @@ class IDrest(BPEM_stimulus):
         Args:
             location(Location): location of stimulus
         """
-
         self.amp = kwargs.get("amp", None)
         self.amp_rel = kwargs.get("thresh_perc", 200.0)
 

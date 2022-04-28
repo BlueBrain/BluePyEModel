@@ -4,12 +4,13 @@ import pathlib
 
 from bluepyopt.ephys.evaluators import CellEvaluator
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
-from bluepyopt.ephys.locations import NrnSecSomaDistanceCompLocation
 from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
 from bluepyopt.ephys.objectives import SingletonObjective
 from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.simulators import NrnSimulator
+
+from bluepyemodel.ecode.dendrite import NrnMainSomaDistanceCompLocation
 
 from ..ecode import eCodes
 from .efel_feature_bpem import eFELFeatureBPEM
@@ -53,7 +54,7 @@ def define_location(definition):
         )
 
     if definition["type"] == "somadistanceapic":
-        return NrnSomaDistanceCompLocation(
+        return NrnMainSomaDistanceCompLocation(
             name=definition["name"],
             soma_distance=definition["somadistance"],
             seclist_name=definition["seclist_name"],
@@ -105,7 +106,7 @@ def define_protocol(protocol_configuration, stochasticity=False, threshold_based
         raise Exception("Only protocols with a single stimulus implemented")
 
     for k, ecode in eCodes.items():
-        if k in protocol_configuration.name.lower():
+        if protocol_configuration.name.lower().startswith(k):
             stimulus = ecode(location=soma_loc, **protocol_configuration.stimuli[0])
             break
     else:

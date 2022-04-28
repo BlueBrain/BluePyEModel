@@ -3,6 +3,9 @@
 from .apwaveform import APWaveform
 from .comb import Comb
 from .dehyperpol import DeHyperpol
+from .dendrite import BAC
+from .dendrite import EPSP
+from .dendrite import DendriticStep
 from .firepattern import FirePattern
 from .hyperdepol import HyperDepol
 from .idrest import IDrest
@@ -16,7 +19,6 @@ from .sinespec import SineSpec
 from .spikerec import SpikeRecMultiSpikes
 from .subwhitenoise import SubWhiteNoise
 from .whitenoise import WhiteNoise
-from .synstim import EPSP, BAC
 
 # The ecode names have to be lower case only, to avoid having to
 # define duplicates.
@@ -53,4 +55,5 @@ eCodes = {
     "highfreq": Comb,
     "epsp": EPSP,
     "bac": BAC,
+    "dendriticstep": DendriticStep,
 }

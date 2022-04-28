@@ -483,6 +483,7 @@ class SearchThresholdCurrent:
 
         spikecount = self.get_spikecount(max_threshold_current)
         if spikecount == 0:
+            print("cell does not spike at max_threshold_current")
             return {"bpo_threshold_current": None}
 
         threshold = self.bisection_search(
