@@ -57,7 +57,7 @@ def define_location(definition):
         return NrnMainSomaDistanceCompLocation(
             name=definition["name"],
             soma_distance=definition["somadistance"],
-            seclist_name=definition["seclist_name"],
+            sec_name=definition["seclist_name"],
         )
 
     if definition["type"] == "nrnseclistcomp":
