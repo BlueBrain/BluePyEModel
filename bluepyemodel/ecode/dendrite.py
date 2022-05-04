@@ -8,8 +8,8 @@ from .idrest import IDrest
 class NrnMainSomaDistanceCompLocation(NrnSecSomaDistanceCompLocation):
     """Location at a distance from soma up to the point furthest along trunk direction."""
 
-    def set_sec_index(self, icell=None):
-        """Search for the point fursest away along trunk direction defined by first two points."""
+    def set_sec_index(self, icell=None, direction=[0.0, 1.0, 0.0]):
+        """Search for the point fursest away along given direction."""
         sections = getattr(icell, self.seclist_name)
         points = np.array(
             [
@@ -21,7 +21,7 @@ class NrnMainSomaDistanceCompLocation(NrnSecSomaDistanceCompLocation):
                 for section in sections
             ]
         )
-        self.sec_index = np.argmax(points.dot(points[1] - points[0]))
+        self.sec_index = np.argmax(points.dot(direction))
 
     def instantiate(self, sim=None, icell=None):
         """ """
