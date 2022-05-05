@@ -202,7 +202,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         self.emodel_metadata_ontology.species = self.get_nexus_subject(self.emodel_metadata.species)
         self.emodel_metadata_ontology.brain_region = self.get_nexus_brain_region(
-            self.emodel_metadata.brain_region
+            self.emodel_metadata.brain_region,  # self.access_point.access_token
         )
 
     def get_nexus_subject(self, species):
