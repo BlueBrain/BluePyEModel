@@ -304,9 +304,14 @@ class NeuronModelConfiguration:
             )
 
             if any(p == tmp_param for p in self.parameters):
-                raise Exception(f"Parameter {parameter_name} is already at location {loc} or 'all'")
-
-            self.parameters.append(tmp_param)
+                logger.warning(
+                    "Parameter %s is already at location %s or 'all'. %s",
+                    parameter_name,
+                    loc,
+                    "Only first occurence will be used.",
+                )
+            else:
+                self.parameters.append(tmp_param)
 
             if mechanism and auto_mechanism:
                 self.add_mechanism(mechanism, loc, stochastic=stochastic)
