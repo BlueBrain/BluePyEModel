@@ -37,63 +37,6 @@ class EModelMetadata:
         self.synapse_class = synapse_class
         self.layer = layer
 
-    @staticmethod
-    def etype_annotation_dict(etype):
-        """Returns an etype annotation dict to be added to annotations list."""
-        #TODO also add id from Cell Type Ontology in WebProtege (optional)
-        return {
-            "@type": [
-                "ETypeAnnotation",
-                "Annotation",
-            ],
-            "hasBody": {
-                "@type": [
-                    "EType",
-                    "AnnotationBody",
-                ],
-                "label": etype
-            },
-            "name": "E-type annotation"
-        }
-
-    @staticmethod
-    def mtype_annotation_dict(mtype):
-        """Returns an mtype annotation dict to be added to annotations list."""
-        #TODO also add id from Cell Type Ontology in WebProtege (optional)
-        return {
-            "@type": [
-                "MTypeAnnotation",
-                "Annotation",
-            ],
-            "hasBody": {
-                "@type": [
-                    "MType",
-                    "AnnotationBody",
-                ],
-                "label": mtype
-            },
-            "name": "M-type annotation"
-        }
-
-    @staticmethod
-    def ttype_annotation_dict(ttype):
-        """Returns an ttype annotation dict to be added to annotations list."""
-        #TODO also add id from Cell Type Ontology in WebProtege (optional)
-        return {
-            "@type": [
-                "TTypeAnnotation",
-                "Annotation",
-            ],
-            "hasBody": {
-                "@type": [
-                    "TType",
-                    "AnnotationBody",
-                ],
-                "label": ttype
-            },
-            "name": "T-type annotation"
-        }
-
     def for_resource(self):
 
         metadata = {}
@@ -106,12 +49,6 @@ class EModelMetadata:
                     metadata["subject"] = v
                 elif k == "brain_region":
                     metadata["brainLocation"] = v
-                elif k == "etype":
-                    annotations.append(etype_annotation_dict(v))
-                elif k == "mtype":
-                    annotations.append(mtype_annotation_dict(v))
-                elif k == "ttype":
-                    annotations.append(ttype_annotation_dict(v))
                 else:
                     metadata[k] = v
 
