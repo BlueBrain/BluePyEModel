@@ -403,9 +403,6 @@ def ontology_forge_access_point(access_token=None):
     """Returns an access point targeting the project containing the ontology for the
     species and brain regions"""
 
-    if access_token is None:
-        access_token = getpass.getpass()
-
     access_point = NexusForgeAccessPoint(
         project="datamodels",
         organisation="neurosciencegraph",
