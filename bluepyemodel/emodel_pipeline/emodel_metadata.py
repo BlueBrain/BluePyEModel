@@ -40,7 +40,6 @@ class EModelMetadata:
     def for_resource(self):
 
         metadata = {}
-        annotations = []
 
         for k, v in vars(self).items():
             if v and v != "None":
@@ -51,9 +50,6 @@ class EModelMetadata:
                     metadata["brainLocation"] = v
                 else:
                     metadata[k] = v
-
-        if annotations:
-            metadata["annotations"] = annotations
 
         return metadata
 
