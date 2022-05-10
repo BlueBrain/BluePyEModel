@@ -24,7 +24,7 @@ EXTRA_LUIGI = [
 
 EXTRA_NEXUS = [
     "icselector",
-    "nexusforge>=0.7",
+    "nexusforge>=0.7.1",
     "entity_management>=1.2",
     "pyJWT>=2.1.0"
 ]

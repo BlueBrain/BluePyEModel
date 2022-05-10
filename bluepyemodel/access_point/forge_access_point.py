@@ -182,7 +182,7 @@ class NexusForgeAccessPoint:
 
         logger.debug("Registering resources: %s", resource_description)
 
-        resource = self.forge.from_json(resource_description)
+        resource = self.forge.from_json(resource_description, na="None")
         resource = self.add_contribution(resource)
 
         if distributions:
