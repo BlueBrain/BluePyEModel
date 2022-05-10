@@ -47,42 +47,31 @@ def calculate_threshold_current(cell, config, holding_current):
         config,
         holding_current,
         config["min_threshold_current"],
-        config["max_threshold_current"],
-        0,
+        config["max_threshold_current"]
     )
 
 
-def binsearch_threshold_current(
-    cell,
-    config,
-    holding_current,
-    min_current,
-    max_current,
-    depth,
-):
+def binsearch_threshold_current(cell, config, holding_current, min_current, max_current):
     """Binary search for threshold currents"""
-    logger.debug("current %s, %s at depth %s", min_current, max_current, depth)
-    med_current = min_current + abs(min_current - max_current) / 2
+    logger.debug("current %s, %s", min_current, max_current)
+    mid_current = (min_current + max_current) / 2
 
-    if depth >= int(config["max_recursion_depth"]):
-        logger.debug("Reached maximal recursion depth, return latest value")
+    if abs(max_current - min_current) < config["threshold_current_precision"]:
         return min_current
 
     spike_count = run_spike_sim(
         cell,
         config,
         holding_current,
-        med_current,
+        mid_current,
     )
     logger.debug("Med spike count %d", spike_count)
 
     if spike_count == 0:
         logger.debug("Searching upwards")
-        return binsearch_threshold_current(
-            cell, config, holding_current, med_current, max_current, depth + 1
-        )
-
-    hs_current = float(config["highest_silent_perc"]) / 100 * med_current
+        return binsearch_threshold_current(cell, config, holding_current, mid_current, max_current)
+    """
+    hs_current = float(config["highest_silent_perc"]) / 100 * mid_current
     hs_spike_count = run_spike_sim(
         cell,
         config,
@@ -95,11 +84,9 @@ def binsearch_threshold_current(
     if hs_spike_count == 0 and spike_count <= int(config["max_spikes_at_threshold"]):
         logger.debug("Found threshold %s", hs_current)
         return hs_current
-
+    """
     logger.debug("Searching downwards")
-    return binsearch_threshold_current(
-        cell, config, holding_current, min_current, med_current, depth + 1
-    )
+    return binsearch_threshold_current(cell, config, holding_current, min_current, mid_current)
 
 
 def run_spike_sim(cell, config, holding_current, step_current):
