@@ -65,6 +65,11 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
         if not self.stochasticity:
             for mechanism in cell_model.mechanisms:
                 mechanism.deterministic = True
+        else:
+            # set back stochasticity if previously overwritten e.g. by preprotocols
+            for mechanism in cell_model.mechanisms:
+                if not mechanism.always_deterministic:
+                    mechanism.deterministic = False
 
         return super().run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
 
