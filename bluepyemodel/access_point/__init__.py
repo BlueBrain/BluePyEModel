@@ -48,6 +48,9 @@ def get_access_point(access_point, emodel, **kwargs):
     mtype = kwargs.get("mtype", None)
     mtype = mtype.replace("__", " ") if mtype else None
 
+    brain_region = kwargs.get("brain_region", None)
+    brain_region = brain_region.replace("__", " ") if brain_region else None
+
     if access_point == "nexus":
         from bluepyemodel.access_point.nexus import NexusAccessPoint
 
@@ -57,7 +60,7 @@ def get_access_point(access_point, emodel, **kwargs):
             ttype=ttype,
             mtype=mtype,
             species=kwargs.get("species", None),
-            brain_region=kwargs.get("brain_region", None),
+            brain_region=brain_region,
             iteration_tag=kwargs.get("iteration_tag", None),
             morph_class=kwargs.get("morph_class", None),
             synapse_class=kwargs.get("synapse_class", None),
@@ -79,7 +82,7 @@ def get_access_point(access_point, emodel, **kwargs):
             ttype=ttype,
             mtype=mtype,
             species=kwargs.get("species", None),
-            brain_region=kwargs.get("brain_region", None),
+            brain_region=brain_region,
             iteration_tag=kwargs.get("iteration_tag", None),
             morph_class=kwargs.get("morph_class", None),
             synapse_class=kwargs.get("synapse_class", None),
