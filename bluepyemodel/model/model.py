@@ -9,7 +9,6 @@ from bluepyopt.ephys.morphologies import NrnFileMorphology
 from bluepyemodel.evaluation import modifiers
 from bluepyemodel.evaluation.modifiers import replace_axon_hoc
 from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
-
 from bluepyemodel.model.mechanisms import NrnMODMechanismCustom
 
 logger = logging.getLogger(__name__)
