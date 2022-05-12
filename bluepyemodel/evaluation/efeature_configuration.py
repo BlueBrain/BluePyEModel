@@ -6,7 +6,14 @@ class EFeatureConfiguration:
     """Container for the definition of an EFeature"""
 
     def __init__(
-        self, efel_feature_name, protocol_name, recording_name, mean, std, efel_settings=None
+        self,
+        efel_feature_name,
+        protocol_name,
+        recording_name,
+        mean,
+        std,
+        efel_settings=None,
+        threshold_efeature_std=None,
     ):
         """Init.
 
