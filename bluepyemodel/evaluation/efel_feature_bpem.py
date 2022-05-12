@@ -206,7 +206,8 @@ class eFELFeatureBPEM(eFELFeature):
                     / self.exp_std
                     / len(feature_values)
                 )
-                logger.debug("Calculated score for %s: %f", self.name, score)
+                #logger.debug("Calculated score for %s: %f", self.name, score)
+                print("Calculated score for %s: %f, %f", self.name, score, feature_values, self.exp_std, self.exp_mean)
 
             score = numpy.min([score, self.max_score])
 

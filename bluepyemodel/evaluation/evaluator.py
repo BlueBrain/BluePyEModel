@@ -306,8 +306,6 @@ def define_main_protocol(
             deterministic
         ais_recording (bool): if True all the soma recording will be at the first axonal section.
         efel_settings (dict): eFEl settings.
-        threshold_efeature_std (float): if informed, compute the std as
-            threshold_efeature_std * mean if std is < threshold_efeature_std * min.
         threshold_based_evaluator (bool): if True, the protocols of the evaluator will be rescaled
             by the holding and threshold current of the model.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside

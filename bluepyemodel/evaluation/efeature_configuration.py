@@ -1,33 +1,12 @@
 """EFeatureConfiguration"""
 
 
-def _limit_std(mean, std, threshold_efeature_std):
-    """Limit the standard deviation with a lower bound equal to a percentage of the mean."""
-
-    if threshold_efeature_std is None:
-        return std
-
-    limit = abs(threshold_efeature_std * mean)
-
-    if std < limit:
-        return limit
-
-    return std
-
-
 class EFeatureConfiguration:
 
     """Container for the definition of an EFeature"""
 
     def __init__(
-        self,
-        efel_feature_name,
-        protocol_name,
-        recording_name,
-        mean,
-        std,
-        efel_settings=None,
-        threshold_efeature_std=None,
+        self, efel_feature_name, protocol_name, recording_name, mean, std, efel_settings=None
     ):
         """Init.
 
@@ -42,8 +21,6 @@ class EFeatureConfiguration:
             mean (float): mean of the efeature.
             std (float): standard deviation of the efeature.
             efel_settings (dict): eFEl settings.
-            threshold_efeature_std (float): lower limit for the std expressed as a percentage of
-                the mean of the features value (optional).
         """
 
         self.efel_feature_name = efel_feature_name
@@ -51,7 +28,7 @@ class EFeatureConfiguration:
         self.recording_name = recording_name
 
         self.mean = mean
-        self.std = _limit_std(mean, std, threshold_efeature_std)
+        self.std = std
 
         if efel_settings is None:
             self.efel_settings = {"strict_stiminterval": True}

@@ -198,7 +198,7 @@ class SearchHoldingCurrent:
         location,
         target_voltage=None,
         target_holding=None,
-        current_precision=1e-5,
+        current_precision=1e-3,
         stimulus_duration=500.0,
         upper_bound=0.2,
         lower_bound=-0.2,
@@ -395,7 +395,7 @@ class SearchThresholdCurrent:
         name,
         location,
         target_threshold=None,
-        current_precision=1e-3,
+        current_precision=1e-2,
         stimulus_duration=1000.0,
         max_threshold_voltage=-30,
     ):
