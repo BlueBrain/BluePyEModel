@@ -61,6 +61,11 @@ class DendriticStep(IDrest):
 
         super().__init__(location=location, **kwargs)
 
+    def instantiate(self, sim=None, icell=None):
+        """Force to have holding current at 0."""
+        self.holding_current = 0
+        super().instantiate(sim=sim, icell=icell)
+
 
 class EPSP(IDrest):
     def __init__(self, location, **kwargs):
