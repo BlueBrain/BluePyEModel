@@ -532,6 +532,15 @@ class LocalAccessPoint(DataAccessPoint):
         else:
             self.morph_path = Path(self.morph_path)
 
+        if str(Path.cwd()) not in str(self.morph_path.resolve()) and self.emodel_metadata.iteration:
+            raise Exception(
+                "When using a githash or iteration tag, the path to the morphology must be local"
+                " otherwise it cannot be archived during the creation of the githash. To solve"
+                " this issue, you can copy the morphology from "
+                f"{self.morph_path.resolve()} to {Path.cwd() / 'morphologies'} and update your "
+                "recipes."
+            )
+
         morphology_definition = {
             "name": self.morph_path.stem,
             "path": str(self.morph_path),
