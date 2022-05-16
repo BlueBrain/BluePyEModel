@@ -57,7 +57,7 @@ def binsearch_threshold_current(cell, config, holding_current, min_current, max_
     mid_current = (min_current + max_current) / 2
 
     if abs(max_current - min_current) < config["threshold_current_precision"]:
-        return min_current
+        return max_current
 
     spike_count = run_spike_sim(
         cell,
