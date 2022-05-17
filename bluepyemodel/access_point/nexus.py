@@ -92,13 +92,13 @@ class NexusAccessPoint(DataAccessPoint):
         if strict:
             return self.access_point.nexus_to_object(
                 type_="EModelPipelineSettings",
-                metadata=self.emodel_metadata_ontology.for_resource(),
+                metadata=self.emodel_metadata_ontology.filters_for_resource(),
             )
 
         try:
             return self.access_point.nexus_to_object(
                 type_="EModelPipelineSettings",
-                metadata=self.emodel_metadata_ontology.for_resource(),
+                metadata=self.emodel_metadata_ontology.filters_for_resource(),
             )
         except AccessPointException:
             return EModelPipelineSettings()
@@ -261,7 +261,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         configuration = self.access_point.nexus_to_object(
             type_="ExtractionTargetsConfiguration",
-            metadata=self.emodel_metadata_ontology.for_resource(),
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
         )
 
         configuration.available_traces = self.get_available_traces()
@@ -282,7 +282,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         configuration = self.access_point.nexus_to_object(
             type_="FitnessCalculatorConfiguration",
-            metadata=self.emodel_metadata_ontology.for_resource(),
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
         )
 
         if configuration.name_rmp_protocol is None:
@@ -306,7 +306,8 @@ class NexusAccessPoint(DataAccessPoint):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
         configuration = self.access_point.nexus_to_object(
-            type_="EModelConfiguration", metadata=self.emodel_metadata_ontology.for_resource()
+            type_="EModelConfiguration",
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
         )
 
         morph_path = self.download_morphology(
@@ -339,13 +340,15 @@ class NexusAccessPoint(DataAccessPoint):
         """Create an EModelWorkflow instance filled with the appropriate configuration"""
         targets_configuration_id = self.access_point.get_nexus_id(
             type_="ExtractionTargetsConfiguration",
-            metadata=self.emodel_metadata_ontology.for_resource(),
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
         )
         pipeline_settings_id = self.access_point.get_nexus_id(
-            type_="EModelPipelineSettings", metadata=self.emodel_metadata_ontology.for_resource()
+            type_="EModelPipelineSettings",
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
         )
         emodel_configuration_id = self.access_point.get_nexus_id(
-            type_="EModelConfiguration", metadata=self.emodel_metadata_ontology.for_resource()
+            type_="EModelConfiguration",
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
         )
 
         return EModelWorkflow(
@@ -361,7 +364,7 @@ class NexusAccessPoint(DataAccessPoint):
         Returns None if the emodel workflow is not present on nexus."""
 
         emodel_workflow = self.access_point.nexus_to_objects(
-            type_="EModelWorkflow", metadata=self.emodel_metadata_ontology.for_resource()
+            type_="EModelWorkflow", metadata=self.emodel_metadata_ontology.filters_for_resource()
         )
         if emodel_workflow:
             return emodel_workflow[0]
@@ -377,15 +380,16 @@ class NexusAccessPoint(DataAccessPoint):
     def store_or_update_emodel_workflow(self, emodel_workflow):
         """If emodel workflow is not on nexus, store it. If it is, fetch it and update its state"""
         type_ = "EModelWorkflow"
-        metadata = self.emodel_metadata_ontology.for_resource()
 
         filters = {"type": type_}
-        filters.update(metadata)
+        filters.update(self.emodel_metadata_ontology.filters_for_resource())
         resources = self.access_point.fetch(filters)
 
         # not present on nexus yet -> store it
         if resources is None:
-            self.access_point.object_to_nexus(emodel_workflow, metadata, replace=False)
+            self.access_point.object_to_nexus(
+                emodel_workflow, self.emodel_metadata_ontology.for_resource(), replace=False
+            )
         # if present on nexus -> update its state
         else:
             resource = resources[0]
@@ -395,7 +399,7 @@ class NexusAccessPoint(DataAccessPoint):
     def get_emodel(self, seed=None):
         """Fetch an emodel"""
 
-        metadata = self.emodel_metadata_ontology.for_resource()
+        metadata = self.emodel_metadata_ontology.filters_for_resource()
 
         if seed:
             metadata["seed"] = int(seed)
@@ -417,7 +421,7 @@ class NexusAccessPoint(DataAccessPoint):
         """Get all the emodels"""
 
         emodels = self.access_point.nexus_to_objects(
-            type_="EModel", metadata=self.emodel_metadata_ontology.for_resource()
+            type_="EModel", metadata=self.emodel_metadata_ontology.filters_for_resource()
         )
 
         for em in emodels:
