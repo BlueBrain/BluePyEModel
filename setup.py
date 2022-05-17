@@ -69,7 +69,7 @@ setup(
         "tqdm",
         "pyyaml",
         "gitpython",
-        "bluepyopt>=1.12",
+        "bluepyopt>=1.12.12",
         "bluepyefe @ git+http://github.com/BlueBrain/BluePyEfe@BPE2#egg=bluepyefe",
         "neurom>=3.0,<4.0",
         "efel>=3.1",
