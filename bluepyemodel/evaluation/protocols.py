@@ -29,10 +29,11 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
                 stochastic
         """
 
-        super().__init__(name=name, stimuli=[stimulus], recordings=recordings)
+        super().__init__(
+            name=name, stimuli=[stimulus], recordings=recordings, deterministic=not stochasticity
+        )
 
         self.stimulus = stimulus
-        self.stochasticity = stochasticity
 
         self.features = []
 
@@ -60,11 +61,6 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
 
         param_values = {} if param_values is None else param_values
         responses = {} if responses is None else responses
-
-        # Set the stochasticity
-        if not self.stochasticity:
-            for mechanism in cell_model.mechanisms:
-                mechanism.deterministic = True
 
         return super().run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
 
