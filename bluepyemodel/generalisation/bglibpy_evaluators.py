@@ -47,17 +47,22 @@ def calculate_threshold_current(cell, config, holding_current):
         config,
         holding_current,
         config["min_threshold_current"],
-        config["max_threshold_current"]
+        config["max_threshold_current"],
     )
 
 
 def binsearch_threshold_current(cell, config, holding_current, min_current, max_current):
     """Binary search for threshold currents"""
-    logger.debug("current %s, %s", min_current, max_current)
     mid_current = (min_current + max_current) / 2
 
     if abs(max_current - min_current) < config["threshold_current_precision"]:
-        return max_current
+        spike_count = run_spike_sim(
+            cell,
+            config,
+            holding_current,
+            max_current,
+        )
+        return max_current, spike_count
 
     spike_count = run_spike_sim(
         cell,
@@ -65,27 +70,10 @@ def binsearch_threshold_current(cell, config, holding_current, min_current, max_
         holding_current,
         mid_current,
     )
-    logger.debug("Med spike count %d", spike_count)
 
     if spike_count == 0:
-        logger.debug("Searching upwards")
         return binsearch_threshold_current(cell, config, holding_current, mid_current, max_current)
-    """
-    hs_current = float(config["highest_silent_perc"]) / 100 * mid_current
-    hs_spike_count = run_spike_sim(
-        cell,
-        config,
-        holding_current,
-        hs_current,
-    )
 
-    logger.debug("Highest silent spike count %d", hs_spike_count)
-
-    if hs_spike_count == 0 and spike_count <= int(config["max_spikes_at_threshold"]):
-        logger.debug("Found threshold %s", hs_current)
-        return hs_current
-    """
-    logger.debug("Searching downwards")
     return binsearch_threshold_current(cell, config, holding_current, min_current, mid_current)
 
 
@@ -199,16 +187,17 @@ def _current_bglibpy_evaluation(
     )
 
     holding_current = calculate_holding_current(cell, protocol_config)
-    threshold_current = calculate_threshold_current(cell, protocol_config, holding_current)
-
-    # apply a correction factor to threshold for stochastic cells if in deterministic mode
-    if "stoch_correction" in protocol_config and not set_cell_deterministic(cell, False):
-        threshold_current *= float(protocol_config["stoch_correction"])
+    threshold_current, spikecount = calculate_threshold_current(
+        cell, protocol_config, holding_current
+    )
 
     cell.delete()
 
-    out = {"holding_current": holding_current, "threshold_current": threshold_current}
-    return out
+    return {
+        "holding_current": holding_current,
+        "threshold_current": threshold_current,
+        "spikecount": spikecount,
+    }
 
 
 def _isolated_current_bglibpy_evaluation(*args, **kwargs):
@@ -230,7 +219,7 @@ def evaluate_currents_bglibpy(
     return evaluate(
         morphs_combos_df,
         _isolated_current_bglibpy_evaluation,
-        new_columns=[["holding_current", 0.0], ["threshold_current", 0.0]],
+        new_columns=[["holding_current", 0.0], ["threshold_current", 0.0], ["spikecount", 0]],
         resume=resume,
         parallel_factory=parallel_factory,
         db_url=db_url,
