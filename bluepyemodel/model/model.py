@@ -9,7 +9,6 @@ from bluepyopt.ephys.morphologies import NrnFileMorphology
 from bluepyemodel.evaluation import modifiers
 from bluepyemodel.evaluation.modifiers import replace_axon_hoc
 from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
-from bluepyemodel.model.mechanisms import NrnMODMechanismCustom
 
 logger = logging.getLogger(__name__)
 
@@ -146,14 +145,14 @@ def define_parameters(parameters_definition, distributions, mapping_multilocatio
 
 
 def define_mechanisms(mechanisms_definition, mapping_multilocation):
-    """Define a list of NrnMODMechanismCustom from a definition dictionary
+    """Define a list of NrnMODMechanism from a definition dictionary
 
     Args:
         mechanisms_definition (list of MechanismConfiguration): definition of the mechanisms
         mapping_multilocation (dict): mapping from multi-locations names to list of locations
 
     Returns:
-        list: list of NrnMODMechanismCustom
+        list: list of NrnMODMechanism
     """
 
     mechanisms = []
@@ -163,7 +162,7 @@ def define_mechanisms(mechanisms_definition, mapping_multilocation):
         seclist_locations = multi_locations(mech_def.location, mapping_multilocation)
 
         mechanisms.append(
-            NrnMODMechanismCustom(
+            ephys.mechanisms.NrnMODMechanism(
                 name=f"{mech_def.name}.{mech_def.location}",
                 mod_path=None,
                 prefix=mech_def.name,
