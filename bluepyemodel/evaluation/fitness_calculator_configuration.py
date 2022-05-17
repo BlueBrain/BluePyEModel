@@ -11,18 +11,6 @@ from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 logger = logging.getLogger(__name__)
 
 
-def _get_apical_point(cell):
-    """Get the apical point isec usign automatic apical point detection."""
-
-    from morph_tool import apical_point
-    from morph_tool import nrnhines
-    from morphio import Morphology
-
-    point = apical_point.apical_point_position(Morphology(cell.morphology.morphology_path))
-
-    return nrnhines.point_to_section_end(cell.icell.apical, point)
-
-
 def _set_morphology_dependent_locations(stimulus, cell):
     """Here we deal with morphology dependent locations"""
 
@@ -37,7 +25,6 @@ def _set_morphology_dependent_locations(stimulus, cell):
     new_stims = []
     if stimulus["type"] == "somadistanceapic":
         new_stims = [deepcopy(stimulus)]
-        new_stims[0]["sec_index"] = _get_apical_point(cell)
         new_stims[0]["sec_name"] = seclist_to_sec.get(
             stimulus["seclist_name"], stimulus["seclist_name"]
         )
