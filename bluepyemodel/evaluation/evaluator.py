@@ -123,7 +123,7 @@ def define_protocol(
         raise Exception("Only protocols with a single stimulus implemented")
 
     for k, ecode in eCodes.items():
-        if k in protocol_configuration.name.lower():
+        if protocol_configuration.name.lower().startswith(k):
             stimulus = ecode(location=soma_loc, **protocol_configuration.stimuli[0])
             break
     else:
