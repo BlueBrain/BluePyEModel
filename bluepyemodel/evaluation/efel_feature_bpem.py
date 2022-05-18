@@ -39,7 +39,7 @@ class eFELFeatureBPEM(eFELFeature):
         interp_step=None,
         double_settings=None,
         int_settings=None,
-        efel_settings=None,
+        string_settings=None,
     ):
         """Constructor
 
@@ -71,9 +71,9 @@ class eFELFeatureBPEM(eFELFeature):
             interp_step,
             double_settings,
             int_settings,
+            string_settings,
             max_score=250.0,
         )
-        self.efel_settings = efel_settings
 
     def calculate_bpo_feature(self, responses):
         """Return internal feature which is directly passed as a response"""
