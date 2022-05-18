@@ -148,8 +148,6 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     if global_efel_settings is None:
         global_efel_settings = {}
 
-    efel_settings = {**global_efel_settings, **feature_config.efel_settings}
-
     stim_amp = None
     stim_start = None
     stim_end = None
@@ -172,6 +170,11 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
 
     recording_names = {"": f"{feature_config.protocol_name}.{feature_config.recording_name}"}
 
+    efel_settings = {**global_efel_settings, **feature_config.efel_settings}
+    double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, float)}
+    int_settings = {k: v for k, v in efel_settings.items() if isinstance(v, int)}
+    string_settings = {k: v for k, v in efel_settings.items() if isinstance(v, str)}
+
     efeature = eFELFeatureBPEM(
         feature_config.name,
         efel_feature_name=feature_config.efel_feature_name,
@@ -182,7 +185,10 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
         exp_std=feature_config.std,
         stimulus_current=stim_amp,
         threshold=efel_settings.get("Threshold", None),
-        efel_settings=efel_settings,
+        interp_step=efel_settings.get("interp_step", None),
+        double_settings=double_settings,
+        int_settings=int_settings,
+        string_settings=string_settings,
     )
 
     return efeature
