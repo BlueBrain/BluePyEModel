@@ -274,19 +274,19 @@ class LocalAccessPoint(DataAccessPoint):
                     _params.update(emodel.parameters)
                     final_path = self.new_final_path
 
-                final[model_name] = {
-                    "emodel": self.emodel_metadata.emodel,
-                    "score": sum(list(emodel.scores.values())),
-                    "parameters": _params,
-                    "fitness": emodel.scores,
-                    "features": emodel.features,
-                    "validation_fitness": emodel.scores_validation,
-                    "validated": emodel.passed_validation,
-                    "seed": int(emodel.seed),
-                    "ttype": emodel.emodel_metadata.ttype,
-                    "iteration_tag": str(emodel.emodel_metadata.iteration),
-                    "pdfs": pdf_dependencies,
-                }
+                final[model_name] = vars(self.emodel_metadata)
+                final[model_name].update(
+                    {
+                        "score": sum(list(emodel.scores.values())),
+                        "parameters": _params,
+                        "fitness": emodel.scores,
+                        "features": emodel.features,
+                        "validation_fitness": emodel.scores_validation,
+                        "validated": emodel.passed_validation,
+                        "seed": int(emodel.seed),
+                        "pdfs": pdf_dependencies,
+                    }
+                )
 
                 self.save_final(final, Path(final_path), lock_file=False)
 
@@ -560,17 +560,22 @@ class LocalAccessPoint(DataAccessPoint):
             iteration_tag = model_data["githash"]
         elif "iteration_tag" in model_data:
             iteration_tag = model_data["iteration_tag"]
+        elif "iteration" in model_data:
+            iteration_tag = model_data["iteration"]
         else:
             iteration_tag = None
 
         emodel_metadata = EModelMetadata(
-            emodel=str(self.emodel_metadata.emodel),
+            emodel=model_data.get("emodel", self.emodel_metadata.emodel),
             etype=model_data.get("etype", None),
             ttype=model_data.get("ttype", None),
             mtype=model_data.get("mtype", None),
             species=model_data.get("species", None),
             brain_region=model_data.get("brain_region", None),
             iteration_tag=iteration_tag,
+            morph_class=model_data.get("morph_class", None),
+            synapse_class=model_data.get("synapse_class", None),
+            layer=model_data.get("layer", None),
         )
 
         emodel = EModel(
