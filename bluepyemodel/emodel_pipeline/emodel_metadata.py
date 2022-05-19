@@ -126,7 +126,7 @@ class EModelMetadata:
         DO NOT use for filtering. For filtering, use self.filters_for_resource() instead.
         """
 
-        metadata = self.filters_for_resource
+        metadata = self.filters_for_resource()
 
         metadata["annotation"] = self.annotation_list()
 
