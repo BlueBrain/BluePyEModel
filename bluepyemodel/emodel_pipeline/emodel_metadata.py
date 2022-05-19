@@ -37,7 +37,74 @@ class EModelMetadata:
         self.synapse_class = synapse_class
         self.layer = layer
 
-    def for_resource(self):
+    def etype_annotation_dict(self):
+        """Returns an etype annotation dict to be added to annotations list."""
+        # TODO also add id from Cell Type Ontology in WebProtege (optional)
+        return {
+            "type": [
+                "ETypeAnnotation",
+                "Annotation",
+            ],
+            "hasBody": {
+                "type": [
+                    "EType",
+                    "AnnotationBody",
+                ],
+                "label": self.etype,
+            },
+            "name": "E-type annotation",
+        }
+
+    def mtype_annotation_dict(self):
+        """Returns an mtype annotation dict to be added to annotations list."""
+        # TODO also add id from Cell Type Ontology in WebProtege (optional)
+        return {
+            "type": [
+                "MTypeAnnotation",
+                "Annotation",
+            ],
+            "hasBody": {
+                "type": [
+                    "MType",
+                    "AnnotationBody",
+                ],
+                "label": self.mtype,
+            },
+            "name": "M-type annotation",
+        }
+
+    def ttype_annotation_dict(self):
+        """Returns an ttype annotation dict to be added to annotations list."""
+        # TODO also add id from Cell Type Ontology in WebProtege (optional)
+        return {
+            "type": [
+                "TTypeAnnotation",
+                "Annotation",
+            ],
+            "hasBody": {
+                "type": [
+                    "TType",
+                    "AnnotationBody",
+                ],
+                "label": self.ttype,
+            },
+            "name": "T-type annotation",
+        }
+
+    def annotation_list(self):
+        """Returns an annotation list containing mtype, etype and ttype annotations"""
+        annotation_list = []
+        if self.etype:
+            annotation_list.append(self.etype_annotation_dict())
+        if self.mtype:
+            annotation_list.append(self.mtype_annotation_dict())
+        if self.ttype:
+            annotation_list.append(self.ttype_annotation_dict())
+
+        return annotation_list
+
+    def filters_for_resource(self):
+        """Metadata used for filtering, without the annotation list"""
 
         metadata = {}
 
@@ -50,6 +117,18 @@ class EModelMetadata:
                     metadata["brainLocation"] = v
                 else:
                     metadata[k] = v
+
+        return metadata
+
+    def for_resource(self):
+        """Metadata to add to a resource to register.
+
+        DO NOT use for filtering. For filtering, use self.filters_for_resource() instead.
+        """
+
+        metadata = self.filters_for_resource()
+
+        metadata["annotation"] = self.annotation_list()
 
         return metadata
 

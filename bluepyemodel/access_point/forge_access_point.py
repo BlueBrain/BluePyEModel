@@ -45,7 +45,15 @@ NEXUS_TYPE_TO_CLASS = {
     "EModelWorkflow": EModelWorkflow,
 }
 
-NEXUS_ENTRIES = ["objectOfStudy", "contribution", "type", "id", "distribution", "@type"]
+NEXUS_ENTRIES = [
+    "objectOfStudy",
+    "contribution",
+    "type",
+    "id",
+    "distribution",
+    "@type",
+    "annotation",
+]
 
 
 class AccessPointException(Exception):
@@ -340,6 +348,8 @@ class NexusForgeAccessPoint:
         payload = {**base_payload, **object_.as_dict()}
 
         distributions = payload.pop("nexus_distributions", None)
+
+        payload_existance.pop("annotation", None)
 
         self.register(
             payload,
