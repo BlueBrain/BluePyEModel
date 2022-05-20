@@ -255,6 +255,7 @@ def plot_models(
     plot_traces=True,
     plot_currentscape=False,
     only_validated=False,
+    stochasticity=False,
 ):
     """Plot the traces, scores and parameter distributions for all the models
         matching the emodels name.
@@ -270,6 +271,7 @@ def plot_models(
         plot_traces (bool): True to plot the traces
         plot_currentscape (bool): True to plot the currentscapes
         only_validated (bool): True to only plot validated models
+        stochasticity (bool): should channels behave stochastically if they can
 
     Returns:
         emodels (list): list of emodels.
@@ -282,6 +284,7 @@ def plot_models(
         include_validation_protocols=True,
         use_fixed_dt_recordings=plot_currentscape,
         record_ions_and_currents=plot_currentscape,
+        stochasticity=stochasticity,
     )
 
     if plot_traces or plot_currentscape:
