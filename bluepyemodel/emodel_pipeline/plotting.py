@@ -271,6 +271,7 @@ def plot_models(
         plot_traces (bool): True to plot the traces
         plot_currentscape (bool): True to plot the currentscapes
         only_validated (bool): True to only plot validated models
+        stochasticity (bool): should channels behave stochastically if they can
 
     Returns:
         emodels (list): list of emodels.
