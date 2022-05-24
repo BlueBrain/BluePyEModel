@@ -268,7 +268,12 @@ class NexusForgeAccessPoint:
             raise AccessPointException(f"Could not find resource for id: {resource_id}")
 
         if isinstance(resource.distribution, list):
-            filename = resource.distribution[0].name
+            for i in range(len(resource.distribution)):
+                if hasattr(resource.distribution[i], "name"):
+                    filename = resource.distribution[i].name
+                    break
+            else:
+                raise AttributeError("The morphology resource does not have a file name.")
         else:
             filename = resource.distribution.name
 
