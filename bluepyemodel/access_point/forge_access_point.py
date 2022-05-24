@@ -376,13 +376,6 @@ class NexusForgeAccessPoint:
             "name": self.resource_name(object_.__class__.__name__, metadata),
         }
 
-        # base_payload = {
-        #     "type": ["Entity", type_],
-        # }
-        # payload_existance = {
-        #     "type": type_,
-        # }
-
         base_payload.update(metadata)
         payload_existance.update(metadata)
 
