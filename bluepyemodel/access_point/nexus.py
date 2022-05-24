@@ -221,8 +221,8 @@ class NexusAccessPoint(DataAccessPoint):
             subject = {
                 "type": "Subject",
                 "species": {
-                    "id": "http://purl.obolibrary.org/obo/NCBITaxon_7370",
-                    "label": "Musca domestica",
+                    "id": "http://purl.obolibrary.org/obo/NCBITaxon_10116",
+                    "label": "Rattus norvegicus",
                 },
             }
 
