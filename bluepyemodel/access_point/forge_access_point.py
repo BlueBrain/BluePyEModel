@@ -63,6 +63,7 @@ NEXUS_ENTRIES = [
     "distribution",
     "@type",
     "annotation",
+    "name",
 ]
 
 
