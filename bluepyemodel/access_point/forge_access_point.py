@@ -35,6 +35,16 @@ CLASS_TO_NEXUS_TYPE = {
     "EModelWorkflow": "EModelWorkflow",
 }
 
+CLASS_TO_RESOURCE_NAME = {
+    "TargetsConfiguration": "ETC",
+    "EModelPipelineSettings": "EMPS",
+    "FitnessCalculatorConfiguration": "FCC",
+    "NeuronModelConfiguration": "EMC",
+    "EModel": "EM",
+    "DistributionConfiguration": "EMCD",
+    "EModelWorkflow": "EMW",
+}
+
 NEXUS_TYPE_TO_CLASS = {
     "ExtractionTargetsConfiguration": TargetsConfiguration,
     "EModelPipelineSettings": EModelPipelineSettings,
@@ -53,6 +63,7 @@ NEXUS_ENTRIES = [
     "distribution",
     "@type",
     "annotation",
+    "name",
 ]
 
 
@@ -337,6 +348,19 @@ class NexusForgeAccessPoint:
 
         return paths
 
+    @staticmethod
+    def resource_name(class_name, metadata):
+        """Create a resource name from the class name and the metadata."""
+        name_parts = [CLASS_TO_RESOURCE_NAME[class_name]]
+        if "iteration" in metadata:
+            name_parts.append(metadata["iteration"])
+        if "emodel" in metadata:
+            name_parts.append(metadata["emodel"])
+        if "ttype" in metadata:
+            name_parts.append(metadata["ttype"])
+
+        return "__".join(name_parts)
+
     def object_to_nexus(self, object_, metadata, replace=True):
         """Transform a BPEM object into a dict which gets registered into Nexus as
         a Resource of the matching type. The metadata are also attached to the object
@@ -344,8 +368,14 @@ class NexusForgeAccessPoint:
 
         type_ = CLASS_TO_NEXUS_TYPE[object_.__class__.__name__]
 
-        base_payload = {"type": ["Entity", type_]}
-        payload_existance = {"type": type_}
+        base_payload = {
+            "type": ["Entity", type_],
+            "name": self.resource_name(object_.__class__.__name__, metadata),
+        }
+        payload_existance = {
+            "type": type_,
+            "name": self.resource_name(object_.__class__.__name__, metadata),
+        }
 
         base_payload.update(metadata)
         payload_existance.update(metadata)
