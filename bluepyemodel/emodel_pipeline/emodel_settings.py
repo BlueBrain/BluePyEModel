@@ -34,6 +34,7 @@ class EModelPipelineSettings:
         path_extract_config=None,
         name_Rin_protocol=None,
         name_rmp_protocol=None,
+        name_TRN_burst_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
         plot_currentscape=False,
@@ -116,7 +117,6 @@ class EModelPipelineSettings:
 
         # Settings related to the optimisation
         self.stochasticity = stochasticity
-
         self.optimizer = optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:
@@ -146,29 +146,14 @@ class EModelPipelineSettings:
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
 
-        # One the way to deprecation:
         self.name_Rin_protocol = name_Rin_protocol  # only when using local access point
-        if name_Rin_protocol is not None:
-            logger.warning(
-                "Setting name_Rin_protocol has been moved to the "
-                "FitnessCalculatorConfiguration and will be deprecated"
-            )
         self.name_rmp_protocol = name_rmp_protocol  # only when using local access point
-        if name_rmp_protocol is not None:
-            logger.warning(
-                "Setting name_rmp_protocol has been moved to the "
-                "FitnessCalculatorConfiguration and will be deprecated"
-            )
+        self.name_TRN_burst_protocol = name_TRN_burst_protocol  # only when using local access point
+        self.morph_modifiers = morph_modifiers
 
         if threshold_based_evaluator is not None:
             logger.warning(
                 "Setting threshold_based_evaluator is not used anymore and will be deprecated"
-            )
-        self.morph_modifiers = morph_modifiers
-        if morph_modifiers is not None:
-            logger.warning(
-                "Setting morph_modifiers has been moved to the "
-                "NeuronModelConfiguration and will be deprecated"
             )
 
     def as_dict(self):
