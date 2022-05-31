@@ -287,6 +287,16 @@ class FitnessCalculatorConfiguration:
         if "type" in protocol and protocol["type"] == "StepThresholdProtocol":
             protocol_type = "ThresholdBasedProtocol"
 
+        stochasticity = True
+        if "stage" in protocol:
+            if not isinstance(protocol["stage"], list) or len(protocol["stage"]) != 1:
+                raise NotImplementedError(
+                    "Expected a list of size 1 for 'stage'"
+                    f"of json file for protocol {protocol_name}, got {protocol['stage']}"
+                )
+            if 1 in protocol["stage"]:
+                stochasticity = False
+
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
@@ -294,6 +304,7 @@ class FitnessCalculatorConfiguration:
             validation=validation,
             ion_variables=self.ion_variables,
             protocol_type=protocol_type,
+            stochasticity=stochasticity,
         )
 
         self.protocols.append(tmp_protocol)
