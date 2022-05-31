@@ -78,7 +78,6 @@ class FitnessCalculatorConfiguration:
         protocols=None,
         name_rmp_protocol=None,
         name_rin_protocol=None,
-        threshold_efeature_std=None,
         validation_protocols=None,
         ion_variables=None,
     ):
@@ -105,8 +104,6 @@ class FitnessCalculatorConfiguration:
                 the search of the RMP.
             name_rin_protocol (str): name of protocol whose features are to be used as targets for
                 the search of the Rin.
-            threshold_efeature_std (float): lower limit for the std expressed as a percentage of
-                the mean of the features value (optional).
             validation_protocols (list of str): name of the protocols used for validation only.
             ion_variables (list of str): ion current names and ionic concentration anmes
                 for all available mechanisms
@@ -124,10 +121,7 @@ class FitnessCalculatorConfiguration:
         if efeatures is None:
             self.efeatures = []
         else:
-            self.efeatures = [
-                EFeatureConfiguration(**f, threshold_efeature_std=threshold_efeature_std)
-                for f in efeatures
-            ]
+            self.efeatures = [EFeatureConfiguration(**f) for f in efeatures]
 
         if validation_protocols is None:
             self.validation_protocols = []
@@ -136,7 +130,6 @@ class FitnessCalculatorConfiguration:
 
         self.name_rmp_protocol = name_rmp_protocol
         self.name_rin_protocol = name_rin_protocol
-        self.threshold_efeature_std = threshold_efeature_std
 
     def protocol_exist(self, protocol_name):
         return bool(p for p in self.protocols if p.name == protocol_name)
@@ -169,7 +162,7 @@ class FitnessCalculatorConfiguration:
 
         self.protocols.append(tmp_protocol)
 
-    def _add_bluepyefe_efeature(self, feature, protocol_name, recording):
+    def _add_bluepyefe_efeature(self, feature, protocol_name, recording, threshold_efeature_std):
         """"""
 
         recording_name = "soma.v" if recording == "soma" else recording
@@ -182,7 +175,7 @@ class FitnessCalculatorConfiguration:
             std=feature["val"][1],
             efeature_name=feature.get("efeature_name", None),
             efel_settings=feature.get("efel_settings", {}),
-            threshold_efeature_std=self.threshold_efeature_std,
+            threshold_efeature_std=threshold_efeature_std,
         )
 
         if protocol_name == self.name_rmp_protocol and feature["feature"] == "voltage_base":
@@ -205,7 +198,7 @@ class FitnessCalculatorConfiguration:
 
         self.efeatures.append(tmp_feature)
 
-    def init_from_bluepyefe(self, efeatures, protocols, currents):
+    def init_from_bluepyefe(self, efeatures, protocols, currents, threshold_efeature_std):
         """Fill the configuration using the output of BluePyEfe"""
 
         if (
@@ -232,7 +225,9 @@ class FitnessCalculatorConfiguration:
         for protocol_name in efeatures:
             for recording in efeatures[protocol_name]:
                 for feature in efeatures[protocol_name][recording]:
-                    self._add_bluepyefe_efeature(feature, protocol_name, recording)
+                    self._add_bluepyefe_efeature(
+                        feature, protocol_name, recording, threshold_efeature_std
+                    )
 
         # Add the current related features
         if currents:
@@ -243,7 +238,7 @@ class FitnessCalculatorConfiguration:
                     recording_name="soma.v",
                     mean=currents["holding_current"][0],
                     std=currents["holding_current"][1],
-                    threshold_efeature_std=self.threshold_efeature_std,
+                    threshold_efeature_std=threshold_efeature_std,
                 )
             )
 
@@ -254,7 +249,7 @@ class FitnessCalculatorConfiguration:
                     recording_name="soma.v",
                     mean=currents["threshold_current"][0],
                     std=currents["threshold_current"][1],
-                    threshold_efeature_std=self.threshold_efeature_std,
+                    threshold_efeature_std=threshold_efeature_std,
                 )
             )
 
@@ -303,7 +298,7 @@ class FitnessCalculatorConfiguration:
 
         self.protocols.append(tmp_protocol)
 
-    def _add_legacy_efeature(self, feature, protocol_name, recording):
+    def _add_legacy_efeature(self, feature, protocol_name, recording, threshold_efeature_std):
         """"""
 
         recording_name = "soma.v" if recording == "soma" else recording
@@ -316,7 +311,7 @@ class FitnessCalculatorConfiguration:
             std=feature["val"][1],
             efeature_name=feature.get("efeature_name", None),
             efel_settings=feature.get("efel_settings", {}),
-            threshold_efeature_std=self.threshold_efeature_std,
+            threshold_efeature_std=threshold_efeature_std,
         )
 
         if protocol_name == "Rin":
@@ -351,7 +346,7 @@ class FitnessCalculatorConfiguration:
 
         self.efeatures.append(tmp_feature)
 
-    def init_from_legacy_dict(self, efeatures, protocols):
+    def init_from_legacy_dict(self, efeatures, protocols, threshold_efeature_std):
 
         self.protocols = []
         self.efeatures = []
@@ -393,7 +388,9 @@ class FitnessCalculatorConfiguration:
         for protocol_name in efeatures:
             for recording in efeatures[protocol_name]:
                 for feature in efeatures[protocol_name][recording]:
-                    self._add_legacy_efeature(feature, protocol_name, recording)
+                    self._add_legacy_efeature(
+                        feature, protocol_name, recording, threshold_efeature_std
+                    )
 
         self.remove_featureless_protocols()
 
