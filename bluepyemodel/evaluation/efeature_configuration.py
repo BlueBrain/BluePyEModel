@@ -1,23 +1,6 @@
 """EFeatureConfiguration"""
 
 
-def _limit_std(mean, std, threshold_efeature_std):
-    """Limit the standard deviation with a lower bound equal to a percentage of the mean."""
-
-    if threshold_efeature_std is None:
-        return std
-
-    if mean == 0.0:
-        return threshold_efeature_std
-
-    limit = abs(threshold_efeature_std * mean)
-
-    if std < limit:
-        return limit
-
-    return std
-
-
 class EFeatureConfiguration:
 
     """Container for the definition of an EFeature"""
@@ -28,10 +11,11 @@ class EFeatureConfiguration:
         protocol_name,
         recording_name,
         mean,
-        std,
         efeature_name=None,
         efel_settings=None,
         threshold_efeature_std=None,
+        original_std=None,
+        std=None,
     ):
         """Init.
 
@@ -45,7 +29,8 @@ class EFeatureConfiguration:
                 example "Step_200".
             recording_name (str): name of the recording of the protocol. For example: "soma.v"
             mean (float): mean of the efeature.
-            std (float): standard deviation of the efeature.
+            original_std (float): unmodified standard deviation of the efeature
+            std (float): kept for legacy purposes.
             efeature_name (str):given name for this specific feature. Can be different
                 from the efel efeature name.
             efel_settings (dict): eFEl settings.
@@ -56,9 +41,10 @@ class EFeatureConfiguration:
         self.efel_feature_name = efel_feature_name
         self.protocol_name = protocol_name
         self.recording_name = recording_name
+        self.threshold_efeature_std = threshold_efeature_std
 
         self.mean = mean
-        self.std = _limit_std(mean, std, threshold_efeature_std)
+        self.original_std = original_std if original_std is not None else std
 
         self.efeature_name = efeature_name
 
@@ -71,6 +57,22 @@ class EFeatureConfiguration:
     def name(self):
         n = self.efeature_name if self.efeature_name else self.efel_feature_name
         return f"{self.protocol_name}.{self.recording_name}.{n}"
+
+    @property
+    def std(self):
+        """Limit the standard deviation with a lower bound equal to a percentage of the mean."""
+
+        if self.threshold_efeature_std is None:
+            return self.original_std
+
+        if self.mean == 0.0:
+            return self.threshold_efeature_std
+
+        limit = abs(self.threshold_efeature_std * self.mean)
+        if self.original_std < limit:
+            return limit
+
+        return self.original_std
 
     def as_dict(self):
         """Dictionary form"""

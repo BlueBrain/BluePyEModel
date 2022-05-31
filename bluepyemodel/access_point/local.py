@@ -465,15 +465,18 @@ class LocalAccessPoint(DataAccessPoint):
             configuration = FitnessCalculatorConfiguration(
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
-                threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
                 ion_variables=ion_variables,
             )
 
             if from_bpe:
-                configuration.init_from_bluepyefe(efeatures, protocols, {})
+                configuration.init_from_bluepyefe(
+                    efeatures, protocols, {}, self.pipeline_settings.threshold_efeature_std
+                )
             else:
-                configuration.init_from_legacy_dict(efeatures, protocols)
+                configuration.init_from_legacy_dict(
+                    efeatures, protocols, self.pipeline_settings.threshold_efeature_std
+                )
 
         else:
             configuration = FitnessCalculatorConfiguration(
@@ -481,7 +484,6 @@ class LocalAccessPoint(DataAccessPoint):
                 protocols=config_dict["protocols"],
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
-                threshold_efeature_std=self.pipeline_settings.threshold_efeature_std,
                 validation_protocols=self.pipeline_settings.validation_protocols,
                 ion_variables=ion_variables,
             )
