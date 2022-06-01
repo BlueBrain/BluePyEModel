@@ -677,11 +677,8 @@ class NexusAccessPoint(DataAccessPoint):
         for r in resource_traces:
 
             ecodes = None
-            if hasattr(r, "image"):
-                ecodes = []
-                for stimulus in r.image:
-                    ecode = stimulus.stimulusType.id.split("/")[-1]
-                    ecodes.append(ecode)
+            if hasattr(r, "stimulus"):
+                ecodes = [stim.stimulusType.label for stim in r.stimulus]
 
             species = None
             if hasattr(r, "subject") and hasattr(r.subject, "species"):
