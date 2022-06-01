@@ -304,7 +304,7 @@ class FitnessCalculatorConfiguration:
             if not isinstance(protocol["stage"], list) or len(protocol["stage"]) != 1:
                 raise NotImplementedError(
                     "Expected a list of size 1 for 'stage'"
-                    f"of json file for protocol {protocol_name}, got {protocol['stage']}"
+                    f" of json file for protocol {protocol_name}, got {protocol['stage']}"
                 )
             if 1 in protocol["stage"]:
                 stochasticity = False
