@@ -11,7 +11,9 @@ from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
-from bluepyemodel.evaluation.protocols import BPEM_ThresholdProtocol
+from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
+from bluepyemodel.evaluation.protocols import BPEM_DynamicStepProtocol
+from bluepyemodel.evaluation.protocols import BPEM_Protocol
 from bluepyemodel.optimisation.optimisation import read_checkpoint
 from bluepyemodel.tools.utils import make_dir
 
@@ -98,7 +100,14 @@ def scores(model, figures_dir="./figures", write_fig=True):
     return fig, axs
 
 
-def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True):
+def traces(
+    model,
+    responses,
+    stimuli={},
+    figures_dir="./figures",
+    write_fig=True,
+    include_pre_protocols=True,
+):
     """Plot the traces of a model"""
     make_dir(figures_dir)
 
@@ -111,8 +120,13 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
     for resp_name, response in responses.items():
 
         if not (isinstance(response, float)):
+
             if resp_name.split(".")[-1] != "v":
                 continue
+
+            if not include_pre_protocols and any(p in resp_name for p in PRE_PROTOCOLS):
+                continue
+
             traces_name.append(resp_name)
 
         else:
@@ -127,7 +141,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
                 rin = response
 
     fig, axs = plt.subplots(
-        len(traces_name), 1, figsize=(10, 2 + (1.6 * len(traces_name))), squeeze=False
+        len(traces_name), 1, figsize=(10, 2 + (1.7 * len(traces_name))), squeeze=False
     )
 
     axs_c = []
@@ -146,23 +160,21 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
             basename = t.split(".")[0]
             if basename in stimuli:
 
-                if hasattr(stimuli[basename], "stimulus"):
+                current = None
 
-                    if (
-                        isinstance(stimuli[basename], BPEM_ThresholdProtocol)
-                        and threshold
-                        and holding
-                    ):
-                        stimuli[basename].stimulus.holding_current = holding
-                        stimuli[basename].stimulus.threshold_current = threshold
+                if (
+                    isinstance(stimuli[basename], BPEM_DynamicStepProtocol)
+                    and stimuli[basename].set_dependencies(responses)
+                ) or isinstance(stimuli[basename], BPEM_Protocol):
+                    time, current = stimuli[basename].stimulus.generate()
 
+                if current is not None:
                     axs_c.append(axs[idx, 0].twinx())
                     axs_c[-1].set_xlabel("Time (ms)")
                     axs_c[-1].set_ylabel("Stim Current (nA)")
-
-                    time, current = stimuli[basename].stimulus.generate()
                     axs_c[-1].plot(time, current, color="gray", alpha=0.6)
-                    axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
+                    if not numpy.isnan(numpy.min(current)) and not numpy.isnan(numpy.max(current)):
+                        axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
 
         idx += 1
 
