@@ -78,6 +78,7 @@ class FitnessCalculatorConfiguration:
         protocols=None,
         name_rmp_protocol=None,
         name_rin_protocol=None,
+        threshold_efeature_std=None,
         validation_protocols=None,
         ion_variables=None,
     ):
@@ -104,6 +105,8 @@ class FitnessCalculatorConfiguration:
                 the search of the RMP.
             name_rin_protocol (str): name of protocol whose features are to be used as targets for
                 the search of the Rin.
+            threshold_efeature_std (float): lower limit for the std expressed as a percentage of
+                the mean of the features value (optional). Legacy.
             validation_protocols (list of str): name of the protocols used for validation only.
             ion_variables (list of str): ion current names and ionic concentration anmes
                 for all available mechanisms
@@ -118,10 +121,19 @@ class FitnessCalculatorConfiguration:
                 ProtocolConfiguration(**p, ion_variables=self.ion_variables) for p in protocols
             ]
 
-        if efeatures is None:
-            self.efeatures = []
-        else:
-            self.efeatures = [EFeatureConfiguration(**f) for f in efeatures]
+        self.efeatures = []
+        if efeatures is not None:
+            for f in efeatures:
+                f_dict = deepcopy(f)
+                f_dict.pop("threshold_efeature_std")
+                self.efeatures.append(
+                    EFeatureConfiguration(
+                        **f_dict,
+                        threshold_efeature_std=f.get(
+                            "threshold_efeature_std", threshold_efeature_std
+                        ),
+                    )
+                )
 
         if validation_protocols is None:
             self.validation_protocols = []

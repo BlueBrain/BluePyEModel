@@ -289,8 +289,6 @@ class NexusAccessPoint(DataAccessPoint):
             configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
         if configuration.name_rin_protocol is None:
             configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
-        if configuration.threshold_efeature_std is None:
-            configuration.threshold_efeature_std = self.pipeline_settings.threshold_efeature_std
         if configuration.validation_protocols is None:
             configuration.validation_protocols = self.pipeline_settings.validation_protocols
 
