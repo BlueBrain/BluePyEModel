@@ -51,7 +51,9 @@ class EModelPipelineSettings:
             efel_settings (dict): efel settings in the form {setting_name: setting_value}.
                 If settings are also informed in the targets per efeature, the latter
                 will have priority.
-            stochasticity (bool): should channels behave stochastically if they can.
+            stochasticity (bool or list of str): should channels behave stochastically if they can.
+                If a list of protocol names is provided, the runs will be stochastic
+                for these protocols, and deterministic for the other ones.
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].

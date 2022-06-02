@@ -13,6 +13,7 @@ class ProtocolConfiguration:
         validation=False,
         ion_variables=None,
         protocol_type="ThresholdBasedProtocol",
+        stochasticity=False,
     ):
         """Init.
 
@@ -42,6 +43,8 @@ class ProtocolConfiguration:
                 for all available mechanisms
             protocol_type (str): type of the protocol. Can be "ThresholdBasedProtocol" or
                 "Protocol".
+            stochasticity (bool): whether the mechanisms should be on stochastic mode
+                when the protocol runs, or not
         """
 
         self.name = name
@@ -74,6 +77,8 @@ class ProtocolConfiguration:
 
         self.validation = validation
         self.protocol_type = protocol_type
+
+        self.stochasticity = stochasticity
 
     def as_dict(self):
         """Dictionary form"""

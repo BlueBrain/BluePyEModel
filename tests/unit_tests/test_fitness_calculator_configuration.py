@@ -14,6 +14,7 @@ def config_dict():
             "efel_settings": {"stim_start": 700, "stim_end": 2700},
             "mean": -83.1596,
             "std": 1.0102,
+            "threshold_efeature_std": 0.05
         },
         {
             "efel_feature_name": "voltage_deflection",
@@ -22,6 +23,7 @@ def config_dict():
             "efel_settings": {},
             "mean": -13.5153,
             "std": 0.001,
+            "threshold_efeature_std": 0.05
         }
     ]
 
@@ -71,7 +73,6 @@ def config_dict():
         "protocols": protocols,
         "name_rmp_protocol": "IV_-40",
         "name_rin_protocol": "IV_0",
-        "threshold_efeature_std": 0.05,
     }
 
     return config_dict
@@ -144,7 +145,7 @@ def test_init(config_dict):
         assert k in p_dict
         assert p_dict[k] is not None
 
-    keys = ["efel_feature_name", "protocol_name", "efel_settings", "mean", "std"]
+    keys = ["efel_feature_name", "protocol_name", "efel_settings", "mean", "original_std"]
     f_dict = config.efeatures[0].as_dict()
     for k in keys:
         assert k in f_dict
@@ -163,7 +164,7 @@ def test_init_from_bpe2(config_dict, config_dict_from_bpe2):
     config_dict.pop("protocols")
 
     config = FitnessCalculatorConfiguration(**config_dict)
-    config.init_from_bluepyefe(efeatures, protocols, currents)
+    config.init_from_bluepyefe(efeatures, protocols, currents, threshold_efeature_std=0.05)
 
     assert len(config.protocols) == 1
     assert len(config.efeatures) == 6

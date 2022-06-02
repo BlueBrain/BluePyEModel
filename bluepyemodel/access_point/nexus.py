@@ -289,10 +289,10 @@ class NexusAccessPoint(DataAccessPoint):
             configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
         if configuration.name_rin_protocol is None:
             configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
-        if configuration.threshold_efeature_std is None:
-            configuration.threshold_efeature_std = self.pipeline_settings.threshold_efeature_std
         if configuration.validation_protocols is None:
             configuration.validation_protocols = self.pipeline_settings.validation_protocols
+        if configuration.stochasticity is None:
+            configuration.stochasticity = self.pipeline_settings.stochasticity
 
         return configuration
 
@@ -679,11 +679,8 @@ class NexusAccessPoint(DataAccessPoint):
         for r in resource_traces:
 
             ecodes = None
-            if hasattr(r, "image"):
-                ecodes = []
-                for stimulus in r.image:
-                    ecode = stimulus.stimulusType.id.split("/")[-1]
-                    ecodes.append(ecode)
+            if hasattr(r, "stimulus"):
+                ecodes = [stim.stimulusType.label for stim in r.stimulus]
 
             species = None
             if hasattr(r, "subject") and hasattr(r.subject, "species"):

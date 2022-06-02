@@ -134,11 +134,14 @@ def define_protocol(
             "names"
         )
 
+    stoch = stochasticity and protocol_configuration.stochasticity
+
     return protocol_type_to_class[protocol_configuration.protocol_type](
         name=protocol_configuration.name,
         stimulus=stimulus,
         recordings=recordings,
-        stochasticity=stochasticity,
+        cvode_active=not stoch,
+        stochasticity=stoch,
     )
 
 
