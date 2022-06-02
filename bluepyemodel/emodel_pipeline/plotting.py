@@ -285,7 +285,6 @@ def plot_models(
         use_fixed_dt_recordings=plot_currentscape,
         record_ions_and_currents=plot_currentscape,
         stochasticity=stochasticity,
-        max_threshold_voltage=-20,
     )
 
     if plot_traces or plot_currentscape:
