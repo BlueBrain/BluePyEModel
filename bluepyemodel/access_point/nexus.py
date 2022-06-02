@@ -291,6 +291,8 @@ class NexusAccessPoint(DataAccessPoint):
             configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
         if configuration.validation_protocols is None:
             configuration.validation_protocols = self.pipeline_settings.validation_protocols
+        if configuration.stochasticity is None:
+            configuration.stochasticity = self.pipeline_settings.stochasticity
 
         return configuration
 

@@ -189,7 +189,7 @@ def replace_axon_with_taper(sim=None, icell=None):
     icell.myelin[0].connect(icell.axon[1], 1.0, 0.0)
 
     logger.debug(
-        "Replace axon with tapered AIS of length %f, " "target length was %f, diameters are %s",
+        "Replace axon with tapered AIS of length %f, target length was %f, diameters are %s",
         L_real,
         L_target,
         diams,
