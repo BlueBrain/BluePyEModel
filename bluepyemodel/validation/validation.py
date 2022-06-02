@@ -83,6 +83,7 @@ def validate(
     logger.info("In validate, %s emodels found to validate.", len(emodels))
 
     for i, mo in enumerate(emodels):
+        # pylint: disable=unnecessary-list-index-lookup
 
         emodels[i].scores = mo.evaluator.fitness_calculator.calculate_scores(mo.responses)
         # turn features from arrays to float to be json serializable

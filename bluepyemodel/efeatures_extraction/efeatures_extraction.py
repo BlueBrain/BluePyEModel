@@ -90,6 +90,7 @@ def extract_save_features_protocols(access_point, mapper=map):
         name_rmp_protocol=access_point.pipeline_settings.name_rmp_protocol,
         name_rin_protocol=access_point.pipeline_settings.name_Rin_protocol,
         validation_protocols=access_point.pipeline_settings.validation_protocols,
+        stochasticity=access_point.pipeline_settings.stochasticity,
     )
 
     fitness_calculator_config.init_from_bluepyefe(

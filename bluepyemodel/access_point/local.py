@@ -240,7 +240,7 @@ class LocalAccessPoint(DataAccessPoint):
             return f"{self.emodel_metadata.emodel}__{self.emodel_metadata.iteration}__{seed}"
 
         logger.warning(
-            "The iteration is %s. It is strongly advised to use " "an iteration tag in the future.",
+            "The iteration is %s. It is strongly advised to use an iteration tag in the future.",
             self.emodel_metadata.iteration,
         )
 
@@ -466,6 +466,7 @@ class LocalAccessPoint(DataAccessPoint):
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 validation_protocols=self.pipeline_settings.validation_protocols,
+                stochasticity=self.pipeline_settings.stochasticity,
                 ion_variables=ion_variables,
             )
 
@@ -485,6 +486,7 @@ class LocalAccessPoint(DataAccessPoint):
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 validation_protocols=self.pipeline_settings.validation_protocols,
+                stochasticity=self.pipeline_settings.stochasticity,
                 ion_variables=ion_variables,
             )
 

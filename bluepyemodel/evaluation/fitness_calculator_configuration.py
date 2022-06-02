@@ -80,6 +80,7 @@ class FitnessCalculatorConfiguration:
         name_rin_protocol=None,
         threshold_efeature_std=None,
         validation_protocols=None,
+        stochasticity=False,
         ion_variables=None,
     ):
         """Init.
@@ -108,6 +109,9 @@ class FitnessCalculatorConfiguration:
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional). Legacy.
             validation_protocols (list of str): name of the protocols used for validation only.
+            stochasticity (bool or list of str): should channels behave stochastically if they can.
+                If a list of protocol names is provided, the runs will be stochastic
+                for these protocols, and deterministic for the other ones.
             ion_variables (list of str): ion current names and ionic concentration anmes
                 for all available mechanisms
         """
@@ -140,11 +144,19 @@ class FitnessCalculatorConfiguration:
         else:
             self.validation_protocols = validation_protocols
 
+        self.stochasticity = stochasticity
+
         self.name_rmp_protocol = name_rmp_protocol
         self.name_rin_protocol = name_rin_protocol
 
     def protocol_exist(self, protocol_name):
         return bool(p for p in self.protocols if p.name == protocol_name)
+
+    def check_stochasticity(self, protocol_name):
+        """Check if stochasticity should be active for a given protocol"""
+        if isinstance(self.stochasticity, list):
+            return protocol_name in self.stochasticity
+        return self.stochasticity
 
     def _add_bluepyefe_protocol(self, protocol_name, protocol):
         """"""
@@ -163,6 +175,7 @@ class FitnessCalculatorConfiguration:
         stimulus["holding_current"] = protocol["holding"]["amp"]
 
         validation = protocol_name in self.validation_protocols
+        stochasticity = self.check_stochasticity(protocol_name)
 
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
@@ -170,6 +183,7 @@ class FitnessCalculatorConfiguration:
             recordings=recordings,
             validation=validation,
             ion_variables=self.ion_variables,
+            stochasticity=stochasticity,
         )
 
         self.protocols.append(tmp_protocol)
@@ -294,6 +308,7 @@ class FitnessCalculatorConfiguration:
             stimulus["holding_current"] = None
 
         validation = protocol_name in self.validation_protocols
+        stochasticity = self.check_stochasticity(protocol_name)
 
         protocol_type = "Protocol"
         if "type" in protocol and protocol["type"] == "StepThresholdProtocol":
@@ -306,6 +321,7 @@ class FitnessCalculatorConfiguration:
             validation=validation,
             ion_variables=self.ion_variables,
             protocol_type=protocol_type,
+            stochasticity=stochasticity,
         )
 
         self.protocols.append(tmp_protocol)

@@ -17,7 +17,9 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
 
     """Protocol with stochasticity capabilities"""
 
-    def __init__(self, name=None, stimulus=None, recordings=None, stochasticity=False):
+    def __init__(
+        self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
+    ):
         """Constructor
 
         Args:
@@ -25,12 +27,17 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
             stimulus (Stimulus): stimulus objects
             recordings (list of Recordings): Recording objects used in the
                 protocol
+            cvode_active (bool): whether to use variable time step
             stochasticity (bool): turns on or off the channels that can be
                 stochastic
         """
 
         super().__init__(
-            name=name, stimuli=[stimulus], recordings=recordings, deterministic=not stochasticity
+            name=name,
+            stimuli=[stimulus],
+            recordings=recordings,
+            cvode_active=cvode_active,
+            deterministic=not stochasticity,
         )
 
         self.stimulus = stimulus
@@ -104,9 +111,11 @@ class BPEM_ThresholdProtocol(BPEM_Protocol, ResponseDependencies):
 
     """Protocol having rheobase-rescaling and stochasticity capabilities"""
 
-    def __init__(self, name=None, stimulus=None, recordings=None, stochasticity=False):
+    def __init__(
+        self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
+    ):
 
-        BPEM_Protocol.__init__(self, name, stimulus, recordings, stochasticity)
+        BPEM_Protocol.__init__(self, name, stimulus, recordings, cvode_active, stochasticity)
         ResponseDependencies.__init__(
             self,
             dependencies={
@@ -158,7 +167,13 @@ class PreProtocol:
             LooseDtRecordingCustom(name=self.recording_name, location=self.location, variable="v")
         ]
 
-        return BPEM_Protocol(name=self.name, stimulus=stimulus, recordings=recordings)
+        return BPEM_Protocol(
+            name=self.name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=True,
+            stochasticity=False,
+        )
 
 
 class RMPProtocol(PreProtocol):
