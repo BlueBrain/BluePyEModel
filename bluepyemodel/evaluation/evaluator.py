@@ -140,6 +140,7 @@ def define_protocol(
         name=protocol_configuration.name,
         stimulus=stimulus,
         recordings=recordings,
+        cvode_active=not stoch,
         stochasticity=stoch,
     )
 

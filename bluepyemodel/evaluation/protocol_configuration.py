@@ -13,7 +13,7 @@ class ProtocolConfiguration:
         validation=False,
         ion_variables=None,
         protocol_type="ThresholdBasedProtocol",
-        stochasticity=True,
+        stochasticity=False,
     ):
         """Init.
 

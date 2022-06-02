@@ -35,6 +35,7 @@ class EModelPipelineSettings:
         name_Rin_protocol=None,
         name_rmp_protocol=None,
         validation_protocols=None,
+        stochastic_protocols=None,
         name_gene_map=None,
         plot_currentscape=False,
         currentscape_config=None,
@@ -94,6 +95,7 @@ class EModelPipelineSettings:
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
+            stochastic_protocols (list of str): name of the protocols using stoachstic mechanisms.
             plot_currentscape (bool): should the EModel currentscapes be plotted
             currentscape_config (dict): currentscape config
                 according to the currentscape documentation
@@ -128,6 +130,9 @@ class EModelPipelineSettings:
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
+        self.stochastic_protocols = stochastic_protocols
+        if self.stochastic_protocols is None:
+            self.stochastic_protocols = []
 
         # Settings related to the validation
         self.validation_threshold = validation_threshold

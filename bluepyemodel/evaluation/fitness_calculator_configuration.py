@@ -80,6 +80,7 @@ class FitnessCalculatorConfiguration:
         name_rin_protocol=None,
         threshold_efeature_std=None,
         validation_protocols=None,
+        stochastic_protocols=None,
         ion_variables=None,
     ):
         """Init.
@@ -108,6 +109,7 @@ class FitnessCalculatorConfiguration:
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional). Legacy.
             validation_protocols (list of str): name of the protocols used for validation only.
+            stochastic_protocols (list of str): name of the protocols using stoachstic mechanisms.
             ion_variables (list of str): ion current names and ionic concentration anmes
                 for all available mechanisms
         """
@@ -140,6 +142,11 @@ class FitnessCalculatorConfiguration:
         else:
             self.validation_protocols = validation_protocols
 
+        if stochastic_protocols is None:
+            self.stochastic_protocols = []
+        else:
+            self.stochastic_protocols = stochastic_protocols
+
         self.name_rmp_protocol = name_rmp_protocol
         self.name_rin_protocol = name_rin_protocol
 
@@ -163,6 +170,7 @@ class FitnessCalculatorConfiguration:
         stimulus["holding_current"] = protocol["holding"]["amp"]
 
         validation = protocol_name in self.validation_protocols
+        stochasticity = protocol_name in self.stochastic_protocols
 
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
@@ -170,6 +178,7 @@ class FitnessCalculatorConfiguration:
             recordings=recordings,
             validation=validation,
             ion_variables=self.ion_variables,
+            stochasticity=stochasticity,
         )
 
         self.protocols.append(tmp_protocol)
@@ -294,20 +303,11 @@ class FitnessCalculatorConfiguration:
             stimulus["holding_current"] = None
 
         validation = protocol_name in self.validation_protocols
+        stochasticity = protocol_name in self.stochastic_protocols
 
         protocol_type = "Protocol"
         if "type" in protocol and protocol["type"] == "StepThresholdProtocol":
             protocol_type = "ThresholdBasedProtocol"
-
-        stochasticity = True
-        if "stage" in protocol:
-            if not isinstance(protocol["stage"], list) or len(protocol["stage"]) != 1:
-                raise NotImplementedError(
-                    "Expected a list of size 1 for 'stage'"
-                    f" of json file for protocol {protocol_name}, got {protocol['stage']}"
-                )
-            if 1 in protocol["stage"]:
-                stochasticity = False
 
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
