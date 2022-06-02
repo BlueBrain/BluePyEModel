@@ -240,7 +240,7 @@ class LocalAccessPoint(DataAccessPoint):
             return f"{self.emodel_metadata.emodel}__{self.emodel_metadata.iteration}__{seed}"
 
         logger.warning(
-            "The iteration is %s. It is strongly advised to use " "an iteration tag in the future.",
+            "The iteration is %s. It is strongly advised to use an iteration tag in the future.",
             self.emodel_metadata.iteration,
         )
 
