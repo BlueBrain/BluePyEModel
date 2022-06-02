@@ -52,8 +52,8 @@ class EModelPipelineSettings:
                 If settings are also informed in the targets per efeature, the latter
                 will have priority.
             stochasticity (bool or list of str): should channels behave stochastically if they can.
-                If a list of protocol names is provided, the runs will be stochastic for these protocols,
-                and deterministic for the other ones.
+                If a list of protocol names is provided, the runs will be stochastic
+                for these protocols, and deterministic for the other ones.
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].

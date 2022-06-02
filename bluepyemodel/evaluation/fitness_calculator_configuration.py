@@ -110,8 +110,8 @@ class FitnessCalculatorConfiguration:
                 the mean of the features value (optional). Legacy.
             validation_protocols (list of str): name of the protocols used for validation only.
             stochasticity (bool or list of str): should channels behave stochastically if they can.
-                If a list of protocol names is provided, the runs will be stochastic for these protocols,
-                and deterministic for the other ones.
+                If a list of protocol names is provided, the runs will be stochastic
+                for these protocols, and deterministic for the other ones.
             ion_variables (list of str): ion current names and ionic concentration anmes
                 for all available mechanisms
         """
