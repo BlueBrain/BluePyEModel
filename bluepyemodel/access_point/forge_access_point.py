@@ -527,12 +527,11 @@ def get_brain_region(brain_region, access_token=None):
         if len(brain_region) > 1:
             brain_region = f"{brain_region[0].upper()}{brain_region[1:]}"
         elif len(brain_region) == 1:
-            brain_region.upper()
+            brain_region = brain_region.upper()
         resource = access_point.resolve(brain_region, strategy="exact")
 
         if resource is None:
-            brain_region.lower()
-            resource = access_point.resolve(brain_region, strategy="exact")
+            resource = access_point.resolve(brain_region.lower(), strategy="exact")
 
     # raise Exception if resource was not found
     if resource is None:
