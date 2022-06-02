@@ -466,7 +466,7 @@ class LocalAccessPoint(DataAccessPoint):
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 validation_protocols=self.pipeline_settings.validation_protocols,
-                stochastic_protocols=self.pipeline_settings.stochastic_protocols,
+                stochasticity=self.pipeline_settings.stochasticity,
                 ion_variables=ion_variables,
             )
 
@@ -486,7 +486,7 @@ class LocalAccessPoint(DataAccessPoint):
                 name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
                 name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
                 validation_protocols=self.pipeline_settings.validation_protocols,
-                stochastic_protocols=self.pipeline_settings.stochastic_protocols,
+                stochasticity=self.pipeline_settings.stochasticity,
                 ion_variables=ion_variables,
             )
 

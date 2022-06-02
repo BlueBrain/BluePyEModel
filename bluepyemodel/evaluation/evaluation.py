@@ -244,7 +244,7 @@ def get_evaluator_from_access_point(
     )
 
     timeout = timeout or access_point.pipeline_settings.optimisation_timeout
-    stochasticity = stochasticity or access_point.pipeline_settings.stochasticity
+    stochasticity = stochasticity or bool(access_point.pipeline_settings.stochasticity)
 
     if max_threshold_voltage is None:
         max_threshold_voltage = access_point.pipeline_settings.max_threshold_voltage

@@ -126,7 +126,6 @@ class NexusAccessPoint(DataAccessPoint):
         name_Rin_protocol=None,
         name_rmp_protocol=None,
         validation_protocols=None,
-        stochastic_protocols=None,
     ):
         """Creates an EModelPipelineSettings resource.
 
@@ -162,7 +161,6 @@ class NexusAccessPoint(DataAccessPoint):
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
-            stochastic_protocols (list of str): name of the protocols using stoachstic mechanisms.
         """
 
         if efel_settings is None:
@@ -193,7 +191,6 @@ class NexusAccessPoint(DataAccessPoint):
             name_Rin_protocol=name_Rin_protocol,
             name_rmp_protocol=name_rmp_protocol,
             validation_protocols=validation_protocols,
-            stochastic_protocols=stochastic_protocols,
         )
 
         self.access_point.object_to_nexus(
@@ -294,8 +291,8 @@ class NexusAccessPoint(DataAccessPoint):
             configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
         if configuration.validation_protocols is None:
             configuration.validation_protocols = self.pipeline_settings.validation_protocols
-        if configuration.stochastic_protocols is None:
-            configuration.stochastic_protocols = self.pipeline_settings.stochastic_protocols
+        if configuration.stochasticity is None:
+            configuration.stochasticity = self.pipeline_settings.stochasticity
 
         return configuration
 
