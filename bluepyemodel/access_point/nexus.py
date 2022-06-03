@@ -533,7 +533,11 @@ class NexusAccessPoint(DataAccessPoint):
 
         # Some morphologies have .h5 attached and we don't want that:
         if format_:
-            filepath = filepath.with_suffix("." + format_)
+            suffix = "." + format_
+            filepath = filepath.with_suffix(suffix)
+            # special case example: format_ is 'asc', but morph has '.ASC' format
+            if not filepath.is_file() and filepath.with_suffix(suffix.upper()).is_file():
+                filepath = filepath.with_suffix(suffix.upper())
         elif filepath.suffix == ".h5":
             for suffix in [".swc", ".asc", ".ASC"]:
                 if filepath.with_suffix(suffix).is_file():
