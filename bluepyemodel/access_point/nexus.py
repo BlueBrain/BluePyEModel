@@ -535,10 +535,15 @@ class NexusAccessPoint(DataAccessPoint):
         if format_:
             filepath = filepath.with_suffix("." + format_)
         elif filepath.suffix == ".h5":
-            for suffix in [".swc", ".asc"]:
+            for suffix in [".swc", ".asc", ".ASC"]:
                 if filepath.with_suffix(suffix).is_file():
                     filepath = filepath.with_suffix(suffix)
                     break
+            else:
+                raise FileNotFoundError(
+                    f"Could not find morphology {filepath.stem}"
+                    f"at path {filepath.parent} with allowed suffix '.asc', '.swc' or '.ASC'."
+                )
 
         return str(filepath)
 
