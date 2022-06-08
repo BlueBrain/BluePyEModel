@@ -291,7 +291,9 @@ class NexusForgeAccessPoint:
         file_path = pathlib.Path(download_directory) / filename
 
         if not file_path.is_file():
-            self.forge.download(resource, "distribution.contentUrl", download_directory)
+            self.forge.download(
+                resource, "distribution.contentUrl", download_directory, cross_bucket=True
+            )
 
         return str(file_path)
 
@@ -303,7 +305,8 @@ class NexusForgeAccessPoint:
         if resources:
             for resource in resources:
                 rr = self.retrieve(resource.id)
-                self.forge.deprecate(rr)
+                if rr is not None:
+                    self.forge.deprecate(rr)
 
     def deprecate_all(self, metadata):
         """Deprecate all resources used or produced by BluePyModel. Use with extreme caution."""
