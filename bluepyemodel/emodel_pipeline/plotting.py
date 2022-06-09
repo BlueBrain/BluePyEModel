@@ -12,8 +12,8 @@ from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.protocols import BPEM_ThresholdProtocol
-from bluepyemodel.optimisation.optimisation import read_checkpoint
 from bluepyemodel.tools.utils import make_dir
+from bluepyemodel.tools.utils import read_checkpoint
 
 # pylint: disable=W0612,W0102,C0209
 

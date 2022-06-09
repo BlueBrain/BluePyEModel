@@ -208,6 +208,10 @@ class EModel_pipeline:
 
         export_emodels(self.access_point, only_validated, seeds=seeds, map_function=self.mapper)
 
+    def summarize(self):
+
+        print(self.access_point)
+
 
 def sanitize_gitignore():
     """In order to avoid git issue when archiving the current working directory,

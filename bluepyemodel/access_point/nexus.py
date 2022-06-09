@@ -475,11 +475,38 @@ class NexusAccessPoint(DataAccessPoint):
 
         return n_validated >= self.pipeline_settings.n_model
 
+    def has_pipeline_settings(self):
+        """Returns True if pipeline settings are present on Nexus"""
+
+        try:
+            _ = self.get_pipeline_settings(strict=True)
+            return True
+        except AccessPointException:
+            return False
+
     def has_fitness_calculator_configuration(self):
         """Check if the fitness calculator configuration exists"""
 
         try:
             _ = self.get_fitness_calculator_configuration()
+            return True
+        except AccessPointException:
+            return False
+
+    def has_targets_configuration(self):
+        """Check if the target configuration exists"""
+
+        try:
+            _ = self.get_targets_configuration()
+            return True
+        except AccessPointException:
+            return False
+
+    def has_model_configuration(self):
+        """Check if the model configuration exists"""
+
+        try:
+            _ = self.get_model_configuration()
             return True
         except AccessPointException:
             return False
@@ -689,7 +716,11 @@ class NexusAccessPoint(DataAccessPoint):
 
             ecodes = None
             if hasattr(r, "stimulus"):
-                ecodes = [stim.stimulusType.label for stim in r.stimulus]
+                ecodes = [
+                    stim.stimulusType.label
+                    for stim in r.stimulus
+                    if hasattr(stim.stimulusType, "label")
+                ]
 
             species = None
             if hasattr(r, "subject") and hasattr(r.subject, "species"):
