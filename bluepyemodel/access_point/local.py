@@ -635,14 +635,32 @@ class LocalAccessPoint(DataAccessPoint):
 
         return filtered_models
 
+    def has_pipeline_settings(self):
+        """Returns True if pipeline settings are present in the recipes"""
+
+        return "pipeline_settings" in self.get_recipes()
+
     def has_fitness_calculator_configuration(self):
         """Check if the fitness calculator configuration exists"""
 
+        recipes = self.get_recipes()
+
+        return Path(recipes["features"]).is_file()
+
+    def has_targets_configuration(self):
+        """Check if the target configuration exists"""
+
         return (
-            Path(self.emodel_dir, "config", "features", self.emodel_metadata.emodel)
-            .with_suffix(".json")
-            .is_file()
+            self.pipeline_settings.path_extract_config
+            and Path(self.pipeline_settings.path_extract_config).is_file()
         )
+
+    def has_model_configuration(self):
+        """Check if the model configuration exists"""
+
+        recipes = self.get_recipes()
+
+        return Path(recipes["params"]).is_file()
 
     def get_emodel_etype_map(self):
         final = self.get_final()

@@ -1,18 +1,21 @@
 """Abstract data access point class."""
+import glob
 import logging
 import pathlib
 import pickle
 from itertools import chain
 
 import efel
+import numpy
 from bluepyopt.deapext.algorithms import _check_stopping_criteria
 from bluepyopt.deapext.stoppingCriteria import MaxNGen
 
 from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.tools.utils import get_checkpoint_path
+from bluepyemodel.tools.utils import read_checkpoint
 
-# pylint: disable=no-member,unused-argument
+# pylint: disable=no-member,unused-argument,assignment-from-no-return,no-value-for-parameter
 
 logger = logging.getLogger(__name__)
 
@@ -227,3 +230,61 @@ class DataAccessPoint:
         # append i_pas which is present by default
         ion_currents.append("i_pas")
         return ion_currents, ionic_concentrations
+
+    def __str__(self):
+
+        str_ = "#############################################################\n"
+        str_ += "################## SUMMARY: EMODEL CREATION #################\n"
+        str_ += "#############################################################\n\n"
+
+        str_ += "GENERAL INFORMATION\n"
+        str_ += f"  Current working directory: {pathlib.Path.cwd()}\n"
+        str_ += f"  Type of access point: {type(self).__name__}\n\n"
+
+        str_ += "EMODEL METADATA\n"
+        for k, v in vars(self.emodel_metadata).items():
+            if v is not None:
+                str_ += f"  {k}: {v}\n"
+        str_ += "\n"
+
+        str_ += "CONFIGURATION STATUS\n"
+        str_ += f"  Has pipeline settings: {self.has_pipeline_settings()}\n"
+        str_ += f"  Has targets configuration: {self.has_targets_configuration()}\n"
+        str_ += (
+            f"  Has a fitness calculator configuration: "
+            f"{self.has_fitness_calculator_configuration()}\n"
+        )
+        str_ += f"  Has a model configuration: {self.has_model_configuration()}\n\n"
+
+        if pathlib.Path("./checkpoints/").is_dir():
+            checkpoints = glob.glob("./checkpoints/*.pkl")
+            template_path = self.emodel_metadata.as_string()
+            checkpoints = [c for c in checkpoints if template_path in c]
+            str_ += "OPTIMISATION STATUS\n"
+            str_ += f"  Number of checkpoints: {len(checkpoints)}\n"
+            for c in checkpoints:
+                run, run_metadata = read_checkpoint(c)
+                str_ += f"    Seed {run_metadata['seed']};"
+                str_ += f" Last generation: {run['logbook'].select('gen')[-1]};"
+                str_ += f" Best fitness: {sum(run['halloffame'][0].fitness.values)}\n"
+            str_ += "\n"
+
+        str_ += "EMODELS BUILDING STATUS\n"
+        emodels = self.get_emodels()
+        if emodels:
+            n_emodels = len(emodels)
+            n_emodels_validated = len([e for e in emodels if e.passed_validation])
+            idx_best = numpy.argmin([e.fitness for e in emodels])
+            str_ += f"  Emodels stored: {n_emodels}\n"
+            str_ += (
+                f"  Number of validated emodel: {n_emodels_validated} "
+                f"({n_emodels_validated / n_emodels} %)\n"
+            )
+            str_ += (
+                f"  Best emodel: seed {emodels[idx_best].seed} with fitness"
+                f" {emodels[idx_best].fitness}\n\n"
+            )
+        else:
+            str_ += "  No emodels\n\n"
+
+        return str_
