@@ -338,10 +338,15 @@ class NexusAccessPoint(DataAccessPoint):
 
     def create_emodel_workflow(self, state="not launched"):
         """Create an EModelWorkflow instance filled with the appropriate configuration"""
-        targets_configuration_id = self.access_point.get_nexus_id(
-            type_="ExtractionTargetsConfiguration",
-            metadata=self.emodel_metadata_ontology.filters_for_resource(),
-        )
+
+        try:
+            targets_configuration_id = self.access_point.get_nexus_id(
+                type_="ExtractionTargetsConfiguration",
+                metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            )
+        except AccessPointException:
+            targets_configuration_id = None
+
         pipeline_settings_id = self.access_point.get_nexus_id(
             type_="EModelPipelineSettings",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
@@ -372,9 +377,11 @@ class NexusAccessPoint(DataAccessPoint):
 
     def check_emodel_workflow_configurations(self, emodel_workflow):
         """Return True if the emodel workflow's configurations are on nexus, and False otherwise"""
+
         for id_ in emodel_workflow.get_configuration_ids():
-            if self.access_point.retrieve(id_) is None:
+            if id_ is not None and self.access_point.retrieve(id_) is None:
                 return False
+
         return True
 
     def store_or_update_emodel_workflow(self, emodel_workflow):
