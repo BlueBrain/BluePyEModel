@@ -5,8 +5,8 @@ import pathlib
 
 from bluepyopt.ephys.evaluators import CellEvaluator
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
-from bluepyopt.ephys.locations import NrnSecSomaDistanceCompLocation
 from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
+from bluepyopt.ephys.locations import NrnTrunkSomaDistanceCompLocation
 from bluepyopt.ephys.objectives import SingletonObjective
 from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.simulators import NrnSimulator
@@ -61,10 +61,9 @@ def define_location(definition):
         )
 
     if definition["type"] == "somadistanceapic":
-        return NrnSecSomaDistanceCompLocation(
+        return NrnTrunkSomaDistanceCompLocation(
             name=definition["name"],
             soma_distance=definition["somadistance"],
-            sec_index=definition.get("sec_index", None),
             sec_name=definition["seclist_name"],
         )
 
