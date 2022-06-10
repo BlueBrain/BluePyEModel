@@ -4,8 +4,8 @@ from .apwaveform import APWaveform
 from .comb import Comb
 from .dehyperpol import DeHyperpol
 from .dendrite import BAC
-from .dendrite import Synaptic
 from .dendrite import DendriticStep
+from .dendrite import Synaptic
 from .firepattern import FirePattern
 from .hyperdepol import HyperDepol
 from .idrest import IDrest
