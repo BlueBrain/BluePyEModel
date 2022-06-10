@@ -22,7 +22,7 @@ class EModelPipelineSettings:
         optimizer="IBEA",
         optimisation_params=None,
         optimisation_timeout=600.0,
-        threshold_efeature_std=0.05,
+        threshold_efeature_std=None,
         max_ngen=100,
         validation_threshold=5.0,
         validation_function="max_score",
