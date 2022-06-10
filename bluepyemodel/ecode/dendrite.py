@@ -1,3 +1,4 @@
+"""Ecode for dendrite specific protocols, such as synaptic input, dendritic steps, or BAC."""
 import numpy as np
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
 from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
@@ -30,7 +31,7 @@ class DendriticStep(IDrest):
             location = NrnSomaDistanceCompLocation(
                 name="dend",
                 soma_distance=kwargs["somadistance"],
-                sec_name=kwargs.get("seclist_name", "apical"),
+                seclist_name=kwargs.get("seclist_name", "apical"),
             )
         else:
             raise Exception(f"direction keyword {direction} not understood")
