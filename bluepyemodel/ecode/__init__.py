@@ -4,7 +4,7 @@ from .apwaveform import APWaveform
 from .comb import Comb
 from .dehyperpol import DeHyperpol
 from .dendrite import BAC
-from .dendrite import EPSP
+from .dendrite import Synaptic
 from .dendrite import DendriticStep
 from .firepattern import FirePattern
 from .hyperdepol import HyperDepol
@@ -53,7 +53,7 @@ eCodes = {
     "noiseou3": NoiseOU3,
     "whitenoise": WhiteNoise,
     "highfreq": Comb,
-    "epsp": EPSP,
+    "synaptic": Synaptic,
     "bac": BAC,
-    "dendriticstep": DendriticStep,
+    "dendritic": DendriticStep,
 }

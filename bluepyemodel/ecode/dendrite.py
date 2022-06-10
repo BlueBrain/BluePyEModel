@@ -22,14 +22,14 @@ class DendriticStep(IDrest):
 
             location = NrnTrunkSomaDistanceCompLocation(
                 name="dend",
-                soma_distance=kwargs.get("somadistance", 10),
+                soma_distance=kwargs["somadistance"],
                 sec_index=kwargs.get("sec_index", None),
                 sec_name="apical",
             )
         elif direction == "random":
             location = NrnSomaDistanceCompLocation(
                 name="dend",
-                soma_distance=kwargs.get("somadistance", 10),
+                soma_distance=kwargs["somadistance"],
                 sec_name=kwargs.get("seclist_name", "apical"),
             )
         else:
@@ -43,7 +43,16 @@ class DendriticStep(IDrest):
         super().instantiate(sim=sim, icell=icell)
 
 
-class EPSP(IDrest):
+class Synaptic(IDrest):
+    """Ecode to model a synapse with EPSP-like shape.
+
+    A synthetic EPSP shape is defined by the difference of two exponentials, one with a
+    rise time (syn_rise) constant, the other with a decay (syn_decay) time constants.
+    It is normalized such that the maximum value is parametrized by syn_amp.
+    """
+
+    name = "Synaptic"
+
     def __init__(self, location, **kwargs):
         """Constructor
 
@@ -52,13 +61,18 @@ class EPSP(IDrest):
             step_delay (float): delay (ms)
             step_duration (float): duration (ms)
             location (Location): stimulus Location
+            syn_delay (float): start time of synaptic input
+            syn_amp (flaot): maximal amplitude of the synaptic input
+            syn_rise (float): rise time constant
+            syn_decay (float): decay time constant
         """
         syn_location = NrnSeclistCompLocation(
             name="syn", comp_x=0.5, sec_index=kwargs.get("sec_index", 0), seclist_name="apical"
         )
         self.syn_delay = kwargs.get("syn_delay", 0.0)
         self.syn_amp = kwargs.get("syn_amp", 0.0)
-        self.syn_duration = kwargs.get("syn_duration", 0.0)
+        self.syn_rise = kwargs.get("syn_rise", 0.5)
+        self.syn_decay = kwargs.get("syn_decay", 5.0)
 
         super().__init__(location=syn_location, **kwargs)
 
@@ -78,9 +92,7 @@ class EPSP(IDrest):
         self.current_vec.append(0)
 
         t = np.linspace(0, self.total_duration - self.delay - self.syn_delay, 2000)
-        rise = 0.5
-        decay = 5.0
-        s = np.exp(-t / decay) - np.exp(-t / rise)
+        s = np.exp(-t / self.syn_decay) - np.exp(-t / self.syn_rise)
         s = self.syn_amp * s / max(s)
 
         for _t, _s in zip(t, s):
@@ -97,17 +109,15 @@ class EPSP(IDrest):
 
 
 class BAC(IDrest):
-    def __init__(self, location, **kwargs):
-        """Constructor
+    """BAC ecode.
 
-        Args:
-            step_amplitude (float): amplitude (nA)
-            step_delay (float): delay (ms)
-            step_duration (float): duration (ms)
-            location (Location): stimulus Location
-        """
+    BAC is a combination of a bAP and a synaptic input to generate Ca dendritic spikes.
+    """
+
+    def __init__(self, location, **kwargs):
+        """Constructor, combination of IDrest and Synaptic ecodes."""
         self.bap = IDrest(location, **kwargs)
-        self.epsp = EPSP(None, **kwargs)
+        self.epsp = Synaptic(None, **kwargs)
 
         super().__init__(location=None, **kwargs)
 
