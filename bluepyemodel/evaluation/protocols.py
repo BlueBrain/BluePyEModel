@@ -31,6 +31,7 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
             stochasticity (bool): turns on or off the channels that can be
                 stochastic
         """
+
         super().__init__(
             name=name,
             stimuli=[stimulus],
@@ -372,7 +373,7 @@ class SearchHoldingCurrent(PreProtocol):
                 elif voltage_max < self.target_voltage.exp_mean:
                     self.upper_bound += 0.2
 
-        return {
+        response = {
             "bpo_holding_current": self.bisection_search(
                 cell_model,
                 param_values,
@@ -383,6 +384,19 @@ class SearchHoldingCurrent(PreProtocol):
                 timeout=timeout,
             )
         }
+        if response["bpo_holding_current"] is None:
+            return response
+
+        protocol = self.create_one_use_step(
+            duration=self.stimulus_duration,
+            totduration=self.stimulus_duration,
+            holding_current=response["bpo_holding_current"],
+        )
+
+        response.update(
+            protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+        )
+        return response
 
     def bisection_search(
         self,
@@ -519,7 +533,18 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             lower_bound=self.holding_current,
             timeout=timeout,
         )
-        return {"bpo_threshold_current": threshold}
+
+        response = {"bpo_threshold_current": threshold}
+        protocol = self.create_one_use_step(
+            amp=threshold,
+            duration=self.stimulus_duration,
+            totduration=self.stimulus_duration,
+            holding_current=self.holding_current,
+        )
+        response.update(
+            protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+        )
+        return response
 
     def max_threshold_current(self):
         """Find the current necessary to get to max_threshold_voltage"""
