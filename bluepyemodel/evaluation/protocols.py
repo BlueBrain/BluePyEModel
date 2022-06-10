@@ -384,6 +384,7 @@ class SearchHoldingCurrent(PreProtocol):
                 timeout=timeout,
             )
         }
+
         if response["bpo_holding_current"] is None:
             return response
 
@@ -396,6 +397,7 @@ class SearchHoldingCurrent(PreProtocol):
         response.update(
             protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         )
+
         return response
 
     def bisection_search(
@@ -421,6 +423,7 @@ class SearchHoldingCurrent(PreProtocol):
             isolate=isolate,
             timeout=timeout,
         )
+
         if voltage is None:
             return self.bisection_search(
                 cell_model,
@@ -506,7 +509,6 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         self.holding_current = None
         self.rin = None
         self.rmp = None
-        self.cell_model
 
     def return_none_responses(self):
         return {
@@ -514,7 +516,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             f"{self.name}.{self.location.name}.v": None,
         }
 
-    def get_spikecount(self, current, cell_model, param_values, sim, isolate, timeout):
+    def _get_spikecount(self, current, cell_model, param_values, sim, isolate, timeout):
         """Get spikecount at a given current."""
         protocol = self.create_one_use_step(
             amp=current,
@@ -539,7 +541,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             return self.return_none_responses()
 
         max_threshold_current = self.max_threshold_current()
-        spikecount = self.get_spikecount(
+        spikecount = self._get_spikecount(
             max_threshold_current, cell_model, param_values, sim, isolate, timeout
         )
         if spikecount == 0:
@@ -556,15 +558,21 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         )
 
         response = {"bpo_threshold_current": threshold}
+
+        if threshold is None:
+            return response
+
         protocol = self.create_one_use_step(
             amp=threshold,
             duration=self.stimulus_duration,
             totduration=self.stimulus_duration,
             holding_current=self.holding_current,
         )
+
         response.update(
             protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         )
+
         return response
 
     def max_threshold_current(self):
@@ -588,7 +596,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         if abs(lower_bound - upper_bound) < self.current_precision:
             return upper_bound
 
-        if self.get_spikecount(mid_bound, cell_model, param_values, sim, isolate, timeout) == 0:
+        if self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate, timeout) == 0:
             return self.bisection_search(
                 cell_model,
                 param_values,
