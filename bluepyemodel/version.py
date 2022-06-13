@@ -1,4 +1,4 @@
 """ Package version. """
 
-VERSION = "0.0.10.dev38"
+VERSION = "0.0.10"
 __version__ = VERSION
