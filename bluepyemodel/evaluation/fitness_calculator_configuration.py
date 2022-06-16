@@ -116,7 +116,8 @@ class FitnessCalculatorConfiguration:
         if efeatures is not None:
             for f in efeatures:
                 f_dict = deepcopy(f)
-                f_dict.pop("threshold_efeature_std")
+                if "threshold_efeature_std" in f_dict:
+                    f_dict.pop("threshold_efeature_std")
                 self.efeatures.append(
                     EFeatureConfiguration(
                         **f_dict,
