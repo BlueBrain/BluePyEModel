@@ -1,12 +1,18 @@
 """API to reproduce Singlecell repositories."""
 
+import copy
 import glob
 import logging
 from pathlib import Path
 
+import efel
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import numpy
+from bluepyopt.ephys.locations import NrnSeclistCompLocation
+from bluepyopt.ephys.protocols import SweepProtocol
+from bluepyopt.ephys.recordings import CompRecording
+from bluepyopt.ephys.stimuli import NrnSquarePulse
 from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
 from bluepyemodel.evaluation.evaluation import compute_responses
@@ -189,6 +195,111 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
     return fig, axs
 
 
+def _get_if_curve_from_evaluator(
+    holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
+):
+
+    total_duration = length_step + (2 * delay)
+    stim_end = delay + length_step
+
+    efel.reset()
+    efel.setIntSetting("strict_stiminterval", True)
+
+    soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
+    rec = CompRecording(name="Step1.soma.v", location=soma_loc, variable="v")
+
+    holding_pulse = NrnSquarePulse(
+        step_amplitude=holding,
+        step_delay=0.0,
+        step_duration=total_duration,
+        total_duration=total_duration,
+        location=soma_loc,
+    )
+
+    spike_freq_equivalent = []
+    frequencies = []
+    amps = numpy.arange(0.0, threshold + max_offset_current, delta_current)
+    for amp in amps:
+
+        step_pulse = NrnSquarePulse(
+            step_amplitude=amp,
+            step_delay=delay,
+            step_duration=length_step,
+            total_duration=total_duration,
+            location=soma_loc,
+        )
+
+        protocol = SweepProtocol("Step1", [holding_pulse, step_pulse], [rec])
+        evaluator.fitness_protocols = {"Step1": protocol}
+
+        responses = evaluator.run_protocols(
+            protocols=evaluator.fitness_protocols.values(), param_values=model.parameters
+        )
+
+        efel_trace = {
+            "T": responses["Step1.soma.v"].response["time"],
+            "V": responses["Step1.soma.v"].response["voltage"],
+            "stim_start": [delay],
+            "stim_end": [stim_end],
+        }
+        features = efel.getFeatureValues(
+            [efel_trace], ["Spikecount", "mean_frequency"], raise_warnings=False
+        )[0]
+        spike_freq_equivalent.append(1e3 * float(features["Spikecount"]) / length_step)
+        frequencies.append(features.get("mean_frequency", None))
+
+    return amps, frequencies, spike_freq_equivalent
+
+
+def IF_curve(
+    model,
+    responses,
+    evaluator,
+    delay=100,
+    length_step=1000,
+    delta_current=0.01,
+    max_offset_current=0.2,
+    figures_dir="./figures",
+    write_fig=True,
+):
+    """Plot the current / frequency curve for the model"""
+
+    fig, ax = plt.subplots(1, figsize=(6, 4))
+    ax2 = ax.twinx()
+
+    holding = responses.get("bpo_holding_current", None)
+    threshold = responses.get("bpo_threshold_current", None)
+    if holding is None or threshold is None:
+        logger.warning("Not plotting IF curve, holing or threshold current is missing")
+        return fig, [ax, ax2]
+
+    amps, frequencies, spike_freq_equivalent = _get_if_curve_from_evaluator(
+        holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
+    )
+
+    ax.scatter(amps, frequencies, c="C0", alpha=0.6)
+    ax.set_xlabel("Step amplitude (nA)")
+    ax.set_ylabel("Mean frequency (Hz)", color="C0")
+    ax.tick_params(axis="y", labelcolor="C0")
+
+    ax2.scatter(amps, spike_freq_equivalent, c="C1", alpha=0.6)
+    ax2.set_ylabel("Spikecount per s over the step", color="C1")
+    ax2.tick_params(axis="y", labelcolor="C1")
+
+    title = f"IF curve {model.emodel_metadata.emodel}, seed {model.seed}"
+
+    fig.suptitle(title)
+
+    fname = model.emodel_metadata.as_string(model.seed) + "__IF_curve.pdf"
+
+    plt.tight_layout()
+
+    if write_fig:
+        save_fig(figures_dir, fname)
+
+    return fig, [ax, ax2]
+
+
 def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", write_fig=True):
     """Plot the distribution of the parameters across several models"""
     make_dir(figures_dir)
@@ -254,6 +365,7 @@ def plot_models(
     plot_scores=True,
     plot_traces=True,
     plot_currentscape=False,
+    plot_if_curve=False,
     only_validated=False,
     stochasticity=False,
 ):
@@ -270,6 +382,7 @@ def plot_models(
         plot_scores (bool): True to plot the scores
         plot_traces (bool): True to plot the traces
         plot_currentscape (bool): True to plot the currentscapes
+        plot_if_curve (bool): True to plot the current / frequency curve
         only_validated (bool): True to only plot validated models
         stochasticity (bool): should channels behave stochastically if they can
 
@@ -340,6 +453,11 @@ def plot_models(
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
             currentscape(mo.responses, config=config, figures_dir=figures_dir_currentscape)
+        if plot_if_curve:
+            figures_dir_traces = figures_dir / "traces" / dest_leaf
+            IF_curve(
+                mo, mo.responses, copy.deepcopy(cell_evaluator), figures_dir=figures_dir_traces
+            )
 
     return emodels
 
