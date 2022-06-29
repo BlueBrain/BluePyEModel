@@ -645,7 +645,7 @@ class EModelCreationTarget(WorkflowTarget):
 
 
 class EModelCreation(WorkflowTask):
-    """Main Wrokflow Task. Creates an emodel.
+    """Main Workflow Task. Creates an emodel.
 
     Parameters:
         emodel (str): name of the emodel.
@@ -726,6 +726,59 @@ class EModelCreation(WorkflowTask):
             brain_region=self.brain_region,
             iteration_tag=self.iteration_tag,
         )
+
+
+class SeveralEModelCreation(luigi.WrapperTask):
+    """Wrapper around EModelCreation. Creates several emodels.
+
+    Parameters:
+        emodels (str): name of the emodels, separated by ",".
+        etypes (str): None, etype or list of etypes of the emodels, separated by ",". Optional.
+        ttypes (str): None, ttype or list of ttypes of the emodels, separated by ",". Optional.
+        mtypes (str): None, mtype or list of mtypes of the emodels, separated by ",". Optional.
+        species (str): name of the species. Optional.
+        brain_region (str): name of the brain region. Optional.
+        iteration_tag (str): iteration tag or githash to identify the run. Optional.
+    """
+
+    emodels = luigi.Parameter(default=[])
+    etypes = luigi.Parameter(default=None)
+    ttypes = luigi.Parameter(default=None)
+    mtypes = luigi.Parameter(default=None)
+    species = luigi.Parameter(default=None)
+    brain_region = luigi.Parameter(default=None)
+    iteration_tag = luigi.Parameter(default=None)
+
+    @staticmethod
+    def _parse_emodel_metadata(metadata, n_models):
+        """Parse the string "etype1,etype2,..." into ["etype1", "etype2", ...]"""
+        # pylint: disable=no-member, unsupported-membership-test
+        if metadata is None or "," not in metadata:
+            return [metadata] * n_models
+        return metadata.split(",")
+
+    def requires(self):
+        # pylint: disable=no-member
+        emodels = self.emodels.split(",")
+        etypes = self._parse_emodel_metadata(self.etypes, len(emodels))
+        ttypes = self._parse_emodel_metadata(self.ttypes, len(emodels))
+        mtypes = self._parse_emodel_metadata(self.mtypes, len(emodels))
+
+        to_run = []
+        for emodel, etype, ttype, mtype in zip(emodels, etypes, ttypes, mtypes):
+            to_run.append(
+                EModelCreation(
+                    emodel=emodel,
+                    etype=etype,
+                    ttype=ttype,
+                    mtype=mtype,
+                    species=self.species,
+                    brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
+                )
+            )
+
+        return to_run
 
 
 class EModelCreationWrapper(WorkflowWrapperTask):
