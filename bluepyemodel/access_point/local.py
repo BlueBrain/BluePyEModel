@@ -715,3 +715,54 @@ class LocalAccessPoint(DataAccessPoint):
                 n_validated += 1
 
         return n_validated >= self.pipeline_settings.n_model
+
+    @classmethod
+    def add_entry_recipes(
+        cls,
+        recipes_path,
+        emodel,
+        morph_path,
+        morphology,
+        parameters_path,
+        protocols_path,
+        features_path,
+        pipeline_settings=None,
+    ):
+        """Append an entry to the recipes, create the file if it does not exist
+
+        Args:
+            recipes_path (str): path to the json containig the recipes.
+            emodel (str): name of the emodel.
+            morph_path (str): path the directory containing the morphologies.
+            morphology (list of str): name of the morphology and name of the file.
+            parameters_path (str): path to the json that contains the parameters.
+            protocols_path (str): path to the json that contains the protocols.
+            features_path (str): path to the json that contains the features.
+            pipeline_settings (dict): pipeline settings.
+        """
+
+        recipes_path = Path(recipes_path)
+        recipes_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if recipes_path.is_file():
+            with recipes_path.open("r") as f:
+                recipes = json.load(f)
+        else:
+            recipes = {}
+
+        if pipeline_settings is None:
+            settings = EModelPipelineSettings().as_dict()
+        else:
+            settings = pipeline_settings
+
+        recipes[emodel] = {
+            "morph_path": morph_path,
+            "morphology": [morphology],
+            "params": parameters_path,
+            "protocol": protocols_path,
+            "features": features_path,
+            "pipeline_settings": settings,
+        }
+
+        with recipes_path.open("w") as f:
+            json.dump(recipes, f, indent=2)
