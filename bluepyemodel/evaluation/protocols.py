@@ -409,10 +409,12 @@ class SearchHoldingCurrent(PreProtocol):
         upper_bound,
         lower_bound,
         timeout=None,
+        depth=0,
     ):
         """Do bisection search to find holding current"""
         mid_bound = (upper_bound + lower_bound) * 0.5
         if abs(upper_bound - lower_bound) < self.current_precision:
+            logger.debug("Depth of holding search: %s", depth)
             return upper_bound
 
         voltage = self.get_voltage_base(
@@ -432,6 +434,7 @@ class SearchHoldingCurrent(PreProtocol):
                 isolate=isolate,
                 lower_bound=lower_bound - 0.2 * lower_bound,
                 upper_bound=upper_bound - 0.2 * upper_bound,
+                depth=depth + 1,
             )
 
         if voltage > self.target_voltage.exp_mean:
@@ -442,6 +445,7 @@ class SearchHoldingCurrent(PreProtocol):
                 isolate=isolate,
                 lower_bound=lower_bound,
                 upper_bound=mid_bound,
+                depth=depth + 1,
             )
 
         return self.bisection_search(
@@ -451,6 +455,7 @@ class SearchHoldingCurrent(PreProtocol):
             isolate=isolate,
             lower_bound=mid_bound,
             upper_bound=upper_bound,
+            depth=depth + 1,
         )
 
 
@@ -590,10 +595,12 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         upper_bound,
         lower_bound,
         timeout=None,
+        depth=0,
     ):
         """Do bisection search to find threshold current"""
         mid_bound = (upper_bound + lower_bound) * 0.5
         if abs(lower_bound - upper_bound) < self.current_precision:
+            logger.debug("Depth of threshold search: %s", depth)
             return upper_bound
 
         if self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate, timeout) == 0:
@@ -605,6 +612,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
                 lower_bound=mid_bound,
                 upper_bound=upper_bound,
                 timeout=timeout,
+                depth=depth + 1,
             )
         return self.bisection_search(
             cell_model,
@@ -614,6 +622,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             lower_bound=lower_bound,
             upper_bound=mid_bound,
             timeout=timeout,
+            depth=depth + 1,
         )
 
 
