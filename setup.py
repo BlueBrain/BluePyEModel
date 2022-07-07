@@ -29,12 +29,6 @@ EXTRA_NEXUS = [
     "pyJWT>=2.1.0"
 ]
 
-EXTRA_GENERALISATION = [
-    "bluepyparallel>=0.0.3",
-    "bglibpy>=4.6.1",
-    "seaborn>=0.11"
-]
-
 EXTRA_CURRENTSCAPE = [
     "currentscape>=0.0.11"
 ]
@@ -83,15 +77,13 @@ setup(
     ],
     extras_require={
         "luigi": EXTRA_LUIGI + EXTRA_CURRENTSCAPE,
-        "generalisation": EXTRA_GENERALISATION,
         "nexus": EXTRA_NEXUS,
         "currentscape": EXTRA_CURRENTSCAPE,
-        "all": EXTRA_LUIGI + EXTRA_GENERALISATION + EXTRA_NEXUS + EXTRA_TEST + EXTRA_CURRENTSCAPE,
+        "all": EXTRA_LUIGI + EXTRA_NEXUS + EXTRA_TEST + EXTRA_CURRENTSCAPE,
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
     },
     packages=find_packages(),
-    entry_points={"console_scripts": ["BluePyEModel=bluepyemodel.apps.emodel_release:cli"]},
     include_package_data=True,
     package_data={"": ["data/*.npy"]},
 )
