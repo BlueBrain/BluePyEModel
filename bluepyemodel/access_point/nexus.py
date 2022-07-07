@@ -194,7 +194,10 @@ class NexusAccessPoint(DataAccessPoint):
         )
 
         self.access_point.object_to_nexus(
-            pipeline_settings, self.emodel_metadata_ontology.for_resource(), replace=True
+            pipeline_settings,
+            self.emodel_metadata_ontology.for_resource(),
+            self.emodel_metadata.as_string(),
+            replace=True,
         )
 
     def build_ontology_based_metadata(self):
@@ -249,12 +252,16 @@ class NexusAccessPoint(DataAccessPoint):
             "brainRegion": brain_region_from_nexus,
         }
 
-    def store_object(self, object_, metadata=None):
+    def store_object(self, object_, seed=None):
         """Store a BPEM object on Nexus"""
 
-        if metadata is None:
-            metadata = self.emodel_metadata_ontology.for_resource()
-        self.access_point.object_to_nexus(object_, metadata, replace=True)
+        self.access_point.object_to_nexus(
+            object_,
+            self.emodel_metadata_ontology.for_resource(),
+            self.emodel_metadata.as_string(),
+            replace=True,
+            seed=seed,
+        )
 
     def get_targets_configuration(self):
         """Get the configuration of the targets (targets and ephys files used)"""
@@ -395,7 +402,10 @@ class NexusAccessPoint(DataAccessPoint):
         # not present on nexus yet -> store it
         if resources is None:
             self.access_point.object_to_nexus(
-                emodel_workflow, self.emodel_metadata_ontology.for_resource(), replace=False
+                emodel_workflow,
+                self.emodel_metadata_ontology.for_resource(),
+                self.emodel_metadata.as_string(),
+                replace=False,
             )
         # if present on nexus -> update its state
         else:
@@ -419,10 +429,7 @@ class NexusAccessPoint(DataAccessPoint):
     def store_emodel(self, emodel):
         """Store an EModel on Nexus"""
 
-        metadata = self.emodel_metadata_ontology.for_resource()
-        metadata["seed"] = emodel.seed
-
-        self.store_object(emodel, metadata)
+        self.store_object(emodel, seed=emodel.seed)
 
     def get_emodels(self, emodels=None):
         """Get all the emodels"""
@@ -552,7 +559,7 @@ class NexusAccessPoint(DataAccessPoint):
             if os.path.isfile(str(mechanisms_directory / mod_file_name)):
                 continue
 
-            filepath = self.access_point.download(resource.id, str(mechanisms_directory))
+            filepath = self.access_point.download(resource.id, str(mechanisms_directory))[0]
 
             # Rename the file in case it's different from the name of the resource
             filepath = pathlib.Path(filepath)
@@ -563,7 +570,7 @@ class NexusAccessPoint(DataAccessPoint):
         """Download a morphology by name if not already downloaded"""
 
         resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
-        filepath = pathlib.Path(self.access_point.download(resource.id, "./nexus_temp/"))
+        filepath = pathlib.Path(self.access_point.download(resource.id, "./nexus_temp/"))[0]
 
         # Some morphologies have .h5 attached and we don't want that:
         if format_:
@@ -635,7 +642,7 @@ class NexusAccessPoint(DataAccessPoint):
             {"type": "IonChannelMapping", "name": "icmapping"}
         )
 
-        return self.access_point.download(resource_ic_map.id)
+        return self.access_point.download(resource_ic_map.id)[0]
 
     def get_t_types(self, table_name):
         """Get the list of t-types available for the present emodel"""
