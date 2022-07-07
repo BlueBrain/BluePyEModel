@@ -269,10 +269,10 @@ class SearchHoldingCurrent(PreProtocol):
         location,
         target_voltage=None,
         target_holding=None,
-        max_depth=7,
+        current_precision=1e-3,
         stimulus_duration=500.0,
         upper_bound=0.2,
-        lower_bound=-0.5,
+        lower_bound=-0.2,
         strict_bounds=True,
     ):
         """Constructor
@@ -283,7 +283,7 @@ class SearchHoldingCurrent(PreProtocol):
                 usually the soma).
             target_voltage (EFeature): target for the voltage at holding_current
             target_holding (EFeature): target for the holding_current
-            max_depth (int): maxium depth for the bisection search
+            current_precision (float): size of search interval in current to stop the search
             stimulus_duration (float): length of the protocol
             upper_bound (float): upper bound for the holding current, in pA
             lower_bound (float): lower bound for the holding current, in pA
@@ -297,7 +297,7 @@ class SearchHoldingCurrent(PreProtocol):
         self.target_voltage = target_voltage
         self.target_holding = target_holding
 
-        self.max_depth = max_depth
+        self.current_precision = current_precision
         self.stimulus_duration = stimulus_duration
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
@@ -320,6 +320,19 @@ class SearchHoldingCurrent(PreProtocol):
 
         response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
 
+        spike_feature = ephys.efeatures.eFELFeature(
+            name="SearchHoldingCurrent.Spikecount",
+            efel_feature_name="Spikecount",
+            recording_names={"": f"SearchHoldingCurrent.{self.location.name}.v"},
+            stim_start=0.0,
+            stim_end=self.stimulus_duration,
+            exp_mean=1,
+            exp_std=0.1,
+        )
+
+        if spike_feature.calculate_feature(response) > 0:
+            return None
+
         return self.target_voltage.calculate_feature(response)
 
     def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
@@ -337,9 +350,11 @@ class SearchHoldingCurrent(PreProtocol):
                     isolate=isolate,
                     timeout=timeout,
                 )
+                if voltage_min is None:
+                    raise Exception("cannot compute holding, we spike at lower bound")
+
                 if voltage_min > self.target_voltage.exp_mean:
                     self.lower_bound -= 0.2
-                    self.max_depth += 1
 
             voltage_max = -1e10
             while voltage_max < self.target_voltage.exp_mean:
@@ -351,9 +366,12 @@ class SearchHoldingCurrent(PreProtocol):
                     isolate=isolate,
                     timeout=timeout,
                 )
-                if voltage_max < self.target_voltage.exp_mean:
+                if voltage_max is None:
+                    # if we spike, we let it pass to the search
+                    voltage_max = 1e10
+
+                elif voltage_max < self.target_voltage.exp_mean:
                     self.upper_bound += 0.2
-                    self.max_depth += 1
 
         response = {
             "bpo_holding_current": self.bisection_search(
@@ -390,19 +408,14 @@ class SearchHoldingCurrent(PreProtocol):
         isolate,
         upper_bound,
         lower_bound,
-        depth=1,
         timeout=None,
+        depth=0,
     ):
         """Do bisection search to find holding current"""
-        logger.debug(
-            "Bisection search for Holding current. Depth = %s / %s",
-            depth,
-            self.max_depth,
-        )
-
         mid_bound = (upper_bound + lower_bound) * 0.5
-        if depth >= self.max_depth:
-            return mid_bound
+        if abs(upper_bound - lower_bound) < self.current_precision:
+            logger.debug("Depth of holding search: %s", depth)
+            return upper_bound
 
         voltage = self.get_voltage_base(
             holding_current=mid_bound,
@@ -414,7 +427,15 @@ class SearchHoldingCurrent(PreProtocol):
         )
 
         if voltage is None:
-            return None
+            return self.bisection_search(
+                cell_model,
+                param_values,
+                sim=sim,
+                isolate=isolate,
+                lower_bound=lower_bound - 0.2 * lower_bound,
+                upper_bound=upper_bound - 0.2 * upper_bound,
+                depth=depth + 1,
+            )
 
         if voltage > self.target_voltage.exp_mean:
             return self.bisection_search(
@@ -446,7 +467,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         name,
         location,
         target_threshold=None,
-        max_depth=7,
+        current_precision=1e-2,
         stimulus_duration=1000.0,
         max_threshold_voltage=-30,
     ):
@@ -457,7 +478,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             location (Location): location on which to perform the search (
                 usually the soma).
             target_threshold (Efeature): target for the threshold_current
-            max_depth (int): maxium depth for the bisection search
+            current_precision (float): size of search interval in current to stop the search
             stimulus_duration (float): duration of the step used to create the
                 protocol
             max_threshold_voltage (float): maximum voltage used as upper
@@ -476,7 +497,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
 
         self.target_threshold = target_threshold
         self.max_threshold_voltage = max_threshold_voltage
-        self.max_depth = max_depth
+        self.current_precision = current_precision
         self.stimulus_duration = stimulus_duration
 
         self.spike_feature = ephys.efeatures.eFELFeature(
@@ -500,6 +521,24 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             f"{self.name}.{self.location.name}.v": None,
         }
 
+    def _get_spikecount(self, current, cell_model, param_values, sim, isolate, timeout):
+        """Get spikecount at a given current."""
+        protocol = self.create_one_use_step(
+            amp=current,
+            duration=self.stimulus_duration,
+            totduration=self.stimulus_duration,
+            holding_current=self.holding_current,
+        )
+
+        response = protocol.run(
+            cell_model,
+            param_values,
+            sim=sim,
+            isolate=isolate,
+            timeout=timeout,
+        )
+        return self.spike_feature.calculate_feature(response)
+
     def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
         """Run protocol"""
 
@@ -507,6 +546,12 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             return self.return_none_responses()
 
         max_threshold_current = self.max_threshold_current()
+        spikecount = self._get_spikecount(
+            max_threshold_current, cell_model, param_values, sim, isolate, timeout
+        )
+        if spikecount == 0:
+            return {"bpo_threshold_current": None}
+
         threshold = self.bisection_search(
             cell_model,
             param_values,
@@ -517,13 +562,13 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             timeout=timeout,
         )
 
-        response = {"bpo_threshold_current": threshold if self.flag_spike_detected else None}
+        response = {"bpo_threshold_current": threshold}
 
-        if response["bpo_threshold_current"] is None:
+        if threshold is None:
             return response
 
         protocol = self.create_one_use_step(
-            amp=response["bpo_threshold_current"],
+            amp=threshold,
             duration=self.stimulus_duration,
             totduration=self.stimulus_duration,
             holding_current=self.holding_current,
@@ -549,38 +594,16 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         isolate,
         upper_bound,
         lower_bound,
-        depth=1,
         timeout=None,
+        depth=0,
     ):
         """Do bisection search to find threshold current"""
-        logger.debug(
-            "Bisection search for Threshold current. Depth = %s / %s",
-            depth,
-            self.max_depth,
-        )
-
         mid_bound = (upper_bound + lower_bound) * 0.5
-        if depth >= self.max_depth:
-            return mid_bound
+        if abs(lower_bound - upper_bound) < self.current_precision:
+            logger.debug("Depth of threshold search: %s", depth)
+            return upper_bound
 
-        protocol = self.create_one_use_step(
-            amp=mid_bound,
-            duration=self.stimulus_duration,
-            totduration=self.stimulus_duration,
-            holding_current=self.holding_current,
-        )
-
-        response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
-        spikecount = self.spike_feature.calculate_feature(response)
-
-        if spikecount is None:
-            return None
-
-        if spikecount == 1:
-            self.flag_spike_detected = True
-            return mid_bound
-
-        if spikecount == 0:
+        if self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate, timeout) == 0:
             return self.bisection_search(
                 cell_model,
                 param_values,
@@ -588,24 +611,19 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
                 isolate=isolate,
                 lower_bound=mid_bound,
                 upper_bound=upper_bound,
-                depth=depth + 1,
                 timeout=timeout,
-            )
-
-        if spikecount > 1:
-            self.flag_spike_detected = True
-            return self.bisection_search(
-                cell_model,
-                param_values,
-                sim=sim,
-                isolate=isolate,
-                lower_bound=lower_bound,
-                upper_bound=mid_bound,
                 depth=depth + 1,
-                timeout=timeout,
             )
-
-        return None
+        return self.bisection_search(
+            cell_model,
+            param_values,
+            sim=sim,
+            isolate=isolate,
+            lower_bound=lower_bound,
+            upper_bound=mid_bound,
+            timeout=timeout,
+            depth=depth + 1,
+        )
 
 
 class MainProtocol(ephys.protocols.Protocol):

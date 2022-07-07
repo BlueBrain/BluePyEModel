@@ -46,15 +46,15 @@ def test_protocols(db, evaluator):
     logging.getLogger().setLevel(logging.DEBUG)
 
     params = db.get_emodel().parameters
-    
+
     responses = evaluator.run_protocols(
         protocols=evaluator.fitness_protocols.values(), param_values=params
     )
 
-    assert_allclose(responses["bpo_rin"], 37.372752, rtol=1e-06)
     assert_allclose(responses["bpo_rmp"], -77.232155, rtol=1e-06)
-    assert_allclose(responses["bpo_holding_current"], -0.14453125, rtol=1e-06)
-    assert_allclose(responses["bpo_threshold_current"], 0.482622, rtol=1e-06)
+    assert_allclose(responses["bpo_holding_current"], -0.14609375, rtol=1e-06)
+    assert_allclose(responses["bpo_rin"], 37.337681471, rtol=1e-06)
+    assert_allclose(responses["bpo_threshold_current"], 0.47677170252, rtol=1e-06)
 
     for prot_name in [
         "RMPProtocol.soma.v",
