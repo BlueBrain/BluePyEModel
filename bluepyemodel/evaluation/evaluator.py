@@ -257,7 +257,7 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
 
 
-def define_holding_protocol(efeatures, strict_bounds=False):
+def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False):
     """Define the search holding current protocol"""
 
     target_voltage = None
@@ -280,7 +280,7 @@ def define_holding_protocol(efeatures, strict_bounds=False):
     if target_voltage and target_current:
         return SearchHoldingCurrent(
             name="SearchHoldingCurrent",
-            location=soma_loc,
+            location=soma_loc if not ais_recording else ais_loc,
             target_voltage=target_voltage,
             target_holding=target_current,
             strict_bounds=strict_bounds,
