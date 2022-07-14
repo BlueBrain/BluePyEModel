@@ -495,7 +495,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         mid_bound = (upper_bound + lower_bound) * 0.5
         if abs(upper_bound - lower_bound) < self.current_precision:
             logger.debug("Depth of holding search: %s", depth)
-            return upper_bound
+            return mid_bound
 
         voltage = self.get_voltage_base(
             holding_current=mid_bound,

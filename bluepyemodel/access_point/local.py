@@ -142,7 +142,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         return EModelPipelineSettings(**settings)
 
-    def get_final(self, lock_file=True):
+    def get_final(self, lock_file=False):
         """Get emodel dictionary from final.json."""
         if self.final_path is None:
             raise Exception("Final_path is None")
@@ -605,10 +605,10 @@ class LocalAccessPoint(DataAccessPoint):
 
         return emodel
 
-    def get_emodel(self):
+    def get_emodel(self, lock_file=False):
         """Get dict with parameter of single emodel (including seed if any)"""
 
-        final = self.get_final()
+        final = self.get_final(lock_file=lock_file)
 
         if self.emodel_metadata.emodel in final:
             return self.format_emodel_data(final[self.emodel_metadata.emodel])
