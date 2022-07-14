@@ -435,7 +435,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                     timeout=timeout,
                 )
                 if voltage_min is None:
-                    raise Exception("cannot compute holding, we spike at lower bound")
+                    voltage_min = 1e10
 
                 if voltage_min > self.target_voltage.exp_mean:
                     self.lower_bound -= 0.2
@@ -451,7 +451,6 @@ class SearchHoldingCurrent(BPEMProtocol):
                     timeout=timeout,
                 )
                 if voltage_max is None:
-                    # if we spike, we let it pass to the search
                     voltage_max = 1e10
 
                 elif voltage_max < self.target_voltage.exp_mean:
