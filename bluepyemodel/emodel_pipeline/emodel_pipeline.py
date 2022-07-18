@@ -88,10 +88,6 @@ class EModel_pipeline:
         elif nexus_endpoint == "staging":
             endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
 
-        emodel_dir = "./"
-        if iteration_tag and data_access_point == "local":
-            emodel_dir = str(pathlib.Path("./") / "run" / iteration_tag)
-
         self.access_point = get_access_point(
             emodel=emodel,
             etype=etype,
@@ -104,7 +100,6 @@ class EModel_pipeline:
             synapse_class=synapse_class,
             layer=layer,
             access_point=data_access_point,
-            emodel_dir=emodel_dir,
             recipes_path=recipes_path,
             final_path="final.json",
             organisation=nexus_organisation,

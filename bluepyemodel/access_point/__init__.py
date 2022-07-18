@@ -77,7 +77,7 @@ def get_access_point(access_point, emodel, **kwargs):
 
         return LocalAccessPoint(
             emodel=emodel,
-            emodel_dir=kwargs["emodel_dir"],
+            emodel_dir=kwargs.get("emodel_dir", None),
             etype=etype,
             ttype=ttype,
             mtype=mtype,

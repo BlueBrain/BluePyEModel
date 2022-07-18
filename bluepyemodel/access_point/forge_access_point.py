@@ -1,6 +1,7 @@
 """Nexus Forge access point used by the Nexus access point"""
 
 import getpass
+import json
 import logging
 import pathlib
 
@@ -112,7 +113,7 @@ class NexusForgeAccessPoint:
 
         try:
             access_token = refresh_token()
-        except:  # noqa
+        except:  # noqa: E722
             logger.info("Please get your Nexus access token from https://bbp.epfl.ch/nexus/web/.")
             access_token = getpass.getpass()
 
@@ -278,27 +279,35 @@ class NexusForgeAccessPoint:
         if resource is None:
             raise AccessPointException(f"Could not find resource for id: {resource_id}")
 
-        if isinstance(resource.distribution, list):
-            for dist in resource.distribution:
-                if hasattr(dist, "name"):
-                    filename = dist.name
-                    break
+        if hasattr(resource, "distribution"):
+
+            file_paths = []
+            if isinstance(resource.distribution, list):
+                for dist in resource.distribution:
+                    if hasattr(dist, "name"):
+                        file_paths.append(pathlib.Path(download_directory) / dist.name)
+                    else:
+                        raise AttributeError(
+                            f"A distribution of the resource {resource.name} does "
+                            "not have a file name."
+                        )
             else:
-                raise AttributeError("The morphology resource does not have a file name.")
-        else:
-            filename = resource.distribution.name
+                file_paths = [pathlib.Path(download_directory) / resource.distribution.name]
 
-        file_path = pathlib.Path(download_directory) / filename
+            if any(not fp.is_file() for fp in file_paths):
+                self.forge.download(
+                    resource, "distribution.contentUrl", download_directory, cross_bucket=True
+                )
 
-        if not file_path.is_file():
-            self.forge.download(
-                resource, "distribution.contentUrl", download_directory, cross_bucket=True
-            )
+            return [str(fp) for fp in file_paths]
 
-        return str(file_path)
+        return []
 
-    def deprecate(self, filters):  # TODO: THATS VERY DANGEROUS TO REWORK
+    def deprecate(self, filters):
         """Deprecate resources based on filters."""
+
+        tmp_cross_bucket = self.cross_bucket
+        self.cross_bucket = False
 
         resources = self.fetch(filters)
 
@@ -307,6 +316,8 @@ class NexusForgeAccessPoint:
                 rr = self.retrieve(resource.id)
                 if rr is not None:
                     self.forge.deprecate(rr)
+
+        self.cross_bucket = tmp_cross_bucket
 
     def deprecate_all(self, metadata):
         """Deprecate all resources used or produced by BluePyModel. Use with extreme caution."""
@@ -345,7 +356,7 @@ class NexusForgeAccessPoint:
                     filepath = loc["location"].replace("file:/", "")
 
             if filepath is None:
-                filepath = self.download(resource.id)
+                filepath = self.download(resource.id)[0]
 
             paths.append(filepath)
 
@@ -364,33 +375,40 @@ class NexusForgeAccessPoint:
 
         return "__".join(name_parts)
 
-    def object_to_nexus(self, object_, metadata, replace=True):
+    def object_to_nexus(self, object_, metadata_dict, metadata_str, replace=True):
         """Transform a BPEM object into a dict which gets registered into Nexus as
-        a Resource of the matching type. The metadata are also attached to the object
-        to be able to retrieve the Resource."""
+        the distribution of a Dataset of the matching type. The metadata
+        are also attached to the object to be able to retrieve the Resource."""
 
         type_ = CLASS_TO_NEXUS_TYPE[object_.__class__.__name__]
 
         base_payload = {
             "type": ["Entity", type_],
-            "name": self.resource_name(object_.__class__.__name__, metadata),
+            "name": self.resource_name(object_.__class__.__name__, metadata_dict),
         }
         payload_existance = {
             "type": type_,
-            "name": self.resource_name(object_.__class__.__name__, metadata),
+            "name": self.resource_name(object_.__class__.__name__, metadata_dict),
         }
 
-        base_payload.update(metadata)
-        payload_existance.update(metadata)
+        base_payload.update(metadata_dict)
+        payload_existance.update(metadata_dict)
+        json_payload = object_.as_dict()
 
-        payload = {**base_payload, **object_.as_dict()}
+        path_json = f"{CLASS_TO_RESOURCE_NAME[object_.__class__.__name__]}__{metadata_str}.json"
+        path_json = str((pathlib.Path("./nexus_temp") / path_json).resolve())
 
-        distributions = payload.pop("nexus_distributions", None)
+        distributions = [path_json]
+        if "nexus_distributions" in json_payload:
+            distributions += json_payload.pop("nexus_distributions")
+
+        with open(path_json, "w") as fp:
+            json.dump(json_payload, fp, indent=2)
 
         payload_existance.pop("annotation", None)
 
         self.register(
-            payload,
+            base_payload,
             filters_existance=payload_existance,
             replace=replace,
             distributions=distributions,
@@ -399,13 +417,23 @@ class NexusForgeAccessPoint:
     def resource_to_object(self, type_, resource, metadata):
         """Transform a Resource into a BPEM object of the matching type"""
 
-        payload = self.forge.as_json(resource)
+        file_paths = self.download(resource.id)
+        json_path = next((fp for fp in file_paths if pathlib.Path(fp).suffix == ".json"), None)
 
-        for k in metadata:
-            payload.pop(k, None)
+        if json_path is None:
+            # legacy case where the payload is in the Resource
+            payload = self.forge.as_json(resource)
 
-        for k in NEXUS_ENTRIES:
-            payload.pop(k, None)
+            for k in metadata:
+                payload.pop(k, None)
+
+            for k in NEXUS_ENTRIES:
+                payload.pop(k, None)
+
+        else:
+            # Case in which the payload is in a .json distribution
+            with open(json_path, "r") as f:
+                payload = json.load(f)
 
         return NEXUS_TYPE_TO_CLASS[type_](**payload)
 

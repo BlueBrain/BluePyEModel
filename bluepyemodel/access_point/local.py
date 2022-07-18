@@ -38,7 +38,7 @@ class LocalAccessPoint(DataAccessPoint):
     def __init__(
         self,
         emodel,
-        emodel_dir,
+        emodel_dir=None,
         etype=None,
         ttype=None,
         mtype=None,
@@ -57,7 +57,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         Args:
             emodel (str): name of the emodel.
-            emodel_dir (str): path to the working directory.
+            emodel_dir (str): path to the working directory. Default to ./run/iteration_tag if None
             ttype (str): name of the t-type
             iteration_tag (str): iteration tag
             final_path (str): path to final.json which will contain the optimized models.
@@ -93,7 +93,13 @@ class LocalAccessPoint(DataAccessPoint):
             layer,
         )
 
-        self.emodel_dir = Path(emodel_dir)
+        if emodel_dir is None:
+            self.emodel_dir = Path.cwd()
+            if iteration_tag:
+                self.emodel_dir = self.emodel_dir / "run" / iteration_tag
+        else:
+            self.emodel_dir = Path(emodel_dir)
+
         self.recipes_path = recipes_path
         self.legacy_dir_structure = legacy_dir_structure
         self.with_seeds = with_seeds
