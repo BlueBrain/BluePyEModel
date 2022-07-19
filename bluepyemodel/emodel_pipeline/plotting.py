@@ -572,7 +572,9 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
         config["output"] = {}
 
     if responses is not None:
-        ordered_keys = get_ordered_currentscape_keys(responses.keys())
+        ordered_keys = get_ordered_currentscape_keys(
+            key for key, item in responses.items() if item is not None
+        )
     else:
         fnames = [
             str(Path(filepath).stem) for filepath in glob.glob(str(Path(output_dir) / "*.dat"))
