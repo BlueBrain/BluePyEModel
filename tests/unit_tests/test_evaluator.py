@@ -8,7 +8,7 @@ from bluepyemodel.ecode.idrest import IDrest
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
 from bluepyemodel.evaluation.evaluator import define_location, define_protocol, define_efeature
-from bluepyemodel.evaluation.protocols import BPEM_Protocol
+from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 
 
 def test_define_location():
@@ -53,7 +53,7 @@ def protocol():
 
 def test_define_protocol(protocol):
 
-    assert isinstance(protocol, BPEM_Protocol)
+    assert isinstance(protocol, ThresholdBasedProtocol)
     assert isinstance(protocol.stimulus, IDrest)
     assert len(protocol.recordings) == 1
     assert isinstance(protocol.recordings[0], CompRecording)
