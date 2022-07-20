@@ -452,7 +452,12 @@ def plot_models(
         if plot_currentscape:
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
-            currentscape(mo.responses, config=config, figures_dir=figures_dir_currentscape)
+            currentscape(
+                mo.responses,
+                config=config,
+                metadata_str=mo.emodel_metadata.as_string(mo.seed),
+                figures_dir=figures_dir_currentscape,
+            )
         if plot_if_curve:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             IF_curve(
@@ -546,7 +551,9 @@ def get_voltage_currents_from_files(key_dict, output_dir):
     return time, voltage, currents, ionic_concentrations
 
 
-def currentscape(responses=None, output_dir=None, config=None, figures_dir="./figures"):
+def currentscape(
+    responses=None, output_dir=None, config=None, metadata_str="", figures_dir="./figures"
+):
     """Plot the currentscapes for all protocols.
 
     Arguments:
@@ -554,6 +561,7 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
         output_dur (str): path to the output dir containing the voltage and current responses.
             Will not be used if responses is set.
         config (dict): currentscape config. See currentscape package for more info.
+        metadata_str (str): Metadata of the model as a string. Used in the files naming.
         figures_dir (str): path to the directory where to put the figures.
 
     """
@@ -596,7 +604,7 @@ def currentscape(responses=None, output_dir=None, config=None, figures_dir="./fi
                     key_dict, output_dir
                 )
 
-            name = ".".join((prot, loc))
+            name = ".".join((metadata_str, prot, loc))
 
             # adapt config
             config["current"]["names"] = key_dict["current_names"]
