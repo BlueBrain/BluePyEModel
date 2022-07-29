@@ -196,10 +196,6 @@ def get_evaluator_from_access_point(
     stochasticity=False,
     include_validation_protocols=False,
     timeout=None,
-    max_threshold_voltage=None,
-    nseg_frequency=40,
-    dt=None,
-    strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
     record_ions_and_currents=False,
 ):
@@ -212,10 +208,6 @@ def get_evaluator_from_access_point(
             and validation efeatures be added to the evaluator.
         timeout (float): duration (in second) after which the evaluation of a
             protocol will be interrupted.
-        max_threshold_voltage (float): maximum voltage used as upper
-            bound in the threshold current search
-        dt (float): if not None, cvode will be disabled and fixed timesteps used.
-        strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
         record_ions_and_currents (bool): whether to add the ion and non-specific currents
             and the ionic concentration to the recordings.
@@ -240,14 +232,7 @@ def get_evaluator_from_access_point(
         name=access_point.emodel_metadata.emodel,
         model_configuration=model_configuration,
         morph_modifiers=morph_modifiers,
-        nseg_frequency=nseg_frequency,
     )
-
-    timeout = timeout or access_point.pipeline_settings.optimisation_timeout
-    stochasticity = stochasticity or bool(access_point.pipeline_settings.stochasticity)
-
-    if max_threshold_voltage is None:
-        max_threshold_voltage = access_point.pipeline_settings.max_threshold_voltage
 
     if isinstance(access_point, LocalAccessPoint):
         mechanisms_directory = None
@@ -257,14 +242,10 @@ def get_evaluator_from_access_point(
     return create_evaluator(
         cell_model=cell_model,
         fitness_calculator_configuration=fitness_calculator_configuration,
-        include_validation_protocols=include_validation_protocols,
+        pipeline_settings=access_point.pipeline_settings,
         stochasticity=stochasticity,
         timeout=timeout,
-        efel_settings=access_point.pipeline_settings.efel_settings,
-        max_threshold_voltage=max_threshold_voltage,
-        dt=dt,
-        strict_holding_bounds=strict_holding_bounds,
+        include_validation_protocols=include_validation_protocols,
         mechanisms_directory=mechanisms_directory,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
-        cvode_minstep=access_point.pipeline_settings.cvode_minstep,
     )

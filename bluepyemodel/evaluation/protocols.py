@@ -8,14 +8,14 @@ from ..ecode import eCodes
 from .recordings import LooseDtRecordingCustom
 from .recordings import check_recordings
 
-# pylint: disable=W0613
+# pylint: disable=abstract-method
 
 logger = logging.getLogger(__name__)
 
 
-class BPEM_Protocol(ephys.protocols.SweepProtocol):
+class BPEMProtocol(ephys.protocols.SweepProtocol):
 
-    """Protocol with stochasticity capabilities"""
+    """Base protocol"""
 
     def __init__(
         self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
@@ -69,20 +69,28 @@ class BPEM_Protocol(ephys.protocols.SweepProtocol):
         param_values = {} if param_values is None else param_values
         responses = {} if responses is None else responses
 
-        return super().run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+        return super().run(
+            cell_model=cell_model,
+            param_values=param_values,
+            sim=sim,
+            isolate=isolate,
+            timeout=timeout,
+        )
 
 
 class ResponseDependencies:
 
     """To add to a protocol to specify that it depends on the responses of other protocols"""
 
-    def __init__(self, dependencies):
+    def __init__(self, dependencies=None):
         """Constructor
 
         Args:
-            dependencies (dict): of the form: {"response_name": "self attribute name"}
+            dependencies (dict): dictionary of dependencies of the form
+                {self_attribute_name: [protocol_name, response_name]}.
         """
-        self.dependencies = dependencies
+
+        self.dependencies = {} if dependencies is None else dependencies
 
     def return_none_responses(self):
         # pylint: disable=inconsistent-return-statements
@@ -98,30 +106,92 @@ class ResponseDependencies:
         else:
             setattr(self, attribute, value)
 
-    def set_dependencies(self, responses=None):
-        for dep in self.dependencies:
-            if responses.get(dep, None) is None:
-                logger.warning("Dependency %s missing", dep)
+    def set_dependencies(self, responses):
+        for attribute_name, dep in self.dependencies.items():
+            if responses.get(dep[1], None) is None:
+                logger.debug("Dependency %s missing", dep[1])
                 return False
-            self.set_attribute(self.dependencies[dep], responses[dep])
+            self.set_attribute(attribute_name, responses[dep[1]])
         return True
 
+    def _run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
+        raise NotImplementedError("The run code of the sub-classes goes here!")
 
-class BPEM_ThresholdProtocol(BPEM_Protocol, ResponseDependencies):
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
+        """Run protocol"""
 
-    """Protocol having rheobase-rescaling and stochasticity capabilities"""
+        param_values = {} if param_values is None else param_values
+        responses = {} if responses is None else responses
+
+        if not self.set_dependencies(responses):
+            return self.return_none_responses()
+
+        return self._run(cell_model, param_values, sim, isolate, timeout)
+
+
+class ProtocolWithDependencies(BPEMProtocol, ResponseDependencies):
+
+    """To add to a protocol to specify that it depends on the responses of other protocols"""
+
+    def __init__(
+        self,
+        dependencies=None,
+        name=None,
+        stimulus=None,
+        recordings=None,
+        cvode_active=None,
+        stochasticity=False,
+    ):
+        """Constructor
+
+        Args:
+            dependencies (dict): dictionary of dependencies of the form
+                {self_attribute_name: [protocol_name, response_name]}.
+        """
+
+        ResponseDependencies.__init__(self, dependencies)
+        BPEMProtocol.__init__(
+            self,
+            name=name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=cvode_active,
+            stochasticity=stochasticity,
+        )
+
+    def _run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
+
+        return BPEMProtocol.run(self, cell_model, param_values, sim, isolate, timeout, responses)
+
+
+class ThresholdBasedProtocol(ProtocolWithDependencies):
+
+    """Protocol having rheobase-rescaling capabilities"""
 
     def __init__(
         self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
     ):
+        """Constructor"""
 
-        BPEM_Protocol.__init__(self, name, stimulus, recordings, cvode_active, stochasticity)
-        ResponseDependencies.__init__(
+        dependencies = {
+            "stimulus.holding_current": ["SearchHoldingCurrent", "bpo_holding_current"],
+            "stimulus.threshold_current": ["SearchThresholdCurrent", "bpo_threshold_current"],
+        }
+
+        ProtocolWithDependencies.__init__(
             self,
-            dependencies={
-                "bpo_holding_current": "stimulus.holding_current",
-                "bpo_threshold_current": "stimulus.threshold_current",
-            },
+            dependencies=dependencies,
+            name=name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=cvode_active,
+            stochasticity=stochasticity,
         )
 
     def return_none_responses(self):
@@ -131,79 +201,60 @@ class BPEM_ThresholdProtocol(BPEM_Protocol, ResponseDependencies):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
 
-        if not self.set_dependencies(responses):
-            return self.return_none_responses()
+        return ResponseDependencies.run(
+            self, cell_model, param_values, sim, isolate, timeout, responses
+        )
 
-        return super().run(cell_model, param_values, sim, isolate, timeout, responses)
 
+class RMPProtocol(BPEMProtocol):
 
-class PreProtocol:
+    """Protocol consisting of a step of amplitude zero"""
 
-    """Abstract pre-protocol class. Pre-protocols are ran before the other protocols that
-    might have them as dependencies. Note that pre-protocol can also have dependencies,
-    therefore they are ran in a specific order: RMP -> SearchHolding -> Rin -> SearchThreshold."""
-
-    def __init__(self, name, location, recording_name):
-
-        self.name = name
-        self.location = location
-        self.recording_name = recording_name
-
-    def create_one_use_step(
-        self, delay=0.0, holding_current=0.0, amp=0.0, duration=100.0, totduration=100.0
-    ):
+    def __init__(self, name, location, target_voltage, stimulus_duration=500.0):
+        """Constructor"""
 
         stimulus_definition = {
-            "delay": delay,
-            "amp": amp,
+            "delay": 0.0,
+            "amp": 0.0,
             "thresh_perc": None,
-            "duration": duration,
-            "totduration": totduration,
-            "holding_current": holding_current,
+            "duration": stimulus_duration,
+            "totduration": stimulus_duration,
+            "holding_current": 0.0,
         }
 
-        stimulus = eCodes["step"](location=self.location, **stimulus_definition)
-        recordings = [
-            LooseDtRecordingCustom(name=self.recording_name, location=self.location, variable="v")
-        ]
+        recording_name = f"{name}.{location.name}.v"
+        stimulus = eCodes["step"](location=location, **stimulus_definition)
+        recordings = [LooseDtRecordingCustom(name=recording_name, location=location, variable="v")]
 
-        return BPEM_Protocol(
-            name=self.name,
+        BPEMProtocol.__init__(
+            self,
+            name=name,
             stimulus=stimulus,
             recordings=recordings,
             cvode_active=True,
             stochasticity=False,
         )
 
-
-class RMPProtocol(PreProtocol):
-    """Protocol consisting of step of amplitude zero"""
-
-    def __init__(self, name, location, target_voltage, stimulus_duration=500.0):
-        """Constructor
-
-        Args:
-            name (str): name of this object
-        """
-
-        super().__init__(name, location, f"{name}.{location.name}.v")
-
         self.stimulus_duration = stimulus_duration
-        self.target_voltage = target_voltage
 
-        self.target_voltage.stim_start = self.stimulus_duration - 100.0
-        self.target_voltage.stim_end = self.stimulus_duration
+        self.target_voltage = target_voltage
+        self.target_voltage.stim_start = stimulus_duration - 100.0
+        self.target_voltage.stim_end = stimulus_duration
         self.target_voltage.stimulus_current = 0.0
 
-    def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
         """Compute the RMP"""
 
-        rmp_protocol = self.create_one_use_step(
-            duration=self.stimulus_duration, totduration=self.stimulus_duration
-        )
-
-        response = rmp_protocol.run(
-            cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
+        response = BPEMProtocol.run(
+            self,
+            cell_model,
+            param_values,
+            sim=sim,
+            isolate=isolate,
+            timeout=timeout,
+            responses=responses,
         )
 
         bpo_rmp = self.target_voltage.calculate_feature(response)
@@ -212,55 +263,72 @@ class RMPProtocol(PreProtocol):
         return response
 
 
-class RinProtocol(PreProtocol, ResponseDependencies):
+class RinProtocol(ProtocolWithDependencies):
+
     """Protocol used to find the input resistance of a model"""
 
     def __init__(
         self, name, location, target_rin, amp=-0.02, stimulus_delay=500.0, stimulus_duration=500.0
     ):
+        """Constructor"""
 
-        PreProtocol.__init__(
-            self, name=name, location=location, recording_name=f"{name}.{location.name}.v"
+        stimulus_definition = {
+            "delay": stimulus_delay,
+            "amp": amp,
+            "thresh_perc": None,
+            "duration": stimulus_duration,
+            "totduration": stimulus_delay + stimulus_duration,
+            "holding_current": 0.0,
+        }
+
+        self.recording_name = f"{name}.{location.name}.v"
+        stimulus = eCodes["step"](location=location, **stimulus_definition)
+        recordings = [
+            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
+        ]
+
+        dependencies = {"stimulus.holding_current": ["SearchHoldingCurrent", "bpo_holding_current"]}
+
+        ProtocolWithDependencies.__init__(
+            self,
+            dependencies=dependencies,
+            name=name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=True,
+            stochasticity=False,
         )
-        ResponseDependencies.__init__(self, dependencies={"bpo_holding_current": "holding_current"})
 
-        self.stimulus_delay = stimulus_delay
-        self.stimulus_duration = stimulus_duration
-        self.amp = amp
         self.target_rin = target_rin
-
-        self.target_rin.stim_start = self.stimulus_delay
-        self.target_rin.stim_end = self.stimulus_delay + self.stimulus_duration
-        self.target_rin.stimulus_current = self.amp
-
-        self.holding_current = None
+        self.target_rin.stim_start = stimulus_delay
+        self.target_rin.stim_end = stimulus_delay + stimulus_duration
+        self.target_rin.stimulus_current = amp
 
     def return_none_responses(self):
         return {self.recording_name: None, "bpo_rin": None}
 
-    def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
-        """Compute input resistance"""
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
+        """Compute the Rin"""
 
-        if not self.set_dependencies(responses):
-            return self.return_none_responses()
-
-        rin_protocol = self.create_one_use_step(
-            amp=self.amp,
-            delay=self.stimulus_delay,
-            duration=self.stimulus_duration,
-            totduration=self.stimulus_delay + self.stimulus_duration,
-            holding_current=self.holding_current,
+        response = ResponseDependencies.run(
+            self,
+            cell_model,
+            param_values,
+            sim=sim,
+            isolate=isolate,
+            timeout=timeout,
+            responses=responses,
         )
 
-        response = rin_protocol.run(
-            cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
-        )
-        response["bpo_rin"] = self.target_rin.calculate_feature(response)[0]
+        bpo_rin = self.target_rin.calculate_feature(response)
+        response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
 
         return response
 
 
-class SearchHoldingCurrent(PreProtocol):
+class SearchHoldingCurrent(BPEMProtocol):
     """Protocol used to find the holding current of a model"""
 
     def __init__(
@@ -287,55 +355,71 @@ class SearchHoldingCurrent(PreProtocol):
             stimulus_duration (float): length of the protocol
             upper_bound (float): upper bound for the holding current, in pA
             lower_bound (float): lower bound for the holding current, in pA
-            strict_bounds (bool): to adaptively enlarge bounds is current is outside
+            strict_bounds (bool): to adaptively enlarge bounds if current is outside
         """
 
-        super().__init__(
-            name=name, location=location, recording_name=target_voltage.recording_names[""]
+        stimulus_definition = {
+            "delay": 0.0,
+            "amp": 0.0,
+            "thresh_perc": None,
+            "duration": stimulus_duration,
+            "totduration": stimulus_duration,
+            "holding_current": 0.0,
+        }
+
+        recording_name = f"{name}.{location.name}.v"
+        stimulus = eCodes["step"](location=location, **stimulus_definition)
+        recordings = [LooseDtRecordingCustom(name=recording_name, location=location, variable="v")]
+
+        BPEMProtocol.__init__(
+            self,
+            name=name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=True,
+            stochasticity=False,
         )
 
-        self.target_voltage = target_voltage
-        self.target_holding = target_holding
-
         self.current_precision = current_precision
-        self.stimulus_duration = stimulus_duration
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
         self.strict_bounds = strict_bounds
 
-        self.target_voltage.stim_start = self.stimulus_duration - 100.0
-        self.target_voltage.stim_end = self.stimulus_duration
+        self.target_voltage = target_voltage
+        self.target_holding = target_holding
+
+        self.target_voltage.stim_start = stimulus_duration - 100.0
+        self.target_voltage.stim_end = stimulus_duration
         self.target_voltage.stimulus_current = 0.0
+
+        self.spike_feature = ephys.efeatures.eFELFeature(
+            name="SearchHoldingCurrent.Spikecount",
+            efel_feature_name="Spikecount",
+            recording_names={"": f"SearchHoldingCurrent.{location.name}.v"},
+            stim_start=0.0,
+            stim_end=stimulus_duration,
+            exp_mean=1,
+            exp_std=0.1,
+        )
 
     def get_voltage_base(
         self, holding_current, cell_model, param_values, sim, isolate, timeout=None
     ):
         """Calculate voltage base for a certain holding current"""
 
-        protocol = self.create_one_use_step(
-            duration=self.stimulus_duration,
-            totduration=self.stimulus_duration,
-            holding_current=holding_current,
+        self.stimuli[0].amp = holding_current
+        response = BPEMProtocol.run(
+            self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
 
-        response = protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
-
-        spike_feature = ephys.efeatures.eFELFeature(
-            name="SearchHoldingCurrent.Spikecount",
-            efel_feature_name="Spikecount",
-            recording_names={"": f"SearchHoldingCurrent.{self.location.name}.v"},
-            stim_start=0.0,
-            stim_end=self.stimulus_duration,
-            exp_mean=1,
-            exp_std=0.1,
-        )
-
-        if spike_feature.calculate_feature(response) > 0:
+        if self.spike_feature.calculate_feature(response) > 0:
             return None
 
         return self.target_voltage.calculate_feature(response)
 
-    def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
         """Run protocol"""
 
         if not self.strict_bounds:
@@ -388,14 +472,10 @@ class SearchHoldingCurrent(PreProtocol):
         if response["bpo_holding_current"] is None:
             return response
 
-        protocol = self.create_one_use_step(
-            duration=self.stimulus_duration,
-            totduration=self.stimulus_duration,
-            holding_current=response["bpo_holding_current"],
-        )
-
         response.update(
-            protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+            BPEMProtocol.run(
+                self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
+            )
         )
 
         return response
@@ -459,7 +539,8 @@ class SearchHoldingCurrent(PreProtocol):
         )
 
 
-class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
+class SearchThresholdCurrent(ProtocolWithDependencies):
+
     """Protocol used to find the threshold current (rheobase) of a model"""
 
     def __init__(
@@ -485,52 +566,66 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
                 bound in the threshold current search
         """
 
-        PreProtocol.__init__(self, name, location, f"{name}.{location.name}.v")
-        ResponseDependencies.__init__(
-            self,
-            dependencies={
-                "bpo_holding_current": "holding_current",
-                "bpo_rin": "rin",
-                "bpo_rmp": "rmp",
-            },
+        dependencies = {
+            "stimulus.holding_current": ["SearchHoldingCurrent", "bpo_holding_current"],
+            "rin": ["RinProtocol", "bpo_rin"],
+            "rmp": ["RMPProtocol", "bpo_rmp"],
+        }
+
+        stimulus_definition = {
+            "delay": 0.0,
+            "amp": 0.0,
+            "thresh_perc": None,
+            "duration": stimulus_duration,
+            "totduration": stimulus_duration,
+            "holding_current": 0.0,
+        }
+
+        self.recording_name = f"{name}.{location.name}.v"
+        stimulus = eCodes["step"](location=location, **stimulus_definition)
+        recordings = [
+            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
+        ]
+
+        super().__init__(
+            dependencies=dependencies,
+            name=name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=True,
+            stochasticity=False,
         )
+
+        self.rin = None
+        self.rmp = None
 
         self.target_threshold = target_threshold
         self.max_threshold_voltage = max_threshold_voltage
         self.current_precision = current_precision
-        self.stimulus_duration = stimulus_duration
 
         self.spike_feature = ephys.efeatures.eFELFeature(
             name="f{name}.Spikecount",
             efel_feature_name="Spikecount",
-            recording_names={"": f"{self.name}.{self.location.name}.v"},
+            recording_names={"": f"{name}.{location.name}.v"},
             stim_start=0.0,
-            stim_end=self.stimulus_duration,
+            stim_end=stimulus_duration,
             exp_mean=1,
             exp_std=0.1,
         )
         self.flag_spike_detected = False
 
-        self.holding_current = None
-        self.rin = None
-        self.rmp = None
-
     def return_none_responses(self):
         return {
             "bpo_threshold_current": None,
-            f"{self.name}.{self.location.name}.v": None,
+            self.recording_name: None,
         }
 
     def _get_spikecount(self, current, cell_model, param_values, sim, isolate, timeout):
         """Get spikecount at a given current."""
-        protocol = self.create_one_use_step(
-            amp=current,
-            duration=self.stimulus_duration,
-            totduration=self.stimulus_duration,
-            holding_current=self.holding_current,
-        )
 
-        response = protocol.run(
+        self.stimulus.amp = current
+
+        response = self._run(
             cell_model,
             param_values,
             sim=sim,
@@ -539,7 +634,9 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         )
         return self.spike_feature.calculate_feature(response)
 
-    def run(self, cell_model, param_values, sim, isolate=None, timeout=None, responses=None):
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
         """Run protocol"""
 
         if not self.set_dependencies(responses):
@@ -558,7 +655,7 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
             sim,
             isolate,
             upper_bound=max_threshold_current,
-            lower_bound=self.holding_current,
+            lower_bound=responses["bpo_holding_current"],
             timeout=timeout,
         )
 
@@ -567,15 +664,8 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         if threshold is None:
             return response
 
-        protocol = self.create_one_use_step(
-            amp=threshold,
-            duration=self.stimulus_duration,
-            totduration=self.stimulus_duration,
-            holding_current=self.holding_current,
-        )
-
         response.update(
-            protocol.run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+            self._run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         )
 
         return response
@@ -626,58 +716,64 @@ class SearchThresholdCurrent(PreProtocol, ResponseDependencies):
         )
 
 
-class MainProtocol(ephys.protocols.Protocol):
-    """Umbrella protocol that can run normal protocols but also Threshold protocols whose holding
-    current and step current can be computed on the go.
+class ProtocolRunner(ephys.protocols.Protocol):
 
-    Pseudo code:
-        Run the none-threshold based protocols
-        Find resting membrane potential
-        Find input resistance
-        Find holding current
-        Find threshold current (lowest current inducing an AP)
-        Run the other protocols
-    """
+    """In charge of running the other protocols in the correct order"""
 
-    def __init__(
-        self,
-        name="Main",
-        pre_protocols=None,
-        threshold_protocols=None,
-        other_protocols=None,
-    ):
-        """Constructor
-
-        Args:
-            name (str): name of this object
-            pre_protocols (dict) special protocols used to compute the RMP, Rin, holding
-                and threshold(rheobase current), to be ran before the threshold protocols
-            threshold_protocols (dict): protocols that will use the automatic
-                computation of the RMP, holding_current and threshold_current
-            other_protocols (dict): additional regular protocols
-        """
+    def __init__(self, protocols, name="ProtocolRunner"):
         super().__init__(name=name)
 
-        self.pre_protocols = pre_protocols if pre_protocols else {}
-        self.threshold_protocols = threshold_protocols if threshold_protocols else {}
-        self.other_protocols = other_protocols if other_protocols else {}
+        self.protocols = protocols
+        self.execution_order = self.compute_execution_order()
 
-    def all_subprotocols(self):
-        """Return all the protocols contained in MainProtocol"""
-        return {**self.pre_protocols, **self.threshold_protocols, **self.other_protocols}
+    def _add_to_execution_order(self, protocol, execution_order, before_index=None):
+        """Recursively add protocols to the execution order while making sure that their
+        dependencies are added before them. Warning: Does not solve all types of dependency graph.
+        """
 
-    def subprotocols(self):
-        """Return all the protocols contained in MainProtocol except the pre_protocols"""
-        return {**self.threshold_protocols, **self.other_protocols}
+        if protocol.name not in execution_order:
+            if before_index is None:
+                execution_order.append(protocol.name)
+            else:
+                execution_order.insert(before_index, protocol.name)
+
+        if hasattr(protocol, "dependencies"):
+            for dep in protocol.dependencies.values():
+                if dep[0] not in execution_order:
+                    self._add_to_execution_order(
+                        self.protocols[dep[0]],
+                        execution_order,
+                        before_index=execution_order.index(protocol.name),
+                    )
+
+    def compute_execution_order(self):
+        """Compute the execution order of the protocols by taking into account their dependencies"""
+
+        execution_order = []
+
+        for protocol in self.protocols.values():
+            self._add_to_execution_order(protocol, execution_order)
+
+        return execution_order
 
     def run(self, cell_model, param_values, sim=None, isolate=None, timeout=None):
         """Run protocol"""
+
         responses = OrderedDict()
         cell_model.freeze(param_values)
 
-        for protocol in self.all_subprotocols().values():
-            logger.debug("Computing protocol %s", protocol.name)
-            responses.update(protocol.run(cell_model, {}, sim, isolate, timeout, responses))
+        for protocol_name in self.execution_order:
+            logger.debug("Computing protocol %s", protocol_name)
+            responses.update(
+                self.protocols[protocol_name].run(
+                    cell_model,
+                    param_values={},
+                    sim=sim,
+                    isolate=isolate,
+                    timeout=timeout,
+                    responses=responses,
+                )
+            )
 
         cell_model.unfreeze(param_values.keys())
         return responses

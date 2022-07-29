@@ -40,6 +40,7 @@ class EModelPipelineSettings:
         currentscape_config=None,
         cvode_minstep=0.0,
         max_threshold_voltage=-30,
+        strict_holding_bounds=True,
     ):
         """Init
 
@@ -105,6 +106,9 @@ class EModelPipelineSettings:
             cvode_minstep (float): minimum time step allowed for a CVODE step.
             max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
                 will search for the rheobase.
+            strict_holding_bounds (bool): if True, the minimum and maximum values for the current
+                used during the holding current search will be fixed. Otherwise, they will be
+                widened dynamically.
         """
 
         # Settings related to E-features extraction
@@ -118,7 +122,6 @@ class EModelPipelineSettings:
 
         # Settings related to the optimisation
         self.stochasticity = stochasticity
-
         self.optimizer = optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:
@@ -130,6 +133,11 @@ class EModelPipelineSettings:
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
+
+        # Specific to threshold based optimization
+        self.name_Rin_protocol = name_Rin_protocol
+        self.name_rmp_protocol = name_rmp_protocol
+        self.strict_holding_bounds = strict_holding_bounds
 
         # Settings related to the validation
         self.validation_threshold = validation_threshold
@@ -148,29 +156,12 @@ class EModelPipelineSettings:
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
 
-        # One the way to deprecation:
-        self.name_Rin_protocol = name_Rin_protocol  # only when using local access point
-        if name_Rin_protocol is not None:
-            logger.warning(
-                "Setting name_Rin_protocol has been moved to the "
-                "FitnessCalculatorConfiguration and will be deprecated"
-            )
-        self.name_rmp_protocol = name_rmp_protocol  # only when using local access point
-        if name_rmp_protocol is not None:
-            logger.warning(
-                "Setting name_rmp_protocol has been moved to the "
-                "FitnessCalculatorConfiguration and will be deprecated"
-            )
+        # Settings specific to the cell model
+        self.morph_modifiers = morph_modifiers
 
         if threshold_based_evaluator is not None:
             logger.warning(
                 "Setting threshold_based_evaluator is not used anymore and will be deprecated"
-            )
-        self.morph_modifiers = morph_modifiers
-        if morph_modifiers is not None:
-            logger.warning(
-                "Setting morph_modifiers has been moved to the "
-                "NeuronModelConfiguration and will be deprecated"
             )
 
     def as_dict(self):
