@@ -47,7 +47,7 @@ EXTRA_DOC = [
 
 
 setup(
-    name="BluePyEModel",
+    name="bluepyemodel",
     author="BlueBrain cells",
     author_email="bbp-ou-cell@groupes.epfl.ch",
     version=VERSION,
