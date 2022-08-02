@@ -13,7 +13,6 @@ from bluepyopt.ephys.locations import NrnSeclistCompLocation
 from bluepyopt.ephys.protocols import SweepProtocol
 from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.stimuli import NrnSquarePulse
-from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
@@ -616,7 +615,12 @@ def currentscape(
                     "Could not plot currentscape for %s: voltage or currents is empty.", name
                 )
             else:
-                logger.info("Plotting currentscape for %s", name)
-                plot_currentscape_fct(
-                    voltage, currents, config, ions_data=ionic_concentrations, time=time
-                )
+                try:
+                    from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
+
+                    logger.info("Plotting currentscape for %s", name)
+                    plot_currentscape_fct(
+                        voltage, currents, config, ions_data=ionic_concentrations, time=time
+                    )
+                except (ImportError):
+                    logger.warning("Currentscape module not found. Skipping currentscape plotting.")
