@@ -17,7 +17,7 @@ from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
-from bluepyemodel.evaluation.protocols import BPEM_ThresholdProtocol
+from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import read_checkpoint
 
@@ -155,7 +155,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
                 if hasattr(stimuli[basename], "stimulus"):
 
                     if (
-                        isinstance(stimuli[basename], BPEM_ThresholdProtocol)
+                        isinstance(stimuli[basename], ThresholdBasedProtocol)
                         and threshold
                         and holding
                     ):
@@ -367,7 +367,6 @@ def plot_models(
     plot_currentscape=False,
     plot_if_curve=False,
     only_validated=False,
-    stochasticity=False,
 ):
     """Plot the traces, scores and parameter distributions for all the models
         matching the emodels name.
@@ -384,7 +383,6 @@ def plot_models(
         plot_currentscape (bool): True to plot the currentscapes
         plot_if_curve (bool): True to plot the current / frequency curve
         only_validated (bool): True to only plot validated models
-        stochasticity (bool): should channels behave stochastically if they can
 
     Returns:
         emodels (list): list of emodels.
@@ -397,7 +395,6 @@ def plot_models(
         include_validation_protocols=True,
         use_fixed_dt_recordings=plot_currentscape,
         record_ions_and_currents=plot_currentscape,
-        stochasticity=stochasticity,
     )
 
     if plot_traces or plot_currentscape:
