@@ -69,7 +69,6 @@ setup(
         "efel>=3.1",
         "psycopg2-binary>=2.8",
         "configparser",
-        "bluepy>=2.4",
         "neuron>=8.0",
         "morph_tool>=2.8",
         "fasteners>=0.16",
