@@ -622,5 +622,5 @@ def currentscape(
                     plot_currentscape_fct(
                         voltage, currents, config, ions_data=ionic_concentrations, time=time
                     )
-                except (ImportError):
+                except (ModuleNotFoundError):
                     logger.warning("Currentscape module not found. Skipping currentscape plotting.")
