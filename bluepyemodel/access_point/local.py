@@ -454,6 +454,16 @@ class LocalAccessPoint(DataAccessPoint):
             if ion_currents is not None and ionic_concentrations is not None:
                 ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
 
+        calc_configuration_settings = {
+            "name_rmp_protocol": self.pipeline_settings.name_rmp_protocol,
+            "name_rin_protocol": self.pipeline_settings.name_Rin_protocol,
+            "name_TRN_burst_protocol": self.pipeline_settings.name_TRN_burst_protocol,
+            "name_TRN_noburst_protocol": self.pipeline_settings.name_TRN_noburst_protocol,
+            "validation_protocols": self.pipeline_settings.validation_protocols,
+            "stochasticity": self.pipeline_settings.stochasticity,
+            "ion_variables": ion_variables,
+        }
+
         if legacy:
             efeatures = self.get_json("features")
             protocols = self.get_json("protocol")
@@ -466,13 +476,7 @@ class LocalAccessPoint(DataAccessPoint):
                     from_bpe = True
                     break
 
-            configuration = FitnessCalculatorConfiguration(
-                name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
-                name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
-                validation_protocols=self.pipeline_settings.validation_protocols,
-                stochasticity=self.pipeline_settings.stochasticity,
-                ion_variables=ion_variables,
-            )
+            configuration = FitnessCalculatorConfiguration(**calc_configuration_settings)
 
             if from_bpe:
                 configuration.init_from_bluepyefe(
@@ -487,11 +491,7 @@ class LocalAccessPoint(DataAccessPoint):
             configuration = FitnessCalculatorConfiguration(
                 efeatures=config_dict["efeatures"],
                 protocols=config_dict["protocols"],
-                name_rmp_protocol=self.pipeline_settings.name_rmp_protocol,
-                name_rin_protocol=self.pipeline_settings.name_Rin_protocol,
-                validation_protocols=self.pipeline_settings.validation_protocols,
-                stochasticity=self.pipeline_settings.stochasticity,
-                ion_variables=ion_variables,
+                **calc_configuration_settings,
             )
 
         return configuration
