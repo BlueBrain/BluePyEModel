@@ -65,6 +65,8 @@ class FitnessCalculatorConfiguration:
         protocols=None,
         name_rmp_protocol=None,
         name_rin_protocol=None,
+        name_TRN_burst_protocol=None,
+        name_TRN_noburst_protocol=None,
         threshold_efeature_std=None,
         validation_protocols=None,
         stochasticity=False,
@@ -135,6 +137,8 @@ class FitnessCalculatorConfiguration:
 
         self.name_rmp_protocol = name_rmp_protocol
         self.name_rin_protocol = name_rin_protocol
+        self.name_TRN_burst_protocol = name_TRN_burst_protocol
+        self.name_TRN_noburst_protocol = name_TRN_noburst_protocol
 
     def protocol_exist(self, protocol_name):
         return bool(p for p in self.protocols if p.name == protocol_name)
@@ -164,6 +168,13 @@ class FitnessCalculatorConfiguration:
         validation = protocol_name in self.validation_protocols
         stochasticity = self.check_stochasticity(protocol_name)
 
+        if (self.name_TRN_burst_protocol and self.name_TRN_burst_protocol in protocol_name) or (
+            self.name_TRN_noburst_protocol and self.name_TRN_noburst_protocol in protocol_name
+        ):
+            protocol_type = "DynamicStepProtocol"
+        else:
+            protocol_type = "ThresholdBasedProtocol"
+
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
@@ -171,6 +182,7 @@ class FitnessCalculatorConfiguration:
             validation=validation,
             ion_variables=self.ion_variables,
             stochasticity=stochasticity,
+            protocol_type=protocol_type,
         )
 
         self.protocols.append(tmp_protocol)
@@ -202,6 +214,22 @@ class FitnessCalculatorConfiguration:
             and feature["feature"] == "ohmic_input_resistance_vb_ssse"
         ):
             tmp_feature.protocol_name = "RinProtocol"
+
+        # TRN burst specific pre-protocols
+        if self.name_TRN_burst_protocol and self.name_TRN_noburst_protocol:
+            for suffix in ["burst", "noburst"]:
+                if (
+                    protocol_name == getattr(self, f"name_TRN_{suffix}_protocol")
+                    and feature["feature"] == "voltage_base"
+                ):
+                    tmp_feature.protocol_name = f"TRNSearchHolding_{suffix}"
+                    tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
+
+            if (
+                protocol_name == getattr(self, f"name_TRN_noburst_protocol")
+                and feature["feature"] == "steady_state_voltage_stimend"
+            ):
+                tmp_feature.protocol_name = f"TRNSearchCurrentStep"
 
         if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(protocol_name):
             raise Exception(

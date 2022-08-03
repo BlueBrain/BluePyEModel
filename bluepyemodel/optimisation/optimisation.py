@@ -28,6 +28,7 @@ def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
     Returns:
         DEAPOptimisation
     """
+
     if optimizer == "IBEA":
         return bluepyopt.deapext.optimisations.IBEADEAPOptimisation(
             evaluator=evaluator, map_function=map_function, **params

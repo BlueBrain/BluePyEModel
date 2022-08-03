@@ -34,6 +34,8 @@ class EModelPipelineSettings:
         path_extract_config=None,
         name_Rin_protocol=None,
         name_rmp_protocol=None,
+        name_TRN_burst_protocol=None,
+        name_TRN_noburst_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
         plot_currentscape=False,
@@ -137,6 +139,8 @@ class EModelPipelineSettings:
         # Specific to threshold based optimization
         self.name_Rin_protocol = name_Rin_protocol
         self.name_rmp_protocol = name_rmp_protocol
+        self.name_TRN_burst_protocol = name_TRN_burst_protocol
+        self.name_TRN_noburst_protocol = name_TRN_noburst_protocol
         self.strict_holding_bounds = strict_holding_bounds
 
         # Settings related to the validation

@@ -125,6 +125,8 @@ class NexusAccessPoint(DataAccessPoint):
         compile_mechanisms=False,
         name_Rin_protocol=None,
         name_rmp_protocol=None,
+        name_TRN_burst_protocol=None,
+        name_TRN_noburst_protocol=None,
         validation_protocols=None,
     ):
         """Creates an EModelPipelineSettings resource.
@@ -190,6 +192,8 @@ class NexusAccessPoint(DataAccessPoint):
             compile_mechanisms=compile_mechanisms,
             name_Rin_protocol=name_Rin_protocol,
             name_rmp_protocol=name_rmp_protocol,
+            name_TRN_burst_protocol=name_TRN_burst_protocol,
+            name_TRN_noburst_protocol=name_TRN_noburst_protocol,
             validation_protocols=validation_protocols,
         )
 
@@ -293,6 +297,12 @@ class NexusAccessPoint(DataAccessPoint):
 
         if configuration.name_rmp_protocol is None:
             configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
+        if configuration.name_TRN_burst_protocol is None:
+            configuration.name_TRN_burst_protocol = self.pipeline_settings.name_TRN_burst_protocol
+        if configuration.name_TRN_noburst_protocol is None:
+            configuration.name_TRN_noburst_protocol = (
+                self.pipeline_settings.name_TRN_noburst_protocol
+            )
         if configuration.name_rin_protocol is None:
             configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
         if configuration.validation_protocols is None:

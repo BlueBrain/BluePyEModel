@@ -14,10 +14,11 @@ from bluepyopt.ephys.simulators import NrnSimulator
 from ..ecode import eCodes
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEMProtocol
+from .protocols import DynamicStepProtocol
 from .protocols import ProtocolRunner
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
-from .protocols import SearchHoldingCurrent
+from .protocols import SearchCurrentForVoltage
 from .protocols import SearchThresholdCurrent
 from .protocols import ThresholdBasedProtocol
 from .recordings import FixedDtRecordingCustom
@@ -28,7 +29,19 @@ logger = logging.getLogger(__name__)
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
 
-PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
+PRE_PROTOCOLS = [
+    "SearchHoldingCurrent",
+    "SearchThresholdCurrent",
+    "RMPProtocol",
+    "RinProtocol",
+    "TRNSearchHolding",
+    "TRNSearchHolding_burst",
+    "TRNSearchCurrentStep_current",
+    "TRNSearchHolding_noburst",
+    "TRNSearchCurrentStep",
+    "TRNSearchCurrentStep_burst",
+    "TRNSearchCurrentStep_noburst",
+]
 LEGACY_PRE_PROTOCOLS = ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]
 
 seclist_to_sec = {
@@ -41,6 +54,7 @@ seclist_to_sec = {
 protocol_type_to_class = {
     "Protocol": BPEMProtocol,
     "ThresholdBasedProtocol": ThresholdBasedProtocol,
+    "DynamicStepProtocol": DynamicStepProtocol,
 }
 
 
@@ -257,38 +271,41 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
 
 
-def define_holding_protocol(efeatures, strict_bounds=False):
-    """Define the search holding current protocol"""
+def define_current_for_voltage_protocol(
+    efeatures,
+    protocol_name,
+    target_current_name=None,
+    strict_bounds=False,
+    upper_bound=0.2,
+    lower_bound=-0.5,
+    no_spikes=False,
+):
+    """Define the search of current giving a voltage"""
 
     target_voltage = None
     for f in efeatures:
         if (
-            "SearchHoldingCurrent" in f.recording_names[""]
+            protocol_name in f.recording_names[""]
             and f.efel_feature_name == "steady_state_voltage_stimend"
         ):
             target_voltage = f
             break
 
-    target_current = None
-    for f in efeatures:
-        if (
-            "SearchHoldingCurrent" in f.recording_names[""]
-            and f.efel_feature_name == "bpo_holding_current"
-        ):
-            target_current = f
-
-    if target_voltage and target_current:
-        return SearchHoldingCurrent(
-            name="SearchHoldingCurrent",
+    if target_voltage:
+        return SearchCurrentForVoltage(
+            name=protocol_name,
             location=soma_loc,
             target_voltage=target_voltage,
-            target_holding=target_current,
             strict_bounds=strict_bounds,
+            upper_bound=upper_bound,
+            lower_bound=lower_bound,
+            target_current_name=target_current_name,
+            no_spikes=no_spikes,
         )
 
     raise Exception(
-        "Couldn't find the efeature 'bpo_holding_current' associated to "
-        "the 'SearchHoldingCurrent' protocol in your FitnessCalculatorConfiguration."
+        "Couldn't find the efeature 'steady_state_voltage_stimend' associated to "
+        f"the {protocol_name} protocol in the FitnessCalculatorConfiguration."
     )
 
 
@@ -320,21 +337,14 @@ def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
     )
 
 
-def define_threshold_based_optimization_protocol(
+def define_protocols_and_features(
     fitness_calculator_configuration,
-    include_validation_protocols=False,
-    stochasticity=True,
-    ais_recording=False,
-    efel_settings=None,
-    max_threshold_voltage=-30,
-    strict_holding_bounds=True,
-    use_fixed_dt_recordings=False,
+    include_validation_protocols,
+    stochasticity,
+    efel_settings,
+    use_fixed_dt_recordings,
 ):
-    """Create a meta protocol in charge of running the other protocols.
-
-    The amplitude of the "threshold_protocols" depend on the computation of
-    the current threshold.
-
+    """
     Args:
         fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
             fitness calculator.
@@ -377,23 +387,68 @@ def define_threshold_based_optimization_protocol(
 
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
+    return protocols, efeatures
+
+
+def define_protocol_runner(
+    protocols,
+    features,
+    ais_recording=False,
+    max_threshold_voltage=-30,
+    strict_holding_bounds=True,
+):
+    """Create a meta protocol in charge of running the other protocols. The amplitude of the
+    "threshold_protocols" depend on the computation of the current threshold.
+    """
+
     # Create the special protocols
     if any(isinstance(p, ThresholdBasedProtocol) for p in protocols.values()):
         protocols.update(
             {
-                "RMPProtocol": define_RMP_protocol(efeatures),
-                "SearchHoldingCurrent": define_holding_protocol(efeatures, strict_holding_bounds),
-                "RinProtocol": define_Rin_protocol(efeatures, ais_recording),
+                "RMPProtocol": define_RMP_protocol(features),
+                "SearchHoldingCurrent": define_current_for_voltage_protocol(
+                    features,
+                    protocol_name="SearchHoldingCurrent",
+                    target_current_name="bpo_holding_current",
+                    strict_bounds=strict_holding_bounds,
+                    no_spikes=True,
+                ),
+                "RinProtocol": define_Rin_protocol(features, ais_recording),
                 "SearchThresholdCurrent": define_threshold_protocol(
-                    efeatures, max_threshold_voltage
+                    features, max_threshold_voltage
                 ),
             }
+        )
+
+    if any(isinstance(p, DynamicStepProtocol) for p in protocols.values()):
+
+        for suffix in ["_noburst", "_burst"]:
+            hold_protocol_name = f"TRNSearchHolding{suffix}"
+            protocols[hold_protocol_name] = define_current_for_voltage_protocol(
+                features,
+                protocol_name=hold_protocol_name,
+                target_current_name=f"TRNSearchHolding_current{suffix}",
+                strict_bounds=strict_holding_bounds,
+                upper_bound=2.0,
+                lower_bound=-1.0,
+                no_spikes=False,
+            )
+
+        step_protocol_name = f"TRNSearchCurrentStep"
+        protocols[step_protocol_name] = define_current_for_voltage_protocol(
+            features,
+            protocol_name=step_protocol_name,
+            target_current_name=f"TRNSearchCurrentStep_current",
+            strict_bounds=strict_holding_bounds,
+            upper_bound=2.0,
+            lower_bound=-1.0,
+            no_spikes=True,
         )
 
     # Create the protocol runner
     protocol_runner = ProtocolRunner(protocols)
 
-    return protocol_runner, efeatures
+    return protocol_runner
 
 
 def define_fitness_calculator(features):
@@ -493,18 +548,24 @@ def create_evaluator(
 
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
-    main_protocol, features = define_threshold_based_optimization_protocol(
+    protocols, features = define_protocols_and_features(
         fitness_calculator_configuration,
         include_validation_protocols,
         stochasticity=stochasticity,
         efel_settings=pipeline_settings.efel_settings,
-        max_threshold_voltage=pipeline_settings.max_threshold_voltage,
-        strict_holding_bounds=pipeline_settings.strict_holding_bounds,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
     )
 
+    protocol_runner = define_protocol_runner(
+        protocols,
+        features,
+        ais_recording=False,
+        max_threshold_voltage=pipeline_settings.max_threshold_voltage,
+        strict_holding_bounds=pipeline_settings.strict_holding_bounds,
+    )
+
     fitness_calculator = define_fitness_calculator(features)
-    fitness_protocols = {"main_protocol": main_protocol}
+    fitness_protocols = {"main_protocol": protocol_runner}
 
     param_names = [param.name for param in cell_model.params.values() if not param.frozen]
 

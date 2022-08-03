@@ -167,7 +167,14 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
 
                     time, current = stimuli[basename].stimulus.generate()
                     axs_c[-1].plot(time, current, color="gray", alpha=0.6)
-                    axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
+                    
+                    max_current = numpy.max(current)
+                    min_current = numpy.min(current)
+                    
+                    if numpy.isnan(max_current) or numpy.isinf(max_current) or numpy.isnan(min_current) or numpy.isinf(min_current):
+                        continue
+
+                    axs_c[-1].set_ylim(min_current - 0.2, max_current + 0.2)
 
         idx += 1
 
@@ -405,7 +412,7 @@ def plot_models(
         if seeds:
             emodels = [model for model in emodels if model.seed in seeds]
 
-    stimuli = cell_evaluator.fitness_protocols["main_protocol"].subprotocols()
+    stimuli = cell_evaluator.fitness_protocols["main_protocol"].protocols
 
     if only_validated:
         emodels = [model for model in emodels if model.passed_validation]
