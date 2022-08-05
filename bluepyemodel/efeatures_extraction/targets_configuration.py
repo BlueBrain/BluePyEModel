@@ -117,6 +117,9 @@ class TargetsConfiguration:
                         "filepath": f.filepath,
                     }
 
+                    if "protocol_name" not in ecodes_metadata:
+                        ecodes_metadata["protocol_name"] = protocol
+
                     files_metadata[f.cell_name][protocol].append(ecodes_metadata)
 
         for cell_name, protocols in files_metadata.items():
