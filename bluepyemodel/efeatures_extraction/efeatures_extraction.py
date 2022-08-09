@@ -64,6 +64,14 @@ def extract_save_features_protocols(access_point, mapper=map):
     """
 
     targets_configuration = access_point.get_targets_configuration()
+    if (
+        access_point.pipeline_settings.name_rmp_protocol is not None
+        and access_point.pipeline_settings.name_Rin_protocol is not None
+    ):
+        targets_configuration.check_presence_RMP_Rin_efeatures(
+            access_point.pipeline_settings.name_rmp_protocol,
+            access_point.pipeline_settings.name_Rin_protocol,
+        )
 
     reader_function = define_extraction_reader_function(access_point)
 
