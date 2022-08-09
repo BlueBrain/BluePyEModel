@@ -1,8 +1,6 @@
 """Model Configurator"""
 import logging
 
-import icselector
-
 from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools.utils import yesno
@@ -68,6 +66,8 @@ class ModelConfigurator:
     def get_gene_based_parameters(self):
         """Get the gene mapping from Nexus and retrieve the matching parameters and mechanisms
         from the ion channel selector"""
+
+        import icselector
 
         if not self.access_point.pipeline_settings.name_gene_map:
             logger.warning(
