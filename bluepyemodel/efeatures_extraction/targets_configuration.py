@@ -159,6 +159,38 @@ class TargetsConfiguration:
 
         return True
 
+    def check_presence_RMP_Rin_efeatures(self, name_rmp_protocol, name_Rin_protocol):
+        """Check that the protocols supposed to be used for RMP and Rin are present in the target
+        and that they have the correct efeatures. If some features are missing, add them."""
+
+        name_rmp, amplitude_rmp = name_rmp_protocol.efeature.split("_")
+        name_rin, amplitude_rin = name_Rin_protocol.efeature.split("_")
+
+        efeatures_rmp = [
+            t.efeature
+            for t in self.targets
+            if t.protocol == name_rmp and t.amplitude == int(amplitude_rmp)
+        ]
+        efeatures_rin = [
+            t.efeature
+            for t in self.targets
+            if t.protocol == name_rin and t.amplitude == int(amplitude_rin)
+        ]
+
+        error_message = (
+            "Target for feature {} is missing for RMP protocol {}. Please add "
+            "it if you wish to do a threshold-based optimization."
+        )
+
+        if "voltage_base" not in efeatures_rmp:
+            raise Exception(error_message.format("voltage_base", name_rmp_protocol))
+        if "voltage_base" not in efeatures_rin:
+            raise Exception(error_message.format("voltage_base", name_rmp_protocol))
+        if "ohmic_input_resistance_vb_ssse" not in efeatures_rin:
+            raise Exception(
+                error_message.format("ohmic_input_resistance_vb_ssse", name_Rin_protocol)
+            )
+
     def as_dict(self):
 
         return {
