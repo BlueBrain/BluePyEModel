@@ -15,7 +15,7 @@ class EModelPipelineSettings:
         extraction_reader=None,
         extraction_threshold_value_save=1,
         plot_extraction=True,
-        picke_cells_extraction=False,
+        pickle_cells_extraction=False,
         efel_settings=None,
         stochasticity=False,
         morph_modifiers=None,
@@ -51,7 +51,7 @@ class EModelPipelineSettings:
                 function and name of the function. E.g: ["path_to_module", "name_of_function"]
             extraction_threshold_value_save (int): name of the mechanism.
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
-            picke_cells_extraction (bool): sould the cells object be saved as a pickle file for
+            pickle_cells_extraction (bool): sould the cells object be saved as a pickle file for
                 further analysis during extraction.
             efel_settings (dict): efel settings in the form {setting_name: setting_value}.
                 If settings are also informed in the targets per efeature, the latter
@@ -118,7 +118,7 @@ class EModelPipelineSettings:
         self.extraction_reader = extraction_reader
         self.extraction_threshold_value_save = extraction_threshold_value_save
         self.plot_extraction = plot_extraction
-        self.picke_cells_extraction = picke_cells_extraction
+        self.pickle_cells_extraction = pickle_cells_extraction
         self.efel_settings = efel_settings  # Also used during optimisation
         if self.efel_settings is None:
             self.efel_settings = {"interp_step": 0.025, "strict_stiminterval": True}
