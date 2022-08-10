@@ -72,7 +72,7 @@ class FitnessCalculatorConfiguration:
     ):
         """Init.
 
-        The arguments efeatures and protocols are expected to be in the format ued for the
+        The arguments efeatures and protocols are expected to be in the format used for the
         storage of the fitness calculator configuration. To store the results of an extraction,
         use the method init_from_bluepyefe.
 
