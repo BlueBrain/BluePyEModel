@@ -65,8 +65,7 @@
         ],
         "n": 97
       }
-    ],
-    "validation": false
+    ]
   },
   "APWaveform_300": {
     "soma.v": [
@@ -86,8 +85,7 @@
         ],
         "n": 30
       }
-    ],
-    "validation": true
+    ]
   },
   "IV_0": {
     "soma.v": [
@@ -107,8 +105,7 @@
         ],
         "n": 126
       }
-    ],
-    "validation": false
+    ]
   },
   "RMPProtocol": {
     "soma.v": [
