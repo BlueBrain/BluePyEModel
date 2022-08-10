@@ -405,7 +405,7 @@ def plot_models(
         if seeds:
             emodels = [model for model in emodels if model.seed in seeds]
 
-    stimuli = cell_evaluator.fitness_protocols["main_protocol"].subprotocols()
+    stimuli = cell_evaluator.fitness_protocols["main_protocol"].protocols
 
     if only_validated:
         emodels = [model for model in emodels if model.passed_validation]
@@ -445,6 +445,7 @@ def plot_models(
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             traces(mo, mo.responses, stimuli, figures_dir_traces)
+
         if plot_currentscape:
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
