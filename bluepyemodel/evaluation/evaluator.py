@@ -382,7 +382,9 @@ def define_threshold_based_optimization_protocol(
         protocols.update(
             {
                 "RMPProtocol": define_RMP_protocol(efeatures),
-                "SearchHoldingCurrent": define_holding_protocol(efeatures, strict_holding_bounds),
+                "SearchHoldingCurrent": define_holding_protocol(
+                    efeatures, strict_holding_bounds, ais_recording
+                ),
                 "RinProtocol": define_Rin_protocol(efeatures, ais_recording),
                 "SearchThresholdCurrent": define_threshold_protocol(
                     efeatures, max_threshold_voltage
