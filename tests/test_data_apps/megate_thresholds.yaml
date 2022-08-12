@@ -1,8 +1,0 @@
-ignore:
-    - bAP
-    - decay_time_constant_after_stim
-    - AP2_amp
-    - AHP_depth
-    - AHP_depth_abs
-    - burst_number
-    - ohmic_input_resistance_vb_ssse
