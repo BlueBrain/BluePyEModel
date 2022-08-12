@@ -411,8 +411,8 @@ class SearchHoldingCurrent(BPEMProtocol):
         response = BPEMProtocol.run(
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
-
-        if self.spike_feature.calculate_feature(response) > 0:
+        n_spikes = self.spike_feature.calculate_feature(response)
+        if n_spikes is None or n_spikes > 0:
             return None
 
         return self.target_voltage.calculate_feature(response)
