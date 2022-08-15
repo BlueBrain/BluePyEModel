@@ -103,8 +103,8 @@ class EModelMetadata:
 
         return annotation_list
 
-    def filters_for_resource(self):
-        """Metadata used for filtering, without the annotation list"""
+    def get_metadata_dict(self):
+        """Metadata as a dict, with keys consistent with nexus."""
 
         metadata = {}
 
@@ -120,13 +120,17 @@ class EModelMetadata:
 
         return metadata
 
+    def filters_for_resource(self):
+        """Metadata used for filtering, without the annotation list"""
+        return self.get_metadata_dict()
+
     def for_resource(self):
         """Metadata to add to a resource to register.
 
         DO NOT use for filtering. For filtering, use self.filters_for_resource() instead.
         """
 
-        metadata = self.filters_for_resource()
+        metadata = self.get_metadata_dict()
 
         metadata["annotation"] = self.annotation_list()
 
