@@ -533,7 +533,7 @@ def raise_brain_region_exception(base_text, brain_region, access_point):
 
 
 def get_brain_region(brain_region, access_token=None):
-    """Returns a json dict of the resource corresponding to the brain region
+    """Returns a dict with id and label of the resource corresponding to the brain region
 
     If the brain region name is not present in nexus,
     raise an exception mentioning the possible brain region names available on nexus
@@ -543,7 +543,7 @@ def get_brain_region(brain_region, access_token=None):
         access_token (str): nexus connection token
 
     Returns:
-        the nexus resource of the brain region as a json dict
+        dict: the id and label of the nexus resource of the brain region
     """
 
     access_point = ontology_forge_access_point(access_token)
@@ -574,8 +574,12 @@ def get_brain_region(brain_region, access_token=None):
         base_text = f"Resource {brain_region} is not a brain region"
         raise_brain_region_exception(base_text, brain_region, access_point)
 
-    # if no exception was raised, return brain region as a json dict
-    return access_point.forge.as_json(resource)
+    # if no exception was raised, filter to get id and label and return them
+    brain_region_dict = access_point.forge.as_json(resource)
+    return {
+        "id": brain_region_dict["id"],
+        "label": brain_region_dict["label"],
+    }
 
 
 def get_all_species(access_token=None):
