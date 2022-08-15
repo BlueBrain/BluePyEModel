@@ -123,12 +123,6 @@ class EModelMetadata:
     def filters_for_resource(self):
         """Metadata used for filtering, without the annotation list"""
         metadata = self.get_metadata_dict()
-
-        # trim down brain region to only keep 'label' in dict
-        brain_region_label = metadata["brainLocation"]["brainRegion"]["label"]
-        brain_region_dict = {"label": brain_region_label}
-        metadata["brainLocation"]["brainRegion"] = brain_region_dict
-
         return metadata
 
     def for_resource(self):
