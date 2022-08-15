@@ -122,8 +122,7 @@ class EModelMetadata:
 
     def filters_for_resource(self):
         """Metadata used for filtering, without the annotation list"""
-        metadata = self.get_metadata_dict()
-        return metadata
+        return self.get_metadata_dict()
 
     def for_resource(self):
         """Metadata to add to a resource to register.

@@ -576,11 +576,10 @@ def get_brain_region(brain_region, access_token=None):
 
     # if no exception was raised, filter to get id and label and return them
     brain_region_dict = access_point.forge.as_json(resource)
-    filtered_brain_region_dict = {
+    return {
         "id": brain_region_dict["id"],
         "label": brain_region_dict["label"],
     }
-    return filtered_brain_region_dict
 
 
 def get_all_species(access_token=None):
