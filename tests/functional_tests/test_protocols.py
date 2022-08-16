@@ -1,4 +1,3 @@
-import pathlib
 import os
 from pathlib import Path
 import pytest
@@ -50,9 +49,9 @@ def test_protocols(db, evaluator):
     )
 
     assert_allclose(responses["bpo_rmp"], -77.232155, rtol=1e-06)
-    assert_allclose(responses["bpo_holding_current"], -0.14609375, rtol=1e-06)
-    assert_allclose(responses["bpo_rin"], 37.337681471, rtol=1e-03)
-    assert_allclose(responses["bpo_threshold_current"], 0.47677170252, rtol=1e-03)
+    assert_allclose(responses["bpo_holding_current"], -0.146484375, rtol=1e-06)
+    assert_allclose(responses["bpo_rin"], 37.3289004582098, rtol=1e-06)
+    assert_allclose(responses["bpo_threshold_current"], 0.47668485131247, rtol=1e-06)
 
     for prot_name in [
         "RMPProtocol.soma.v",
@@ -70,7 +69,7 @@ def test_protocols(db, evaluator):
         "IV_-100.soma.v",
         "SpikeRec_600.soma.v",
     ]:
-        #responses[prot_name].response.to_csv(f"{DATA}/test_{prot_name}.csv", index=False)
+        # responses[prot_name].response.to_csv(f"{DATA}/test_{prot_name}.csv", index=False)
         expected_df = pd.read_csv(f"{DATA}/test_{prot_name}.csv")
         response = responses[prot_name].response
         assert_frame_equal(response, expected_df)
