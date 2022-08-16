@@ -411,8 +411,8 @@ class SearchHoldingCurrent(BPEMProtocol):
         response = BPEMProtocol.run(
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
-
-        if self.spike_feature.calculate_feature(response) > 0:
+        n_spikes = self.spike_feature.calculate_feature(response)
+        if n_spikes is None or n_spikes > 0:
             return None
 
         return self.target_voltage.calculate_feature(response)
@@ -435,7 +435,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                     timeout=timeout,
                 )
                 if voltage_min is None:
-                    raise Exception("cannot compute holding, we spike at lower bound")
+                    voltage_min = 1e10
 
                 if voltage_min > self.target_voltage.exp_mean:
                     self.lower_bound -= 0.2
@@ -495,7 +495,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         mid_bound = (upper_bound + lower_bound) * 0.5
         if abs(upper_bound - lower_bound) < self.current_precision:
             logger.debug("Depth of holding search: %s", depth)
-            return upper_bound
+            return mid_bound
 
         voltage = self.get_voltage_base(
             holding_current=mid_bound,
