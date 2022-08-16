@@ -605,7 +605,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         return emodel
 
-    def get_emodel(self, lock_file=False):
+    def get_emodel(self, lock_file=True):
         """Get dict with parameter of single emodel (including seed if any)"""
 
         final = self.get_final(lock_file=lock_file)

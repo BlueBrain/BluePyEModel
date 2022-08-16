@@ -451,6 +451,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                     timeout=timeout,
                 )
                 if voltage_max is None:
+                    # if we spike, we let it pass to the search
                     voltage_max = 1e10
 
                 elif voltage_max < self.target_voltage.exp_mean:
