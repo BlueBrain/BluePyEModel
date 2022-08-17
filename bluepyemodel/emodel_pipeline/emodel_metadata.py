@@ -18,13 +18,28 @@ class EModelMetadata:
         synapse_class=None,
         layer=None,
     ):
+        """Constructor
 
+        Args:
+            emodel (str): name of the emodel
+            etype (str): name of the electric type.
+            ttype (str): name of the transcriptomic type.
+            mtype (str): name of the morphology type.
+            species (str): name of the species.
+            brain_region (str): name of the brain location.
+            iteration_tag (str): tag associated to the current run.
+            morph_class (str): morphological class.
+                Can be 'INT' for interneurons or 'PYR' for pyramidal neurons.
+            synapse_class (str): synapse class.
+                Can be 'EXC' for excitatory or 'INH' for inhibitory.
+            layer (str): leyer of the brain from which the cell comes from.
+        """
         if emodel is None and etype is None:
-            raise Exception("At least emodel or etype should be informed")
+            raise ValueError("At least emodel or etype should be informed")
         if morph_class not in ["PYR", "INT", None]:
-            raise Exception("morph_class should be 'PYR' or 'INT'")
+            raise ValueError("morph_class should be 'PYR' or 'INT'")
         if synapse_class not in ["EXC", "INH", None]:
-            raise Exception("synapse_class should be 'EXC' or 'INH'")
+            raise ValueError("synapse_class should be 'EXC' or 'INH'")
 
         self.emodel = emodel
         self.etype = None if etype == "None" else etype

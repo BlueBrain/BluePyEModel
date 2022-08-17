@@ -47,15 +47,20 @@ class NexusAccessPoint(DataAccessPoint):
             emodel (str): name of the emodel
             etype (str): name of the electric type.
             ttype (str): name of the transcriptomic type.
+                Required if using the gene expression or IC selector.
             mtype (str): name of the morphology type.
             species (str): name of the species.
             brain_region (str): name of the brain location.
             iteration_tag (str): tag associated to the current run.
+            morph_class (str): morphological class.
+                Can be 'INT' for interneurons or 'PYR' for pyramidal neurons.
+            synapse_class (str): synapse class.
+                Can be 'EXC' for excitatory or 'INH' for inhibitory.
+            layer (str): leyer of the brain from which the cell comes from.
             project (str): name of the Nexus project.
             organisation (str): name of the Nexus organization to which the project belong.
             endpoint (str): Nexus endpoint.
             forge_path (str): path to a .yml used as configuration by nexus-forge.
-            ttype (str): name of the t-type. Required if using the gene expression or IC selector.
             access_token (str): Nexus connection token.
         """
 
