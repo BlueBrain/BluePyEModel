@@ -337,7 +337,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         location,
         target_voltage=None,
         target_holding=None,
-        current_precision=1e-3,
+        voltage_precision=0.1,
         stimulus_duration=500.0,
         upper_bound=0.2,
         lower_bound=-0.2,
@@ -351,7 +351,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                 usually the soma).
             target_voltage (EFeature): target for the voltage at holding_current
             target_holding (EFeature): target for the holding_current
-            current_precision (float): size of search interval in current to stop the search
+            voltage_precision (float): accuracy for holding voltage, in mV, to stop the search
             stimulus_duration (float): length of the protocol
             upper_bound (float): upper bound for the holding current, in pA
             lower_bound (float): lower bound for the holding current, in pA
@@ -380,7 +380,7 @@ class SearchHoldingCurrent(BPEMProtocol):
             stochasticity=False,
         )
 
-        self.current_precision = current_precision
+        self.voltage_precision = voltage_precision
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
         self.strict_bounds = strict_bounds
@@ -415,7 +415,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         if n_spikes is None or n_spikes > 0:
             return None
 
-        return self.target_voltage.calculate_feature(response)
+        return self.target_voltage.calculate_feature(response)[0]
 
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
@@ -493,10 +493,6 @@ class SearchHoldingCurrent(BPEMProtocol):
     ):
         """Do bisection search to find holding current"""
         mid_bound = (upper_bound + lower_bound) * 0.5
-        if abs(upper_bound - lower_bound) < self.current_precision:
-            logger.debug("Depth of holding search: %s", depth)
-            return mid_bound
-
         voltage = self.get_voltage_base(
             holding_current=mid_bound,
             cell_model=cell_model,
@@ -505,19 +501,15 @@ class SearchHoldingCurrent(BPEMProtocol):
             isolate=isolate,
             timeout=timeout,
         )
+        if (
+            voltage is not None
+            and abs(voltage - self.target_voltage.exp_mean) < self.voltage_precision
+        ):
+            logger.debug("Depth of holding search: %s", depth)
+            return mid_bound
 
-        if voltage is None:
-            return self.bisection_search(
-                cell_model,
-                param_values,
-                sim=sim,
-                isolate=isolate,
-                lower_bound=lower_bound - 0.2 * lower_bound,
-                upper_bound=upper_bound - 0.2 * upper_bound,
-                depth=depth + 1,
-            )
-
-        if voltage > self.target_voltage.exp_mean:
+        # if voltage is None, it means we spike at mid_bound, so we try with lower side
+        if voltage is None or voltage > self.target_voltage.exp_mean:
             return self.bisection_search(
                 cell_model,
                 param_values,
