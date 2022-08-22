@@ -23,7 +23,7 @@
             {"fun": "math.exp({distance}*{constant})*{value}", "parameters": ["constant"]}
     },
     "parameters": {
-        "__comment": "define constants as single values and params to optimize as tuples of bounds: [lower, upper]",
+        "__comment": "define constants as single values and params to optimise as tuples of bounds: [lower, upper]",
         "global":   [
             {"name":"v_init",                 "val":-80},
             {"name":"celsius",                "val":34}

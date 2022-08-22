@@ -25,7 +25,7 @@ def get_parser():
             "configure_model_from_gene",
             "configure_model_from_json",
             "extract",
-            "test_optimize",
+            "test_optimise",
             "test_analyze"]
     )
     parser.add_argument('--emodel', type=str, required=True)
@@ -65,7 +65,7 @@ def store_pipeline_settings(access_point):
     pipeline_settings = EModelPipelineSettings(
         extraction_threshold_value_save=1,
         stochasticity=False,
-        optimizer="SO-CMA",
+        optimiser="SO-CMA",
         optimisation_params={"offspring_size": 20},
         optimisation_timeout=100.,
         threshold_efeature_std=0.05,
@@ -149,12 +149,12 @@ if __name__ == "__main__":
         configure_model(pipeline, morphology)
     elif args.step == "extract":
         pipeline.extract_efeatures()
-    elif args.step == "test_optimize":
+    elif args.step == "test_optimise":
         logger.warning(
-            "test_optimize is only to check that the optimisation works. To "
+            "test_optimise is only to check that the optimisation works. To "
             "optimise the models, please use launch_luigi.sh"
         )
-        pipeline.optimize(seed=args.seed)
+        pipeline.optimise(seed=args.seed)
     elif args.step == "test_analyze":
         logger.warning(
             "test_analyze is only to check that the validation and storing "

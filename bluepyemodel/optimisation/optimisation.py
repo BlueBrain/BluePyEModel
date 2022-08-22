@@ -14,46 +14,46 @@ from bluepyemodel.tools.utils import read_checkpoint
 logger = logging.getLogger(__name__)
 
 
-def setup_optimizer(evaluator, map_function, params, optimizer="IBEA"):
+def setup_optimiser(evaluator, map_function, params, optimiser="IBEA"):
     """Setup the bluepyopt optimiser.
 
     Args:
         evaluator (CellEvaluator): evaluator used to compute the scores.
         map_function (map): used to parallelize the evaluation of the
             individual in the population.
-        params (dict): optimization meta-parameters.
-        optimizer (str): name of the optimiser, has to be "IBEA", "SO-CMA" or
+        params (dict): optimisation meta-parameters.
+        optimiser (str): name of the optimiser, has to be "IBEA", "SO-CMA" or
             "MO-CMA".
 
     Returns:
         DEAPOptimisation
     """
-    if optimizer == "IBEA":
+    if optimiser == "IBEA":
         return bluepyopt.deapext.optimisations.IBEADEAPOptimisation(
             evaluator=evaluator, map_function=map_function, **params
         )
-    if optimizer == "SO-CMA":
+    if optimiser == "SO-CMA":
         return bluepyopt.deapext.optimisationsCMA.DEAPOptimisationCMA(
             evaluator=evaluator,
             map_function=map_function,
             selector_name="single_objective",
             **params,
         )
-    if optimizer == "MO-CMA":
+    if optimiser == "MO-CMA":
         return bluepyopt.deapext.optimisationsCMA.DEAPOptimisationCMA(
             evaluator=evaluator,
             map_function=map_function,
             selector_name="multi_objective",
             **params,
         )
-    raise Exception(f"Unknown optimizer: {optimizer}")
+    raise Exception(f"Unknown optimiser: {optimiser}")
 
 
-def run_optimization(optimizer, checkpoint_path, max_ngen, terminator=None):
+def run_optimisation(optimiser, checkpoint_path, max_ngen, terminator=None):
     """Run the optimisation.
 
     Args:
-        optimizer (DEAPOptimisation): optimiser used for the run.
+        optimiser (DEAPOptimisation): optimiser used for the run.
         checkpoint_path (str): path to which the checkpoint will be saved.
         max_ngen (int): maximum number of generation for which the
             evolutionary strategy will run.
@@ -77,7 +77,7 @@ def run_optimization(optimizer, checkpoint_path, max_ngen, terminator=None):
         continue_opt = False
 
     logger.info("Running optimisation ...")
-    pop, hof, log, history = optimizer.run(
+    pop, hof, log, history = optimiser.run(
         max_ngen=max_ngen,
         cp_filename=str(checkpoint_path),
         continue_cp=continue_opt,
@@ -104,22 +104,22 @@ def setup_and_run_optimisation(
         opt_params["centroids"][0] = [
             opt_params["centroids"][0][name] for name in list(cell_evaluator.param_names)
         ]
-    if opt_params is None and access_point.pipeline_settings.optimizer.endswith("CMA"):
+    if opt_params is None and access_point.pipeline_settings.optimiser.endswith("CMA"):
         opt_params = {"offspring_size": 10, "weight_hv": 0.4}
 
     opt_params["seed"] = seed
 
-    opt = setup_optimizer(
+    opt = setup_optimiser(
         cell_evaluator,
         mapper,
         params=opt_params,
-        optimizer=access_point.pipeline_settings.optimizer,
+        optimiser=access_point.pipeline_settings.optimiser,
     )
 
     checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed)
 
-    run_optimization(
-        optimizer=opt,
+    run_optimisation(
+        optimiser=opt,
         checkpoint_path=checkpoint_path,
         max_ngen=access_point.pipeline_settings.max_ngen,
         terminator=terminator,
@@ -131,7 +131,7 @@ def store_best_model(
     seed=None,
     checkpoint_path=None,
 ):
-    """Store the best model from an optimization. Reads a checkpoint file generated
+    """Store the best model from an optimisation. Reads a checkpoint file generated
         by BluePyOpt and store the best individual of the hall of fame.
 
     Args:

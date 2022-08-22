@@ -179,7 +179,7 @@ class TargetsConfiguration:
 
         error_message = (
             "Target for feature {} is missing for RMP protocol {}. Please add "
-            "it if you wish to do a threshold-based optimization."
+            "it if you wish to do a threshold-based optimisation."
         )
 
         if "voltage_base" not in efeatures_rmp:
