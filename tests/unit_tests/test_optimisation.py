@@ -6,8 +6,7 @@ from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 
 def test_get_checkpoint_path():
     metadata = EModelMetadata(emodel="L5PC", ttype="t type", iteration_tag="test")
-    seed = 0
-    path = get_checkpoint_path(metadata, seed)
+    path = get_checkpoint_path(metadata, seed=0)
     assert str(path) == "./checkpoints/emodel=L5PC__ttype=t type__iteration=test__seed=0.pkl"
 
 
