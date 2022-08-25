@@ -269,20 +269,11 @@ def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False)
             target_voltage = f
             break
 
-    target_current = None
-    for f in efeatures:
-        if (
-            "SearchHoldingCurrent" in f.recording_names[""]
-            and f.efel_feature_name == "bpo_holding_current"
-        ):
-            target_current = f
-
-    if target_voltage and target_current:
+    if target_voltage:
         return SearchHoldingCurrent(
             name="SearchHoldingCurrent",
             location=soma_loc if not ais_recording else ais_loc,
             target_voltage=target_voltage,
-            target_holding=target_current,
             strict_bounds=strict_bounds,
         )
 
