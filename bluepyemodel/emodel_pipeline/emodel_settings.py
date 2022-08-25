@@ -20,7 +20,8 @@ class EModelPipelineSettings:
         stochasticity=False,
         morph_modifiers=None,
         threshold_based_evaluator=None,
-        optimizer="IBEA",
+        optimiser="IBEA",
+        optimizer=None,
         optimisation_params=None,
         optimisation_timeout=600.0,
         threshold_efeature_std=None,
@@ -63,15 +64,16 @@ class EModelPipelineSettings:
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
             threshold_based_evaluator (bool): not used. To be deprecated.
-            optimizer (str): algorithm used for optimization, can be "IBEA", "SO-CMA",
-                "MO-CMA" (use cma option in pip install for CMA optimizers).
+            optimiser (str): algorithm used for optimisation, can be "IBEA", "SO-CMA",
+                "MO-CMA" (use cma option in pip install for CMA optimisers).
+            optimizer (str): for legacy reasons, overwrites optimiser when not None.
             optimisation_params (dict): optimisation parameters. Keys have to match the
-                optimizer's call. E.g., for optimizer MO-CMA:
+                optimiser's call. E.g., for optimiser MO-CMA:
                 {"offspring_size": 10, "weight_hv": 0.4}
             optimisation_timeout (float): duration (in second) after which the evaluation
                 of a protocol will be interrupted.
             max_ngen (int): maximum number of generations of the evolutionary process of the
-                optimization.
+                optimisation.
             validation_threshold (float): score threshold under which the emodel passes
                 validation.
             validation_function (str or list): if str, can be "max_score" or "mean_score".
@@ -126,7 +128,7 @@ class EModelPipelineSettings:
 
         # Settings related to the optimisation
         self.stochasticity = stochasticity
-        self.optimizer = optimizer
+        self.optimiser = optimiser if optimizer is None else optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:
             self.optimisation_params = {"offspring_size": 100}
@@ -138,7 +140,7 @@ class EModelPipelineSettings:
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
 
-        # Specific to threshold based optimization
+        # Specific to threshold based optimisation
         self.name_Rin_protocol = name_Rin_protocol
         self.name_rmp_protocol = name_rmp_protocol
         self.strict_holding_bounds = strict_holding_bounds

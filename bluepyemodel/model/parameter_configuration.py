@@ -13,7 +13,7 @@ class ParameterConfiguration:
             location (str): section of the neuron on which the parameter will be instantiated.
             value (float or list of two floats): if float, set the value of the parameter. If list
                 of two floats, sets the upper and lower bound between which the parameter will
-                be optimized.
+                be optimised.
             distribution (str): name of the distribution followed by the parameter (optional).
             mechanism (name): name of the mechanism to which the parameter relates (optional).
         """

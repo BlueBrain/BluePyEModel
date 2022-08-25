@@ -36,8 +36,8 @@ def save_fig(figures_dir, figure_name):
     plt.clf()
 
 
-def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures", write_fig=True):
-    """Create plots related to a BluePyOpt optimization"""
+def optimisation(checkpoint_path="./checkpoint.pkl", figures_dir="./figures", write_fig=True):
+    """Create plots related to a BluePyOpt optimisation"""
 
     make_dir(figures_dir)
     run, _ = read_checkpoint(checkpoint_path)

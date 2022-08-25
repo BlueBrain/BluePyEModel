@@ -60,7 +60,7 @@ class LocalAccessPoint(DataAccessPoint):
             emodel_dir (str): path to the working directory. Default to ./run/iteration_tag if None
             ttype (str): name of the t-type
             iteration_tag (str): iteration tag
-            final_path (str): path to final.json which will contain the optimized models.
+            final_path (str): path to final.json which will contain the optimised models.
             recipes_path (str): path to the json file which should contain the path to the
                 configuration files used for each etype. The content of this file should follow the
                 format:

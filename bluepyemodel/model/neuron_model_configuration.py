@@ -263,7 +263,7 @@ class NeuronModelConfiguration:
                 will be instantiated.
             value (float or list of two floats): if float, set the value of the parameter. If list
                 of two floats, sets the upper and lower bound between which the parameter will
-                be optimized.
+                be optimised.
             mechanism (name): name of the mechanism to which the parameter relates (optional).
             distribution_name (str): name of the distribution followed by the parameter.
                 Distributions have to be added before adding the parameters that uses them.

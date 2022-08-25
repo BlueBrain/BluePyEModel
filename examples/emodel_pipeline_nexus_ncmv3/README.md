@@ -43,7 +43,7 @@ $VENV/bin/python pipeline.py --step=configure_model_from_json --emodel=EMODEL_NA
 ```
 In this case, you can choose which file to use to initialize the configuration in pipeline.py, line 235. As of now it uses Darshan's personal configuration files, which are known to work.
 
-Note that it is unlikely that the model created from gene would work out of the box. Therefore, if you wish to modify the gene based configuration before proceeding with model optimization, you can get the configuration from Nexus and modify it before proceeding further. The jupyter notebook edit_neuron_model_configuration.ipynb explains how to do so.
+Note that it is unlikely that the model created from gene would work out of the box. Therefore, if you wish to modify the gene based configuration before proceeding with model optimisation, you can get the configuration from Nexus and modify it before proceeding further. The jupyter notebook edit_neuron_model_configuration.ipynb explains how to do so.
 
 The goal for the future will be for the pipeline and model to be configured through WebUI rather than using python script.
 
@@ -68,8 +68,8 @@ If an error happens during the execution of the workflow, the command ./launch_l
 
 Once the pipeline ran successfully, the final emodels are saved in the Nexus project (here: bbp/ncmv3) as resources of type `EModel`.
 
-To check that the models were optimized successfully, you can refer to the figures created in ./figures/EMODEL_NAME/.
-The `optimisation` subfolder contains plots of the fitness versus number of generations run by the optimizer, while the `trace` and `scores` subfolder contain the voltage traces and efeatures scores for the emodels.
+To check that the models were optimised successfully, you can refer to the figures created in ./figures/EMODEL_NAME/.
+The `optimisation` subfolder contains plots of the fitness versus number of generations run by the optimiser, while the `trace` and `scores` subfolder contain the voltage traces and efeatures scores for the emodels.
 
 If you wish to run other protocol on a model or investigate the final model yourself, an example of how to do so is available in the notebook exploit_model.ipynb.
 

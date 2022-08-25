@@ -59,7 +59,7 @@ This section present the general picture of how to create an e-model using pytho
 
 The pipeline is divided in 4 steps:
 - extraction: extracts efeatures from the ephys recordings and averages the results along the requested targets.
-- optimisation: builds a NEURON cell model and optimizes its parameters using as targets the efeatures computed during efeature extraction.
+- optimisation: builds a NEURON cell model and optimises its parameters using as targets the efeatures computed during efeature extraction.
 - storage of the model: reads the results of the extraction and stores the models (best set of parameters) in local or on Nexus.
 - validation: reads the models and runs the optimisation protocols and/or validation protocols on them. The efeature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
 - plotting: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the efeature scores and parameter distributions.
@@ -78,7 +78,7 @@ Therefore, in an empty directory, you will need to create a file `recipes.json`.
         "pipeline_settings": {
             "path_extract_config": "extraction_config.json",
             "optimisation_timeout": 300,
-            "optimizer": "MO-CMA",
+            "optimiser": "MO-CMA",
             "optimisation_params": {
                 "offspring_size": 20
             }
@@ -111,7 +111,7 @@ pipeline = EModel_pipeline(
 Finally, the different steps of the pipeline can be run with the commands:
 ```
 pipeline.extract_efeatures()
-pipeline.optimize(seed=1)
+pipeline.optimise(seed=1)
 pipeline.store_optimisation_results()
 pipeline.plot(only_validated=False)
 ```

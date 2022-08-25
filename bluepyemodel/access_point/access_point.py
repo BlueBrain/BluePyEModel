@@ -73,7 +73,7 @@ class DataAccessPoint:
         self,
         scores,
         params,
-        optimizer_name,
+        optimiser_name,
         seed,
         validated=None,
         scores_validation=None,
@@ -163,7 +163,7 @@ class DataAccessPoint:
                 when the optimisation is not complete
 
         Raises:
-            Exception if optimizer in pipeline settings in neither
+            Exception if optimiser in pipeline settings in neither
                 "SO-CMA", "MO-CMA" or "IBEA"
 
         Returns:
@@ -181,14 +181,14 @@ class DataAccessPoint:
             return True
 
         # there is a file & we want to continue optimisation -> check if optimisation if finished
-        optimizer = self.pipeline_settings.optimizer
+        optimiser = self.pipeline_settings.optimiser
         ngen = self.pipeline_settings.max_ngen
 
         with open(str(checkpoint_path), "rb") as checkpoint_file:
             cp = pickle.load(checkpoint_file)
 
         # CMA
-        if optimizer in ["SO-CMA", "MO-CMA"]:
+        if optimiser in ["SO-CMA", "MO-CMA"]:
             gen = cp["generation"]
             CMA_es = cp["CMA_es"]
             CMA_es.check_termination(gen)
@@ -198,7 +198,7 @@ class DataAccessPoint:
             return True
 
         # IBEA
-        if optimizer == "IBEA":
+        if optimiser == "IBEA":
             gen = cp["generation"]
             stopping_criteria = [MaxNGen(ngen)]
             # to check if next gen is over max generation
@@ -208,7 +208,7 @@ class DataAccessPoint:
                 return True
             return False
 
-        raise Exception(f"Unknown optimizer: {optimizer}")
+        raise Exception(f"Unknown optimiser: {optimiser}")
 
     def get_ion_currents_concentrations(self):
         """Get all ion currents and ion concentrations.

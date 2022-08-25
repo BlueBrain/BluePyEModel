@@ -126,7 +126,7 @@ class EModel_pipeline:
 
         return extract_save_features_protocols(access_point=self.access_point, mapper=self.mapper)
 
-    def optimize(self, seed=1):
+    def optimise(self, seed=1):
         """"""
 
         setup_and_run_optimisation(
@@ -180,7 +180,7 @@ class EModel_pipeline:
             ):
                 continue
 
-            plotting.optimization(
+            plotting.optimisation(
                 checkpoint_path=chkp_path,
                 figures_dir=pathlib.Path("./figures")
                 / self.access_point.emodel_metadata.emodel
