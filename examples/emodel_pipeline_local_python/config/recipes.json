@@ -12,7 +12,7 @@
         "features": "config/features/L5PC.json",
         "pipeline_settings": {
             "optimisation_timeout": 300,
-            "optimizer": "MO-CMA",
+            "optimiser": "MO-CMA",
             "max_ngen": 4,
             "optimisation_params": {
                 "offspring_size": 4
@@ -22,7 +22,9 @@
             "currentscape_config": {
                 "title": "L5PC"
             },
-            "validation_protocols": ["APWaveform_300"]
+            "validation_protocols": [
+                "APWaveform_300"
+            ]
         }
     }
 }

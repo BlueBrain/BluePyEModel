@@ -311,7 +311,7 @@ def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
     )
 
 
-def define_threshold_based_optimization_protocol(
+def define_threshold_based_optimisation_protocol(
     fitness_calculator_configuration,
     include_validation_protocols=False,
     stochasticity=True,
@@ -486,7 +486,7 @@ def create_evaluator(
 
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
-    main_protocol, features = define_threshold_based_optimization_protocol(
+    main_protocol, features = define_threshold_based_optimisation_protocol(
         fitness_calculator_configuration,
         include_validation_protocols,
         stochasticity=stochasticity,

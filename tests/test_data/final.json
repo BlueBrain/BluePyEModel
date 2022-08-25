@@ -1,7 +1,7 @@
 {
   "cADpyr_L5TPC": {
     "seed": "1",
-    "optimizer": "IBEA",
+    "optimiser": "IBEA",
     "params": {
       "gSK_E2bar_SK_E2.somatic": 0.02023934993186524,
       "gK_Tstbar_K_Tst.somatic": 0.01315314265442069,
@@ -264,7 +264,7 @@
     },
     "validation_fitness": {},
     "validated": true,
-    "optimizer": "IBEA",
+    "optimiser": "IBEA",
     "seed": 1,
     "pdfs": {
       "traces": [
@@ -441,7 +441,7 @@
       "APWaveform_320.soma.v.AHP_depth": 1.2907715923321168
     },
     "validated": true,
-    "optimizer": "IBEA",
+    "optimiser": "IBEA",
     "seed": 1,
     "ttype": null,
     "pdfs": {
