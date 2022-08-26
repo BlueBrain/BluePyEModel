@@ -541,7 +541,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         location,
         target_threshold=None,
         current_precision=1e-2,
+        stimulus_delay=0.0,
         stimulus_duration=1000.0,
+        stimulus_totduration=1000.0,
         max_threshold_voltage=-30,
     ):
         """Constructor
@@ -552,8 +554,11 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
                 usually the soma).
             target_threshold (Efeature): target for the threshold_current
             current_precision (float): size of search interval in current to stop the search
+            stimulus_delay (float): delay before the beginning of the step
+                used to create the protocol
             stimulus_duration (float): duration of the step used to create the
                 protocol
+            stimulus_totduration (float): total duration of the protocol
             max_threshold_voltage (float): maximum voltage used as upper
                 bound in the threshold current search
         """
@@ -565,11 +570,11 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         }
 
         stimulus_definition = {
-            "delay": 0.0,
+            "delay": stimulus_delay,
             "amp": 0.0,
             "thresh_perc": None,
             "duration": stimulus_duration,
-            "totduration": stimulus_duration,
+            "totduration": stimulus_totduration,
             "holding_current": 0.0,
         }
 
