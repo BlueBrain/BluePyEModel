@@ -627,9 +627,12 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             param_values,
             sim=sim,
             isolate=isolate,
-            timeout=timeout,
+            timeout=5,
         )
-        return self.spike_feature.calculate_feature(response)
+        feature = self.spike_feature.calculate_feature(response)
+        if feature is None:
+            feature = 1
+        return feature
 
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
@@ -657,7 +660,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         )
 
         response = {"bpo_threshold_current": threshold}
-
         if threshold is None:
             return response
 
