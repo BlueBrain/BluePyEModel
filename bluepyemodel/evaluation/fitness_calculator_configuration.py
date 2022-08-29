@@ -103,6 +103,9 @@ class FitnessCalculatorConfiguration:
                 for all available mechanisms
         """
 
+        self.search_threshold_step_delay = 0.0
+        self.search_threshold_step_duration = 1000.0
+        self.search_threshold_totduration = 1000.0
         self.ion_variables = ion_variables
 
         if protocols is None:
@@ -387,6 +390,17 @@ class FitnessCalculatorConfiguration:
             )
 
         for protocol_name, protocol in protocols.items():
+
+            if protocol_name == "ThresholdDetection":
+                self.search_threshold_step_delay = protocol["step_template"]["stimuli"]["step"][
+                    "delay"
+                ]
+                self.search_threshold_step_duration = protocol["step_template"]["stimuli"]["step"][
+                    "duration"
+                ]
+                self.search_threshold_totduration = protocol["step_template"]["stimuli"]["step"][
+                    "totduration"
+                ]
 
             if protocol_name in PRE_PROTOCOLS + LEGACY_PRE_PROTOCOLS:
                 continue

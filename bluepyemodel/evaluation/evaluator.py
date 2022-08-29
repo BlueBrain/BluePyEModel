@@ -283,7 +283,9 @@ def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False)
     )
 
 
-def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
+def define_threshold_protocol(
+    efeatures, max_threshold_voltage=-30, step_delay=0.0, step_duration=1000.0, totduration=1000.0
+):
     """Define the search threshold current protocol"""
 
     target_current = []
@@ -300,6 +302,9 @@ def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
             location=soma_loc,
             target_threshold=target_current[0],
             max_threshold_voltage=max_threshold_voltage,
+            stimulus_delay=step_delay,
+            stimulus_duration=step_duration,
+            stimulus_totduration=totduration,
         )
 
     raise Exception(
@@ -378,7 +383,11 @@ def define_threshold_based_optimisation_protocol(
                 ),
                 "RinProtocol": define_Rin_protocol(efeatures, ais_recording),
                 "SearchThresholdCurrent": define_threshold_protocol(
-                    efeatures, max_threshold_voltage
+                    efeatures,
+                    max_threshold_voltage,
+                    fitness_calculator_configuration.search_threshold_step_delay,
+                    fitness_calculator_configuration.search_threshold_step_duration,
+                    fitness_calculator_configuration.search_threshold_totduration,
                 ),
             }
         )
