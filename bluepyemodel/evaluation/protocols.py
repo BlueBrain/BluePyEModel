@@ -419,7 +419,6 @@ class SearchHoldingCurrent(BPEMProtocol):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
-
         if not self.strict_bounds:
             # first readjust the bounds if needed
             voltage_min = 1e10
@@ -627,7 +626,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             param_values,
             sim=sim,
             isolate=isolate,
-            timeout=5,
+            timeout=20,
         )
         feature = self.spike_feature.calculate_feature(response)
         if feature is None:
