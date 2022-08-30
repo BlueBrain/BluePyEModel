@@ -490,21 +490,6 @@ def ontology_forge_access_point(access_token=None):
     return access_point
 
 
-def get_all_brain_regions(access_token=None):
-    """Returns a list of all the brain regions available"""
-
-    access_point = ontology_forge_access_point(access_token)
-
-    filters = {
-        "isDefinedBy": {"id": "http://bbp.epfl.ch/neurosciencegraph/ontologies/mba"},
-        "type": "Class",
-    }
-
-    resources = access_point.forge.search(filters, limit=10000, cross_bucket=True)
-
-    return sorted(set(r.label for r in resources))
-
-
 def raise_brain_region_exception(base_text, brain_region, access_point):
     """Raise an exception mentioning the possible brain region names available on nexus
 
