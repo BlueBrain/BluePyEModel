@@ -107,6 +107,31 @@ class NexusForgeAccessPoint:
         self.agent.id = decoded_token["sub"]
         self.agent.type = ["Person", "Agent"]
 
+        self._available_etypes = None
+
+    @property
+    def available_etypes(self):
+        """List of ids of available etypes in this forge graph"""
+        if self._available_etypes is None:
+            self._available_etypes = self.get_available_etypes()
+        return self._available_etypes
+
+    def get_available_etypes(self):
+        """Returns a list of nexus ids of all the etype resources using sparql"""
+        query = """
+            SELECT ?e_type_id
+
+            WHERE {{
+                    ?e_type_id label ?e_type ;
+                        subClassOf* EType ;
+            }}
+        """
+        # should we use self.limit here?
+        resources = self.forge.sparql(query, limit=self.limit)
+        if resources is None:
+            return []
+        return [r.e_type_id for r in resources]
+
     @staticmethod
     def get_access_token():
         """Define access token either from bbp-workflow or provided by the user"""
@@ -474,6 +499,60 @@ class NexusForgeAccessPoint:
 
         return resource.id
 
+    @staticmethod
+    def brain_region_filter(resources):
+        """Filter resources to keep only brain regions
+        
+        Arguments:
+            resources (list of Resource): resources to be filtered
+
+        Returns:
+            list of Resource: the filtered resources
+        """
+        return [
+            r for r in resources
+            if hasattr(r, "subClassOf") and r.subClassOf == "nsg:BrainRegion"
+        ]
+
+
+    def etype_filter(self, resources):
+        """Filter resources to keep only etypes
+        
+        Arguments:
+            resources (list of Resource): resources to be filtered
+
+        Returns:
+            list of Resource: the filtered resources
+        """
+        return [
+            r for r in resources
+            if r.id in self.available_etypes
+        ]
+
+    def filter_resources(self, resources, filter):
+        """Filter resources
+        
+        Arguments:
+            resources (list of Resource): resources to be filtered
+            filter (str): which filter to use
+                can be "brain_region", "etype"
+
+        Returns:
+            list of Resource: the filtered resources
+
+        Raises:
+            AccessPointException if filter not in ["brain_region", "etype"]
+        """
+        if filter == "brain_region":
+            return self.brain_region_filter(resources)
+        elif filter == "etype":
+            return self.etype_filter(resources)
+        else:
+            filters = ["brain_region", "etype"]
+            raise AccessPointException(
+                f"Filter not expected in filter_resources: {filter}"
+                f"Please choose among the following filters: {filters}"
+            )
 
 def ontology_forge_access_point(access_token=None):
     """Returns an access point targeting the project containing the ontology for the
@@ -490,31 +569,67 @@ def ontology_forge_access_point(access_token=None):
     return access_point
 
 
-def raise_brain_region_exception(base_text, brain_region, access_point):
-    """Raise an exception mentioning the possible brain region names available on nexus
+def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
+    """Raise an exception mentioning the possible appropriate resource names available on nexus
 
     Arguments:
         base_text (str): text to display in the Exception
-        brain_region (str): name of the brain region to search for
+        label (str): name of the resource to search for
         access_point (NexusForgeAccessPoint)
+        filter (str): which filter to use
+            can be "brain_region", "etype"
+        limit (int): maximum number of resources to fetch when looking up
+            for resource name suggestions
     """
     if not base_text.endswith("."):
         base_text = f"{base_text}."
-    resources = access_point.resolve(brain_region, strategy="all", limit=20)
+
+    resources = access_point.resolve(label, strategy="all", limit=limit)
     if resources is None:
         raise AccessPointException(base_text)
 
     # make sure that resources is iterable
     if not isinstance(resources, list):
         resources = [resources]
-    brain_regions = "\n".join(
+    filtered_names = "\n".join(
         set(
-            r.label
-            for r in resources
-            if hasattr(r, "subClassOf") and r.subClassOf == "nsg:BrainRegion"
+            r.label for r in access_point.filter_resources(resources, filter)
         )
     )
-    raise AccessPointException(f"{base_text} Maybe you meant one of those:\n{brain_regions}")
+    if filtered_names:
+        raise AccessPointException(f"{base_text} Maybe you meant one of those:\n{filtered_names}")
+    else:
+        for r in resources:
+            print(r.label)
+            print(r.type)
+            print(r)
+        raise AccessPointException(base_text)
+
+
+def check_etype(etype, access_token=None):
+    """Checks that etype is present on nexus. Raises an Exception otherwise.
+
+    Arguments:
+        etype (str): name of the etype to search for
+        access_token (str): nexus connection token
+    """
+    filter = "etype"
+
+    access_point = ontology_forge_access_point(access_token)
+
+    resource = access_point.resolve(etype, strategy="exact")
+    # raise Exception if resource was not found
+    if resource is None:
+        base_text = f"Could not find etype with name {etype}"
+        raise_not_found_exception(base_text, etype, access_point, filter)
+
+    # if resource found but not a etype, also raise Exception
+    if resource.id not in access_point.available_etypes:
+        base_text = f"Resource {etype} is not a etype"
+        raise_not_found_exception(base_text, etype, access_point, filter)
+
+    print("passed")
+    print(resource)
 
 
 def get_brain_region(brain_region, access_token=None):
@@ -531,6 +646,7 @@ def get_brain_region(brain_region, access_token=None):
         dict: the id and label of the nexus resource of the brain region
     """
 
+    filter = "brain_region"
     access_point = ontology_forge_access_point(access_token)
 
     if brain_region in ["SSCX", "sscx"]:
@@ -552,12 +668,12 @@ def get_brain_region(brain_region, access_token=None):
     # raise Exception if resource was not found
     if resource is None:
         base_text = f"Could not find any brain region with name {brain_region}"
-        raise_brain_region_exception(base_text, brain_region, access_point)
+        raise_brain_region_exception(base_text, brain_region, access_point, filter)
 
     # if resource found but not a brain region, also raise Exception
     if not hasattr(resource, "subClassOf") or resource.subClassOf != "nsg:BrainRegion":
         base_text = f"Resource {brain_region} is not a brain region"
-        raise_brain_region_exception(base_text, brain_region, access_point)
+        raise_brain_region_exception(base_text, brain_region, access_point, filter)
 
     # if no exception was raised, filter to get id and label and return them
     brain_region_dict = access_point.forge.as_json(resource)
