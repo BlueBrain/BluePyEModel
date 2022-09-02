@@ -550,7 +550,7 @@ class NexusForgeAccessPoint:
     @staticmethod
     def brain_region_filter(resources):
         """Filter resources to keep only brain regions
-        
+
         Arguments:
             resources (list of Resource): resources to be filtered
 
@@ -558,14 +558,12 @@ class NexusForgeAccessPoint:
             list of Resource: the filtered resources
         """
         return [
-            r for r in resources
-            if hasattr(r, "subClassOf") and r.subClassOf == "nsg:BrainRegion"
+            r for r in resources if hasattr(r, "subClassOf") and r.subClassOf == "nsg:BrainRegion"
         ]
-
 
     def type_filter(self, resources, filter):
         """Filter resources to keep only etypes/mtypes/ttypes
-        
+
         Arguments:
             resources (list of Resource): resources to be filtered
             filter (str): can be "etype", "mytype" or "ttype"
@@ -583,14 +581,11 @@ class NexusForgeAccessPoint:
             raise AccessPointException(
                 f'filter is {filter} but should be in ["etype", "mtype", "ttype"]'
             )
-        return [
-            r for r in resources
-            if r.id in available_names
-        ]
+        return [r for r in resources if r.id in available_names]
 
     def filter_resources(self, resources, filter):
         """Filter resources
-        
+
         Arguments:
             resources (list of Resource): resources to be filtered
             filter (str): which filter to use
@@ -604,14 +599,15 @@ class NexusForgeAccessPoint:
         """
         if filter == "brain_region":
             return self.brain_region_filter(resources)
-        elif filter in ["etype", "mtype", "ttype"]:
+        if filter in ["etype", "mtype", "ttype"]:
             return self.type_filter(resources, filter)
-        else:
-            filters = ["brain_region", "etype", "mtype", "ttype"]
-            raise AccessPointException(
-                f"Filter not expected in filter_resources: {filter}"
-                f"Please choose among the following filters: {filters}"
-            )
+
+        filters = ["brain_region", "etype", "mtype", "ttype"]
+        raise AccessPointException(
+            f"Filter not expected in filter_resources: {filter}"
+            f"Please choose among the following filters: {filters}"
+        )
+
 
 def ontology_forge_access_point(access_token=None):
     """Returns an access point targeting the project containing the ontology for the
@@ -651,18 +647,16 @@ def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
     if not isinstance(resources, list):
         resources = [resources]
     filtered_names = "\n".join(
-        set(
-            r.label for r in access_point.filter_resources(resources, filter)
-        )
+        set(r.label for r in access_point.filter_resources(resources, filter))
     )
     if filtered_names:
         raise AccessPointException(f"{base_text} Maybe you meant one of those:\n{filtered_names}")
-    else:
-        for r in resources:
-            print(r.label)
-            print(r.type)
-            print(r)
-        raise AccessPointException(base_text)
+
+    for r in resources:
+        print(r.label)
+        print(r.type)
+        print(r)
+    raise AccessPointException(base_text)
 
 
 def check_resource(label, category, access_point=None, access_token=None):
@@ -675,10 +669,8 @@ def check_resource(label, category, access_point=None, access_token=None):
     """
     allowed_categories = ["etype", "mtype", "ttype"]
     if category not in allowed_categories:
-        raise AccessPointException(
-            f"Category is {category}, but should be in {allowed_categories}"
-        )
-    
+        raise AccessPointException(f"Category is {category}, but should be in {allowed_categories}")
+
     if access_point is None:
         access_point = ontology_forge_access_point(access_token)
 
@@ -739,12 +731,12 @@ def get_brain_region(brain_region, access_token=None):
     # raise Exception if resource was not found
     if resource is None:
         base_text = f"Could not find any brain region with name {brain_region}"
-        raise_brain_region_exception(base_text, brain_region, access_point, filter)
+        raise_not_found_exception(base_text, brain_region, access_point, filter)
 
     # if resource found but not a brain region, also raise Exception
     if not hasattr(resource, "subClassOf") or resource.subClassOf != "nsg:BrainRegion":
         base_text = f"Resource {brain_region} is not a brain region"
-        raise_brain_region_exception(base_text, brain_region, access_point, filter)
+        raise_not_found_exception(base_text, brain_region, access_point, filter)
 
     # if no exception was raised, filter to get id and label and return them
     brain_region_dict = access_point.forge.as_json(resource)

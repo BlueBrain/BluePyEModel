@@ -9,7 +9,9 @@ import pandas
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
+from bluepyemodel.access_point.forge_access_point import check_resource
 from bluepyemodel.access_point.forge_access_point import get_brain_region
+from bluepyemodel.access_point.forge_access_point import ontology_forge_access_point
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
@@ -96,16 +98,16 @@ class NexusAccessPoint(DataAccessPoint):
         """Check that etype, mtype and ttype are presnet on nexus"""
         ontology_access_point = ontology_forge_access_point(self.access_point.access_token)
 
-        logger.info(f"Checking if etype {self.etype} is present on nexus...")
-        check_resource(self.etype, "etype", access_point=ontology_access_point)
+        logger.info("Checking if etype %s is present on nexus...", self.emodel_metadata.etype)
+        check_resource(self.emodel_metadata.etype, "etype", access_point=ontology_access_point)
         logger.info("Etype checked")
 
-        logger.info(f"Checking if mtype {self.mtype} is present on nexus...")
-        check_resource(self.mtype, "mtype", access_point=ontology_access_point)
+        logger.info("Checking if mtype %s is present on nexus...", self.emodel_metadata.mtype)
+        check_resource(self.emodel_metadata.mtype, "mtype", access_point=ontology_access_point)
         logger.info("Mtype checked")
 
-        logger.info(f"Checking if ttype {self.ttype} is present on nexus...")
-        check_resource(self.ttype, "ttype", access_point=ontology_access_point)
+        logger.info("Checking if ttype %s is present on nexus...", self.emodel_metadata.ttype)
+        check_resource(self.emodel_metadata.ttype, "ttype", access_point=ontology_access_point)
         logger.info("Ttype checked")
 
     def get_pipeline_settings(self, strict=True):
