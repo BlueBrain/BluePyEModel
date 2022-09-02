@@ -92,6 +92,22 @@ class NexusAccessPoint(DataAccessPoint):
 
         self.pipeline_settings = self.get_pipeline_settings(strict=False)
 
+    def check_mettypes(self):
+        """Check that etype, mtype and ttype are presnet on nexus"""
+        ontology_access_point = ontology_forge_access_point(self.access_point.access_token)
+
+        logger.info(f"Checking if etype {self.etype} is present on nexus...")
+        check_resource(self.etype, "etype", access_point=ontology_access_point)
+        logger.info("Etype checked")
+
+        logger.info(f"Checking if mtype {self.mtype} is present on nexus...")
+        check_resource(self.mtype, "mtype", access_point=ontology_access_point)
+        logger.info("Mtype checked")
+
+        logger.info(f"Checking if ttype {self.ttype} is present on nexus...")
+        check_resource(self.ttype, "ttype", access_point=ontology_access_point)
+        logger.info("Ttype checked")
+
     def get_pipeline_settings(self, strict=True):
 
         if strict:

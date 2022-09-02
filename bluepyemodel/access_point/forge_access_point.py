@@ -108,6 +108,8 @@ class NexusForgeAccessPoint:
         self.agent.type = ["Person", "Agent"]
 
         self._available_etypes = None
+        self._available_mtypes = None
+        self._available_ttypes = None
 
     @property
     def available_etypes(self):
@@ -115,6 +117,20 @@ class NexusForgeAccessPoint:
         if self._available_etypes is None:
             self._available_etypes = self.get_available_etypes()
         return self._available_etypes
+
+    @property
+    def available_mtypes(self):
+        """List of ids of available mtypes in this forge graph"""
+        if self._available_mtypes is None:
+            self._available_mtypes = self.get_available_mtypes()
+        return self._available_mtypes
+
+    @property
+    def available_ttypes(self):
+        """List of ids of available ttypes in this forge graph"""
+        if self._available_ttypes is None:
+            self._available_ttypes = self.get_available_ttypes()
+        return self._available_ttypes
 
     def get_available_etypes(self):
         """Returns a list of nexus ids of all the etype resources using sparql"""
@@ -131,6 +147,38 @@ class NexusForgeAccessPoint:
         if resources is None:
             return []
         return [r.e_type_id for r in resources]
+
+    def get_available_mtypes(self):
+        """Returns a list of nexus ids of all the mtype resources using sparql"""
+        query = """
+            SELECT ?m_type_id
+
+            WHERE {{
+                    ?m_type_id label ?m_type ;
+                        subClassOf* MType ;
+            }}
+        """
+        # should we use self.limit here?
+        resources = self.forge.sparql(query, limit=self.limit)
+        if resources is None:
+            return []
+        return [r.m_type_id for r in resources]
+
+    def get_available_ttypes(self):
+        """Returns a list of nexus ids of all the ttype resources using sparql"""
+        query = """
+            SELECT ?t_type_id
+
+            WHERE {{
+                    ?t_type_id label ?t_type ;
+                        subClassOf* BrainCellTranscriptomeType ;
+            }}
+        """
+        # should we use self.limit here?
+        resources = self.forge.sparql(query, limit=self.limit)
+        if resources is None:
+            return []
+        return [r.t_type_id for r in resources]
 
     @staticmethod
     def get_access_token():
@@ -515,18 +563,29 @@ class NexusForgeAccessPoint:
         ]
 
 
-    def etype_filter(self, resources):
-        """Filter resources to keep only etypes
+    def type_filter(self, resources, filter):
+        """Filter resources to keep only etypes/mtypes/ttypes
         
         Arguments:
             resources (list of Resource): resources to be filtered
+            filter (str): can be "etype", "mytype" or "ttype"
 
         Returns:
             list of Resource: the filtered resources
         """
+        if filter == "etype":
+            available_names = self.available_etypes
+        elif filter == "mtype":
+            available_names = self.available_mtypes
+        elif filter == "ttype":
+            available_names = self.available_ttypes
+        else:
+            raise AccessPointException(
+                f'filter is {filter} but should be in ["etype", "mtype", "ttype"]'
+            )
         return [
             r for r in resources
-            if r.id in self.available_etypes
+            if r.id in available_names
         ]
 
     def filter_resources(self, resources, filter):
@@ -535,20 +594,20 @@ class NexusForgeAccessPoint:
         Arguments:
             resources (list of Resource): resources to be filtered
             filter (str): which filter to use
-                can be "brain_region", "etype"
+                can be "brain_region", "etype", "mtype", "ttype"
 
         Returns:
             list of Resource: the filtered resources
 
         Raises:
-            AccessPointException if filter not in ["brain_region", "etype"]
+            AccessPointException if filter not in ["brain_region", "etype", "mtype", "ttype"]
         """
         if filter == "brain_region":
             return self.brain_region_filter(resources)
-        elif filter == "etype":
-            return self.etype_filter(resources)
+        elif filter in ["etype", "mtype", "ttype"]:
+            return self.type_filter(resources, filter)
         else:
-            filters = ["brain_region", "etype"]
+            filters = ["brain_region", "etype", "mtype", "ttype"]
             raise AccessPointException(
                 f"Filter not expected in filter_resources: {filter}"
                 f"Please choose among the following filters: {filters}"
@@ -577,7 +636,7 @@ def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
         label (str): name of the resource to search for
         access_point (NexusForgeAccessPoint)
         filter (str): which filter to use
-            can be "brain_region", "etype"
+            can be "brain_region", "etype", "mtype", or "ttype"
         limit (int): maximum number of resources to fetch when looking up
             for resource name suggestions
     """
@@ -606,29 +665,41 @@ def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
         raise AccessPointException(base_text)
 
 
-def check_etype(etype, access_token=None):
-    """Checks that etype is present on nexus. Raises an Exception otherwise.
+def check_resource(label, category, access_point=None, access_token=None):
+    """Checks that resource is present on nexus and is part of the provided category
 
     Arguments:
-        etype (str): name of the etype to search for
-        access_token (str): nexus connection token
+        label (str): name of the resource to search for
+        category (str): can be "etype", "mtype" or "ttype"
+        access_point (str):  ontology_forge_access_point(access_token)
     """
-    filter = "etype"
+    allowed_categories = ["etype", "mtype", "ttype"]
+    if category not in allowed_categories:
+        raise AccessPointException(
+            f"Category is {category}, but should be in {allowed_categories}"
+        )
+    
+    if access_point is None:
+        access_point = ontology_forge_access_point(access_token)
 
-    access_point = ontology_forge_access_point(access_token)
-
-    resource = access_point.resolve(etype, strategy="exact")
+    resource = access_point.resolve(label, strategy="exact")
     # raise Exception if resource was not found
     if resource is None:
-        base_text = f"Could not find etype with name {etype}"
-        raise_not_found_exception(base_text, etype, access_point, filter)
+        base_text = f"Could not find {category} with name {label}"
+        raise_not_found_exception(base_text, label, access_point, category)
 
-    # if resource found but not a etype, also raise Exception
-    if resource.id not in access_point.available_etypes:
-        base_text = f"Resource {etype} is not a etype"
-        raise_not_found_exception(base_text, etype, access_point, filter)
+    # if resource found but not of the appropriate category, also raise Exception
+    available_names = []
+    if category == "etype":
+        available_names = access_point.available_etypes
+    elif category == "mtype":
+        available_names = access_point.available_mtypes
+    elif category == "ttype":
+        available_names = access_point.available_ttypes
+    if resource.id not in available_names:
+        base_text = f"Resource {label} is not a {category}"
+        raise_not_found_exception(base_text, label, access_point, category)
 
-    print("passed")
     print(resource)
 
 
