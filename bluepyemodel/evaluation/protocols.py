@@ -487,7 +487,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         lower_bound,
         timeout=None,
         depth=0,
-        max_depth=30,
+        max_depth=20,
     ):
         """Do bisection search to find holding current"""
         mid_bound = (upper_bound + lower_bound) * 0.5
@@ -626,7 +626,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             param_values,
             sim=sim,
             isolate=isolate,
-            timeout=20,
+            timeout=50,
         )
         feature = self.spike_feature.calculate_feature(response)
         if feature is None:
@@ -684,7 +684,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         lower_bound,
         timeout=None,
         depth=0,
-        max_depth=30,
+        max_depth=20,
     ):
         """Do bisection search to find threshold current."""
         mid_bound = (upper_bound + lower_bound) * 0.5
@@ -692,9 +692,13 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             mid_bound, cell_model, param_values, sim, isolate, timeout
         )
         if abs(lower_bound - upper_bound) < self.current_precision:
-            if spikecount == 1 or depth > max_depth:
+            if spikecount == 1:
                 logger.debug("Depth of threshold search: %s", depth)
                 return upper_bound
+
+        # if we don't converge, something is wrong, and we better not continue evalutations
+        if depth > max_depth:
+            return None
 
         if spikecount == 0:
             return self.bisection_search(
