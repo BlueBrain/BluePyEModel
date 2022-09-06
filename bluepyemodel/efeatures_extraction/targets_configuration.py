@@ -163,8 +163,8 @@ class TargetsConfiguration:
         """Check that the protocols supposed to be used for RMP and Rin are present in the target
         and that they have the correct efeatures. If some features are missing, add them."""
 
-        name_rmp, amplitude_rmp = name_rmp_protocol.efeature.split("_")
-        name_rin, amplitude_rin = name_Rin_protocol.efeature.split("_")
+        name_rmp, amplitude_rmp = name_rmp_protocol.split("_")
+        name_rin, amplitude_rin = name_Rin_protocol.split("_")
 
         efeatures_rmp = [
             t.efeature
