@@ -284,7 +284,12 @@ def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False)
 
 
 def define_threshold_protocol(
-    efeatures, max_threshold_voltage=-30, step_delay=0.0, step_duration=1000.0, totduration=1000.0
+    efeatures,
+    max_threshold_voltage=-30,
+    step_delay=0.0,
+    step_duration=1000.0,
+    totduration=1000.0,
+    spikecount_timeout=50,
 ):
     """Define the search threshold current protocol"""
 
@@ -305,6 +310,7 @@ def define_threshold_protocol(
             stimulus_delay=step_delay,
             stimulus_duration=step_duration,
             stimulus_totduration=totduration,
+            spikecount_timeout=spikecount_timeout,
         )
 
     raise Exception(
@@ -388,6 +394,7 @@ def define_threshold_based_optimisation_protocol(
                     fitness_calculator_configuration.search_threshold_step_delay,
                     fitness_calculator_configuration.search_threshold_step_duration,
                     fitness_calculator_configuration.search_threshold_totduration,
+                    fitness_calculator_configuration.spikecount_timeout,
                 ),
             }
         )

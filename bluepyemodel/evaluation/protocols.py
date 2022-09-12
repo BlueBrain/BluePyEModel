@@ -419,7 +419,6 @@ class SearchHoldingCurrent(BPEMProtocol):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
-
         if not self.strict_bounds:
             # first readjust the bounds if needed
             voltage_min = 1e10
@@ -488,7 +487,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         lower_bound,
         timeout=None,
         depth=0,
-        max_depth=30,
+        max_depth=20,
     ):
         """Do bisection search to find holding current"""
         mid_bound = (upper_bound + lower_bound) * 0.5
@@ -545,8 +544,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         stimulus_duration=1000.0,
         stimulus_totduration=1000.0,
         max_threshold_voltage=-30,
+        spikecount_timeout=50,
     ):
-        """Constructor
+        """Constructor.
 
         Args:
             name (str): name of this object
@@ -561,6 +561,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             stimulus_totduration (float): total duration of the protocol
             max_threshold_voltage (float): maximum voltage used as upper
                 bound in the threshold current search
+            spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
+                we set spikecount=2 as if many spikes were present, to speed up bisection search.
         """
 
         dependencies = {
@@ -609,7 +611,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             exp_mean=1,
             exp_std=0.1,
         )
-        self.flag_spike_detected = False
+        self.spikecount_timeout = spikecount_timeout
 
     def return_none_responses(self):
         return {
@@ -617,7 +619,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             self.recording_name: None,
         }
 
-    def _get_spikecount(self, current, cell_model, param_values, sim, isolate, timeout):
+    def _get_spikecount(self, current, cell_model, param_values, sim, isolate):
         """Get spikecount at a given current."""
 
         self.stimulus.amp = current
@@ -627,9 +629,15 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             param_values,
             sim=sim,
             isolate=isolate,
-            timeout=timeout,
+            timeout=self.spikecount_timeout,
         )
-        return self.spike_feature.calculate_feature(response)
+        feature = self.spike_feature.calculate_feature(response)
+        if feature is None:
+            feature = 2.0
+            logging.debug(
+                "Trace computation for threshold timed out at %s", self.spikecount_timeout
+            )
+        return feature
 
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
@@ -641,7 +649,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
         max_threshold_current = self.max_threshold_current()
         spikecount = self._get_spikecount(
-            max_threshold_current, cell_model, param_values, sim, isolate, timeout
+            max_threshold_current, cell_model, param_values, sim, isolate
         )
         if spikecount == 0:
             return {"bpo_threshold_current": None}
@@ -657,7 +665,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         )
 
         response = {"bpo_threshold_current": threshold}
-
         if threshold is None:
             return response
 
@@ -683,17 +690,19 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         lower_bound,
         timeout=None,
         depth=0,
-        max_depth=30,
+        max_depth=20,
     ):
         """Do bisection search to find threshold current."""
         mid_bound = (upper_bound + lower_bound) * 0.5
-        spikecount = self._get_spikecount(
-            mid_bound, cell_model, param_values, sim, isolate, timeout
-        )
+        spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
         if abs(lower_bound - upper_bound) < self.current_precision:
-            if spikecount == 1 or depth > max_depth:
+            if spikecount == 1:
                 logger.debug("Depth of threshold search: %s", depth)
                 return upper_bound
+
+        # if we don't converge, something is wrong, and we better not continue evalutations
+        if depth > max_depth:
+            return None
 
         if spikecount == 0:
             return self.bisection_search(
