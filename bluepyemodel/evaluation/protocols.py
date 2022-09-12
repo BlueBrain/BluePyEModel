@@ -577,7 +577,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             "thresh_perc": None,
             "duration": stimulus_duration,
             "totduration": stimulus_totduration,
-            "holding_current": 0.0,
+            "holding_current": None,
         }
 
         self.recording_name = f"{name}.{location.name}.v"
@@ -603,7 +603,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.current_precision = current_precision
 
         self.spike_feature = ephys.efeatures.eFELFeature(
-            name="f{name}.Spikecount",
+            name=f"{name}.Spikecount",
             efel_feature_name="Spikecount",
             recording_names={"": f"{name}.{location.name}.v"},
             stim_start=stimulus_delay,
