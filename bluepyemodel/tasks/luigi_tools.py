@@ -49,6 +49,7 @@ class WorkflowTask(luigi.Task):
         """Get a mapper for parallel computations."""
         return get_mapper(self.backend)
 
+    @staticmethod
     def check_mettypes(func):
         """Decorator to check mtype, etype and ttype presence on nexus"""
         def inner(self):
