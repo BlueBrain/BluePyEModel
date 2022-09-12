@@ -561,6 +561,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             stimulus_totduration (float): total duration of the protocol
             max_threshold_voltage (float): maximum voltage used as upper
                 bound in the threshold current search
+            spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
+                we set spikecount=2 as if many spikes were present, to speed up bisection search.
         """
 
         dependencies = {
