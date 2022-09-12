@@ -257,7 +257,7 @@ def define_Rin_protocol(efeatures, ais_recording=False):
     return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
 
 
-def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False):
+def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False, max_depth=7):
     """Define the search holding current protocol"""
 
     target_voltage = None
@@ -275,6 +275,7 @@ def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False)
             location=soma_loc if not ais_recording else ais_loc,
             target_voltage=target_voltage,
             strict_bounds=strict_bounds,
+            max_depth=max_depth,
         )
 
     raise Exception(
@@ -290,6 +291,7 @@ def define_threshold_protocol(
     step_duration=1000.0,
     totduration=1000.0,
     spikecount_timeout=50,
+    max_depth=10,
 ):
     """Define the search threshold current protocol"""
 
@@ -311,6 +313,7 @@ def define_threshold_protocol(
             stimulus_duration=step_duration,
             stimulus_totduration=totduration,
             spikecount_timeout=spikecount_timeout,
+            max_depth=max_depth,
         )
 
     raise Exception(
@@ -331,6 +334,8 @@ def define_threshold_based_optimisation_protocol(
     max_threshold_voltage=-30,
     strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
+    max_depth_holding_search=7,
+    max_depth_threshold_search=10,
 ):
     """Create a meta protocol in charge of running the other protocols.
 
@@ -350,6 +355,10 @@ def define_threshold_based_optimisation_protocol(
             threshold_efeature_std * mean if std is < threshold_efeature_std * min.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+        max_depth_holding_search (float): maximum depth for the binary search for the
+            holding current
+        max_depth_threshold_search (float): maximum depth for the binary search for the
+            threshold current
     """
 
     # Create the threshold and non-threshold protocols
@@ -385,7 +394,7 @@ def define_threshold_based_optimisation_protocol(
             {
                 "RMPProtocol": define_RMP_protocol(efeatures),
                 "SearchHoldingCurrent": define_holding_protocol(
-                    efeatures, strict_holding_bounds, ais_recording
+                    efeatures, strict_holding_bounds, ais_recording, max_depth_holding_search
                 ),
                 "RinProtocol": define_Rin_protocol(efeatures, ais_recording),
                 "SearchThresholdCurrent": define_threshold_protocol(
@@ -395,6 +404,7 @@ def define_threshold_based_optimisation_protocol(
                     fitness_calculator_configuration.search_threshold_step_duration,
                     fitness_calculator_configuration.search_threshold_totduration,
                     fitness_calculator_configuration.spikecount_timeout,
+                    max_depth_threshold_search,
                 ),
             }
         )
@@ -510,6 +520,8 @@ def create_evaluator(
         max_threshold_voltage=pipeline_settings.max_threshold_voltage,
         strict_holding_bounds=pipeline_settings.strict_holding_bounds,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
+        max_depth_holding_search=pipeline_settings.max_depth_holding_search,
+        max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
     )
 
     fitness_calculator = define_fitness_calculator(features)
