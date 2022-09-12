@@ -43,6 +43,15 @@ class EModelPipelineSettings:
         cvode_minstep=0.0,
         max_threshold_voltage=-30,
         strict_holding_bounds=True,
+        rmp_duration=500.0,
+        rin_step_delay=500.0,
+        rin_step_duration=500.0,
+        rin_step_amp=-0.02,
+        rin_totduration=1000.0,
+        search_holding_duration=500.0,
+        search_threshold_step_delay=None,
+        search_threshold_step_duration=None,
+        search_threshold_totduration=None,
     ):
         """Init
 
@@ -114,6 +123,18 @@ class EModelPipelineSettings:
             strict_holding_bounds (bool): if True, the minimum and maximum values for the current
                 used during the holding current search will be fixed. Otherwise, they will be
                 widened dynamically.
+            rmp_duration (float): duration of rmp pre-protocol
+            rin_step_delay (float): delay of step in Rin pre-protocol
+            rin_step_duration (float): duration of step in Rin pre-protocol
+            rin_step_amp (float): amplitude of step in Rin pre-protocol
+            rin_totduration (float): total duration of Rin pre-protocol
+            search_holding_duration (float): duration of holding search protocol
+            search_threshold_step_delay (float or None): if not None,
+                overwrites fitness calculator value of step delay of search threshold protocol
+            search_threshold_step_duration (float or None): if not None,
+                overwrites fitness calculator value of step duration of search threshold protocol
+            search_threshold_totduration (float or None): if not None,
+                overwrites fitness calculator value of total duration of search threshold protocol
         """
 
         # Settings related to E-features extraction
@@ -144,6 +165,17 @@ class EModelPipelineSettings:
         self.name_Rin_protocol = name_Rin_protocol
         self.name_rmp_protocol = name_rmp_protocol
         self.strict_holding_bounds = strict_holding_bounds
+        self.preprotocols_settings = {
+            "rmp_duration": rmp_duration,
+            "rin_step_delay": rin_step_delay,
+            "rin_step_duration": rin_step_duration,
+            "rin_step_amp": rin_step_amp,
+            "rin_totduration": rin_totduration,
+            "search_holding_duration": search_holding_duration,
+            "search_threshold_step_delay": search_threshold_step_delay,
+            "search_threshold_step_duration": search_threshold_step_duration,
+            "search_threshold_totduration": search_threshold_totduration,
+        }
 
         # Settings related to the validation
         self.validation_threshold = validation_threshold

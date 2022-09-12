@@ -268,7 +268,14 @@ class RinProtocol(ProtocolWithDependencies):
     """Protocol used to find the input resistance of a model"""
 
     def __init__(
-        self, name, location, target_rin, amp=-0.02, stimulus_delay=500.0, stimulus_duration=500.0
+        self,
+        name,
+        location,
+        target_rin,
+        amp=-0.02,
+        stimulus_delay=500.0,
+        stimulus_duration=500.0,
+        totduration=1000.0,
     ):
         """Constructor"""
 
@@ -277,7 +284,7 @@ class RinProtocol(ProtocolWithDependencies):
             "amp": amp,
             "thresh_perc": None,
             "duration": stimulus_duration,
-            "totduration": stimulus_delay + stimulus_duration,
+            "totduration": totduration,
             "holding_current": None,
         }
 
