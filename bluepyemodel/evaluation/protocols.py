@@ -544,8 +544,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         stimulus_duration=1000.0,
         stimulus_totduration=1000.0,
         max_threshold_voltage=-30,
+        spikecount_timeout=50,
     ):
-        """Constructor
+        """Constructor.
 
         Args:
             name (str): name of this object
@@ -608,7 +609,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             exp_mean=1,
             exp_std=0.1,
         )
-        self.flag_spike_detected = False
+        self.spikecount_timeout = spikecount_timeout
 
     def return_none_responses(self):
         return {
@@ -616,7 +617,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             self.recording_name: None,
         }
 
-    def _get_spikecount(self, current, cell_model, param_values, sim, isolate, timeout):
+    def _get_spikecount(self, current, cell_model, param_values, sim, isolate):
         """Get spikecount at a given current."""
 
         self.stimulus.amp = current
@@ -626,12 +627,10 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             param_values,
             sim=sim,
             isolate=isolate,
-            timeout=50,
+            timeout=self.spikecount_timeout,
         )
         feature = self.spike_feature.calculate_feature(response)
-        if feature is None:
-            feature = 1
-        return feature
+        return feature if feature is not None else 1
 
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
@@ -643,7 +642,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
         max_threshold_current = self.max_threshold_current()
         spikecount = self._get_spikecount(
-            max_threshold_current, cell_model, param_values, sim, isolate, timeout
+            max_threshold_current, cell_model, param_values, sim, isolate
         )
         if spikecount == 0:
             return {"bpo_threshold_current": None}
@@ -688,9 +687,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
     ):
         """Do bisection search to find threshold current."""
         mid_bound = (upper_bound + lower_bound) * 0.5
-        spikecount = self._get_spikecount(
-            mid_bound, cell_model, param_values, sim, isolate, timeout
-        )
+        spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
         if abs(lower_bound - upper_bound) < self.current_precision:
             if spikecount == 1:
                 logger.debug("Depth of threshold search: %s", depth)

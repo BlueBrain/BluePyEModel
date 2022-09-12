@@ -106,6 +106,7 @@ class FitnessCalculatorConfiguration:
         self.search_threshold_step_delay = 0.0
         self.search_threshold_step_duration = 1000.0
         self.search_threshold_totduration = 1000.0
+        self.spikecount_timeout = 50
         self.ion_variables = ion_variables
 
         if protocols is None:
