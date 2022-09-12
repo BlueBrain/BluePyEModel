@@ -606,8 +606,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             name="f{name}.Spikecount",
             efel_feature_name="Spikecount",
             recording_names={"": f"{name}.{location.name}.v"},
-            stim_start=0.0,
-            stim_end=stimulus_duration,
+            stim_start=stimulus_delay,
+            stim_end=stimulus_delay + stimulus_duration,
             exp_mean=1,
             exp_std=0.1,
         )
