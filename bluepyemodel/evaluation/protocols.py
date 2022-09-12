@@ -278,7 +278,7 @@ class RinProtocol(ProtocolWithDependencies):
             "thresh_perc": None,
             "duration": stimulus_duration,
             "totduration": stimulus_delay + stimulus_duration,
-            "holding_current": 0.0,
+            "holding_current": None,
         }
 
         self.recording_name = f"{name}.{location.name}.v"
