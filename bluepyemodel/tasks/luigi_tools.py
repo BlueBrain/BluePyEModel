@@ -52,11 +52,13 @@ class WorkflowTask(luigi.Task):
     @staticmethod
     def check_mettypes(func):
         """Decorator to check mtype, etype and ttype presence on nexus"""
+
         def inner(self):
             """Inner decorator function"""
             if EmodelAPIConfig().api == "nexus":
                 self.access_point.check_mettypes()
             func(self)
+
         return inner
 
 
