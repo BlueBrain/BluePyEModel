@@ -652,10 +652,6 @@ def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
     if filtered_names:
         raise AccessPointException(f"{base_text} Maybe you meant one of those:\n{filtered_names}")
 
-    for r in resources:
-        print(r.label)
-        print(r.type)
-        print(r)
     raise AccessPointException(base_text)
 
 
@@ -691,8 +687,6 @@ def check_resource(label, category, access_point=None, access_token=None):
     if resource.id not in available_names:
         base_text = f"Resource {label} is not a {category}"
         raise_not_found_exception(base_text, label, access_point, category)
-
-    print(resource)
 
 
 def get_brain_region(brain_region, access_token=None):

@@ -55,6 +55,7 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
 class ExtractEFeatures(WorkflowTask):
     """Luigi wrapper for extract_efeatures in emodel_pipeline.EModel_pipeline."""
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """ """
 
@@ -194,6 +195,7 @@ class Optimise(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 
         return targets
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
         attrs = [
@@ -367,6 +369,7 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
 
         return to_run
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """ """
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
@@ -514,6 +517,7 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 
         return to_run
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
         attrs = [
@@ -683,6 +687,7 @@ class EModelCreation(WorkflowTask):
         emodel_workflow.state = state
         self.access_point.store_or_update_emodel_workflow(emodel_workflow)
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """Optimise e-models by batches of batch_size until one is validated."""
 
