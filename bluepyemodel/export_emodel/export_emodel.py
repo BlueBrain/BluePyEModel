@@ -91,7 +91,7 @@ def export_model_sonata(cell_model, emodel, output_dir=None):
     )
 
 
-def export_emodels(access_point, only_validated=False, seeds=None, map_function=None):
+def export_emodels(access_point, only_validated=False, seeds=None, map_function=map):
     """Export a set of emodels to a set of folder named after them. Each folder will
     contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model."""
 
@@ -110,9 +110,14 @@ def export_emodels(access_point, only_validated=False, seeds=None, map_function=
         emodels = [model for model in emodels if model.passed_validation]
 
     if emodels:
+
         logger.info("In export_emodels, %s emodels found to export.", len(emodels))
+        cell_model = cell_evaluator.cell_model
+
         for mo in emodels:
-            export_model_sonata(cell_evaluator.cell_model, mo, output_dir=None)
+            if not cell_model.morphology.morph_modifiers:  # Turn [] into None
+                cell_model.morphology.morph_modifiers = None
+            export_model_sonata(cell_model, mo, output_dir=None)
 
     else:
         logger.warning("In export_emodels, no emodel for %s", access_point.emodel_metadata.emodel)
