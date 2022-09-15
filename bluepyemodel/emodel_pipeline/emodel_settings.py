@@ -43,6 +43,8 @@ class EModelPipelineSettings:
         cvode_minstep=0.0,
         max_threshold_voltage=-30,
         strict_holding_bounds=True,
+        max_depth_holding_search=7,
+        max_depth_threshold_search=10,
     ):
         """Init
 
@@ -114,6 +116,10 @@ class EModelPipelineSettings:
             strict_holding_bounds (bool): if True, the minimum and maximum values for the current
                 used during the holding current search will be fixed. Otherwise, they will be
                 widened dynamically.
+            max_depth_holding_search (float): maximum depth for the binary search for the
+                holding current
+            max_depth_threshold_search (float): maximum depth for the binary search for the
+                threshold current
         """
 
         # Settings related to E-features extraction
@@ -126,16 +132,20 @@ class EModelPipelineSettings:
             self.efel_settings = {"interp_step": 0.025, "strict_stiminterval": True}
         self.path_extract_config = path_extract_config  # only when using local access point
 
+        # Settings related to the evaluator
+        self.max_threshold_voltage = max_threshold_voltage
+        self.threshold_efeature_std = threshold_efeature_std
+        self.max_depth_holding_search = max_depth_holding_search
+        self.max_depth_threshold_search = max_depth_threshold_search
+
         # Settings related to the optimisation
+        self.optimisation_timeout = optimisation_timeout
         self.stochasticity = stochasticity
         self.optimiser = optimiser if optimizer is None else optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:
             self.optimisation_params = {"offspring_size": 100}
-        self.optimisation_timeout = optimisation_timeout
         self.cvode_minstep = cvode_minstep
-        self.max_threshold_voltage = max_threshold_voltage
-        self.threshold_efeature_std = threshold_efeature_std
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
