@@ -349,6 +349,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         lower_bound=-0.2,
         strict_bounds=True,
         max_depth=7,
+        no_spikes=True,
     ):
         """Constructor
 
@@ -363,6 +364,8 @@ class SearchHoldingCurrent(BPEMProtocol):
             lower_bound (float): lower bound for the holding current, in pA
             strict_bounds (bool): to adaptively enlarge bounds if current is outside
             max_depth (float): maximum depth for the binary search
+            no_spikes (bool): if True, the holding current will only be considered valid if there
+                are no spikes at holding.
         """
 
         stimulus_definition = {
@@ -391,6 +394,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
         self.strict_bounds = strict_bounds
+        self.no_spikes = no_spikes
 
         self.target_voltage = target_voltage
         self.holding_voltage = self.target_voltage.exp_mean
@@ -420,9 +424,11 @@ class SearchHoldingCurrent(BPEMProtocol):
         response = BPEMProtocol.run(
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
-        n_spikes = self.spike_feature.calculate_feature(response)
-        if n_spikes is None or n_spikes > 0:
-            return None
+
+        if self.no_spikes:
+            n_spikes = self.spike_feature.calculate_feature(response)
+            if n_spikes is None or n_spikes > 0:
+                return None
 
         return self.target_voltage.calculate_feature(response)[0]
 
@@ -560,6 +566,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         max_threshold_voltage=-30,
         spikecount_timeout=50,
         max_depth=10,
+        no_spikes=True,
     ):
         """Constructor.
 
@@ -579,6 +586,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
                 we set spikecount=2 as if many spikes were present, to speed up bisection search.
             max_depth (float): maximum depth for the binary search
+            no_spikes (bool): if True, will check that the holding current (lower bound) does not
+                trigger spikes.
         """
 
         dependencies = {
@@ -617,7 +626,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.target_threshold = target_threshold
         self.max_threshold_voltage = max_threshold_voltage
         self.current_precision = current_precision
-
+        self.no_spikes = no_spikes
         self.max_depth = max_depth
 
         self.spike_feature = ephys.efeatures.eFELFeature(
@@ -665,11 +674,10 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         if not self.set_dependencies(responses):
             return self.return_none_responses()
 
-        max_threshold_current = self.max_threshold_current()
-        spikecount = self._get_spikecount(
-            max_threshold_current, cell_model, param_values, sim, isolate
+        lower_bound, upper_bound = self.define_search_bounds(
+            cell_model, param_values, sim, isolate, responses
         )
-        if spikecount == 0:
+        if lower_bound is None or upper_bound is None:
             return {"bpo_threshold_current": None}
 
         threshold = self.bisection_search(
@@ -677,8 +685,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             param_values,
             sim,
             isolate,
-            upper_bound=max_threshold_current,
-            lower_bound=responses["bpo_holding_current"],
+            upper_bound=upper_bound,
+            lower_bound=lower_bound,
             timeout=timeout,
         )
 
@@ -697,6 +705,26 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         max_threshold_current = (self.max_threshold_voltage - self.rmp) / self.rin
         logger.debug("Max threshold current: %.6g", max_threshold_current)
         return max_threshold_current
+
+    def define_search_bounds(self, cell_model, param_values, sim, isolate, responses):
+        """Define the bounds and check their validity"""
+
+        upper_bound = self.max_threshold_current()
+        spikecount = self._get_spikecount(upper_bound, cell_model, param_values, sim, isolate)
+        if spikecount == 0:
+            return None, None
+
+        lower_bound = responses["bpo_holding_current"]
+        spikecount = self._get_spikecount(lower_bound, cell_model, param_values, sim, isolate)
+        if spikecount > 0:
+            if self.no_spikes:
+                return None, None
+            lower_bound -= 0.5
+
+        if lower_bound > upper_bound:
+            return None, None
+
+        return lower_bound, upper_bound
 
     def bisection_search(
         self,
