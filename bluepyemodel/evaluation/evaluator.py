@@ -198,7 +198,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     return efeature
 
 
-def define_RMP_protocol(efeatures):
+def define_RMP_protocol(efeatures, stimulus_duration=500.0):
     """Define the resting membrane potential protocol"""
 
     target_voltage = None
@@ -218,7 +218,12 @@ def define_RMP_protocol(efeatures):
             "use for RMP (setting 'name_rmp_protocol') might be wrong."
         )
 
-    rmp_protocol = RMPProtocol(name="RMPProtocol", location=soma_loc, target_voltage=target_voltage)
+    rmp_protocol = RMPProtocol(
+        name="RMPProtocol",
+        location=soma_loc,
+        target_voltage=target_voltage,
+        stimulus_duration=stimulus_duration,
+    )
 
     for f in efeatures:
         if (
@@ -232,7 +237,14 @@ def define_RMP_protocol(efeatures):
     return rmp_protocol
 
 
-def define_Rin_protocol(efeatures, ais_recording=False):
+def define_Rin_protocol(
+    efeatures,
+    ais_recording=False,
+    amp=-0.02,
+    stimulus_delay=500.0,
+    stimulus_duration=500.0,
+    totduration=1000.0,
+):
     """Define the input resistance protocol"""
 
     target_rin = None
@@ -254,10 +266,20 @@ def define_Rin_protocol(efeatures, ais_recording=False):
 
     location = soma_loc if not ais_recording else ais_loc
 
-    return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
+    return RinProtocol(
+        name="RinProtocol",
+        location=location,
+        target_rin=target_rin,
+        amp=amp,
+        stimulus_delay=stimulus_delay,
+        stimulus_duration=stimulus_duration,
+        totduration=totduration,
+    )
 
 
-def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False, max_depth=7):
+def define_holding_protocol(
+    efeatures, strict_bounds=False, ais_recording=False, max_depth=7, stimulus_duration=500.0
+):
     """Define the search holding current protocol"""
 
     target_voltage = None
@@ -276,6 +298,7 @@ def define_holding_protocol(efeatures, strict_bounds=False, ais_recording=False,
             target_voltage=target_voltage,
             strict_bounds=strict_bounds,
             max_depth=max_depth,
+            stimulus_duration=stimulus_duration,
         )
 
     raise Exception(
@@ -392,11 +415,24 @@ def define_threshold_based_optimisation_protocol(
     if any(isinstance(p, ThresholdBasedProtocol) for p in protocols.values()):
         protocols.update(
             {
-                "RMPProtocol": define_RMP_protocol(efeatures),
-                "SearchHoldingCurrent": define_holding_protocol(
-                    efeatures, strict_holding_bounds, ais_recording, max_depth_holding_search
+                "RMPProtocol": define_RMP_protocol(
+                    efeatures, stimulus_duration=fitness_calculator_configuration.rmp_duration
                 ),
-                "RinProtocol": define_Rin_protocol(efeatures, ais_recording),
+                "SearchHoldingCurrent": define_holding_protocol(
+                    efeatures,
+                    strict_holding_bounds,
+                    ais_recording,
+                    max_depth_holding_search,
+                    stimulus_duration=fitness_calculator_configuration.search_holding_duration,
+                ),
+                "RinProtocol": define_Rin_protocol(
+                    efeatures,
+                    ais_recording,
+                    amp=fitness_calculator_configuration.rin_step_amp,
+                    stimulus_delay=fitness_calculator_configuration.rin_step_delay,
+                    stimulus_duration=fitness_calculator_configuration.rin_step_duration,
+                    totduration=fitness_calculator_configuration.rin_totduration,
+                ),
                 "SearchThresholdCurrent": define_threshold_protocol(
                     efeatures,
                     max_threshold_voltage,
