@@ -348,6 +348,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         upper_bound=0.2,
         lower_bound=-0.2,
         strict_bounds=True,
+        max_depth=7,
     ):
         """Constructor
 
@@ -361,6 +362,7 @@ class SearchHoldingCurrent(BPEMProtocol):
             upper_bound (float): upper bound for the holding current, in pA
             lower_bound (float): lower bound for the holding current, in pA
             strict_bounds (bool): to adaptively enlarge bounds if current is outside
+            max_depth (float): maximum depth for the binary search
         """
 
         stimulus_definition = {
@@ -396,6 +398,8 @@ class SearchHoldingCurrent(BPEMProtocol):
         self.target_voltage.stim_start = stimulus_duration - 100.0
         self.target_voltage.stim_end = stimulus_duration
         self.target_voltage.stimulus_current = 0.0
+
+        self.max_depth = max_depth
 
         self.spike_feature = ephys.efeatures.eFELFeature(
             name="SearchHoldingCurrent.Spikecount",
@@ -494,7 +498,6 @@ class SearchHoldingCurrent(BPEMProtocol):
         lower_bound,
         timeout=None,
         depth=0,
-        max_depth=20,
     ):
         """Do bisection search to find holding current"""
         mid_bound = (upper_bound + lower_bound) * 0.5
@@ -507,7 +510,11 @@ class SearchHoldingCurrent(BPEMProtocol):
             timeout=timeout,
         )
         # if we don't converge fast enough, we stop and return lower bound, which will not spike
-        if depth > max_depth:
+        if depth > self.max_depth:
+            logging.debug(
+                "Exiting search due to reaching max_depth. The required voltage precision "
+                "was not reached."
+            )
             return lower_bound
 
         if voltage is not None and abs(voltage - self.holding_voltage) < self.voltage_precision:
@@ -552,6 +559,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         stimulus_totduration=1000.0,
         max_threshold_voltage=-30,
         spikecount_timeout=50,
+        max_depth=10,
     ):
         """Constructor.
 
@@ -570,6 +578,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
                 bound in the threshold current search
             spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
                 we set spikecount=2 as if many spikes were present, to speed up bisection search.
+            max_depth (float): maximum depth for the binary search
         """
 
         dependencies = {
@@ -609,6 +618,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.max_threshold_voltage = max_threshold_voltage
         self.current_precision = current_precision
 
+        self.max_depth = max_depth
+
         self.spike_feature = ephys.efeatures.eFELFeature(
             name=f"{name}.Spikecount",
             efel_feature_name="Spikecount",
@@ -640,7 +651,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         )
         feature = self.spike_feature.calculate_feature(response)
         if feature is None:
-            feature = 2.0
+            feature = 2
             logging.debug(
                 "Trace computation for threshold timed out at %s", self.spikecount_timeout
             )
@@ -697,7 +708,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         lower_bound,
         timeout=None,
         depth=0,
-        max_depth=20,
     ):
         """Do bisection search to find threshold current."""
         mid_bound = (upper_bound + lower_bound) * 0.5
@@ -707,8 +717,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
                 logger.debug("Depth of threshold search: %s", depth)
                 return upper_bound
 
-        # if we don't converge, something is wrong, and we better not continue evalutations
-        if depth > max_depth:
+        if depth > self.max_depth:
+            if spikecount:
+                return upper_bound
             return None
 
         if spikecount == 0:
