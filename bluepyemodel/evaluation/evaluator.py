@@ -347,7 +347,6 @@ def define_threshold_protocol(
 
 def define_threshold_based_optimisation_protocol(
     fitness_calculator_configuration,
-    preprotocols_settings,
     include_validation_protocols=False,
     stochasticity=True,
     ais_recording=False,
@@ -364,7 +363,6 @@ def define_threshold_based_optimisation_protocol(
     Args:
         fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
             fitness calculator.
-        preprotocols_settings (dict): contains configuration data of pre-protocols
         include_validation_protocols (bool): should the validation protocols
             and validation efeatures be added to the evaluator.
         stochasticity (bool): Should the stochastic channels be stochastic or
@@ -409,28 +407,28 @@ def define_threshold_based_optimisation_protocol(
         protocols.update(
             {
                 "RMPProtocol": define_RMP_protocol(
-                    efeatures, stimulus_duration=preprotocols_settings["rmp_duration"]
+                    efeatures, stimulus_duration=fitness_calculator_configuration.rmp_duration
                 ),
                 "SearchHoldingCurrent": define_holding_protocol(
                     efeatures,
                     strict_holding_bounds,
                     ais_recording,
-                    stimulus_duration=preprotocols_settings["search_holding_duration"],
+                    stimulus_duration=fitness_calculator_configuration.search_holding_duration,
                 ),
                 "RinProtocol": define_Rin_protocol(
                     efeatures,
                     ais_recording,
-                    amp=preprotocols_settings["rin_step_amp"],
-                    stimulus_delay=preprotocols_settings["rin_step_delay"],
-                    stimulus_duration=preprotocols_settings["rin_step_duration"],
-                    totduration=preprotocols_settings["rin_totduration"],
+                    amp=fitness_calculator_configuration.rin_step_amp,
+                    stimulus_delay=fitness_calculator_configuration.rin_step_delay,
+                    stimulus_duration=fitness_calculator_configuration.rin_step_duration,
+                    totduration=fitness_calculator_configuration.rin_totduration,
                 ),
                 "SearchThresholdCurrent": define_threshold_protocol(
                     efeatures,
                     max_threshold_voltage,
-                    preprotocols_settings["search_threshold_step_delay"],
-                    preprotocols_settings["search_threshold_step_duration"],
-                    preprotocols_settings["search_threshold_totduration"],
+                    fitness_calculator_configuration.search_threshold_step_delay,
+                    fitness_calculator_configuration.search_threshold_step_duration,
+                    fitness_calculator_configuration.search_threshold_totduration,
                     fitness_calculator_configuration.spikecount_timeout,
                 ),
             }
@@ -539,22 +537,8 @@ def create_evaluator(
 
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
-    if pipeline_settings.preprotocols_settings["search_threshold_step_delay"] is None:
-        pipeline_settings.preprotocols_settings[
-            "search_threshold_step_delay"
-        ] = fitness_calculator_configuration.search_threshold_step_delay
-    if pipeline_settings.preprotocols_settings["search_threshold_step_duration"] is None:
-        pipeline_settings.preprotocols_settings[
-            "search_threshold_step_duration"
-        ] = fitness_calculator_configuration.search_threshold_step_duration
-    if pipeline_settings.preprotocols_settings["search_threshold_totduration"] is None:
-        pipeline_settings.preprotocols_settings[
-            "search_threshold_totduration"
-        ] = fitness_calculator_configuration.search_threshold_totduration
-
     main_protocol, features = define_threshold_based_optimisation_protocol(
         fitness_calculator_configuration,
-        pipeline_settings.preprotocols_settings,
         include_validation_protocols,
         stochasticity=stochasticity,
         efel_settings=pipeline_settings.efel_settings,
