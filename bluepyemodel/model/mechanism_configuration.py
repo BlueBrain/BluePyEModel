@@ -12,6 +12,7 @@ class MechanismConfiguration:
         location,
         stochastic=None,
         version=None,
+        temperature=None,
         parameters=None,
         ion_currents=None,
         nonspecific_currents=None,
@@ -20,21 +21,23 @@ class MechanismConfiguration:
         """Init
 
         Args:
-             name (str): name of the mechanism.
-             locations (str or list of str): sections of the neuron on which this mechanism
-                 will be instantiated.
-             stochastic (bool): Can the mechanisms behave stochastically (optional).
-             version (str): version id of the mod file.
-             parameters (list): list of the possible parameter for this mechanism.
-             ion_currents (list): list of the ion currents that this mechanism writes.
-             nonspecific_currents (list): list of non-specific currents
-             ionic_concentrations (list): list of the ionic concentration linked to the ion current
-                If None, will be deduced from the ions list.
+            name (str): name of the mechanism.
+            locations (str or list of str): sections of the neuron on which this mechanism
+                will be instantiated.
+            stochastic (bool): Can the mechanisms behave stochastically (optional).
+            version (str): version id of the mod file.
+            temperature (int): temperature associated with the mechanism if any
+            parameters (list): list of the possible parameter for this mechanism.
+            ion_currents (list): list of the ion currents that this mechanism writes.
+            nonspecific_currents (list): list of non-specific currents
+            ionic_concentrations (list): list of the ionic concentration linked to the ion current
+            If None, will be deduced from the ions list.
         """
 
         self.name = name
         self.location = location
         self.version = version
+        self.temperature = temperature
         self.ion_currents = ion_currents
         self.nonspecific_currents = nonspecific_currents
         self.ionic_concentrations = ionic_concentrations
@@ -74,4 +77,5 @@ class MechanismConfiguration:
             "stochastic": self.stochastic,
             "location": self.location,
             "version": self.version,
+            "temperature": self.temperature,
         }

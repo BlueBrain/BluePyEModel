@@ -5,6 +5,7 @@ from bluepyemodel.model.distribution_configuration import DistributionConfigurat
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 from bluepyemodel.model.parameter_configuration import ParameterConfiguration
+from bluepyemodel.model.utils import temperature_check
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +159,11 @@ class NeuronModelConfiguration:
         if "mechanisms" in configuration_dict:
             for mechanism in configuration_dict["mechanisms"]:
                 self.add_mechanism(
-                    mechanism["name"], mechanism["location"], mechanism.get("stochastic", None)
+                    mechanism["name"],
+                    mechanism["location"],
+                    mechanism.get("stochastic", None),
+                    mechanism.get("version", None),
+                    mechanism.get("temperature", None),
                 )
 
         self.morphology = MorphologyConfiguration(**configuration_dict["morphology"])
@@ -316,25 +321,30 @@ class NeuronModelConfiguration:
             if mechanism and auto_mechanism:
                 self.add_mechanism(mechanism, loc, stochastic=stochastic)
 
-    def is_mechanism_available(self, mechanism_name, version=None):
+    def is_mechanism_available(self, mechanism_name, version=None, temperature=None):
         """Is the mechanism part of the mechanisms available"""
 
         if self.available_mechanisms is not None:
 
             for mech in self.available_mechanisms:
 
-                if version is not None:
-                    if mechanism_name in mech.name and version == mech.version:
-                        return True
-                elif mechanism_name in mech.name:
-                    return True
+                if mechanism_name in mech.name:
+                    if version is None or (version is not None and version == mech.version):
+                        if temperature_check(temperature, mech):
+                            return True
 
             return False
 
         return True
 
     def add_mechanism(
-        self, mechanism_name, locations, stochastic=None, version=None, auto_parameter=False
+        self,
+        mechanism_name,
+        locations,
+        stochastic=None,
+        version=None,
+        temperature=None,
+        auto_parameter=False,
     ):
         """Add a mechanism to the configuration. This function should rarely be called directly as
          mechanisms are added automatically when using add_parameters. But it might be needed if a
@@ -346,6 +356,7 @@ class NeuronModelConfiguration:
                  will be instantiated.
              stochastic (bool): Can the mechanisms behave stochastically (optional).
              version (str): version id of the mod file.
+             temperature (int): temperature associated with the mechanism if any
              auto_parameter (bool): if True, will automatically add the parameters of the mechanism
                 if they are known.
         """
@@ -353,17 +364,19 @@ class NeuronModelConfiguration:
         locations = self._format_locations(locations)
 
         if mechanism_name not in ["pas", "hh"] and not self.is_mechanism_available(
-            mechanism_name, version
+            mechanism_name, version, temperature
         ):
             raise Exception(
                 f"You are trying to add mechanism {mechanism_name} (version {version}) "
-                "but it is not available on Nexus or local."
+                f"(with temperature {temperature} C) but it is not available on Nexus or local."
             )
 
         for loc in locations:
             if self.available_mechanisms and mechanism_name not in ["pas", "hh"]:
                 mechanism_parameters = next(
-                    m.parameters for m in self.available_mechanisms if m.name == mechanism_name
+                    m.parameters
+                    for m in self.available_mechanisms
+                    if (m.name == mechanism_name and temperature_check(temperature, m))
                 )
             else:
                 mechanism_parameters = None
@@ -373,26 +386,35 @@ class NeuronModelConfiguration:
                 location=loc,
                 stochastic=stochastic,
                 version=version,
+                temperature=temperature,
                 parameters=mechanism_parameters,
             )
 
             # Check if mech is not already part of the configuration
             for m in self.mechanisms:
-                if m.name == mechanism_name and m.location == loc:
+                if (
+                    m.name == mechanism_name
+                    and m.location == loc
+                    and (temperature_check(temperature, m))
+                ):
                     return
 
             # Handle the case where the new mech is a key of the multilocation map
             if loc in multiloc_map:
                 tmp_mechanisms = []
                 for m in self.mechanisms:
-                    if not (m.name == mechanism_name and m.location in multiloc_map[loc]):
+                    if not (
+                        m.name == mechanism_name
+                        and m.location in multiloc_map[loc]
+                        and temperature_check(temperature, m)
+                    ):
                         tmp_mechanisms.append(m)
                 self.mechanisms = tmp_mechanisms + [tmp_mechanism]
 
             # Handle the case where the new mech is a value of the multilocation map
             else:
                 for m in self.mechanisms:
-                    if m.name == tmp_mechanism.name:
+                    if m.name == tmp_mechanism.name and temperature_check(temperature, m):
                         if m.location in multiloc_map and loc in multiloc_map[m.location]:
                             return
 
