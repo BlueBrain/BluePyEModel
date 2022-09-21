@@ -134,7 +134,7 @@ class NeuronModelConfiguration:
 
         return locations
 
-    def init_from_dict(self, configuration_dict, auto_mechanism=True):
+    def init_from_dict(self, configuration_dict, auto_mechanism=False):
         """Instantiate the object from its dictionary form"""
 
         if "distributions" in configuration_dict:
@@ -258,7 +258,7 @@ class NeuronModelConfiguration:
         mechanism=None,
         distribution_name=None,
         stochastic=None,
-        auto_mechanism=True,
+        auto_mechanism=False,
     ):
         """Add a parameter to the configuration
 
