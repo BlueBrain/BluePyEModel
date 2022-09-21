@@ -26,7 +26,8 @@ def configuration():
         value=5,
         mechanism='test_mechanism',
         distribution_name=None,
-        stochastic=None
+        stochastic=None,
+        auto_mechanism=True,
     )
 
     return config
@@ -38,7 +39,7 @@ def configuration_with_distribution(configuration):
     configuration.add_distribution(
         distribution_name="not_constant",
         function="{value} * 2 * {dist_param1}",
-        parameters=["dist_param1"]
+        parameters=["dist_param1"],
     )
 
     configuration.add_parameter(
@@ -47,7 +48,8 @@ def configuration_with_distribution(configuration):
         value=[1., 2.],
         mechanism='test_mechanism2',
         distribution_name="not_constant",
-        stochastic=None
+        stochastic=None,
+        auto_mechanism=True,
     )
 
     configuration.add_parameter(
@@ -56,7 +58,7 @@ def configuration_with_distribution(configuration):
         value=[3., 10.],
         mechanism=None,
         distribution_name=None,
-        stochastic=None
+        stochastic=None,
     )
 
     return configuration
@@ -93,7 +95,8 @@ def test_remove_mechanisms(configuration):
         locations='somatic',
         value=[1., 2.],
         mechanism='test_mechanism2',
-        stochastic=None
+        stochastic=None,
+        auto_mechanism=True,
     )
 
     configuration.add_parameter(
@@ -101,7 +104,8 @@ def test_remove_mechanisms(configuration):
         locations='all',
         value=[1., 2.],
         mechanism='test_mechanism3',
-        stochastic=None
+        stochastic=None,
+        auto_mechanism=True,
     )
 
     configuration.remove_mechanism("test_parameter2", "all")
