@@ -134,7 +134,7 @@ class NeuronModelConfiguration:
 
         return locations
 
-    def init_from_dict(self, configuration_dict):
+    def init_from_dict(self, configuration_dict, auto_mechanism=True):
         """Instantiate the object from its dictionary form"""
 
         if "distributions" in configuration_dict:
@@ -154,6 +154,7 @@ class NeuronModelConfiguration:
                     param["value"],
                     param.get("mechanism", None),
                     param.get("dist", None),
+                    auto_mechanism=auto_mechanism,
                 )
 
         if "mechanisms" in configuration_dict:
