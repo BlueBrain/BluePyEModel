@@ -35,7 +35,6 @@ class DendriticStep(IDrest):
             )
         else:
             raise Exception(f"direction keyword {direction} not understood")
-        print(location.sec_index)
         super().__init__(location=location, **kwargs)
 
     def instantiate(self, sim=None, icell=None):

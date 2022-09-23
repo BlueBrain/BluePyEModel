@@ -399,12 +399,12 @@ class FitnessCalculatorConfiguration:
         for protocol_name, protocol in protocols.items():
 
             if protocol_name == "RMP":
-                self.rmp_duration = protocol["step_template"]["stimuli"]["step"]["duration"]
+                self.rmp_duration = protocol["stimuli"]["step"]["duration"]
             if protocol_name == "Rin":
-                self.rin_step_delay = protocol["step_template"]["stimuli"]["step"]["delay"]
-                self.rin_step_duration = protocol["step_template"]["stimuli"]["step"]["duration"]
-                self.rin_step_amp = protocol["step_template"]["stimuli"]["step"]["amp"]
-                self.rin_totduration = protocol["step_template"]["stimuli"]["step"]["totduration"]
+                self.rin_step_delay = protocol["stimuli"]["step"]["delay"]
+                self.rin_step_duration = protocol["stimuli"]["step"]["duration"]
+                self.rin_step_amp = protocol["stimuli"]["step"]["amp"]
+                self.rin_totduration = protocol["stimuli"]["step"]["totduration"]
             if protocol_name == "ThresholdDetection":
                 self.search_threshold_step_delay = protocol["step_template"]["stimuli"]["step"][
                     "delay"
