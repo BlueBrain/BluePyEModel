@@ -35,7 +35,7 @@ class DendriticStep(IDrest):
             )
         else:
             raise Exception(f"direction keyword {direction} not understood")
-
+        print(location.sec_index)
         super().__init__(location=location, **kwargs)
 
     def instantiate(self, sim=None, icell=None):
@@ -44,7 +44,7 @@ class DendriticStep(IDrest):
         super().instantiate(sim=sim, icell=icell)
 
 
-class Synaptic(IDrest):
+class Synaptic(DendriticStep):
     """Ecode to model a synapse with EPSP-like shape.
 
     A synthetic EPSP shape is defined by the difference of two exponentials, one with a
@@ -67,15 +67,13 @@ class Synaptic(IDrest):
             syn_rise (float): rise time constant
             syn_decay (float): decay time constant
         """
-        syn_location = NrnSeclistCompLocation(
-            name="syn", comp_x=0.5, sec_index=kwargs.get("sec_index", 0), seclist_name="apical"
-        )
+        super().__init__(location=None, **kwargs)
+
         self.syn_delay = kwargs.get("syn_delay", 0.0)
         self.syn_amp = kwargs.get("syn_amp", 0.0)
         self.syn_rise = kwargs.get("syn_rise", 0.5)
         self.syn_decay = kwargs.get("syn_decay", 5.0)
 
-        super().__init__(location=syn_location, **kwargs)
 
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
