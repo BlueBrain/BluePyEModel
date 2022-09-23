@@ -1,6 +1,5 @@
 """Ecode for dendrite specific protocols, such as synaptic input, dendritic steps, or BAC."""
 import numpy as np
-from bluepyopt.ephys.locations import NrnSeclistCompLocation
 from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
 from bluepyopt.ephys.locations import NrnTrunkSomaDistanceCompLocation
 
@@ -72,7 +71,6 @@ class Synaptic(DendriticStep):
         self.syn_amp = kwargs.get("syn_amp", 0.0)
         self.syn_rise = kwargs.get("syn_rise", 0.5)
         self.syn_decay = kwargs.get("syn_decay", 5.0)
-
 
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
