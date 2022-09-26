@@ -470,19 +470,17 @@ class NexusAccessPoint(DataAccessPoint):
             if mechanism.name == "pas":
                 continue
 
+            input_dict = {"type": "SubCellularModelScript", "name": mechanism.name}
+
+            if mechanism.temperature is not None:
+                input_dict["temperature"] = mechanism.temperature
+
             if mechanism.version is not None:
-                resource = self.access_point.fetch_one(
-                    {
-                        "type": "SubCellularModelScript",
-                        "name": mechanism.name,
-                        "version": mechanism.version,
-                    },
-                )
+                input_dict["version"] = mechanism.version
+                resource = self.access_point.fetch_one(input_dict)
 
             else:
-                resources = self.access_point.fetch(
-                    {"type": "SubCellularModelScript", "name": mechanism.name}
-                )
+                resources = self.access_point.fetch(input_dict)
 
                 # If version not specified, we take the most recent one:
                 if resources is None:
@@ -614,6 +612,7 @@ class NexusAccessPoint(DataAccessPoint):
         for r in resources:
 
             version = r.modelid if hasattr(r, "modelid") else None
+            temperature = r.temperature if hasattr(r, "temperature") else None
             stochastic = r.stochastic if hasattr(r, "stochastic") else None
 
             parameters = {}
@@ -643,6 +642,7 @@ class NexusAccessPoint(DataAccessPoint):
                 location=None,
                 stochastic=stochastic,
                 version=version,
+                temperature=temperature,
                 parameters=parameters,
                 ion_currents=ion_currents,
             )
