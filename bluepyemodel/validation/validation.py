@@ -96,11 +96,14 @@ def validate(
                 emodels[i].features[key] = None
 
         emodels[i].scores_validation = {}
-        for feature_names, score in mo.scores.items():
+        to_remove = []
+        for feature_names in mo.scores:
             for p in access_point.pipeline_settings.validation_protocols:
                 if p in feature_names:
-                    emodels[i].scores_validation[feature_names] = score
+                    emodels[i].scores_validation[feature_names] = mo.scores[feature_names]
+                    to_remove.append(feature_names)
                     break
+        emodels[i].scores = {k: v for k, v in emodels[i].scores.items() if k not in to_remove}
 
         # turn bool_ into bool to be json serializable
         emodels[i].passed_validation = bool(
