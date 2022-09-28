@@ -434,11 +434,11 @@ def define_protocol_runner(
                 no_spikes=False,
             )
 
-        step_protocol_name = f"TRNSearchCurrentStep"
+        step_protocol_name = "TRNSearchCurrentStep"
         protocols[step_protocol_name] = define_current_for_voltage_protocol(
             features,
             protocol_name=step_protocol_name,
-            target_current_name=f"TRNSearchCurrentStep_current",
+            target_current_name="TRNSearchCurrentStep_current",
             strict_bounds=strict_holding_bounds,
             upper_bound=2.0,
             lower_bound=-1.0,
