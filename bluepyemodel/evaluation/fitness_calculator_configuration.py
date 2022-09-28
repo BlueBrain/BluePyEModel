@@ -250,10 +250,10 @@ class FitnessCalculatorConfiguration:
                     tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
 
             if (
-                protocol_name == getattr(self, f"name_TRN_noburst_protocol")
+                protocol_name == getattr(self, "name_TRN_noburst_protocol")
                 and feature["feature"] == "steady_state_voltage_stimend"
             ):
-                tmp_feature.protocol_name = f"TRNSearchCurrentStep"
+                tmp_feature.protocol_name = "TRNSearchCurrentStep"
 
         if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(protocol_name):
             raise ValueError(

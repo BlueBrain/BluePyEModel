@@ -242,6 +242,17 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
                     time, current = stimuli[basename].stimulus.generate()
                     axs_c[-1].plot(time, current, color="gray", alpha=0.6)
 
+                    max_current = numpy.max(current)
+                    min_current = numpy.min(current)
+
+                    if (
+                        numpy.isnan(max_current)
+                        or numpy.isinf(max_current)
+                        or numpy.isnan(min_current)
+                        or numpy.isinf(min_current)
+                    ):
+                        continue
+
                     min_lim = numpy.min(current) - 0.2
                     max_lim = numpy.max(current) + 0.2
                     if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
@@ -583,6 +594,13 @@ def get_ordered_currentscape_keys(keys):
         "bpo_rin",
         "bpo_holding_current",
         "bpo_threshold_current",
+        "SearchThresholdCurrent",
+        "TRNSearchHolding_current_burst",
+        "TRNSearchCurrentStep_current",
+        "TRNSearchHolding_current_noburst",
+        "TRNSearchCurrentStep",
+        "TRNSearchHolding_noburst",
+        "TRNSearchHolding_burst",
     ]
 
     ordered_keys = {}

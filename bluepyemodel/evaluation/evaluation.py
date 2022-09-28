@@ -15,6 +15,15 @@ from bluepyemodel.tools.utils import make_dir
 
 logger = logging.getLogger(__name__)
 
+float_response_keys = [
+    "holding_current",
+    "threshold_current",
+    "bpo",
+    "TRNSearchHolding_current_burst",
+    "TRNSearchCurrentStep_current",
+    "TRNSearchHolding_current_noburst",
+]
+
 
 def locally_store_responses(emodel):
     """Locally store the responses.
@@ -25,7 +34,7 @@ def locally_store_responses(emodel):
     output_dir = f"./recordings/{emodel.emodel_metadata.as_string(emodel.seed)}"
     make_dir(output_dir)
     for key, resp in emodel.responses.items():
-        if not ("holding_current" in key or "threshold_current" in key or "bpo" in key):
+        if not any(fl_key in key for fl_key in float_response_keys):
             output_path = Path(output_dir) / ".".join((key, "dat"))
 
             if resp["time"] is not None and resp["voltage"] is not None:
