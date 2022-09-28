@@ -500,6 +500,13 @@ def get_ordered_currentscape_keys(keys):
         "bpo_rin",
         "bpo_holding_current",
         "bpo_threshold_current",
+        "SearchThresholdCurrent",
+        "TRNSearchHolding_current_burst",
+        "TRNSearchCurrentStep_current",
+        "TRNSearchHolding_current_noburst",
+        "TRNSearchCurrentStep",
+        "TRNSearchHolding_noburst",
+        "TRNSearchHolding_burst",
     ]
 
     ordered_keys = {}
