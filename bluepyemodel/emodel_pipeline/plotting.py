@@ -172,10 +172,10 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
                     min_current = numpy.min(current)
 
                     if (
-                        numpy.isnan(max_current) or
-                        numpy.isinf(max_current) or
-                        numpy.isnan(min_current) or
-                        numpy.isinf(min_current)
+                        numpy.isnan(max_current)
+                        or numpy.isinf(max_current)
+                        or numpy.isnan(min_current)
+                        or numpy.isinf(min_current)
                     ):
                         continue
 
