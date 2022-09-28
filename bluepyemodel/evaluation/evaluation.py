@@ -51,19 +51,7 @@ def check_local_responses_presence(emodels, cell_eval):
         if not all(
             (
                 (Path(output_dir) / ".".join((rec.name, "dat"))).is_file()
-                for prot in cell_eval.fitness_protocols[
-                    "main_protocol"
-                ].threshold_protocols.values()
-                for rec in prot.recordings
-                if rec.variable == "v"
-            )
-        ):
-            return False
-
-        if not all(
-            (
-                (Path(output_dir) / ".".join((rec.name, "dat"))).is_file()
-                for prot in cell_eval.fitness_protocols["main_protocol"].other_protocols.values()
+                for prot in cell_eval.fitness_protocols["main_protocol"].protocols.values()
                 for rec in prot.recordings
                 if rec.variable == "v"
             )
