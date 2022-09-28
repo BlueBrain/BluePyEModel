@@ -209,7 +209,7 @@ class LocalAccessPoint(DataAccessPoint):
             emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
             recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
-            recipes_path = self.recipes_path
+            recipes_path = self.emodel_dir / self.recipes_path
 
         with open(recipes_path, "r") as f:
             return json.load(f)
