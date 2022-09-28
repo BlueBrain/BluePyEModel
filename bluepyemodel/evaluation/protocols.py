@@ -221,7 +221,7 @@ class DynamicStepProtocol(ProtocolWithDependencies):
                 f"TRNSearchHolding{suffix}",
                 f"TRNSearchHolding_current{suffix}",
             ],
-            "stimulus_amplitude": [f"TRNSearchCurrentStep", f"TRNSearchCurrentStep_current"],
+            "stimulus_amplitude": ["TRNSearchCurrentStep", "TRNSearchCurrentStep_current"],
         }
 
         ProtocolWithDependencies.__init__(
@@ -729,6 +729,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
+        # pylint: disable=too-many-return-statements
 
         if not self.set_dependencies(responses):
             return self.return_none_responses()
@@ -743,8 +744,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         if spikecount > 0:
             if self.no_spikes:
                 return {"bpo_threshold_current": None}
-            else:
-                lower_bound -= 0.5
+            lower_bound -= 0.5
 
         if lower_bound > upper_bound:
             return {"bpo_threshold_current": None}
