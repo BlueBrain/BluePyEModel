@@ -45,6 +45,7 @@ class EModelPipelineSettings:
         strict_holding_bounds=True,
         max_depth_holding_search=7,
         max_depth_threshold_search=10,
+        spikecount_timeout=50,
     ):
         """Init
 
@@ -137,6 +138,7 @@ class EModelPipelineSettings:
         self.threshold_efeature_std = threshold_efeature_std
         self.max_depth_holding_search = max_depth_holding_search
         self.max_depth_threshold_search = max_depth_threshold_search
+        self.spikecount_timeout = spikecount_timeout
 
         # Settings related to the optimisation
         self.optimisation_timeout = optimisation_timeout

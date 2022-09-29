@@ -359,6 +359,7 @@ def define_threshold_based_optimisation_protocol(
     use_fixed_dt_recordings=False,
     max_depth_holding_search=7,
     max_depth_threshold_search=10,
+    spikecount_timeout=50,
 ):
     """Create a meta protocol in charge of running the other protocols.
 
@@ -439,7 +440,7 @@ def define_threshold_based_optimisation_protocol(
                     fitness_calculator_configuration.search_threshold_step_delay,
                     fitness_calculator_configuration.search_threshold_step_duration,
                     fitness_calculator_configuration.search_threshold_totduration,
-                    fitness_calculator_configuration.spikecount_timeout,
+                    spikecount_timeout,
                     max_depth_threshold_search,
                 ),
             }
@@ -558,6 +559,7 @@ def create_evaluator(
         use_fixed_dt_recordings=use_fixed_dt_recordings,
         max_depth_holding_search=pipeline_settings.max_depth_holding_search,
         max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
+        spikecount_timeout=pipeline_settings.spikecount_timeout,
     )
 
     fitness_calculator = define_fitness_calculator(features)

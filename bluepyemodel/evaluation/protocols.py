@@ -661,9 +661,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         feature = self.spike_feature.calculate_feature(response)
         if feature is None:
             feature = 2
-            logging.debug(
-                "Trace computation for threshold timed out at %s", self.spikecount_timeout
-            )
+            logger.debug("Trace computation for threshold timed out at %s", self.spikecount_timeout)
         return feature
 
     def run(
@@ -678,6 +676,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             cell_model, param_values, sim, isolate, responses
         )
         if lower_bound is None or upper_bound is None:
+            logger.warning("Threshold search bounds are not good")
             return {"bpo_threshold_current": None}
 
         threshold = self.bisection_search(
@@ -716,6 +715,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
         lower_bound = responses["bpo_holding_current"]
         spikecount = self._get_spikecount(lower_bound, cell_model, param_values, sim, isolate)
+
         if spikecount > 0:
             if self.no_spikes:
                 return None, None
@@ -746,9 +746,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
                 return upper_bound
 
         if depth > self.max_depth:
-            if spikecount:
-                return upper_bound
-            return None
+            return upper_bound
 
         if spikecount == 0:
             return self.bisection_search(
