@@ -89,6 +89,7 @@ def extract_save_features_protocols(access_point, mapper=map):
         map_function=mapper,
         write_files=False,
         plot=plot,
+        efel_settings=access_point.pipeline_settings.efel_settings,
         pickle_cells=access_point.pipeline_settings.pickle_cells_extraction,
     )
 
