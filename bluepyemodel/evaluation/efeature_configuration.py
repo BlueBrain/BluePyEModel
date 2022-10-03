@@ -16,6 +16,7 @@ class EFeatureConfiguration:
         threshold_efeature_std=None,
         original_std=None,
         std=None,
+        sample_size=None,
     ):
         """Init.
 
@@ -36,6 +37,8 @@ class EFeatureConfiguration:
             efel_settings (dict): eFEl settings.
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional).
+            sample_size (float): number of data point that were used to compute the present
+                average and standard deviation.
         """
 
         self.efel_feature_name = efel_feature_name
@@ -45,6 +48,7 @@ class EFeatureConfiguration:
 
         self.mean = mean
         self.original_std = original_std if original_std is not None else std
+        self.sample_size = sample_size
 
         self.efeature_name = efeature_name
 
