@@ -167,7 +167,11 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
 
                     time, current = stimuli[basename].stimulus.generate()
                     axs_c[-1].plot(time, current, color="gray", alpha=0.6)
-                    axs_c[-1].set_ylim(numpy.min(current) - 0.2, numpy.max(current) + 0.2)
+
+                    min_lim = numpy.min(current) - 0.2
+                    max_lim = numpy.max(current) + 0.2
+                    if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
+                        axs_c[-1].set_ylim(min_lim, max_lim)
 
         idx += 1
 
