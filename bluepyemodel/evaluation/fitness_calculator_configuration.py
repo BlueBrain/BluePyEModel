@@ -198,6 +198,7 @@ class FitnessCalculatorConfiguration:
             efeature_name=feature.get("efeature_name", None),
             efel_settings=feature.get("efel_settings", {}),
             threshold_efeature_std=threshold_efeature_std,
+            sample_size=feature.get("n", None),
         )
 
         if protocol_name == self.name_rmp_protocol and feature["feature"] == "voltage_base":
