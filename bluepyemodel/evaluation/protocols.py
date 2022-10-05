@@ -658,11 +658,11 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             isolate=isolate,
             timeout=self.spikecount_timeout,
         )
-        feature = self.spike_feature.calculate_feature(response)
-        if feature is None:
-            feature = 2
+        if response[self.recording_name] is None:
             logger.debug("Trace computation for threshold timed out at %s", self.spikecount_timeout)
-        return feature
+            return 2
+
+        return self.spike_feature.calculate_feature(response)
 
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
