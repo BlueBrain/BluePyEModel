@@ -818,17 +818,22 @@ class ProtocolRunner(ephys.protocols.Protocol):
         cell_model.freeze(param_values)
 
         for protocol_name in self.execution_order:
+
             logger.debug("Computing protocol %s", protocol_name)
-            responses.update(
-                self.protocols[protocol_name].run(
-                    cell_model,
-                    param_values={},
-                    sim=sim,
-                    isolate=isolate,
-                    timeout=timeout,
-                    responses=responses,
-                )
+            new_responses = self.protocols[protocol_name].run(
+                cell_model,
+                param_values={},
+                sim=sim,
+                isolate=isolate,
+                timeout=timeout,
+                responses=responses,
             )
+
+            if any(v is None for v in new_responses.values()):
+                logger.debug("None in responses, exiting evaluation")
+                break
+
+            responses.update(new_responses)
 
         cell_model.unfreeze(param_values.keys())
         return responses
