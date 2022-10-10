@@ -2,6 +2,8 @@
 import logging
 from copy import deepcopy
 
+import numpy
+
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
@@ -50,6 +52,27 @@ def _set_morphology_dependent_locations(stimulus, cell):
     ]:
         logger.warning("We could not add a location for %s", stimulus)
     return new_stims
+
+
+def _are_same_protocol(name_a, name_b):
+    """Check if two protocol names or list are equal. Eg: is IV_0.0 the same as IV_0"""
+
+    amps = []
+    ecodes = []
+
+    for name in [name_a, name_b]:
+        if isinstance(name, str):
+            ecodes.append("_".join(e for e in name.split("_")[:-1]))
+            amps.append(float(name.split("_")[-1]))
+        elif isinstance(name, list):
+            ecodes.append(name[0])
+            amps.append(float(name[1]))
+        else:
+            raise TypeError
+
+    if ecodes[0] == ecodes[1] and numpy.isclose(amps[0], amps[1]):
+        return True
+    return False
 
 
 class FitnessCalculatorConfiguration:
@@ -201,14 +224,20 @@ class FitnessCalculatorConfiguration:
             sample_size=feature.get("n", None),
         )
 
-        if protocol_name == self.name_rmp_protocol and feature["feature"] == "voltage_base":
+        if (
+            _are_same_protocol(self.name_rmp_protocol, protocol_name)
+            and feature["feature"] == "voltage_base"
+        ):
             tmp_feature.protocol_name = "RMPProtocol"
             tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
-        if protocol_name == self.name_rin_protocol and feature["feature"] == "voltage_base":
+        if (
+            _are_same_protocol(self.name_rin_protocol, protocol_name)
+            and feature["feature"] == "voltage_base"
+        ):
             tmp_feature.protocol_name = "SearchHoldingCurrent"
             tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
         if (
-            protocol_name == self.name_rin_protocol
+            _are_same_protocol(self.name_rin_protocol, protocol_name)
             and feature["feature"] == "ohmic_input_resistance_vb_ssse"
         ):
             tmp_feature.protocol_name = "RinProtocol"
@@ -224,16 +253,16 @@ class FitnessCalculatorConfiguration:
     def init_from_bluepyefe(self, efeatures, protocols, currents, threshold_efeature_std):
         """Fill the configuration using the output of BluePyEfe"""
 
-        if (
-            self.name_rmp_protocol
-            and self.name_rmp_protocol not in efeatures
-            and self.name_rmp_protocol != "all"
+        if self.name_rmp_protocol and not any(
+            _are_same_protocol(self.name_rmp_protocol, p) for p in efeatures
         ):
             raise Exception(
                 f"The stimulus {self.name_rmp_protocol} requested for RMP "
                 "computation couldn't be extracted from the ephys data."
             )
-        if self.name_rin_protocol and self.name_rin_protocol not in efeatures:
+        if self.name_rin_protocol and not any(
+            _are_same_protocol(self.name_rin_protocol, p) for p in efeatures
+        ):
             raise Exception(
                 f"The stimulus {self.name_rin_protocol} requested for Rin "
                 "computation couldn't be extracted from the ephys data."
@@ -378,7 +407,7 @@ class FitnessCalculatorConfiguration:
 
         if (
             self.name_rmp_protocol
-            and self.name_rmp_protocol not in efeatures
+            and not any(_are_same_protocol(self.name_rmp_protocol, p) for p in efeatures)
             and "RMP" not in efeatures
         ):
             raise Exception(
@@ -388,7 +417,7 @@ class FitnessCalculatorConfiguration:
 
         if (
             self.name_rin_protocol
-            and self.name_rin_protocol not in efeatures
+            and not any(_are_same_protocol(self.name_rin_protocol, p) for p in efeatures)
             and "Rin" not in efeatures
         ):
             raise Exception(

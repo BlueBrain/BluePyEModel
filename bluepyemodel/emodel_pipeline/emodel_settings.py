@@ -101,15 +101,14 @@ class EModelPipelineSettings:
                 mechanisms_dir directory.
             path_extract_config (str): path to the .json containing the extraction targets, files
                 metadata and the name of the protocols used to compute the threshold of the cell.
-            name_Rin_protocol (str): name of the protocol associated with the efeatures used for
-                the computation of the input resistance scores during optimisation, e.g: IV_-20.
-                This settings as to be set before efeature extraction if you wish to run a
-                threshold based evaluator.
-            name_rmp_protocol (str): name of the protocol associated with the efeatures used for
-                the computation of the resting membrane potential scores during optimisation,
-                e.g: IV_0. This settings has to be set before efeature extraction if you wish
-                to run a threshold based evaluator. Can also be 'all', in which case the RMP
-                will be estimated as the mean of the voltage_base for all the protocols.
+            name_Rin_protocol (list of str): name and amplitude of the protocol associated with
+                the efeatures used for the computation of the input resistance scores during
+                optimisation, e.g: ["IV", -20]. This settings as to be set before efeature
+                extraction if you wish to run a threshold based evaluator.
+            name_rmp_protocol (list of str): name and amplitude of the protocol associated with
+                the efeatures used for the computation of the resting membrane potential scores
+                during optimisation, e.g: ["IV", 0]. This settings has to be set before efeature
+                extraction if you wish to run a threshold based evaluator.
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
                 wish to run validation.
