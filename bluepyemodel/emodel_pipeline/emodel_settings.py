@@ -16,6 +16,8 @@ class EModelPipelineSettings:
         extraction_threshold_value_save=1,
         plot_extraction=True,
         pickle_cells_extraction=False,
+        rheobase_strategy_extraction="absolute",
+        rheobase_settings_extraction=None,
         efel_settings=None,
         stochasticity=False,
         morph_modifiers=None,
@@ -57,6 +59,12 @@ class EModelPipelineSettings:
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
             pickle_cells_extraction (bool): sould the cells object be saved as a pickle file for
                 further analysis during extraction.
+            rheobase_strategy_extraction (str): function used to compute the rheobase during
+                extraction. Can be 'absolute' (amplitude of the lowest amplitude inducing at
+                least a spike) or 'majority' (amplitude of the bin in which a majority of
+                sweeps induced at least one spike).
+            rheobase_settings_extraction (dict): settings related to the rheobase computation.
+                Keys have to match the arguments expected by the rheobase computation function.
             efel_settings (dict): efel settings in the form {setting_name: setting_value}.
                 If settings are also informed in the targets per efeature, the latter
                 will have priority.
@@ -132,6 +140,8 @@ class EModelPipelineSettings:
         if self.efel_settings is None:
             self.efel_settings = {"interp_step": 0.025, "strict_stiminterval": True}
         self.path_extract_config = path_extract_config  # only when using local access point
+        self.rheobase_strategy_extraction = rheobase_strategy_extraction
+        self.rheobase_settings_extraction = rheobase_settings_extraction
 
         # Settings related to the evaluator
         self.max_threshold_voltage = max_threshold_voltage
