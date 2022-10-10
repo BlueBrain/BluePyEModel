@@ -273,7 +273,7 @@ def create_cell_model(
     )
 
     return ephys.models.CellModel(
-        name=name.replace(":", "_"),
+        name=name.replace(":", "_").replace("-", "_"),
         morph=morph,
         mechs=mechanisms,
         params=parameters,
