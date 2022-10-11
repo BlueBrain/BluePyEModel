@@ -1,134 +1,110 @@
 {
-  "SearchHoldingCurrent": {
-    "soma.v": [
-      {
-        "feature": "bpo_holding_current",
-        "val": [
-          -0.089,
-          0.1
-        ],
-        "strict_stim": true
-      },
-      {
-        "feature": "steady_state_voltage_stimend",
-        "val": [
-          -82.81958690811605,
-          1.0475676922867347
-        ],
-        "strict_stim": true
+  "efeatures": [
+    {
+      "efel_feature_name": "Spikecount",
+      "protocol_name": "IDRest_200",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "mean": 18.5625,
+      "original_std": 5.061728336250376,
+      "sample_size": 16,
+      "efeature_name": "Spikecount",
+      "efel_settings": {
+        "interp_step": 0.025,
+        "strict_stiminterval": true
       }
-    ]
-  },
-  "SearchThresholdCurrent": {
-    "soma.v": [
-      {
-        "feature": "bpo_threshold_current",
-        "val": [
-          0.3217038670887372,
-          0.00001
-        ],
-        "strict_stim": true
+    },
+    {
+      "efel_feature_name": "voltage_base",
+      "protocol_name": "IDRest_200",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "mean": -71.84710911089577,
+      "original_std": 0.9996541782018281,
+      "sample_size": 16,
+      "efeature_name": "voltage_base",
+      "efel_settings": {
+        "interp_step": 0.025,
+        "strict_stiminterval": true
       }
-    ]
-  },
-  "IDRest_150": {
-    "soma.v": [
-      {
-        "feature": "mean_frequency",
-        "val": [
-          5.745575680803232,
-          3.0170303744338165
-        ],
-        "n": 97
-      },
-      {
-        "feature": "ISI_CV",
-        "val": [
-          0.202907467686871,
-          0.20024383072094523
-        ],
-        "n": 97
-      },
-      {
-        "feature": "AP_amplitude",
-        "val": [
-          70.5709033030217,
-          7.30247145813405
-        ],
-        "n": 97
-      },
-      {
-        "feature": "AP_begin_width",
-        "val": [
-          8.951554239663182,
-          3.848902616111871
-        ],
-        "n": 97
+    },
+    {
+      "efel_feature_name": "AP_amplitude",
+      "protocol_name": "IDRest_200",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "mean": 50.5113145252614,
+      "original_std": 1.8035119835947135,
+      "sample_size": 16,
+      "efeature_name": "AP_amplitude",
+      "efel_settings": {
+        "interp_step": 0.025,
+        "strict_stiminterval": true
       }
-    ]
-  },
-  "APWaveform_300": {
-    "soma.v": [
-      {
-        "feature": "AP_amplitude",
-        "val": [
-          82.42927107280917,
-          4.083761054230715
-        ],
-        "n": 30
-      },
-      {
-        "feature": "AP_begin_width",
-        "val": [
-          10.101666666666716,
-          5.326070314969607
-        ],
-        "n": 30
+    },
+    {
+      "efel_feature_name": "AP_amplitude",
+      "protocol_name": "APWaveform_300",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "mean": 53.29020082028301,
+      "original_std": 4.03220131226907,
+      "sample_size": 23,
+      "efeature_name": "AP_amplitude",
+      "efel_settings": {
+        "interp_step": 0.025,
+        "strict_stiminterval": true
       }
-    ]
-  },
-  "IV_0": {
-    "soma.v": [
-      {
-        "feature": "voltage_base",
-        "val": [
-          -83.01058529566203,
-          1.0252726526561142
-        ],
-        "n": 126
-      },
-      {
-        "feature": "ohmic_input_resistance_vb_ssse",
-        "val": [
-          64.32817922946982,
-          409.45465812657494
-        ],
-        "n": 126
-      }
-    ]
-  },
-  "RMPProtocol": {
-    "soma.v": [
-      {
-        "feature": "steady_state_voltage_stimend",
-        "val": [
-          -83.01058529566203,
-          1.0252726526561142
-        ],
-        "strict_stim": true
-      }
-    ]
-  },
-  "RinProtocol": {
-    "soma.v": [
-      {
-        "feature": "ohmic_input_resistance_vb_ssse",
-        "val": [
-          48.84779554364659,
-          15.594516146490195
-        ],
-        "n": 136
-      }
-    ]
-  }
+    }
+  ],
+  "protocols": [
+    {
+      "name": "IDRest_200",
+      "stimuli": [
+        {
+          "delay": 700.15625,
+          "amp": 0.04941164824413135,
+          "thresh_perc": 197.65625064031553,
+          "duration": 1999.953125,
+          "totduration": 3000.0,
+          "holding_current": -0.025389384478330612
+        }
+      ],
+      "recordings": [
+        {
+          "type": "CompRecording",
+          "name": "IDRest_200.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": false,
+      "protocol_type": "Protocol",
+      "stochasticity": false
+    },
+    {
+      "name": "APWaveform_300",
+      "stimuli": [
+        {
+          "delay": 5.02875,
+          "amp": 0.07304330635815859,
+          "thresh_perc": 292.18750197915716,
+          "duration": 50.069583333333334,
+          "totduration": 60.0,
+          "holding_current": -0.024998778477311134
+        }
+      ],
+      "recordings": [
+        {
+          "type": "CompRecording",
+          "name": "APWaveform_300.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": true,
+      "protocol_type": "Protocol",
+      "stochasticity": false
+    }
+  ]
 }

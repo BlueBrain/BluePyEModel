@@ -57,6 +57,9 @@ def _set_morphology_dependent_locations(stimulus, cell):
 def _are_same_protocol(name_a, name_b):
     """Check if two protocol names or list are equal. Eg: is IV_0.0 the same as IV_0"""
 
+    if name_a is None or name_b is None:
+        return False
+
     amps = []
     ecodes = []
 
@@ -196,6 +199,10 @@ class FitnessCalculatorConfiguration:
         validation = protocol_name in self.validation_protocols
         stochasticity = self.check_stochasticity(protocol_name)
 
+        protocol_type = "Protocol"
+        if self.name_rmp_protocol and self.name_rin_protocol:
+            protocol_type = "ThresholdBasedProtocol"
+
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
@@ -203,6 +210,7 @@ class FitnessCalculatorConfiguration:
             validation=validation,
             ion_variables=self.ion_variables,
             stochasticity=stochasticity,
+            protocol_type=protocol_type,
         )
 
         self.protocols.append(tmp_protocol)
@@ -282,7 +290,7 @@ class FitnessCalculatorConfiguration:
                     )
 
         # Add the current related features
-        if currents:
+        if currents and self.name_rmp_protocol and self.name_rin_protocol:
             self.efeatures.append(
                 EFeatureConfiguration(
                     efel_feature_name="bpo_holding_current",

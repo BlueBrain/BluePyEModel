@@ -55,7 +55,8 @@ The section after that will focus on scenario 4 as it is the most complex. Scena
 
 ### 1) Running using python with local storage
 
-This section present the general picture of how to create an e-model using python and local storage. For a detailed picture, please refer to the files in examples/emodel_pipeline_local_python.
+This section presents the general picture of how to create an e-model using python and local storage.
+For a detailed picture, please refer to the example directory `./examples/emodel_pipeline_local_python` and its README which shows how to setup an optimisation directory and how to run it on BB5 using slurm.
 
 The pipeline is divided in 4 steps:
 - extraction: extracts efeatures from the ephys recordings and averages the results along the requested targets.

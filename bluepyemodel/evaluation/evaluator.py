@@ -215,7 +215,7 @@ def define_RMP_protocol(efeatures, stimulus_duration=500.0):
             "Couldn't find the efeature 'steady_state_voltage_stimend' associated to the "
             "'RMPProtocol' in your FitnessCalculatorConfiguration. It might not have been "
             "extracted from the ephys data you have available or the name of the protocol to"
-            "use for RMP (setting 'name_rmp_protocol') might be wrong."
+            " use for RMP (setting 'name_rmp_protocol') might be wrong."
         )
 
     rmp_protocol = RMPProtocol(
@@ -348,6 +348,87 @@ def define_threshold_protocol(
     )
 
 
+def define_protocols(
+    fitness_calculator_configuration,
+    include_validation_protocols,
+    stochasticity,
+    use_fixed_dt_recordings,
+):
+    """Instantiate several efeatures"""
+
+    protocols = {}
+    for protocols_def in fitness_calculator_configuration.protocols:
+        if not include_validation_protocols and protocols_def.validation:
+            continue
+        protocols[protocols_def.name] = define_protocol(
+            protocols_def, stochasticity, use_fixed_dt_recordings
+        )
+
+    return protocols
+
+
+def define_efeatures(
+    fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+):
+    """Instantiate several Protocols"""
+
+    efeatures = []
+    validation_prot = fitness_calculator_configuration.validation_protocols
+
+    for feature_def in fitness_calculator_configuration.efeatures:
+
+        if not include_validation_protocols and feature_def.protocol_name in validation_prot:
+            continue
+
+        protocol = None
+        if feature_def.protocol_name not in PRE_PROTOCOLS:
+            protocol = next(
+                (p for p in protocols.values() if p.name == feature_def.protocol_name), None
+            )
+            if protocol is None:
+                raise Exception(f"Could not find protocol named {feature_def.protocol_name}")
+
+        efeatures.append(define_efeature(feature_def, protocol, efel_settings))
+
+    return efeatures
+
+
+def define_optimisation_protocol(
+    fitness_calculator_configuration,
+    include_validation_protocols=False,
+    stochasticity=True,
+    efel_settings=None,
+    use_fixed_dt_recordings=False,
+):
+    """Create a meta protocol in charge of running the other protocols.
+
+    Args:
+        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
+            fitness calculator.
+        include_validation_protocols (bool): should the validation protocols
+            and validation efeatures be added to the evaluator.
+        stochasticity (bool): Should the stochastic channels be stochastic or
+            deterministic
+        efel_settings (dict): eFEl settings.
+        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+    """
+
+    protocols = define_protocols(
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        stochasticity,
+        use_fixed_dt_recordings,
+    )
+
+    efeatures = define_efeatures(
+        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+    )
+
+    protocol_runner = ProtocolRunner(protocols)
+
+    return protocol_runner, efeatures
+
+
 def define_threshold_based_optimisation_protocol(
     fitness_calculator_configuration,
     include_validation_protocols=False,
@@ -385,66 +466,49 @@ def define_threshold_based_optimisation_protocol(
             threshold current
     """
 
-    # Create the threshold and non-threshold protocols
-    protocols = {}
-    for protocols_def in fitness_calculator_configuration.protocols:
-        if not include_validation_protocols and protocols_def.validation:
-            continue
-        protocols[protocols_def.name] = define_protocol(
-            protocols_def, stochasticity, use_fixed_dt_recordings
-        )
+    protocols = define_protocols(
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        stochasticity,
+        use_fixed_dt_recordings,
+    )
 
-    # Create the efeatures
-    efeatures = []
-    validation_prot = fitness_calculator_configuration.validation_protocols
-    for feature_def in fitness_calculator_configuration.efeatures:
-
-        if not include_validation_protocols and feature_def.protocol_name in validation_prot:
-            continue
-
-        protocol = None
-        if feature_def.protocol_name not in PRE_PROTOCOLS:
-            protocol = next(
-                (p for p in protocols.values() if p.name == feature_def.protocol_name), None
-            )
-            if protocol is None:
-                raise Exception(f"Could not find protocol named {feature_def.protocol_name}")
-
-        efeatures.append(define_efeature(feature_def, protocol, efel_settings))
+    efeatures = define_efeatures(
+        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+    )
 
     # Create the special protocols
-    if any(isinstance(p, ThresholdBasedProtocol) for p in protocols.values()):
-        protocols.update(
-            {
-                "RMPProtocol": define_RMP_protocol(
-                    efeatures, stimulus_duration=fitness_calculator_configuration.rmp_duration
-                ),
-                "SearchHoldingCurrent": define_holding_protocol(
-                    efeatures,
-                    strict_holding_bounds,
-                    ais_recording,
-                    max_depth_holding_search,
-                    stimulus_duration=fitness_calculator_configuration.search_holding_duration,
-                ),
-                "RinProtocol": define_Rin_protocol(
-                    efeatures,
-                    ais_recording,
-                    amp=fitness_calculator_configuration.rin_step_amp,
-                    stimulus_delay=fitness_calculator_configuration.rin_step_delay,
-                    stimulus_duration=fitness_calculator_configuration.rin_step_duration,
-                    totduration=fitness_calculator_configuration.rin_totduration,
-                ),
-                "SearchThresholdCurrent": define_threshold_protocol(
-                    efeatures,
-                    max_threshold_voltage,
-                    fitness_calculator_configuration.search_threshold_step_delay,
-                    fitness_calculator_configuration.search_threshold_step_duration,
-                    fitness_calculator_configuration.search_threshold_totduration,
-                    spikecount_timeout,
-                    max_depth_threshold_search,
-                ),
-            }
-        )
+    protocols.update(
+        {
+            "RMPProtocol": define_RMP_protocol(
+                efeatures, stimulus_duration=fitness_calculator_configuration.rmp_duration
+            ),
+            "SearchHoldingCurrent": define_holding_protocol(
+                efeatures,
+                strict_holding_bounds,
+                ais_recording,
+                max_depth_holding_search,
+                stimulus_duration=fitness_calculator_configuration.search_holding_duration,
+            ),
+            "RinProtocol": define_Rin_protocol(
+                efeatures,
+                ais_recording,
+                amp=fitness_calculator_configuration.rin_step_amp,
+                stimulus_delay=fitness_calculator_configuration.rin_step_delay,
+                stimulus_duration=fitness_calculator_configuration.rin_step_duration,
+                totduration=fitness_calculator_configuration.rin_totduration,
+            ),
+            "SearchThresholdCurrent": define_threshold_protocol(
+                efeatures,
+                max_threshold_voltage,
+                fitness_calculator_configuration.search_threshold_step_delay,
+                fitness_calculator_configuration.search_threshold_step_duration,
+                fitness_calculator_configuration.search_threshold_totduration,
+                spikecount_timeout,
+                max_depth_threshold_search,
+            ),
+        }
+    )
 
     # Create the protocol runner
     protocol_runner = ProtocolRunner(protocols)
@@ -549,18 +613,30 @@ def create_evaluator(
 
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
-    main_protocol, features = define_threshold_based_optimisation_protocol(
-        fitness_calculator_configuration,
-        include_validation_protocols,
-        stochasticity=stochasticity,
-        efel_settings=pipeline_settings.efel_settings,
-        max_threshold_voltage=pipeline_settings.max_threshold_voltage,
-        strict_holding_bounds=pipeline_settings.strict_holding_bounds,
-        use_fixed_dt_recordings=use_fixed_dt_recordings,
-        max_depth_holding_search=pipeline_settings.max_depth_holding_search,
-        max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
-        spikecount_timeout=pipeline_settings.spikecount_timeout,
-    )
+    if any(
+        p.protocol_type == "ThresholdBasedProtocol"
+        for p in fitness_calculator_configuration.protocols
+    ):
+        main_protocol, features = define_threshold_based_optimisation_protocol(
+            fitness_calculator_configuration,
+            include_validation_protocols,
+            stochasticity=stochasticity,
+            efel_settings=pipeline_settings.efel_settings,
+            max_threshold_voltage=pipeline_settings.max_threshold_voltage,
+            strict_holding_bounds=pipeline_settings.strict_holding_bounds,
+            use_fixed_dt_recordings=use_fixed_dt_recordings,
+            max_depth_holding_search=pipeline_settings.max_depth_holding_search,
+            max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
+            spikecount_timeout=pipeline_settings.spikecount_timeout,
+        )
+    else:
+        main_protocol, features = define_optimisation_protocol(
+            fitness_calculator_configuration,
+            include_validation_protocols,
+            stochasticity=stochasticity,
+            efel_settings=pipeline_settings.efel_settings,
+            use_fixed_dt_recordings=use_fixed_dt_recordings,
+        )
 
     fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}
