@@ -1,0 +1,69 @@
+{
+  "L5PC__1": {
+    "emodel": "L5PC",
+    "etype": null,
+    "ttype": null,
+    "mtype": null,
+    "species": null,
+    "brain_region": null,
+    "iteration": null,
+    "morph_class": null,
+    "synapse_class": null,
+    "layer": null,
+    "score": 0.8687488995320345,
+    "parameters": {
+      "constant.distribution_decay": -0.02544253178789003,
+      "g_pas.all": 1.9365499387907016e-05,
+      "e_pas.all": -71.68554706165426,
+      "gIhbar_Ih.somadend": 0.00012726341475843622,
+      "gNaTgbar_NaTg.axonal": 1.49999999925,
+      "gNap_Et2bar_Nap_Et2.axonal": 0.001231068122475032,
+      "gK_Pstbar_K_Pst.axonal": 0.9999999995,
+      "gK_Tstbar_K_Tst.axonal": 0.14146838825857647,
+      "gSKv3_1bar_SKv3_1.axonal": 0.06610421851427994,
+      "gCa_HVAbar_Ca_HVA2.axonal": 0.000900095743681961,
+      "gCa_LVAstbar_Ca_LVAst.axonal": 0.009999999995000002,
+      "gSK_E2bar_SK_E2.axonal": 0.08400434514975705,
+      "decay_CaDynamics_DC0.axonal": 20.000000139999997,
+      "gamma_CaDynamics_DC0.axonal": 0.019356629771130753,
+      "gNaTgbar_NaTg.somatic": 1.4999998465548003e-10,
+      "gK_Pstbar_K_Pst.somatic": 0.007629017508956629,
+      "gK_Tstbar_K_Tst.somatic": 0.07369326765163223,
+      "gSKv3_1bar_SKv3_1.somatic": 0.49639327917330567,
+      "gCa_HVAbar_Ca_HVA2.somatic": 0.00021789251296703145,
+      "gCa_LVAstbar_Ca_LVAst.somatic": 0.007911720274669722,
+      "gSK_E2bar_SK_E2.somatic": 0.061282566406501385,
+      "decay_CaDynamics_DC0.somatic": 175.33769080426165,
+      "gamma_CaDynamics_DC0.somatic": 0.024563626793845245,
+      "gamma_CaDynamics_DC0.apical": 0.005752774726923888,
+      "gNaTgbar_NaTg.apical": 0.059575702726924924,
+      "gSKv3_1bar_SKv3_1.apical": 1.4999999940062958e-12,
+      "gCa_HVAbar_Ca_HVA2.apical": 8.807947390959207e-05,
+      "gCa_LVAstbar_Ca_LVAst.apical": 0.00043572935712563596,
+      "gamma_CaDynamics_DC0.basal": 0.044528369999164194,
+      "gCa_HVAbar_Ca_HVA2.basal": 2.767439659468225e-05,
+      "gCa_LVAstbar_Ca_LVAst.basal": 0.0002000932656347511
+    },
+    "fitness": {
+      "IDRest_200.soma.v.Spikecount": 0.30868902797684866,
+      "IDRest_200.soma.v.voltage_base": 0.07175378705497765,
+      "IDRest_200.soma.v.AP_amplitude": 0.48830608450020824
+    },
+    "features": {
+      "IDRest_200.soma.v.Spikecount": 17.0,
+      "IDRest_200.soma.v.voltage_base": -71.91883808392708,
+      "IDRest_200.soma.v.AP_amplitude": 49.630648650203064,
+      "APWaveform_300.soma.v.AP_amplitude": 50.039797009372045
+    },
+    "validation_fitness": {
+      "APWaveform_300.soma.v.AP_amplitude": 0.8061114907682633
+    },
+    "validated": true,
+    "seed": 1,
+    "pdfs": [
+      "/Users/damart/Desktop/bluepyemodel/examples/emodel_pipeline_local_python/figures/L5PC/traces/all/emodel=L5PC__seed=1__traces.pdf",
+      "/Users/damart/Desktop/bluepyemodel/examples/emodel_pipeline_local_python/figures/L5PC/scores/all/emodel=L5PC__seed=1__scores.pdf",
+      "/Users/damart/Desktop/bluepyemodel/examples/emodel_pipeline_local_python/figures/L5PC/distributions/all/emodel=L5PC__parameters_distribution.pdf"
+    ]
+  }
+}
