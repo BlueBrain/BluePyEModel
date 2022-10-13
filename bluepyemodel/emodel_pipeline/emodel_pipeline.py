@@ -137,7 +137,7 @@ class EModel_pipeline:
             terminator=None,
         )
 
-     def store_optimisation_results(self, seed=None):
+    def store_optimisation_results(self, seed=None):
         """"""
 
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
