@@ -83,6 +83,9 @@ class EModelPipelineSettings:
                 {"offspring_size": 10, "weight_hv": 0.4}
             optimisation_timeout (float): duration (in second) after which the evaluation
                 of a protocol will be interrupted.
+            threshold_efeature_std (float): if informed, during extraction, the std of the
+                features will be computed as abs(threshold_efeature_std * mean) if
+                std is < threshold_efeature_std * min.
             max_ngen (int): maximum number of generations of the evolutionary process of the
                 optimisation.
             validation_threshold (float): score threshold under which the emodel passes
