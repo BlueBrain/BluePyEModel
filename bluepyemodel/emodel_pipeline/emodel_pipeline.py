@@ -137,26 +137,26 @@ class EModel_pipeline:
             terminator=None,
         )
 
-    def store_optimisation_results(self, seed=None):
+     def store_optimisation_results(self, seed=None):
         """"""
 
-        if seed is not None:
-            store_best_model(access_point=self.access_point, seed=seed)
+        checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
 
-        else:
-            checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
-            for chkp_path in glob.glob(checkpoint_path.replace("seed=1", "*")):
+        for chkp_path in glob.glob(checkpoint_path.replace("seed=1", "*")):
 
+            if seed is not None and str(seed) not in chkp_path:
+                continue
+
+            tmp_seed = seed
+            if tmp_seed is None:
                 tmp_path = pathlib.Path(chkp_path).stem
-                seed = next(
-                    int(e.replace("seed=", "")) for e in tmp_path.split("__") if "seed=" in e
-                )
+                tmp_seed = next(int(e.replace("seed=", "")) for e in tmp_path.split("__") if "seed=" in e)
 
-                store_best_model(
-                    access_point=self.access_point,
-                    seed=seed,
-                    checkpoint_path=chkp_path,
-                )
+            store_best_model(
+                access_point=self.access_point,
+                seed=tmp_seed,
+                checkpoint_path=chkp_path,
+            )
 
     def validation(self):
         """"""
