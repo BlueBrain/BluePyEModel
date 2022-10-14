@@ -12,6 +12,7 @@ from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tools.multiprocessing import ipyparallel_map_function
+from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.validation.validation import validate
 
 logger = logging.getLogger()
@@ -139,25 +140,24 @@ class EModel_pipeline:
     def store_optimisation_results(self, seed=None):
         """"""
 
-        for chkp_path in glob.glob("./checkpoints/*.pkl"):
+        if seed is not None:
+            store_best_model(access_point=self.access_point, seed=seed)
 
-            if self.access_point.emodel_metadata.emodel not in chkp_path:
-                continue
+        else:
+            checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
 
-            if (
-                self.access_point.emodel_metadata.iteration
-                and self.access_point.emodel_metadata.iteration not in chkp_path
-            ):
-                continue
+            for chkp_path in glob.glob(checkpoint_path.replace("seed=1", "*")):
 
-            if seed and str(seed) not in chkp_path:
-                continue
+                file_name = pathlib.Path(chkp_path).stem
+                tmp_seed = next(
+                    int(e.replace("seed=", "")) for e in file_name.split("__") if "seed=" in e
+                )
 
-            store_best_model(
-                access_point=self.access_point,
-                seed=seed,
-                checkpoint_path=chkp_path,
-            )
+                store_best_model(
+                    access_point=self.access_point,
+                    seed=tmp_seed,
+                    checkpoint_path=chkp_path,
+                )
 
     def validation(self):
         """"""
