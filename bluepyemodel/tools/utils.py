@@ -3,6 +3,8 @@ import logging
 import pickle
 from pathlib import Path
 
+import numpy
+
 logger = logging.getLogger("__main__")
 
 
@@ -114,3 +116,40 @@ def read_checkpoint(checkpoint_path):
             )
 
     return run, run_metadata
+
+
+def format_protocol_name_to_list(protocol_name):
+    """Make sure that the name of a protocol is a list [protocol_name, amplitude]"""
+
+    if isinstance(protocol_name, str):
+        try:
+            name = "_".join(e for e in protocol_name.split("_")[:-1])
+            amplitude = float(protocol_name.split("_")[-1])
+        except ValueError:
+            return protocol_name, None
+        return name, amplitude
+
+    if isinstance(protocol_name, list):
+        return protocol_name
+
+    raise TypeError("protocol_name should be a string or a list.")
+
+
+def are_same_protocol(name_a, name_b):
+    """Check if two protocol names or list are equal. Eg: is IV_0.0 the same as IV_0 and
+    the same as ["IV", 0.0]."""
+
+    if name_a is None or name_b is None:
+        return False
+
+    amps = []
+    ecodes = []
+
+    for name in [name_a, name_b]:
+        tmp_p = format_protocol_name_to_list(name)
+        ecodes.append(tmp_p[0])
+        amps.append(tmp_p[1])
+
+    if ecodes[0] == ecodes[1] and numpy.isclose(amps[0], amps[1]):
+        return True
+    return False

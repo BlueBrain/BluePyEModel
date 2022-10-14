@@ -114,7 +114,7 @@ class EModelPipelineSettings:
                 extraction if you wish to run a threshold based evaluator.
             validation_protocols (dict): names and targets of the protocol that will be used for
                 validation only. This settings has to be set before efeature extraction if you
-                wish to run validation.
+                wish to run validation. E.g:  {"sAHP": [150, 250]}.
             plot_currentscape (bool): should the EModel currentscapes be plotted
             currentscape_config (dict): currentscape config
                 according to the currentscape documentation

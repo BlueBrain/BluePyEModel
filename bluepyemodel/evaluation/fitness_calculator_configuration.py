@@ -2,13 +2,12 @@
 import logging
 from copy import deepcopy
 
-import numpy
-
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import seclist_to_sec
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
+from bluepyemodel.tools.utils import are_same_protocol
 
 logger = logging.getLogger(__name__)
 
@@ -52,30 +51,6 @@ def _set_morphology_dependent_locations(stimulus, cell):
     ]:
         logger.warning("We could not add a location for %s", stimulus)
     return new_stims
-
-
-def _are_same_protocol(name_a, name_b):
-    """Check if two protocol names or list are equal. Eg: is IV_0.0 the same as IV_0"""
-
-    if name_a is None or name_b is None:
-        return False
-
-    amps = []
-    ecodes = []
-
-    for name in [name_a, name_b]:
-        if isinstance(name, str):
-            ecodes.append("_".join(e for e in name.split("_")[:-1]))
-            amps.append(float(name.split("_")[-1]))
-        elif isinstance(name, list):
-            ecodes.append(name[0])
-            amps.append(float(name[1]))
-        else:
-            raise TypeError
-
-    if ecodes[0] == ecodes[1] and numpy.isclose(amps[0], amps[1]):
-        return True
-    return False
 
 
 class FitnessCalculatorConfiguration:
@@ -233,19 +208,19 @@ class FitnessCalculatorConfiguration:
         )
 
         if (
-            _are_same_protocol(self.name_rmp_protocol, protocol_name)
+            are_same_protocol(self.name_rmp_protocol, protocol_name)
             and feature["feature"] == "voltage_base"
         ):
             tmp_feature.protocol_name = "RMPProtocol"
             tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
         if (
-            _are_same_protocol(self.name_rin_protocol, protocol_name)
+            are_same_protocol(self.name_rin_protocol, protocol_name)
             and feature["feature"] == "voltage_base"
         ):
             tmp_feature.protocol_name = "SearchHoldingCurrent"
             tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
         if (
-            _are_same_protocol(self.name_rin_protocol, protocol_name)
+            are_same_protocol(self.name_rin_protocol, protocol_name)
             and feature["feature"] == "ohmic_input_resistance_vb_ssse"
         ):
             tmp_feature.protocol_name = "RinProtocol"
@@ -262,14 +237,14 @@ class FitnessCalculatorConfiguration:
         """Fill the configuration using the output of BluePyEfe"""
 
         if self.name_rmp_protocol and not any(
-            _are_same_protocol(self.name_rmp_protocol, p) for p in efeatures
+            are_same_protocol(self.name_rmp_protocol, p) for p in efeatures
         ):
             raise Exception(
                 f"The stimulus {self.name_rmp_protocol} requested for RMP "
                 "computation couldn't be extracted from the ephys data."
             )
         if self.name_rin_protocol and not any(
-            _are_same_protocol(self.name_rin_protocol, p) for p in efeatures
+            are_same_protocol(self.name_rin_protocol, p) for p in efeatures
         ):
             raise Exception(
                 f"The stimulus {self.name_rin_protocol} requested for Rin "
@@ -415,7 +390,7 @@ class FitnessCalculatorConfiguration:
 
         if (
             self.name_rmp_protocol
-            and not any(_are_same_protocol(self.name_rmp_protocol, p) for p in efeatures)
+            and not any(are_same_protocol(self.name_rmp_protocol, p) for p in efeatures)
             and "RMP" not in efeatures
         ):
             raise Exception(
@@ -425,7 +400,7 @@ class FitnessCalculatorConfiguration:
 
         if (
             self.name_rin_protocol
-            and not any(_are_same_protocol(self.name_rin_protocol, p) for p in efeatures)
+            and not any(are_same_protocol(self.name_rin_protocol, p) for p in efeatures)
             and "Rin" not in efeatures
         ):
             raise Exception(
