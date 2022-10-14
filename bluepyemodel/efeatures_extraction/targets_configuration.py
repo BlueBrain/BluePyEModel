@@ -4,6 +4,7 @@ import logging
 
 from bluepyemodel.efeatures_extraction.target import Target
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
+from bluepyemodel.tools.utils import are_same_protocol
 
 logger = logging.getLogger(__name__)
 
@@ -163,18 +164,11 @@ class TargetsConfiguration:
         """Check that the protocols supposed to be used for RMP and Rin are present in the target
         and that they have the correct efeatures. If some features are missing, add them."""
 
-        name_rmp, amplitude_rmp = name_rmp_protocol.split("_")
-        name_rin, amplitude_rin = name_Rin_protocol.split("_")
-
         efeatures_rmp = [
-            t.efeature
-            for t in self.targets
-            if t.protocol == name_rmp and t.amplitude == int(amplitude_rmp)
+            t.efeature for t in self.targets if are_same_protocol(t.protocol, name_rmp_protocol)
         ]
         efeatures_rin = [
-            t.efeature
-            for t in self.targets
-            if t.protocol == name_rin and t.amplitude == int(amplitude_rin)
+            t.efeature for t in self.targets if are_same_protocol(t.protocol, name_Rin_protocol)
         ]
 
         error_message = (

@@ -8,6 +8,7 @@ import numpy
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.tools.utils import are_same_protocol
 from bluepyemodel.validation import validation_functions
 
 logger = logging.getLogger(__name__)
@@ -82,38 +83,34 @@ def validate(
 
     logger.info("In validate, %s emodels found to validate.", len(emodels))
 
-    for i, mo in enumerate(emodels):
-        # pylint: disable=unnecessary-list-index-lookup
+    validation_protocols = []
+    for protocol, amps in access_point.pipeline_settings.validation_protocols.items():
+        validation_protocols += [[protocol, amp] for amp in amps]
 
-        emodels[i].scores = mo.evaluator.fitness_calculator.calculate_scores(mo.responses)
+    for model in emodels:
+
         # turn features from arrays to float to be json serializable
-        emodels[i].features = {}
-        values = mo.evaluator.fitness_calculator.calculate_values(mo.responses)
-        for key, value in values.items():
+        model.features = model.evaluator.fitness_calculator.calculate_values(model.responses)
+        for key, value in model.features.items():
             if value is not None:
-                emodels[i].features[key] = float(numpy.mean([v for v in value if v]))
-            else:
-                emodels[i].features[key] = None
+                model.features[key] = float(numpy.nanmean([v for v in value if v is not None]))
 
-        emodels[i].scores_validation = {}
-        to_remove = []
-        for feature_names in mo.scores:
-            for p in access_point.pipeline_settings.validation_protocols:
-                if p in feature_names:
-                    emodels[i].scores_validation[feature_names] = mo.scores[feature_names]
-                    to_remove.append(feature_names)
-                    break
-        emodels[i].scores = {k: v for k, v in emodels[i].scores.items() if k not in to_remove}
+        scores = model.evaluator.fitness_calculator.calculate_scores(model.responses)
+        for feature_name in scores:
+            if any(are_same_protocol(p, feature_name.split(".")[0]) for p in validation_protocols):
+                model.scores_validation[feature_name] = scores[feature_name]
+            else:
+                model.scores[feature_name] = scores[feature_name]
 
         # turn bool_ into bool to be json serializable
-        emodels[i].passed_validation = bool(
+        model.passed_validation = bool(
             validation_function(
-                mo,
+                model,
                 access_point.pipeline_settings.validation_threshold,
                 False,
             )
         )
 
-        access_point.store_emodel(emodels[i])
+        access_point.store_emodel(model)
 
     return emodels
