@@ -90,10 +90,10 @@ class FitnessCalculatorConfiguration:
                     {"name": str, "stimuli": list of dict, "recordings": list of dict,
                     "validation": bool}
                 ]
-            name_rmp_protocol (str or list of str): name and amplitude of protocol
+            name_rmp_protocol (str or list): name and amplitude of protocol
                 whose features are to be used as targets for the search of the RMP.
                 e.g: ["IV", 0] or "IV_0"
-            name_rin_protocol (str or list of str): name and amplitude of protocol
+            name_rin_protocol (str or list): name and amplitude of protocol
                 whose features are to be used as targets for the search of the Rin.
                 e.g: ["IV", -20] or "IV_-20"
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of

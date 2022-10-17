@@ -106,12 +106,12 @@ class EModelPipelineSettings:
             path_extract_config (str): path to the .json containing the extraction targets, files
                 metadata and the name of the protocols used to compute the threshold of the cell.
                 Only used with local access point.
-            name_Rin_protocol (list of str or str): name and amplitude of the protocol associated
+            name_Rin_protocol (list or str): name and amplitude of the protocol associated
                 with the efeatures used for the computation of the input resistance scores
                 during optimisation, e.g: ["IV", -20] or "IV_-20".
                 This setting has to be set before efeature extraction if you wish to run
                 a threshold based evaluator.
-            name_rmp_protocol (list of str or str): name and amplitude of the protocol associated
+            name_rmp_protocol (list or str): name and amplitude of the protocol associated
                 with the efeatures used for the computation of the resting membrane potential
                 scores during optimisation, e.g: ["IV", 0] or "IV_0".
                 This setting has to be set before efeature extraction if you wish to run
