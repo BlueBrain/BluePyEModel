@@ -105,6 +105,7 @@ class EModelPipelineSettings:
                 mechanisms_dir directory.
             path_extract_config (str): path to the .json containing the extraction targets, files
                 metadata and the name of the protocols used to compute the threshold of the cell.
+                Only used with local access point.
             name_Rin_protocol (list of str): name and amplitude of the protocol associated with
                 the efeatures used for the computation of the input resistance scores during
                 optimisation, e.g: ["IV", -20]. This settings as to be set before efeature
@@ -141,7 +142,7 @@ class EModelPipelineSettings:
         self.efel_settings = efel_settings  # Also used during optimisation
         if self.efel_settings is None:
             self.efel_settings = {"interp_step": 0.025, "strict_stiminterval": True}
-        self.path_extract_config = path_extract_config  # only when using local access point
+        self.path_extract_config = path_extract_config
         self.rheobase_strategy_extraction = rheobase_strategy_extraction
         self.rheobase_settings_extraction = rheobase_settings_extraction
 
