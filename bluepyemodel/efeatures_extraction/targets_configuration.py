@@ -165,10 +165,14 @@ class TargetsConfiguration:
         and that they have the correct efeatures. If some features are missing, add them."""
 
         efeatures_rmp = [
-            t.efeature for t in self.targets if are_same_protocol(t.protocol, name_rmp_protocol)
+            t.efeature
+            for t in self.targets
+            if are_same_protocol([t.protocol, t.amplitude], name_rmp_protocol)
         ]
         efeatures_rin = [
-            t.efeature for t in self.targets if are_same_protocol(t.protocol, name_Rin_protocol)
+            t.efeature
+            for t in self.targets
+            if are_same_protocol([t.protocol, t.amplitude], name_Rin_protocol)
         ]
 
         error_message = (
