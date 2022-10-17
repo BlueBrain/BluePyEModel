@@ -56,7 +56,7 @@ class EModelPipelineSettings:
                 efeature extraction. If list, must contain the path to the file containing the
                 function and name of the function. E.g: ["path_to_module", "name_of_function"]
             extraction_threshold_value_save (int): minimum number of values (data points)
-                needed for an efeatures to be returned in the output of the extraction process.
+                needed for an efeature to be returned in the output of the extraction process.
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
             pickle_cells_extraction (bool): sould the cells object be saved as a pickle file for
                 further analysis during extraction.
@@ -105,14 +105,17 @@ class EModelPipelineSettings:
                 mechanisms_dir directory.
             path_extract_config (str): path to the .json containing the extraction targets, files
                 metadata and the name of the protocols used to compute the threshold of the cell.
-            name_Rin_protocol (list of str): name and amplitude of the protocol associated with
-                the efeatures used for the computation of the input resistance scores during
-                optimisation, e.g: ["IV", -20]. This settings as to be set before efeature
-                extraction if you wish to run a threshold based evaluator.
-            name_rmp_protocol (list of str): name and amplitude of the protocol associated with
-                the efeatures used for the computation of the resting membrane potential scores
-                during optimisation, e.g: ["IV", 0]. This settings has to be set before efeature
-                extraction if you wish to run a threshold based evaluator.
+                Only used with local access point.
+            name_Rin_protocol (list or str): name and amplitude of the protocol associated
+                with the efeatures used for the computation of the input resistance scores
+                during optimisation, e.g: ["IV", -20] or "IV_-20".
+                This setting has to be set before efeature extraction if you wish to run
+                a threshold based evaluator.
+            name_rmp_protocol (list or str): name and amplitude of the protocol associated
+                with the efeatures used for the computation of the resting membrane potential
+                scores during optimisation, e.g: ["IV", 0] or "IV_0".
+                This setting has to be set before efeature extraction if you wish to run
+                a threshold based evaluator.
             validation_protocols (list of str): name of the protocols used for validation only.
                 E.g. ["APWaveform_300"]
             plot_currentscape (bool): should the EModel currentscapes be plotted
@@ -127,10 +130,12 @@ class EModelPipelineSettings:
             strict_holding_bounds (bool): if True, the minimum and maximum values for the current
                 used during the holding current search will be fixed. Otherwise, they will be
                 widened dynamically.
-            max_depth_holding_search (float): maximum depth for the binary search for the
+            max_depth_holding_search (int): maximum depth for the binary search for the
                 holding current
-            max_depth_threshold_search (float): maximum depth for the binary search for the
+            max_depth_threshold_search (int): maximum depth for the binary search for the
                 threshold current
+            spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
+                we set spikecount=2 as if many spikes were present, to speed up bisection search.
         """
 
         # Settings related to E-features extraction
@@ -141,7 +146,7 @@ class EModelPipelineSettings:
         self.efel_settings = efel_settings  # Also used during optimisation
         if self.efel_settings is None:
             self.efel_settings = {"interp_step": 0.025, "strict_stiminterval": True}
-        self.path_extract_config = path_extract_config  # only when using local access point
+        self.path_extract_config = path_extract_config
         self.rheobase_strategy_extraction = rheobase_strategy_extraction
         self.rheobase_settings_extraction = rheobase_settings_extraction
 

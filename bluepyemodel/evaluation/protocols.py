@@ -363,7 +363,7 @@ class SearchHoldingCurrent(BPEMProtocol):
             upper_bound (float): upper bound for the holding current, in pA
             lower_bound (float): lower bound for the holding current, in pA
             strict_bounds (bool): to adaptively enlarge bounds if current is outside
-            max_depth (float): maximum depth for the binary search
+            max_depth (int): maximum depth for the binary search
             no_spikes (bool): if True, the holding current will only be considered valid if there
                 are no spikes at holding.
         """
@@ -585,7 +585,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
                 bound in the threshold current search
             spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
                 we set spikecount=2 as if many spikes were present, to speed up bisection search.
-            max_depth (float): maximum depth for the binary search
+            max_depth (int): maximum depth for the binary search
             no_spikes (bool): if True, will check that the holding current (lower bound) does not
                 trigger spikes.
         """
