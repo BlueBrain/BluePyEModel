@@ -134,6 +134,8 @@ class EModelPipelineSettings:
                 holding current
             max_depth_threshold_search (int): maximum depth for the binary search for the
                 threshold current
+            spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
+                we set spikecount=2 as if many spikes were present, to speed up bisection search.
         """
 
         # Settings related to E-features extraction
