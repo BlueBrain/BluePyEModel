@@ -55,7 +55,8 @@ class EModelPipelineSettings:
             extraction_reader (function or list): function used to read the ephys data during
                 efeature extraction. If list, must contain the path to the file containing the
                 function and name of the function. E.g: ["path_to_module", "name_of_function"]
-            extraction_threshold_value_save (int): name of the mechanism.
+            extraction_threshold_value_save (int): minimum number of values (data points)
+                needed for an efeatures to be returned in the output of the extraction process.
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
             pickle_cells_extraction (bool): sould the cells object be saved as a pickle file for
                 further analysis during extraction.
