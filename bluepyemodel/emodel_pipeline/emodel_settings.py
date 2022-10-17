@@ -130,9 +130,9 @@ class EModelPipelineSettings:
             strict_holding_bounds (bool): if True, the minimum and maximum values for the current
                 used during the holding current search will be fixed. Otherwise, they will be
                 widened dynamically.
-            max_depth_holding_search (float): maximum depth for the binary search for the
+            max_depth_holding_search (int): maximum depth for the binary search for the
                 holding current
-            max_depth_threshold_search (float): maximum depth for the binary search for the
+            max_depth_threshold_search (int): maximum depth for the binary search for the
                 threshold current
         """
 
