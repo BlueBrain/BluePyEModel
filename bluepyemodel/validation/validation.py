@@ -83,10 +83,6 @@ def validate(
 
     logger.info("In validate, %s emodels found to validate.", len(emodels))
 
-    validation_protocols = []
-    for protocol, amps in access_point.pipeline_settings.validation_protocols.items():
-        validation_protocols += [[protocol, amp] for amp in amps]
-
     for model in emodels:
 
         # turn features from arrays to float to be json serializable
@@ -97,7 +93,10 @@ def validate(
 
         scores = model.evaluator.fitness_calculator.calculate_scores(model.responses)
         for feature_name in scores:
-            if any(are_same_protocol(p, feature_name.split(".")[0]) for p in validation_protocols):
+            if any(
+                are_same_protocol(p, feature_name)
+                for p in access_point.pipeline_settings.validation_protocols
+            ):
                 model.scores_validation[feature_name] = scores[feature_name]
             else:
                 model.scores[feature_name] = scores[feature_name]

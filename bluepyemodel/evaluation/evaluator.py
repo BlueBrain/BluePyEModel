@@ -12,6 +12,7 @@ from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.simulators import NrnSimulator
 
 from ..ecode import eCodes
+from ..tools.utils import are_same_protocol
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEMProtocol
 from .protocols import ProtocolRunner
@@ -22,7 +23,6 @@ from .protocols import SearchThresholdCurrent
 from .protocols import ThresholdBasedProtocol
 from .recordings import FixedDtRecordingCustom
 from .recordings import LooseDtRecordingCustom
-from bluepyemodel.tools.utils import are_same_protocol
 
 logger = logging.getLogger(__name__)
 
@@ -378,7 +378,9 @@ def define_efeatures(
 
     for feature_def in fitness_calculator_configuration.efeatures:
 
-        if not include_validation_protocols and any(are_same_protocol(feature_def.protocol_name, p) for p in validation_prot):
+        if not include_validation_protocols and any(
+            are_same_protocol(feature_def.protocol_name, p) for p in validation_prot
+        ):
             continue
 
         protocol = None
