@@ -171,7 +171,7 @@ class FitnessCalculatorConfiguration:
         stimulus = deepcopy(protocol["step"])
         stimulus["holding_current"] = protocol["holding"]["amp"]
 
-        validation = protocol_name in self.validation_protocols
+        validation = any(are_same_protocol(protocol_name, p) for p in self.validation_protocols)
         stochasticity = self.check_stochasticity(protocol_name)
 
         protocol_type = "Protocol"
@@ -316,7 +316,7 @@ class FitnessCalculatorConfiguration:
         else:
             stimulus["holding_current"] = None
 
-        validation = protocol_name in self.validation_protocols
+        validation = any(are_same_protocol(protocol_name, p) for p in self.validation_protocols)
         stochasticity = self.check_stochasticity(protocol_name)
 
         protocol_type = "Protocol"
