@@ -459,6 +459,8 @@ def define_threshold_based_optimisation_protocol(
             deterministic
         ais_recording (bool): if True all the soma recording will be at the first axonal section.
         efel_settings (dict): eFEl settings.
+        max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
+            will search for the rheobase.
         strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
         max_depth_holding_search (float): maximum depth for the binary search for the
