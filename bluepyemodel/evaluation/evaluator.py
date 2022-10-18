@@ -459,14 +459,17 @@ def define_threshold_based_optimisation_protocol(
             deterministic
         ais_recording (bool): if True all the soma recording will be at the first axonal section.
         efel_settings (dict): eFEl settings.
-        threshold_efeature_std (float): if informed, compute the std as
-            threshold_efeature_std * mean if std is < threshold_efeature_std * min.
-        strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
+        max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
+            will search for the rheobase.
+        strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
+            when set to False
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
-        max_depth_holding_search (float): maximum depth for the binary search for the
+        max_depth_holding_search (int): maximum depth for the binary search for the
             holding current
-        max_depth_threshold_search (float): maximum depth for the binary search for the
+        max_depth_threshold_search (int): maximum depth for the binary search for the
             threshold current
+        spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
+            we set spikecount=2 as if many spikes were present, to speed up bisection search.
     """
 
     protocols = define_protocols(

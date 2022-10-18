@@ -22,27 +22,25 @@ def define_validation_function(access_point):
 
     if validation_function is None or not validation_function:
         logger.warning("Validation function not specified, will use validate_max_score.")
-        validation_function = validation_functions.validate_max_score
+        return validation_functions.validate_max_score
 
-    else:
+    if isinstance(validation_function, str):
+        if validation_function == "max_score":
+            validation_function = validation_functions.validate_max_score
+        elif validation_function == "mean_score":
+            validation_function = validation_functions.validate_mean_score
+        else:
+            raise Exception("validation_function must be 'max_score' or 'mean_score'.")
 
-        if isinstance(validation_function, str):
-            if validation_function == "max_score":
-                validation_function = validation_functions.validate_max_score
-            elif validation_function == "mean_score":
-                validation_function = validation_functions.validate_mean_score
-            else:
-                raise Exception("validation_function must be 'max_score' or 'mean_score'.")
+    elif isinstance(validation_function, list) and len(validation_function) == 2:
+        # pylint: disable=deprecated-method,no-value-for-parameter
+        function_module = SourceFileLoader(
+            pathlib.Path(validation_function[0]).stem, validation_function[0]
+        ).load_module()
+        validation_function = getattr(function_module, validation_function[1])
 
-        elif isinstance(validation_function, list) and len(validation_function) == 2:
-            # pylint: disable=deprecated-method,no-value-for-parameter
-            function_module = SourceFileLoader(
-                pathlib.Path(validation_function[0]).stem, validation_function[0]
-            ).load_module()
-            validation_function = getattr(function_module, validation_function[1])
-
-        if not callable(validation_function):
-            raise Exception("validation_function is not callable nor a list of two strings")
+    if not callable(validation_function):
+        raise Exception("validation_function is not callable nor a list of two strings")
 
     return validation_function
 
