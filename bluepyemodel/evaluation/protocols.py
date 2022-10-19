@@ -676,7 +676,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             cell_model, param_values, sim, isolate, responses
         )
         if lower_bound is None or upper_bound is None:
-            logger.warning("Threshold search bounds are not good")
+            logger.debug("Threshold search bounds are not good")
             return {"bpo_threshold_current": None}
 
         threshold = self.bisection_search(
