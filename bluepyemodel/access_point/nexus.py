@@ -181,6 +181,9 @@ class NexusAccessPoint(DataAccessPoint):
 
     def get_nexus_brain_region(self, brain_region, access_token=None):
         """Get the ontology of the brain location."""
+        if brain_region is None:
+            return None
+
         brain_region_from_nexus = get_brain_region(brain_region, access_token=access_token)
 
         return {
