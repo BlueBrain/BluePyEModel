@@ -94,6 +94,8 @@ class NexusAccessPoint(DataAccessPoint):
 
         self.pipeline_settings = self.get_pipeline_settings(strict=False)
 
+        pathlib.Path("./nexus_temp/").mkdir(parents=True, exist_ok=True)
+
     def check_mettypes(self):
         """Check that etype, mtype and ttype are presnet on nexus"""
         ontology_access_point = ontology_forge_access_point(self.access_point.access_token)

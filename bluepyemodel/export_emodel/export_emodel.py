@@ -95,7 +95,9 @@ def export_emodels(access_point, only_validated=False, seeds=None, map_function=
     """Export a set of emodels to a set of folder named after them. Each folder will
     contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model."""
 
-    cell_evaluator = get_evaluator_from_access_point(access_point)
+    cell_evaluator = get_evaluator_from_access_point(
+        access_point, include_validation_protocols=True
+    )
 
     emodels = compute_responses(
         access_point,
