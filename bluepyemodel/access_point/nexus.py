@@ -471,6 +471,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         mechanisms_directory = self.get_mechanisms_directory()
 
+        any_downloaded = False
         for mechanism in mechanisms:
 
             if mechanism.name == "pas":
