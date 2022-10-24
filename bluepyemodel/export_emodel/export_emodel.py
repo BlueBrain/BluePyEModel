@@ -74,7 +74,7 @@ def export_model_sonata(cell_model, emodel, output_dir=None):
 
     hoc_file_path = str(output_path / "model.hoc")
     node_file_path = str(output_path / "nodes.h5")
-    morphology_path = str(output_path / "morphology.swc")
+    morphology_path = str(output_path / pathlib.Path(cell_model.morphology.morphology_path).name)
 
     # Copy the morphology
     shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)

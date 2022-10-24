@@ -3,6 +3,7 @@ import copy
 import logging
 import os
 import pathlib
+import subprocess
 
 import pandas
 
@@ -503,11 +504,18 @@ class NexusAccessPoint(DataAccessPoint):
                 continue
 
             filepath = self.access_point.download(resource.id, str(mechanisms_directory))[0]
+            any_downloaded = True
 
             # Rename the file in case it's different from the name of the resource
             filepath = pathlib.Path(filepath)
             if filepath.stem != mechanism:
                 filepath.rename(pathlib.Path(filepath.parent / mod_file_name))
+
+        if any_downloaded:
+            previous_dir = os.getcwd()
+            os.chdir(pathlib.Path(mechanisms_directory.parent))
+            subprocess.run(f"nrnivmodl mechanisms", shell=True)
+            os.chdir(previous_dir)
 
     def download_morphology(self, name, format_=None):
         """Download a morphology by name if not already downloaded"""
