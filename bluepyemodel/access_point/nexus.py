@@ -59,7 +59,7 @@ class NexusAccessPoint(DataAccessPoint):
                 Can be 'INT' for interneurons or 'PYR' for pyramidal neurons.
             synapse_class (str): synapse class.
                 Can be 'EXC' for excitatory or 'INH' for inhibitory.
-            layer (str): leyer of the brain from which the cell comes from.
+            layer (str): layer of the brain from which the cell comes from.
             project (str): name of the Nexus project.
             organisation (str): name of the Nexus organization to which the project belong.
             endpoint (str): Nexus endpoint.
@@ -715,3 +715,34 @@ class NexusAccessPoint(DataAccessPoint):
             )
 
         return traces
+
+    def store_morphology(self, morphology_name, morphology_path, mtype=None):
+
+        payload = {
+            "type": ["NeuronMorphology", "Entity", "Dataset", "ReconstructedCell"],
+            "name": pathlib.Path(morphology_path).stem,
+            "objectOfStudy": {
+                "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
+                "@type": "ObjectOfStudy",
+                "label": "Single Cell",
+            },
+        }
+
+        if mtype:
+            payload["annotation"] = (
+                {
+                    "@type": ["Annotation", "nsg:MTypeAnnotation"],
+                    "hasBody": {
+                        "@id": "nsg:InhibitoryNeuron",
+                        "@type": ["Mtype", "AnnotationBody"],
+                        "label": mtype,
+                        "prefLabel": mtype,
+                    },
+                    "name": "M-type Annotation",
+                },
+            )
+
+        self.access_point.register(
+            resource_description=payload,
+            distributions=[morphology_path],
+        )

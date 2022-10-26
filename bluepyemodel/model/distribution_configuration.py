@@ -19,13 +19,15 @@ class DistributionConfiguration:
         Args:
             name (str): name of the distribution.
             function (str): python function of the distribution as a string. Will be executed
-                using the python "eval" method.
+                using the python "eval" method. The string needs to include "value" which will be
+                replaced by the conductance of the parameter using the present distribution.
+                It can also include "distance" if the distribution is parametrized by the distance
+                to the soma. Example: "(-0.8696 + 2.087*math.exp(({distance})*0.0031))*{value}".
             parameters (list of str): names of the parameters that parametrize the above function
-                (no need to include the parameter "distance"). (Optional).
-            morphology_dependent_parameters (list of str):
-            soma_ref_location (float): location along the soma used as origin
-                from which to compute the distances. Expressed as a fraction
-                (between 0.0 and 1.0). (Optional).
+                if any. Note that "value" and "distance" do not need to be specified here.
+            morphology_dependent_parameters (list of str): unused. To be deprecated.
+            soma_ref_location (float): location along the soma used as origin from which to
+                compute the distances. Expressed as a fraction (between 0.0 and 1.0).
             comment (str): additional comment or note.
         """
 
