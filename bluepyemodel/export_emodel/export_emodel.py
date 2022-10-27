@@ -1,8 +1,8 @@
 """Export the emodels in the SONATA format"""
 import logging
+import os
 import pathlib
 import shutil
-import os
 
 import h5py
 
