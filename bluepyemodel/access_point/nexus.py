@@ -515,7 +515,7 @@ class NexusAccessPoint(DataAccessPoint):
         if any_downloaded:
             previous_dir = os.getcwd()
             os.chdir(pathlib.Path(mechanisms_directory.parent))
-            subprocess.run(f"nrnivmodl mechanisms", shell=True)
+            subprocess.run("nrnivmodl mechanisms", shell=True, check=True)
             os.chdir(previous_dir)
 
     def download_morphology(self, name, format_=None):
