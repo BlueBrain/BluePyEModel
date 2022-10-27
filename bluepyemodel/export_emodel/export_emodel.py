@@ -2,6 +2,7 @@
 import logging
 import pathlib
 import shutil
+import os
 
 import h5py
 
@@ -55,7 +56,15 @@ def write_hoc_file(cell_model, emodel, hoc_file_path):
     WARNING: this assumes that any morphology modifier has been informed as both
     a python method and a hoc method"""
 
-    hoc_content = cell_model.create_hoc(param_values=emodel.parameters)
+    template_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), 'templates')
+    )
+
+    hoc_content = cell_model.create_hoc(
+        param_values=emodel.parameters,
+        template="cell_template_neurodamus.jinja2",
+        template_dir=template_dir
+    )
 
     with open(hoc_file_path, "w") as f:
         f.writelines(hoc_content)
