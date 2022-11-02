@@ -105,7 +105,7 @@ def get_dehyperpol_stimulus():
     total_duration = 1220.0
 
     # generate stimulus
-    prot_def = {"depol_amp": 0.2, "hyper_amp": -0.1, "holding_current": -0.001}
+    prot_def = {"amp": 0.2, "amp2": -0.1, "holding_current": -0.001}
     stimulus = eCodes["dehyperpol"](location=soma_loc, **prot_def)
 
     return (
@@ -115,8 +115,8 @@ def get_dehyperpol_stimulus():
         toff,
         total_duration,
         prot_def["holding_current"],
-        prot_def["depol_amp"],
-        prot_def["hyper_amp"],
+        prot_def["amp"],
+        prot_def["amp2"],
     )
 
 
