@@ -20,10 +20,10 @@ class DeHyperpol(BPEM_stimulus):
             location(Location): location of stimulus
         """
 
-        self.depol_amp = kwargs.get("depol_amp", None)
-        self.depol_amp_rel = kwargs.get("depol_amp_rel", None)
-        self.hyper_amp = kwargs.get("hyper_amp", None)
-        self.hyper_amp_rel = kwargs.get("hyper_amp_rel", None)
+        self.depol_amp = kwargs.get("amp", None)
+        self.depol_amp_rel = kwargs.get("amp_rel", None)
+        self.hyper_amp = kwargs.get("amp2", None)
+        self.hyper_amp_rel = kwargs.get("amp2_rel", None)
 
         if self.hyper_amp is None and self.hyper_amp_rel is None:
             raise Exception(
