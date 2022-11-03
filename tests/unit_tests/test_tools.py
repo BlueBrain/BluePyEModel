@@ -50,4 +50,25 @@ def test_format_protocol_name_to_list():
 
 
 def test_are_same_protocol():
+    # None case
+    assert not are_same_protocol("APWaveform_140", None)
+    assert not are_same_protocol(None, "APWaveform_140")
 
+    # str case
+    assert not are_same_protocol("APWaveform_140", "IDRest_100")
+    assert not are_same_protocol("APWaveform_140", "APWaveform_120")
+    assert not are_same_protocol("APWaveform_140", "IDRest_140")
+    assert are_same_protocol("APWaveform_140", "APWaveform_140")
+    assert are_same_protocol("APWaveform_140", "APWaveform_140.0")
+
+    # list case
+    assert not are_same_protocol(["APWaveform", 140], ["APWaveform", 120])
+    assert not are_same_protocol(["APWaveform", 140], ["IDRest", 140])
+    assert are_same_protocol(["APWaveform", 140], ["APWaveform", 140])
+    assert are_same_protocol(["APWaveform", 140], ["APWaveform", 140.0])
+
+    # mixed case
+    assert not are_same_protocol("APWaveform_140", ["APWaveform", 120])
+    assert are_same_protocol("APWaveform_140", ["APWaveform", 140])
+    assert are_same_protocol("APWaveform_140", ["APWaveform", 140.0])
+    assert are_same_protocol("APWaveform_140.0", ["APWaveform", 140])
