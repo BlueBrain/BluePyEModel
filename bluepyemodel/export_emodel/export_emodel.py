@@ -1,5 +1,6 @@
 """Export the emodels in the SONATA format"""
 import logging
+import os
 import pathlib
 import shutil
 
@@ -55,7 +56,13 @@ def write_hoc_file(cell_model, emodel, hoc_file_path):
     WARNING: this assumes that any morphology modifier has been informed as both
     a python method and a hoc method"""
 
-    hoc_content = cell_model.create_hoc(param_values=emodel.parameters)
+    template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
+
+    hoc_content = cell_model.create_hoc(
+        param_values=emodel.parameters,
+        template="cell_template_neurodamus.jinja2",
+        template_dir=template_dir,
+    )
 
     with open(hoc_file_path, "w") as f:
         f.writelines(hoc_content)
@@ -74,7 +81,7 @@ def export_model_sonata(cell_model, emodel, output_dir=None):
 
     hoc_file_path = str(output_path / "model.hoc")
     node_file_path = str(output_path / "nodes.h5")
-    morphology_path = str(output_path / "morphology.swc")
+    morphology_path = str(output_path / pathlib.Path(cell_model.morphology.morphology_path).name)
 
     # Copy the morphology
     shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)
@@ -95,7 +102,9 @@ def export_emodels(access_point, only_validated=False, seeds=None, map_function=
     """Export a set of emodels to a set of folder named after them. Each folder will
     contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model."""
 
-    cell_evaluator = get_evaluator_from_access_point(access_point)
+    cell_evaluator = get_evaluator_from_access_point(
+        access_point, include_validation_protocols=True
+    )
 
     emodels = compute_responses(
         access_point,

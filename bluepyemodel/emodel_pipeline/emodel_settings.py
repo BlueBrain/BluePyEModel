@@ -177,9 +177,17 @@ class EModelPipelineSettings:
         # Settings related to the validation
         self.validation_threshold = validation_threshold
         self.validation_function = validation_function
-        self.validation_protocols = validation_protocols
-        if self.validation_protocols is None:
+
+        if isinstance(validation_protocols, dict):
+            self.validation_protocols = [
+                f"{name}_{amp}"
+                for name in validation_protocols
+                for amp in validation_protocols[name]
+            ]
+        elif validation_protocols is None:
             self.validation_protocols = []
+        else:
+            self.validation_protocols = validation_protocols
 
         # Settings specific to the Luigi pipeline
         self.n_model = n_model

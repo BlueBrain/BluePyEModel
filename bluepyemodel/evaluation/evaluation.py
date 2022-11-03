@@ -181,7 +181,7 @@ def compute_responses(
 
 def get_evaluator_from_access_point(
     access_point,
-    stochasticity=False,
+    stochasticity=None,
     include_validation_protocols=False,
     timeout=None,
     use_fixed_dt_recordings=False,
