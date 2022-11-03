@@ -290,9 +290,6 @@ class NeuronModelConfiguration:
                 " Please register your distributions first."
             )
 
-        if distribution_name != "uniform" and parameter_name[0] != "g":
-            raise Exception("Only channel density parameters can be linked to a distribution")
-
         for loc in locations:
 
             tmp_param = ParameterConfiguration(
@@ -415,9 +412,6 @@ class NeuronModelConfiguration:
         if not location:
             raise Exception("Cannot set a parameter's distribution without specifying a location.")
         locations = self._format_locations(location)
-
-        if distribution_name != "uniform" and parameter_name[0] != "g":
-            raise Exception("Only channel density parameters can be linked to a distribution")
 
         for loc in locations:
             for p in self.parameters:
