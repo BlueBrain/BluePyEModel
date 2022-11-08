@@ -12,6 +12,7 @@ multiloc_map = {
     "all": ["apical", "basal", "somatic", "axonal"],
     "alldend": ["apical", "basal"],
     "somadend": ["apical", "basal", "somatic"],
+    "allnoaxon": ["apical", "basal", "somatic"],
     "somaxon": ["axonal", "somatic"],
     "allact": ["apical", "basal", "somatic", "axonal"],
 }
