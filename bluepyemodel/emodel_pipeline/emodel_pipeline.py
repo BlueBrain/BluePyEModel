@@ -7,7 +7,7 @@ import pathlib
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
-from bluepyemodel.export_emodel.export_emodel import export_emodels
+from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
 from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
@@ -23,24 +23,24 @@ class EModel_pipeline:
     """EModel pipeline"""
 
     def __init__(
-        self,
-        emodel,
-        data_access_point,
-        etype=None,
-        ttype=None,
-        mtype=None,
-        species=None,
-        brain_region=None,
-        iteration_tag=None,
-        morph_class=None,
-        synapse_class=None,
-        layer=None,
-        recipes_path=None,
-        forge_path=None,
-        nexus_organisation=None,
-        nexus_project=None,
-        nexus_endpoint="staging",
-        use_ipyparallel=None,
+            self,
+            emodel,
+            data_access_point,
+            etype=None,
+            ttype=None,
+            mtype=None,
+            species=None,
+            brain_region=None,
+            iteration_tag=None,
+            morph_class=None,
+            synapse_class=None,
+            layer=None,
+            recipes_path=None,
+            forge_path=None,
+            nexus_organisation=None,
+            nexus_project=None,
+            nexus_endpoint="staging",
+            use_ipyparallel=None,
     ):
         """Initialize the emodel_pipeline.
 
@@ -110,7 +110,7 @@ class EModel_pipeline:
         )
 
     def configure_model(
-        self, morphology_name, morphology_path=None, morphology_format=None, use_gene_data=False
+            self, morphology_name, morphology_path=None, morphology_format=None, use_gene_data=False
     ):
         """"""
 
@@ -175,16 +175,15 @@ class EModel_pipeline:
                 continue
 
             if (
-                self.access_point.emodel_metadata.iteration
-                and self.access_point.emodel_metadata.iteration not in chkp_path
+                    self.access_point.emodel_metadata.iteration
+                    and self.access_point.emodel_metadata.iteration not in chkp_path
             ):
                 continue
 
             plotting.optimisation(
                 checkpoint_path=chkp_path,
-                figures_dir=pathlib.Path("./figures")
-                / self.access_point.emodel_metadata.emodel
-                / "optimisation",
+                figures_dir=pathlib.Path(
+                    "./figures") / self.access_point.emodel_metadata.emodel / "optimisation",
             )
 
         return plotting.plot_models(
@@ -201,7 +200,9 @@ class EModel_pipeline:
 
     def export_emodels(self, only_validated=False, seeds=None):
 
-        export_emodels(self.access_point, only_validated, seeds=seeds, map_function=self.mapper)
+        export_emodels_sonata(
+            self.access_point, only_validated, seeds=seeds, map_function=self.mapper
+        )
 
     def summarize(self):
 
