@@ -124,4 +124,5 @@ class EModel:
             "scoreValidation": scores_validation_resource,
             "passedValidation": self.passed_validation,
             "nexus_distributions": pdf_dependencies,
+            "seed": self.seed,
         }
