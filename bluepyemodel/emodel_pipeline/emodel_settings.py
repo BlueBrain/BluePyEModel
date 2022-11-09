@@ -42,6 +42,7 @@ class EModelPipelineSettings:
         name_gene_map=None,
         plot_currentscape=False,
         currentscape_config=None,
+        neuron_dt=None,
         cvode_minstep=0.0,
         max_threshold_voltage=-30,
         strict_holding_bounds=True,
@@ -124,6 +125,7 @@ class EModelPipelineSettings:
                 (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config)
                 Note that current.names, output.savefig, output.fname and output.dir
                 do not need to be set, since they are automatically rewritten by BPEM.
+            neuron_dt (float): dt of the NEURON simulator. If None, cvode will be used.
             cvode_minstep (float): minimum time step allowed for a CVODE step.
             max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
                 will search for the rheobase.
@@ -156,15 +158,17 @@ class EModelPipelineSettings:
         self.max_depth_holding_search = max_depth_holding_search
         self.max_depth_threshold_search = max_depth_threshold_search
         self.spikecount_timeout = spikecount_timeout
+        self.stochasticity = stochasticity
+        self.neuron_dt = neuron_dt
+        self.cvode_minstep = cvode_minstep
 
         # Settings related to the optimisation
         self.optimisation_timeout = optimisation_timeout
-        self.stochasticity = stochasticity
         self.optimiser = optimiser if optimizer is None else optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:
             self.optimisation_params = {"offspring_size": 100}
-        self.cvode_minstep = cvode_minstep
+
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms

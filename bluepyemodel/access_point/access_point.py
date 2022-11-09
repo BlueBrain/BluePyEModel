@@ -185,7 +185,7 @@ class DataAccessPoint:
         ngen = self.pipeline_settings.max_ngen
 
         with open(str(checkpoint_path), "rb") as checkpoint_file:
-            cp = pickle.load(checkpoint_file)
+            cp = pickle.load(checkpoint_file, encoding="latin1")
 
         # CMA
         if optimiser in ["SO-CMA", "MO-CMA"]:

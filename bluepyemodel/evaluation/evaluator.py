@@ -613,6 +613,7 @@ def create_evaluator(
     simulator = get_simulator(
         stochasticity=stochasticity,
         cell_model=cell_model,
+        dt=pipeline_settings.neuron_dt,
         mechanisms_directory=mechanisms_directory,
         cvode_minstep=pipeline_settings.cvode_minstep,
     )
