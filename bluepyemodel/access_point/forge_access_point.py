@@ -348,7 +348,9 @@ class NexusForgeAccessPoint:
         """Download datafile from nexus if it doesn't already exist."""
         if download_directory is None:
             if metadata_str is None:
-                raise AccessPointException("download_directory or metadata_str should be other than None")
+                raise AccessPointException(
+                    "download_directory or metadata_str should be other than None"
+                )
             download_directory = pathlib.Path("./nexus_temp") / metadata_str
         resource = self.forge.retrieve(resource_id, cross_bucket=True)
 
@@ -481,7 +483,9 @@ class NexusForgeAccessPoint:
         path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}"
         if seed is not None:
             path_json += f"__{seed}"
-        path_json = str((pathlib.Path("./nexus_temp") / metadata_str / f"{path_json}.json").resolve())
+        path_json = str(
+            (pathlib.Path("./nexus_temp") / metadata_str / f"{path_json}.json").resolve()
+        )
 
         distributions = [path_json]
         if "nexus_distributions" in json_payload:
