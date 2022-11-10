@@ -381,7 +381,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         emodel = self.access_point.nexus_to_object(
             type_="EModel",
-            metadata=metadata
+            metadata=metadata,
             metadata_str=self.emodel_metadata.as_string(),
         )
         emodel.emodel_metadata = copy.deepcopy(self.emodel_metadata)
