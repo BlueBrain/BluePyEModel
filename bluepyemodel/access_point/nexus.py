@@ -95,7 +95,8 @@ class NexusAccessPoint(DataAccessPoint):
 
         self.pipeline_settings = self.get_pipeline_settings(strict=False)
 
-        pathlib.Path("./nexus_temp/").mkdir(parents=True, exist_ok=True)
+        directory_name = self.emodel_metadata.as_string()
+        (pathlib.Path("./nexus_temp/") / directory_name).mkdir(parents=True, exist_ok=True)
 
     def check_mettypes(self):
         """Check that etype, mtype and ttype are presnet on nexus"""
@@ -119,12 +120,14 @@ class NexusAccessPoint(DataAccessPoint):
             return self.access_point.nexus_to_object(
                 type_="EModelPipelineSettings",
                 metadata=self.emodel_metadata_ontology.filters_for_resource(),
+                metadata_str=self.emodel_metadata.as_string(),
             )
 
         try:
             return self.access_point.nexus_to_object(
                 type_="EModelPipelineSettings",
                 metadata=self.emodel_metadata_ontology.filters_for_resource(),
+                metadata_str=self.emodel_metadata.as_string(),
             )
         except AccessPointException:
             return EModelPipelineSettings()
@@ -204,8 +207,9 @@ class NexusAccessPoint(DataAccessPoint):
         self.access_point.object_to_nexus(
             object_,
             metadata_dict,
-            self.emodel_metadata.as_string(seed=seed),
+            self.emodel_metadata.as_string(),
             replace=True,
+            seed=seed,
         )
 
     def get_targets_configuration(self):
@@ -214,6 +218,7 @@ class NexusAccessPoint(DataAccessPoint):
         configuration = self.access_point.nexus_to_object(
             type_="ExtractionTargetsConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
 
         configuration.available_traces = self.get_available_traces()
@@ -235,6 +240,7 @@ class NexusAccessPoint(DataAccessPoint):
         configuration = self.access_point.nexus_to_object(
             type_="FitnessCalculatorConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
 
         if configuration.name_rmp_protocol is None:
@@ -260,6 +266,7 @@ class NexusAccessPoint(DataAccessPoint):
         configuration = self.access_point.nexus_to_object(
             type_="EModelConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
 
         morph_path = self.download_morphology(
@@ -281,7 +288,11 @@ class NexusAccessPoint(DataAccessPoint):
     def get_distributions(self):
         """Get the list of available distributions"""
 
-        return self.access_point.nexus_to_objects(type_="EModelChannelDistribution", metadata={})
+        return self.access_point.nexus_to_objects(
+            type_="EModelChannelDistribution",
+            metadata={},
+            metadata_str=self.emodel_metadata.as_string(),
+        )
 
     def store_distribution(self, distribution):
         """Store a channel distribution as a resource of type EModelChannelDistribution"""
@@ -321,7 +332,9 @@ class NexusAccessPoint(DataAccessPoint):
         Returns None if the emodel workflow is not present on nexus."""
 
         emodel_workflow = self.access_point.nexus_to_objects(
-            type_="EModelWorkflow", metadata=self.emodel_metadata_ontology.filters_for_resource()
+            type_="EModelWorkflow",
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
         if emodel_workflow:
             return emodel_workflow[0]
@@ -366,7 +379,11 @@ class NexusAccessPoint(DataAccessPoint):
         if seed:
             metadata["seed"] = int(seed)
 
-        emodel = self.access_point.nexus_to_object(type_="EModel", metadata=metadata)
+        emodel = self.access_point.nexus_to_object(
+            type_="EModel",
+            metadata=metadata,
+            metadata_str=self.emodel_metadata.as_string(),
+        )
         emodel.emodel_metadata = copy.deepcopy(self.emodel_metadata)
 
         return emodel
@@ -380,7 +397,9 @@ class NexusAccessPoint(DataAccessPoint):
         """Get all the emodels"""
 
         emodels = self.access_point.nexus_to_objects(
-            type_="EModel", metadata=self.emodel_metadata_ontology.filters_for_resource()
+            type_="EModel",
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
 
         for em in emodels:
@@ -526,7 +545,12 @@ class NexusAccessPoint(DataAccessPoint):
         """Download a morphology by name if not already downloaded"""
 
         resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
-        filepath = pathlib.Path(self.access_point.download(resource.id, "./nexus_temp/")[0])
+        directory_name = self.emodel_metadata.as_string()
+        filepath = pathlib.Path(
+            self.access_point.download(resource.id, pathlib.Path("./nexus_temp/") / directory_name)[
+                0
+            ]
+        )
 
         # Some morphologies have .h5 attached and we don't want that:
         if format_:
@@ -569,7 +593,8 @@ class NexusAccessPoint(DataAccessPoint):
         if not resource:
             raise Exception(f"No matching resource for {id_} {name}")
 
-        return self.access_point.resource_location(resource)[0]
+        metadata_str = self.emodel_metadata.as_string()
+        return self.access_point.resource_location(resource, metadata_str=metadata_str)[0]
 
     def get_mechanisms_directory(self):
         """Return the path to the directory containing the mechanisms for the current emodel"""
@@ -585,7 +610,8 @@ class NexusAccessPoint(DataAccessPoint):
 
         dataset = self.access_point.fetch_one(filters={"type": "RNASequencing", "name": name})
 
-        filepath = self.access_point.resource_location(dataset)[0]
+        metadata_str = self.emodel_metadata.as_string()
+        filepath = self.access_point.resource_location(dataset, metadata_str=metadata_str)[0]
 
         df = pandas.read_csv(filepath, index_col=["me-type", "t-type", "modality"])
 
@@ -598,7 +624,9 @@ class NexusAccessPoint(DataAccessPoint):
             {"type": "IonChannelMapping", "name": "icmapping"}
         )
 
-        return self.access_point.download(resource_ic_map.id)[0]
+        return self.access_point.download(
+            resource_ic_map.id, metadata_str=self.emodel_metadata.as_string()
+        )[0]
 
     def get_t_types(self, table_name):
         """Get the list of t-types available for the present emodel"""
