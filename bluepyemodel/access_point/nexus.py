@@ -625,7 +625,9 @@ class NexusAccessPoint(DataAccessPoint):
             {"type": "IonChannelMapping", "name": "icmapping"}
         )
 
-        return self.access_point.download(resource_ic_map.id)[0]
+        return self.access_point.download(
+            resource_ic_map.id, metadata_str=self.emodel_metadata.as_string()
+        )[0]
 
     def get_t_types(self, table_name):
         """Get the list of t-types available for the present emodel"""
