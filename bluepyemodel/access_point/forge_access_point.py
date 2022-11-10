@@ -436,7 +436,7 @@ class NexusForgeAccessPoint:
         return paths
 
     @staticmethod
-    def resource_name(class_name, metadata):
+    def resource_name(class_name, metadata, seed=None):
         """Create a resource name from the class name and the metadata."""
         name_parts = [CLASS_TO_RESOURCE_NAME[class_name]]
         if "iteration" in metadata:
@@ -445,6 +445,8 @@ class NexusForgeAccessPoint:
             name_parts.append(metadata["emodel"])
         if "ttype" in metadata:
             name_parts.append(metadata["ttype"])
+        if seed is not None:
+            name_parts.append(str(seed))
 
         return "__".join(name_parts)
 
@@ -453,22 +455,27 @@ class NexusForgeAccessPoint:
         the distribution of a Dataset of the matching type. The metadata
         are also attached to the object to be able to retrieve the Resource."""
 
-        type_ = CLASS_TO_NEXUS_TYPE[object_.__class__.__name__]
+        class_name = object_.__class__.__name__
+        type_ = CLASS_TO_NEXUS_TYPE[class_name]
+
+        seed = None
+        if class_name == "EModel":
+            seed = object_.seed
 
         base_payload = {
             "type": ["Entity", type_],
-            "name": self.resource_name(object_.__class__.__name__, metadata_dict),
+            "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
         payload_existance = {
             "type": type_,
-            "name": self.resource_name(object_.__class__.__name__, metadata_dict),
+            "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
 
         base_payload.update(metadata_dict)
         payload_existance.update(metadata_dict)
         json_payload = object_.as_dict()
 
-        path_json = f"{CLASS_TO_RESOURCE_NAME[object_.__class__.__name__]}__{metadata_str}.json"
+        path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}__{metadata_str}.json"
         path_json = str((pathlib.Path("./nexus_temp") / path_json).resolve())
 
         distributions = [path_json]

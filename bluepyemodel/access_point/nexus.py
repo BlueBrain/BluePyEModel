@@ -197,9 +197,13 @@ class NexusAccessPoint(DataAccessPoint):
     def store_object(self, object_, seed=None):
         """Store a BPEM object on Nexus"""
 
+        metadata_dict = self.emodel_metadata_ontology.for_resource()
+        if seed is not None:
+            metadata_dict["seed"] = seed
+
         self.access_point.object_to_nexus(
             object_,
-            self.emodel_metadata_ontology.for_resource(),
+            metadata_dict,
             self.emodel_metadata.as_string(seed=seed),
             replace=True,
         )
