@@ -457,7 +457,7 @@ class NexusForgeAccessPoint:
 
         class_name = object_.__class__.__name__
         type_ = CLASS_TO_NEXUS_TYPE[class_name]
-        
+
         seed = None
         if class_name == "EModel":
             seed = object_.seed
