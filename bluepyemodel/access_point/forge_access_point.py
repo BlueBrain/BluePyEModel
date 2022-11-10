@@ -446,7 +446,7 @@ class NexusForgeAccessPoint:
         if "ttype" in metadata:
             name_parts.append(metadata["ttype"])
         if seed is not None:
-            name_parts.append(seed)
+            name_parts.append(str(seed))
 
         return "__".join(name_parts)
 
