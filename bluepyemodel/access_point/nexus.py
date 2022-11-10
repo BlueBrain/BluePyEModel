@@ -547,10 +547,9 @@ class NexusAccessPoint(DataAccessPoint):
         resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
         directory_name = self.emodel_metadata.as_string()
         filepath = pathlib.Path(
-            self.access_point.download(
-                resource.id,
-                pathlib.Path("./nexus_temp/") / directory_name
-            )[0]
+            self.access_point.download(resource.id, pathlib.Path("./nexus_temp/") / directory_name)[
+                0
+            ]
         )
 
         # Some morphologies have .h5 attached and we don't want that:
