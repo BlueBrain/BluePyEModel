@@ -506,7 +506,7 @@ class NexusForgeAccessPoint:
     def resource_to_object(self, type_, resource, metadata, metadata_str):
         """Transform a Resource into a BPEM object of the matching type"""
 
-        file_paths = self.download(resource.id, metadata_str)
+        file_paths = self.download(resource.id, metadata_str=metadata_str)
         json_path = next((fp for fp in file_paths if pathlib.Path(fp).suffix == ".json"), None)
 
         if json_path is None:
