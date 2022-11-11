@@ -9,7 +9,9 @@ def name_morphology(radius, type_="cylindrical"):
     return f"{type_}_morphology_{radius:.4f}"
 
 
-def cylindrical_morphology_generator(radius=5.0, output_dir="morphologies"):
+def cylindrical_morphology_generator(
+    radius=5.0, radius_axon=0.0, length_axon=0.0, output_dir="morphologies"
+):
     """Creates a cylindrical morphology and save it as a .swc"""
 
     name = name_morphology(radius, type_="cylindrical")
@@ -20,6 +22,10 @@ def cylindrical_morphology_generator(radius=5.0, output_dir="morphologies"):
     content += f"1 1 -{radius} 0.0 0.0 {radius} -1\n"
     content += f"2 1 0.0 0.0 0.0 {radius} 1\n"
     content += f"3 1 {radius} 0.0 0.0 {radius} 2\n"
+
+    if radius_axon and length_axon:
+        content += f"4 2 -{radius} 0.0 0.0 {radius_axon} 1\n"
+        content += f"5 2 -{radius + length_axon} 0.0 0.0 {radius_axon} 4\n"
 
     with open(str(morphology_path), "w+") as fp:
         fp.write(content)
