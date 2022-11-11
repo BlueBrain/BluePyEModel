@@ -480,7 +480,7 @@ class NexusForgeAccessPoint:
         payload_existance.update(metadata_dict)
         json_payload = object_.as_dict()
 
-        path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}"
+        path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}__{metadata_str}"
         if seed is not None:
             path_json += f"__{seed}"
         path_json = str(
