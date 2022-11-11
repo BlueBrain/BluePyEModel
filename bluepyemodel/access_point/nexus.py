@@ -544,7 +544,19 @@ class NexusAccessPoint(DataAccessPoint):
     def download_morphology(self, name, format_=None):
         """Download a morphology by name if not already downloaded"""
 
-        resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
+        # Temporary fix for the duplicated morphology issue
+        resources = self.access_point.fetch({"type": "NeuronMorphology", "name": name})
+        if resources is None:
+            raise AccessPointException(f"Could not get resource for morphology {name}")
+        if len(resources) == 1:
+            resource = resources[0]
+        elif len(resources) == 2:
+            resource = next((r for r in resources if hasattr(r, "derivation")), None)
+            if resource is None:
+                raise AccessPointException(f"Could not get resource for morphology {name}")
+        else:
+            raise AccessPointException(f"More than 2 morphologies with name: {name}")
+
         directory_name = self.emodel_metadata.as_string()
         filepath = pathlib.Path(
             self.access_point.download(resource.id, pathlib.Path("./nexus_temp/") / directory_name)[
