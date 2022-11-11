@@ -181,6 +181,7 @@ class EModel_pipeline:
                 continue
 
             plotting.optimisation(
+                optimiser=self.access_point.pipeline_settings.optimiser,
                 checkpoint_path=chkp_path,
                 figures_dir=pathlib.Path("./figures")
                 / self.access_point.emodel_metadata.emodel

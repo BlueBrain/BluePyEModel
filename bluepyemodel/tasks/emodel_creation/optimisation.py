@@ -902,6 +902,7 @@ class PlotOptimisation(WorkflowTask):
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
 
         optimisation(
+            optimiser=self.access_point.pipeline_settings.optimiser,
             checkpoint_path=checkpoint_path,
             figures_dir=Path("./figures") / self.emodel / "optimisation",
         )
