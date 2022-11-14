@@ -36,7 +36,15 @@ def save_fig(figures_dir, figure_name):
     plt.clf()
 
 
-def optimisation(optimiser, checkpoint_path="./checkpoint.pkl", figures_dir="./figures", write_fig=True):
+def optimisation(
+        optimiser,
+        emodel,
+        iteration,
+        seed,
+        checkpoint_path="./checkpoint.pkl",
+        figures_dir="./figures",
+        write_fig=True
+    ):
     """Create plots related to a BluePyOpt optimisation"""
 
     make_dir(figures_dir)
@@ -52,6 +60,10 @@ def optimisation(optimiser, checkpoint_path="./checkpoint.pkl", figures_dir="./f
     ))
 
     fig, axs = plt.subplots(1, figsize=(8, 8), squeeze=False)
+
+    title = str(emodel)
+    title += f" iteration = {iteration} ; seed = {seed}"
+    axs[0, 0].set_title(metadata_str)
 
     axs[0, 0].plot(nevals, run["logbook"].select("min"), label="Minimum", ls="--", c="gray")
 
@@ -99,6 +111,10 @@ def scores(model, figures_dir="./figures", write_fig=True):
 
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
+
+    title = str(model.emodel_metadata.emodel)
+    title += f" iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
+    axs[0, 0].set_title(title)
 
     fname = model.emodel_metadata.as_string(model.seed) + "__scores.pdf"
 
@@ -183,6 +199,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
         idx += 1
 
     title = str(model.emodel_metadata.emodel)
+    title += f"\n iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
 
     if threshold:
         title += "\n Threshold current = {:.4f} nA".format(threshold)
@@ -354,7 +371,9 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
     axs[0, 0].set_xlim(0, 1 + len(ubounds))
     axs[0, 0].set_ylim(-1.05, 1.05)
 
-    axs[0, 0].set_title(models[0].emodel_metadata.as_string())
+    title = str(models[0].emodel_metadata.emodel)
+    title += f" iteration = {models[0].emodel_metadata.iteration}"
+    axs[0, 0].set_title(title)
 
     fname = models[0].emodel_metadata.as_string() + "__parameters_distribution.pdf"
 

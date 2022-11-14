@@ -903,6 +903,9 @@ class PlotOptimisation(WorkflowTask):
 
         optimisation(
             optimiser=self.access_point.pipeline_settings.optimiser,
+            emodel=self.emodel,
+            iteration=self.iteration_tag,
+            seed=self.seed,
             checkpoint_path=checkpoint_path,
             figures_dir=Path("./figures") / self.emodel / "optimisation",
         )
