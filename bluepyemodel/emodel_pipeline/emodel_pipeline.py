@@ -180,7 +180,14 @@ class EModel_pipeline:
             ):
                 continue
 
+            stem = str(pathlib.Path(chkp_path).stem)
+            seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
+
             plotting.optimisation(
+                optimiser=self.access_point.pipeline_settings.optimiser,
+                emodel=self.access_point.emodel_metadata.emodel,
+                iteration=self.access_point.emodel_metadata.iteration,
+                seed=seed,
                 checkpoint_path=chkp_path,
                 figures_dir=pathlib.Path("./figures")
                 / self.access_point.emodel_metadata.emodel

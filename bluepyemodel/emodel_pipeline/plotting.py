@@ -36,7 +36,15 @@ def save_fig(figures_dir, figure_name):
     plt.clf()
 
 
-def optimisation(checkpoint_path="./checkpoint.pkl", figures_dir="./figures", write_fig=True):
+def optimisation(
+    optimiser,
+    emodel,
+    iteration,
+    seed,
+    checkpoint_path="./checkpoint.pkl",
+    figures_dir="./figures",
+    write_fig=True,
+):
     """Create plots related to a BluePyOpt optimisation"""
 
     make_dir(figures_dir)
@@ -44,7 +52,20 @@ def optimisation(checkpoint_path="./checkpoint.pkl", figures_dir="./figures", wr
 
     nevals = numpy.cumsum(run["logbook"].select("nevals"))
 
+    legend_text = "\n".join(
+        (
+            f"min score = {min(run['logbook'].select('min')):.3f}",
+            f"# of generations = {run['generation']}",
+            f"# of evaluations = {nevals[-1]}",
+            f"evolution algorithm: {optimiser}",
+        )
+    )
+
     fig, axs = plt.subplots(1, figsize=(8, 8), squeeze=False)
+
+    title = str(emodel)
+    title += f"; iteration = {iteration} ; seed = {seed}"
+    axs[0, 0].set_title(title)
 
     axs[0, 0].plot(nevals, run["logbook"].select("min"), label="Minimum", ls="--", c="gray")
 
@@ -53,7 +74,7 @@ def optimisation(checkpoint_path="./checkpoint.pkl", figures_dir="./figures", wr
     axs[0, 0].set_yscale("log")
     axs[0, 0].set_xlabel("Number of evaluations")
     axs[0, 0].set_ylabel("Fitness")
-    axs[0, 0].legend(loc="upper right", frameon=False)
+    axs[0, 0].legend(title=legend_text, loc="upper right", frameon=False)
 
     p = Path(checkpoint_path)
 
@@ -92,6 +113,11 @@ def scores(model, figures_dir="./figures", write_fig=True):
 
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
+
+    title = str(model.emodel_metadata.emodel)
+    title += f"; iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
+    # tweak size and placement so that title does not overcross figure
+    fig.suptitle(title, size="medium", y=0.99)
 
     fname = model.emodel_metadata.as_string(model.seed) + "__scores.pdf"
 
@@ -176,6 +202,7 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
         idx += 1
 
     title = str(model.emodel_metadata.emodel)
+    title += f"\n iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
 
     if threshold:
         title += "\n Threshold current = {:.4f} nA".format(threshold)
@@ -347,7 +374,9 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
     axs[0, 0].set_xlim(0, 1 + len(ubounds))
     axs[0, 0].set_ylim(-1.05, 1.05)
 
-    axs[0, 0].set_title(models[0].emodel_metadata.as_string())
+    title = str(models[0].emodel_metadata.emodel)
+    title += f"; iteration = {models[0].emodel_metadata.iteration}"
+    axs[0, 0].set_title(title)
 
     fname = models[0].emodel_metadata.as_string() + "__parameters_distribution.pdf"
 
