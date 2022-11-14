@@ -179,7 +179,8 @@ class NexusAccessPoint(DataAccessPoint):
                     "label": "Mus musculus",
                 },
             }
-
+        elif species is None:
+            subject = None
         else:
             raise Exception(f"Unknown species {species}.")
 
