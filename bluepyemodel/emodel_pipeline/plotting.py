@@ -37,14 +37,14 @@ def save_fig(figures_dir, figure_name):
 
 
 def optimisation(
-        optimiser,
-        emodel,
-        iteration,
-        seed,
-        checkpoint_path="./checkpoint.pkl",
-        figures_dir="./figures",
-        write_fig=True
-    ):
+    optimiser,
+    emodel,
+    iteration,
+    seed,
+    checkpoint_path="./checkpoint.pkl",
+    figures_dir="./figures",
+    write_fig=True,
+):
     """Create plots related to a BluePyOpt optimisation"""
 
     make_dir(figures_dir)
@@ -52,18 +52,20 @@ def optimisation(
 
     nevals = numpy.cumsum(run["logbook"].select("nevals"))
 
-    legend_text = "\n".join((
-        f"min score = {min(run['logbook'].select('min')):.3f}",
-        f"# of generations = {run['generation']}",
-        f"# of evaluations = {nevals[-1]}",
-        f"evolution algorithm: {optimiser}",
-    ))
+    legend_text = "\n".join(
+        (
+            f"min score = {min(run['logbook'].select('min')):.3f}",
+            f"# of generations = {run['generation']}",
+            f"# of evaluations = {nevals[-1]}",
+            f"evolution algorithm: {optimiser}",
+        )
+    )
 
     fig, axs = plt.subplots(1, figsize=(8, 8), squeeze=False)
 
     title = str(emodel)
     title += f" iteration = {iteration} ; seed = {seed}"
-    axs[0, 0].set_title(metadata_str)
+    axs[0, 0].set_title(title)
 
     axs[0, 0].plot(nevals, run["logbook"].select("min"), label="Minimum", ls="--", c="gray")
 

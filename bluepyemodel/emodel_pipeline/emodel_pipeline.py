@@ -181,7 +181,7 @@ class EModel_pipeline:
                 continue
 
             stem = str(pathlib.Path(chkp_path).stem)
-            seed = int(stem.split("seed=")[-1])
+            seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
 
             plotting.optimisation(
                 optimiser=self.access_point.pipeline_settings.optimiser,
