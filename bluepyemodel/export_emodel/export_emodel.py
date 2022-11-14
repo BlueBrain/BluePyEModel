@@ -190,11 +190,11 @@ def export_emodels_nexus(
     if not emodels:
         return
 
-    metadata = vars(local_access_point.emodel_metadata.emodel)
-    metadata.pop("iteration")
+    metadata = vars(local_access_point.emodel_metadata)
+    iteration = metadata.pop("iteration")
     nexus_access_point = NexusAccessPoint(
         **metadata,
-        iteration_tag=local_access_point.emodel_metadata.iteration,
+        iteration_tag=iteration,
         project=nexus_project,
         organisation=nexus_organisation,
         endpoint=nexus_endpoint,
@@ -208,7 +208,7 @@ def export_emodels_nexus(
     targets_configuration = local_access_point.get_targets_configuration()
 
     # Register the morphology if it does not already exists
-    morpho_name = model_configuration.morphology.morphology_path.name
+    morpho_name = model_configuration.morphology.path
     resources = nexus_access_point.access_point.fetch(
         {"type": "NeuronMorphology", "name": morpho_name}
     )
@@ -220,7 +220,7 @@ def export_emodels_nexus(
         )
         nexus_access_point.store_morphology(
             morphology_name=morpho_name,
-            morphology_path=model_configuration.morphology.morphology_path.path,
+            morphology_path=model_configuration.morphology.path,
             mtype=local_access_point.emodel_metadata.mtype,
         )
 
