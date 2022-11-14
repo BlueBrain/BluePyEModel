@@ -117,7 +117,7 @@ def scores(model, figures_dir="./figures", write_fig=True):
     title = str(model.emodel_metadata.emodel)
     title += f"; iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
     # tweak size and placement so that title does not overcross figure
-    fig.suptitle(title, size='medium', y=0.99)
+    fig.suptitle(title, size="medium", y=0.99)
 
     fname = model.emodel_metadata.as_string(model.seed) + "__scores.pdf"
 
