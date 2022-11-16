@@ -15,7 +15,7 @@ class Comb(BPEM_stimulus):
 
     """Comb current stimulus
 
-          holdi         amp       holdi        amp      holdi            .   .   .
+          holdi         amp       holdi        amp       holdi           .   .   .
             :            :          :           :          :
             :       ___________     :      ___________     :     ___                  _____
             :      |           |    :     |           |    :    |                          |
