@@ -10,7 +10,27 @@ logger = logging.getLogger(__name__)
 
 class Ramp(BPEM_stimulus):
 
-    """Ramp current stimulus"""
+    """Ramp current stimulus
+
+
+            holdi          holdi+amp       holdi
+              :                :             :
+              :                :             :
+              :               /|             :
+              :              / |             :
+              :             /  |             :
+              :            /   |             :
+              :           /    |             :
+              :          /     |             :
+              :         /      |             :
+              :        /       |             :
+              :       /        |             :
+        |___________ /         |__________________________
+        ^           ^          ^                          ^
+        :           :          :                          :
+        :           :          :                          :
+        t=0         delay      delay+duration             totduration
+    """
 
     name = "Ramp"
 

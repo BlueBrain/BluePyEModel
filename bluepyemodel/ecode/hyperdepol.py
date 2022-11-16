@@ -10,7 +10,25 @@ logger = logging.getLogger(__name__)
 
 class HyperDepol(BPEM_stimulus):
 
-    """HyperDepol current stimulus"""
+    """HyperDepol current stimulus
+    
+
+              holdi        holdi+hyper_amp      holdi+depol_amp       holdi
+                :                :                     :                :
+                :                :           _____________________      :
+                :                :          |                     |     :
+                :                :          |                     |     :
+                :                :          |                     |     :
+                :                :          |                     |     :
+                :                :          |                     |     :
+        |_______________         :          |                     |___________
+        ^               |        :          |                     ^           ^
+        :               |___________________|                     :           :
+        :               ^                   ^                     :           :
+        :               :                   :                     :           :
+        :               :                   :                     :           :
+        t=0             delay               tmid                  toff        totduration
+    """
 
     name = "HyperDepol"
 
