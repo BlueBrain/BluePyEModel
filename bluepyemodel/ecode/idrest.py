@@ -12,19 +12,19 @@ class IDrest(BPEM_stimulus):
 
     """IDrest current stimulus
 
-              holdi               holdi+amp                holdi
-                :                     :                      :
-                :                     :                      :
-                :           ______________________           :
-                :          |                      |          :
-                :          |                      |          :
-                :          |                      |          :
-                :          |                      |          :
-        |__________________|                      |______________________
-        ^                  ^                      ^                      ^
-        :                  :                      :                      :
-        :                  :                      :                      :
-        t=0                delay                  delay+duration         totduration
+          holdi               holdi+amp                holdi
+            :                     :                      :
+            :                     :                      :
+            :           ______________________           :
+            :          |                      |          :
+            :          |                      |          :
+            :          |                      |          :
+            :          |                      |          :
+    |__________________|                      |______________________
+    ^                  ^                      ^                      ^
+    :                  :                      :                      :
+    :                  :                      :                      :
+    t=0                delay                  delay+duration         totduration
     """
 
     name = "IDrest"

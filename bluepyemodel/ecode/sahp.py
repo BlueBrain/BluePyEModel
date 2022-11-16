@@ -11,21 +11,21 @@ logger = logging.getLogger(__name__)
 class sAHP(BPEM_stimulus):
 
     """sAHP current stimulus
-    
 
-           holdi       holdi+long_amp      holdi+amp       holdi+long_amp          holdi
-             :                :                :                 :                   :
-             :                :          ______________          :                   :
-             :                :         |              |         :                   :
-             :      ____________________|              |____________________         :
-             :     |                    ^              ^                    |        : 
-             :     |                    :              :                    |        :
-        |__________|                    :              :                    |__________________
-        ^          ^                    :              :                    ^                  ^
-        :          :                    :              :                    :                  :
-        :          :                    :              :                    :                  :
-        t=0        delay                tmid           tmid2                toff     totduration
-    
+
+       holdi       holdi+long_amp      holdi+amp       holdi+long_amp          holdi
+         :                :                :                 :                   :
+         :                :          ______________          :                   :
+         :                :         |              |         :                   :
+         :      ____________________|              |____________________         :
+         :     |                    ^              ^                    |        :
+         :     |                    :              :                    |        :
+    |__________|                    :              :                    |__________________
+    ^          ^                    :              :                    ^                  ^
+    :          :                    :              :                    :                  :
+    :          :                    :              :                    :                  :
+    t=0        delay                tmid           tmid2                toff     totduration
+
     """
 
     name = "sAHP"
