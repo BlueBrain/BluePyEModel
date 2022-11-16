@@ -1,6 +1,6 @@
 """Comb stimulus class.
 
-This stimulus consists of regularly spaces short steps, aimed at generating a train of spikes.
+This stimulus consists of regularly spaced short steps, aimed at generating a train of spikes.
 """
 import logging
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class Comb(BPEM_stimulus):
 
     """Comb current stimulus
-    
+
           holdi         amp       holdi        amp      holdi            .   .   .
             :            :          :           :          :
             :       ___________     :      ___________     :     ___                  _____
