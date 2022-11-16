@@ -13,7 +13,23 @@ logger = logging.getLogger(__name__)
 
 class Comb(BPEM_stimulus):
 
-    """IDrest current stimulus"""
+    """Comb current stimulus
+    
+          holdi         amp       holdi        amp      holdi            .   .   .
+            :            :          :           :          :
+            :       ___________     :      ___________     :     ___                  _____
+            :      |           |    :     |           |    :    |                          |
+            :      |           |    :     |           |    :    |        * n_steps         |
+            :      |           |    :     |           |    :    |        .   .   .         |
+            :      |           |    :     |           |    :    |                          |
+    |______________|           |__________|           |_________|                          |_____
+    :              :           :          :           :         :                                ^
+    :              :           :          :           :         :                                :
+    :              :           :          :           :         :                                :
+     <--  delay  --><-duration->           <-duration->         :        .   .   .     totduration
+                    <--   inter_delay  --><--  inter_delay   -->
+
+    """
 
     name = "Comb"
 
@@ -21,12 +37,18 @@ class Comb(BPEM_stimulus):
         """Constructor
         Args:
             location(Location): location of stimulus
+            inter_delay (float): time between each step beginnings in ms
+            n_steps (int): number of steps for the stimulus
+            amp (float): amplitude of each step(nA)
+            delay (float): time at which the first current spike begins (ms)
+            duration (float): duration of each step (ms)
+            totduration (float): total duration of the whole stimulus (ms)
         """
         self.inter_delay = kwargs.get("inter_delay", 5)
         self.n_steps = kwargs.get("n_steps", 20)
         self.amp = kwargs.get("amp", 40)
         self.delay = kwargs.get("delay", 200.0)
-        self.duration = kwargs.get("duration", 5.0)
+        self.duration = kwargs.get("duration", 0.5)
         self.total_duration = kwargs.get("totduration", 350.0)
         self.holding = 0.0  # hardcoded holding for now (holding_current is modified externally)
 
