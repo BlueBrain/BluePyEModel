@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy
 from bluepyopt.ephys.responses import TimeVoltageResponse
 
+from bluepyemodel.access_point import get_access_point
 from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.model import model
@@ -179,6 +180,22 @@ def compute_responses(
     return emodels
 
 
+def fill_initial_parameters(evaluator, initial_parameters):
+    """Freezes the parameters of the evaluator that are present in the informed parameter set."""
+    # pylint: disable=protected-access
+
+    for p in evaluator.cell_model.params:
+        if p in initial_parameters and evaluator.cell_model.params[p].bounds is not None:
+            evaluator.cell_model.params[p]._value = initial_parameters[
+                p
+            ]  # pylint: disable=protected-access
+            evaluator.cell_model.params[p].frozen = True
+            evaluator.cell_model.params[p].bounds = None
+
+    evaluator.params = [p for p in evaluator.params if p.name not in initial_parameters]
+    evaluator.param_names = [pn for pn in evaluator.param_names if pn not in initial_parameters]
+
+
 def get_evaluator_from_access_point(
     access_point,
     stochasticity=None,
@@ -227,7 +244,7 @@ def get_evaluator_from_access_point(
     else:
         mechanisms_directory = access_point.get_mechanisms_directory()
 
-    return create_evaluator(
+    evaluator = create_evaluator(
         cell_model=cell_model,
         fitness_calculator_configuration=fitness_calculator_configuration,
         pipeline_settings=access_point.pipeline_settings,
@@ -237,3 +254,35 @@ def get_evaluator_from_access_point(
         mechanisms_directory=mechanisms_directory,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
     )
+
+    start_from_emodel = access_point.pipeline_settings.start_from_emodel
+
+    if start_from_emodel is not None:
+
+        access_point_type = "local" if isinstance(access_point, LocalAccessPoint) else "nexus"
+
+        if access_point_type == "local":
+            kwargs = {
+                "emodel_dir": access_point.emodel_dir,
+                "final_path": access_point.final_path,
+                "recipes_path": access_point.recipes_path,
+            }
+        else:
+            raise Exception("start_from_emodel not implemented for Nexus access point")
+
+        starting_access_point = get_access_point(
+            access_point=access_point_type, **start_from_emodel, **kwargs
+        )
+
+        emodels = starting_access_point.get_emodels()
+        if not emodels:
+            raise Exception(
+                f"Cannot start optimisation of {access_point.emodel_metadata.emodel} because"
+                f" there are no emodels for {start_from_emodel}"
+            )
+
+        initial_parameters = sorted(emodels, key=lambda x: x.fitness)[0].parameters
+
+        fill_initial_parameters(evaluator, initial_parameters)
+
+    return evaluator
