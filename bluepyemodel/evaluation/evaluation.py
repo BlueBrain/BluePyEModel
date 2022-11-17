@@ -179,6 +179,19 @@ def compute_responses(
     return emodels
 
 
+
+def fill_initial_parameters(evaluator, initial_parameters):
+    
+    for p in evaluator.cell_model.params:
+        if p in initial_parameters and evaluator.cell_model.params[p].bounds != None:
+            evaluator.cell_model.params[p]._value = initial_parameters[p]
+            evaluator.cell_model.params[p].frozen = True
+            evaluator.cell_model.params[p].bounds = None
+
+    evaluator.params = [p for p in evaluator.params if not p.name in initial_parameters]
+    evaluator.param_names = [pn for pn in evaluator.param_names if pn not in initial_parameters]
+
+
 def get_evaluator_from_access_point(
     access_point,
     stochasticity=None,
@@ -227,7 +240,7 @@ def get_evaluator_from_access_point(
     else:
         mechanisms_directory = access_point.get_mechanisms_directory()
 
-    return create_evaluator(
+    evaluator =  create_evaluator(
         cell_model=cell_model,
         fitness_calculator_configuration=fitness_calculator_configuration,
         pipeline_settings=access_point.pipeline_settings,
@@ -237,3 +250,31 @@ def get_evaluator_from_access_point(
         mechanisms_directory=mechanisms_directory,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
     )
+    
+    start_from_emodel = access_point.pipeline_settings.start_from_emodel
+    
+    if start_from_emodel is not None:
+        # THE FITNESS CALCULATOR AND MODEL CONFIGURATION MUST ALREADY EXIST FOR BOTH EMODELS
+
+        # Get emodel parameters
+        # TODO: do the Nexus version
+        starting_access_point = LocalAccessPoint(
+            emodel=start_from_emodel["emodel"],
+            etype=start_from_emodel["etype"],
+            final_path="./final.json",
+            iteration_tag=start_from_emodel["iteration_tag"],
+            recipes_path="./config/recipes.json",
+        )
+
+        emodels = starting_access_point.get_emodels()
+        if not emodels:
+            raise Exception(
+                f"Cannot start optimisation of {access_point.emodel_metadata.emodel} because"
+                f" there are no emodels for {starting_access_point.emodel_metadata.emodel}"
+            )
+
+        initial_parameters = sorted(emodels, key=lambda x: x.fitness)[0].parameters
+
+        fill_initial_parameters(evaluator, initial_parameters)
+        
+    return evaluator

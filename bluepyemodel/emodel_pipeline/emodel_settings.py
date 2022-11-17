@@ -22,6 +22,7 @@ class EModelPipelineSettings:
         stochasticity=False,
         morph_modifiers=None,
         threshold_based_evaluator=None,
+        start_from_emodel=None,
         optimiser="IBEA",
         optimizer=None,
         optimisation_params=None,
@@ -77,6 +78,7 @@ class EModelPipelineSettings:
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
             threshold_based_evaluator (bool): not used. To be deprecated.
+            start_from_emodel (dict or None):
             optimiser (str): algorithm used for optimisation, can be "IBEA", "SO-CMA",
                 "MO-CMA" (use cma option in pip install for CMA optimisers).
             optimizer (str): for legacy reasons, overwrites optimiser when not None.
@@ -163,6 +165,7 @@ class EModelPipelineSettings:
         self.cvode_minstep = cvode_minstep
 
         # Settings related to the optimisation
+        self.start_from_emodel = start_from_emodel
         self.optimisation_timeout = optimisation_timeout
         self.optimiser = optimiser if optimizer is None else optimizer
         self.optimisation_params = optimisation_params

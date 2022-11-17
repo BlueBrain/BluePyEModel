@@ -10,6 +10,8 @@ from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.tools.utils import logger
 from bluepyemodel.tools.utils import read_checkpoint
+from bluepyemodel.access_point.local import LocalAccessPoint
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 
 logger = logging.getLogger(__name__)
 
