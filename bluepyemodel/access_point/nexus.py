@@ -506,7 +506,7 @@ class NexusAccessPoint(DataAccessPoint):
                     {
                         "type": "SubCellularModelScript",
                         "name": mechanism.name,
-                        "version": mechanism.version,
+                        "modelid": mechanism.version,
                     },
                 )
 
@@ -519,8 +519,8 @@ class NexusAccessPoint(DataAccessPoint):
                 if resources is None:
                     raise AccessPointException(f"SubCellularModelScript {mechanism.name} not found")
 
-                if len(resources) > 1 and all(hasattr(r, "version") for r in resources):
-                    resource = sorted(resources, key=lambda x: x.version)[-1]
+                if len(resources) > 1 and all(hasattr(r, "modelid") for r in resources):
+                    resource = sorted(resources, key=lambda x: x.modelid)[-1]
                 else:
                     resource = resources[0]
 
