@@ -476,7 +476,11 @@ def plot_models(
             scores(mo, figures_dir_scores)
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
-            recording_names = {recording["name"] for prot in access_point.get_fitness_calculator_configuration().protocols for recording in prot.recordings_from_config}
+            recording_names = {
+                recording["name"]
+                for prot in access_point.get_fitness_calculator_configuration().protocols
+                for recording in prot.recordings_from_config
+            }
             traces(mo, mo.responses, recording_names, stimuli, figures_dir_traces)
 
         if plot_currentscape:
