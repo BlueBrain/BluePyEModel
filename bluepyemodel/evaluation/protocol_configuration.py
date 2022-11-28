@@ -57,8 +57,10 @@ class ProtocolConfiguration:
             recordings = [recordings]
 
         self.recordings = []
+        self.recordings_from_config = []
         for recording in recordings:
             self.recordings.append(recording)
+            self.recordings_from_config.append(recording)
 
             if ion_variables is not None:
                 for ion in ion_variables:
