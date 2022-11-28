@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def get_loc_ions(isection):
     """Get all ion concentrations available in a location."""
-    local_overall_ions = ()
+    local_overall_ions = set()
 
     # ion overall current & concentration
     ions = isection.psection()["ions"]
@@ -25,7 +25,7 @@ def get_loc_ions(isection):
 
 def get_loc_currents(isection):
     """Get all overall currents available in a location."""
-    local_overall_currs = ()
+    local_overall_currs = set()
 
     # ion overall current & concentration
     ions = isection.psection()["ions"]
@@ -72,7 +72,9 @@ def check_recordings(recordings, icell, sim):
         if section_key in varlists:
             local_varlist = varlists[section_key]
         else:
-            local_varlist = get_loc_varlist(sec) + get_loc_ions(sec) + get_loc_currents(sec)
+            local_varlist = (
+                get_loc_varlist(sec) + list(get_loc_ions(sec)) + list(get_loc_currents(sec))
+            )
             varlists[section_key] = local_varlist
 
         # keep recording if its variable is available in its location

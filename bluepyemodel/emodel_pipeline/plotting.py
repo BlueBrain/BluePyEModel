@@ -129,7 +129,7 @@ def scores(model, figures_dir="./figures", write_fig=True):
     return fig, axs
 
 
-def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True):
+def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures", write_fig=True):
     """Plot the traces of a model"""
     make_dir(figures_dir)
 
@@ -142,9 +142,8 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
     for resp_name, response in responses.items():
 
         if not (isinstance(response, float)):
-            if resp_name.split(".")[-1] != "v":
-                continue
-            traces_name.append(resp_name)
+            if resp_name in recording_names:
+                traces_name.append(resp_name)
 
         else:
 
@@ -477,7 +476,8 @@ def plot_models(
             scores(mo, figures_dir_scores)
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
-            traces(mo, mo.responses, stimuli, figures_dir_traces)
+            recording_names = {recording["name"] for prot in access_point.get_fitness_calculator_configuration().protocols for recording in prot.recordings_from_config}
+            traces(mo, mo.responses, recording_names, stimuli, figures_dir_traces)
 
         if plot_currentscape:
             config = access_point.pipeline_settings.currentscape_config
