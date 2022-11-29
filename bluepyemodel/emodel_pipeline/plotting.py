@@ -36,6 +36,44 @@ def save_fig(figures_dir, figure_name):
     plt.clf()
 
 
+def get_traces_ylabel(var):
+    """Get ylabel for traces subplot."""
+    if var == "v":
+        return "Voltage (mV)"
+    if var[0] == "i":
+        return "Current (pA)"
+    if var[-1] == "i":
+        return "Ionic concentration (mM)"
+    return ""
+
+
+def get_traces_names_and_float_responses(responses, recording_names):
+    """Extract the names of the traces to be plotted, as well as the float responses values."""
+    traces_names = []
+    threshold = None
+    holding = None
+    rmp = None
+    rin = None
+
+    for resp_name, response in responses.items():
+
+        if not (isinstance(response, float)):
+            if resp_name in recording_names:
+                traces_names.append(resp_name)
+
+        else:
+            if resp_name == "bpo_threshold_current":
+                threshold = response
+            elif resp_name == "bpo_holding_current":
+                holding = response
+            elif resp_name == "bpo_rmp":
+                rmp = response
+            elif resp_name == "bpo_rin":
+                rin = response
+
+    return traces_names, threshold, holding, rmp, rin
+
+
 def optimisation(
     optimiser,
     emodel,
@@ -133,44 +171,27 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
     """Plot the traces of a model"""
     make_dir(figures_dir)
 
-    traces_name = []
-    threshold = None
-    holding = None
-    rmp = None
-    rin = None
-
-    for resp_name, response in responses.items():
-
-        if not (isinstance(response, float)):
-            if resp_name in recording_names:
-                traces_name.append(resp_name)
-
-        else:
-
-            if resp_name == "bpo_threshold_current":
-                threshold = response
-            elif resp_name == "bpo_holding_current":
-                holding = response
-            elif resp_name == "bpo_rmp":
-                rmp = response
-            elif resp_name == "bpo_rin":
-                rin = response
+    traces_names, threshold, holding, rmp, rin = get_traces_names_and_float_responses(
+        responses, recording_names
+    )
 
     fig, axs = plt.subplots(
-        len(traces_name), 1, figsize=(10, 2 + (1.6 * len(traces_name))), squeeze=False
+        len(traces_names), 1, figsize=(10, 2 + (1.6 * len(traces_names))), squeeze=False
     )
 
     axs_c = []
-    for idx, t in enumerate(sorted(traces_name)):
+    for idx, t in enumerate(sorted(traces_names)):
 
         axs[idx, 0].set_title(t)
 
         if responses[t]:
 
+            ylabel = get_traces_ylabel(var=t.split(".")[-1])
+
             # Plot responses (voltage, current, etc.)
             axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
-            axs[idx, 0].set_ylabel("Voltage (mV)")
+            axs[idx, 0].set_ylabel(ylabel)
 
             # Plot current
             basename = t.split(".")[0]
