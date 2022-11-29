@@ -167,10 +167,19 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
 
         if responses[t]:
 
+            ylabel = ""
+            var = t.split(".")[-1]
+            if var == "v":
+                ylabel = "Voltage (mV)"
+            elif var[0] == "i":
+                ylabel = "Current (pA)"
+            elif var[-1] == "i":
+                ylabel = "Ionic concentration (mM)"
+
             # Plot responses (voltage, current, etc.)
             axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
-            axs[idx, 0].set_ylabel("Voltage (mV)")
+            axs[idx, 0].set_ylabel(ylabel)
 
             # Plot current
             basename = t.split(".")[0]
