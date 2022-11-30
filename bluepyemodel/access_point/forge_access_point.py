@@ -763,3 +763,16 @@ def get_all_species(access_token=None):
     resources = access_point.forge.search({"subClassOf": "nsg:Species"}, limit=100)
 
     return sorted(set(r.label for r in resources))
+
+
+def get_curated_morphology(resources):
+    """Get curated morphology from multiple resources with same morphology name"""
+    for r in resources:
+        if hasattr(r, "annotation"):
+            for annotation in r.annotation:
+                if "QualityAnnotation" in annotation.type:
+                    if annotation.hasBody.label == "Curated":
+                        return r
+        if hasattr(r, "derivation"):
+            return r
+    return None

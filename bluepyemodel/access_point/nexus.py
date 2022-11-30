@@ -12,6 +12,7 @@ from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.access_point.forge_access_point import check_resource
 from bluepyemodel.access_point.forge_access_point import get_brain_region
+from bluepyemodel.access_point.forge_access_point import get_curated_morphology
 from bluepyemodel.access_point.forge_access_point import ontology_forge_access_point
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
@@ -552,7 +553,7 @@ class NexusAccessPoint(DataAccessPoint):
         if len(resources) == 1:
             resource = resources[0]
         elif len(resources) == 2:
-            resource = next((r for r in resources if hasattr(r, "derivation")), None)
+            resource = get_curated_morphology(resources)
             if resource is None:
                 raise AccessPointException(f"Could not get resource for morphology {name}")
         else:
