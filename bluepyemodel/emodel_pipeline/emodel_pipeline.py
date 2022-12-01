@@ -7,7 +7,7 @@ import pathlib
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
-from bluepyemodel.export_emodel.export_emodel import export_emodels
+from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
 from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
@@ -180,7 +180,14 @@ class EModel_pipeline:
             ):
                 continue
 
+            stem = str(pathlib.Path(chkp_path).stem)
+            seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
+
             plotting.optimisation(
+                optimiser=self.access_point.pipeline_settings.optimiser,
+                emodel=self.access_point.emodel_metadata.emodel,
+                iteration=self.access_point.emodel_metadata.iteration,
+                seed=seed,
                 checkpoint_path=chkp_path,
                 figures_dir=pathlib.Path("./figures")
                 / self.access_point.emodel_metadata.emodel
@@ -201,7 +208,9 @@ class EModel_pipeline:
 
     def export_emodels(self, only_validated=False, seeds=None):
 
-        export_emodels(self.access_point, only_validated, seeds=seeds, map_function=self.mapper)
+        export_emodels_sonata(
+            self.access_point, only_validated, seeds=seeds, map_function=self.mapper
+        )
 
     def summarize(self):
 

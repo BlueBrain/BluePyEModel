@@ -22,6 +22,7 @@ class EModelPipelineSettings:
         stochasticity=False,
         morph_modifiers=None,
         threshold_based_evaluator=None,
+        start_from_emodel=None,
         optimiser="IBEA",
         optimizer=None,
         optimisation_params=None,
@@ -42,6 +43,7 @@ class EModelPipelineSettings:
         name_gene_map=None,
         plot_currentscape=False,
         currentscape_config=None,
+        neuron_dt=None,
         cvode_minstep=0.0,
         max_threshold_voltage=-30,
         strict_holding_bounds=True,
@@ -76,6 +78,15 @@ class EModelPipelineSettings:
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
             threshold_based_evaluator (bool): not used. To be deprecated.
+            start_from_emodel (dict): If informed, the evaluator for the present emodel will
+                be instantiated using as values for the model parameters the ones from the
+                model specified in the present dict. That option can be used or example
+                to perform two steps optimisations. Example:
+                    {
+                        "emodel": "bNAC",
+                        "etype": "bNAC",
+                        "iteration_tag": "mytest"
+                    }.
             optimiser (str): algorithm used for optimisation, can be "IBEA", "SO-CMA",
                 "MO-CMA" (use cma option in pip install for CMA optimisers).
             optimizer (str): for legacy reasons, overwrites optimiser when not None.
@@ -124,6 +135,7 @@ class EModelPipelineSettings:
                 (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config)
                 Note that current.names, output.savefig, output.fname and output.dir
                 do not need to be set, since they are automatically rewritten by BPEM.
+            neuron_dt (float): dt of the NEURON simulator. If None, cvode will be used.
             cvode_minstep (float): minimum time step allowed for a CVODE step.
             max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
                 will search for the rheobase.
@@ -156,15 +168,18 @@ class EModelPipelineSettings:
         self.max_depth_holding_search = max_depth_holding_search
         self.max_depth_threshold_search = max_depth_threshold_search
         self.spikecount_timeout = spikecount_timeout
+        self.stochasticity = stochasticity
+        self.neuron_dt = neuron_dt
+        self.cvode_minstep = cvode_minstep
 
         # Settings related to the optimisation
+        self.start_from_emodel = start_from_emodel
         self.optimisation_timeout = optimisation_timeout
-        self.stochasticity = stochasticity
         self.optimiser = optimiser if optimizer is None else optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:
             self.optimisation_params = {"offspring_size": 100}
-        self.cvode_minstep = cvode_minstep
+
         self.max_ngen = max_ngen
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms

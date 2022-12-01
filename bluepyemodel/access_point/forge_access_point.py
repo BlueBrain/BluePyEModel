@@ -344,9 +344,14 @@ class NexusForgeAccessPoint:
 
         return resources[0]
 
-    def download(self, resource_id, download_directory="./nexus_temp"):
+    def download(self, resource_id, download_directory=None, metadata_str=None):
         """Download datafile from nexus if it doesn't already exist."""
-
+        if download_directory is None:
+            if metadata_str is None:
+                raise AccessPointException(
+                    "download_directory or metadata_str should be other than None"
+                )
+            download_directory = pathlib.Path("./nexus_temp") / metadata_str
         resource = self.forge.retrieve(resource_id, cross_bucket=True)
 
         if resource is None:
@@ -405,7 +410,7 @@ class NexusForgeAccessPoint:
 
             self.deprecate(filters)
 
-    def resource_location(self, resource):
+    def resource_location(self, resource, metadata_str):
         """Get the path of the files attached to a resource. If the resource is
         not located on gpfs, download it instead"""
 
@@ -429,14 +434,14 @@ class NexusForgeAccessPoint:
                     filepath = loc["location"].replace("file:/", "")
 
             if filepath is None:
-                filepath = self.download(resource.id)[0]
+                filepath = self.download(resource.id, metadata_str=metadata_str)[0]
 
             paths.append(filepath)
 
         return paths
 
     @staticmethod
-    def resource_name(class_name, metadata):
+    def resource_name(class_name, metadata, seed=None):
         """Create a resource name from the class name and the metadata."""
         name_parts = [CLASS_TO_RESOURCE_NAME[class_name]]
         if "iteration" in metadata:
@@ -445,31 +450,42 @@ class NexusForgeAccessPoint:
             name_parts.append(metadata["emodel"])
         if "ttype" in metadata:
             name_parts.append(metadata["ttype"])
+        if seed is not None:
+            name_parts.append(str(seed))
 
         return "__".join(name_parts)
 
-    def object_to_nexus(self, object_, metadata_dict, metadata_str, replace=True):
+    def object_to_nexus(self, object_, metadata_dict, metadata_str, replace=True, seed=None):
         """Transform a BPEM object into a dict which gets registered into Nexus as
         the distribution of a Dataset of the matching type. The metadata
         are also attached to the object to be able to retrieve the Resource."""
 
-        type_ = CLASS_TO_NEXUS_TYPE[object_.__class__.__name__]
+        class_name = object_.__class__.__name__
+        type_ = CLASS_TO_NEXUS_TYPE[class_name]
+
+        seed = None
+        if class_name == "EModel":
+            seed = object_.seed
 
         base_payload = {
             "type": ["Entity", type_],
-            "name": self.resource_name(object_.__class__.__name__, metadata_dict),
+            "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
         payload_existance = {
             "type": type_,
-            "name": self.resource_name(object_.__class__.__name__, metadata_dict),
+            "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
 
         base_payload.update(metadata_dict)
         payload_existance.update(metadata_dict)
         json_payload = object_.as_dict()
 
-        path_json = f"{CLASS_TO_RESOURCE_NAME[object_.__class__.__name__]}__{metadata_str}.json"
-        path_json = str((pathlib.Path("./nexus_temp") / path_json).resolve())
+        path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}__{metadata_str}"
+        if seed is not None:
+            path_json += f"__{seed}"
+        path_json = str(
+            (pathlib.Path("./nexus_temp") / metadata_str / f"{path_json}.json").resolve()
+        )
 
         distributions = [path_json]
         if "nexus_distributions" in json_payload:
@@ -487,10 +503,10 @@ class NexusForgeAccessPoint:
             distributions=distributions,
         )
 
-    def resource_to_object(self, type_, resource, metadata):
+    def resource_to_object(self, type_, resource, metadata, metadata_str):
         """Transform a Resource into a BPEM object of the matching type"""
 
-        file_paths = self.download(resource.id)
+        file_paths = self.download(resource.id, metadata_str=metadata_str)
         json_path = next((fp for fp in file_paths if pathlib.Path(fp).suffix == ".json"), None)
 
         if json_path is None:
@@ -510,7 +526,7 @@ class NexusForgeAccessPoint:
 
         return NEXUS_TYPE_TO_CLASS[type_](**payload)
 
-    def nexus_to_object(self, type_, metadata):
+    def nexus_to_object(self, type_, metadata, metadata_str):
         """Search for a single Resource matching the type_ and metadata and return it
         as a BPEM object of the matching type"""
 
@@ -519,9 +535,9 @@ class NexusForgeAccessPoint:
 
         resource = self.fetch_one(filters)
 
-        return self.resource_to_object(type_, resource, metadata)
+        return self.resource_to_object(type_, resource, metadata, metadata_str)
 
-    def nexus_to_objects(self, type_, metadata):
+    def nexus_to_objects(self, type_, metadata, metadata_str):
         """Search for Resources matching the type_ and metadata and return them
         as BPEM objects of the matching type"""
 
@@ -534,7 +550,7 @@ class NexusForgeAccessPoint:
 
         if resources:
             for resource in resources:
-                objects_.append(self.resource_to_object(type_, resource, metadata))
+                objects_.append(self.resource_to_object(type_, resource, metadata, metadata_str))
 
         return objects_
 
@@ -747,3 +763,16 @@ def get_all_species(access_token=None):
     resources = access_point.forge.search({"subClassOf": "nsg:Species"}, limit=100)
 
     return sorted(set(r.label for r in resources))
+
+
+def get_curated_morphology(resources):
+    """Get curated morphology from multiple resources with same morphology name"""
+    for r in resources:
+        if hasattr(r, "annotation"):
+            for annotation in r.annotation:
+                if "QualityAnnotation" in annotation.type:
+                    if annotation.hasBody.label == "Curated":
+                        return r
+        if hasattr(r, "derivation"):
+            return r
+    return None

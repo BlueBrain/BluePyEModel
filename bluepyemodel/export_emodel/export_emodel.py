@@ -6,6 +6,7 @@ import shutil
 
 import h5py
 
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 
@@ -75,7 +76,9 @@ def export_model_sonata(cell_model, emodel, output_dir=None):
         logger.warning("Exporting a model that did not pass validation.")
 
     if output_dir is None:
-        output_dir = f"./export_emodels/{emodel.emodel_metadata.as_string(seed=emodel.seed)}/"
+        output_dir = (
+            f"./export_emodels_sonata/{emodel.emodel_metadata.as_string(seed=emodel.seed)}/"
+        )
     output_path = pathlib.Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
@@ -98,7 +101,37 @@ def export_model_sonata(cell_model, emodel, output_dir=None):
     )
 
 
-def export_emodels(access_point, only_validated=False, seeds=None, map_function=map):
+def select_emodels(emodel_name, emodels, only_validated=False, only_best=True, seeds=None):
+
+    if not emodels:
+        logger.warning("In export_emodels_nexus, no emodel for %s", emodel_name)
+        return []
+
+    if only_best:
+        emodels = [sorted(emodels, key=lambda x: x.fitness)[0]]
+
+    if seeds:
+        emodels = [e for e in emodels if e.seed in seeds]
+        if not emodels:
+            logger.warning(
+                "In export_emodels_nexus, no emodel for %s and seeds %s", emodel_name, seeds
+            )
+            return []
+
+    if only_validated:
+        emodels = [e for e in emodels if e.passed_validation]
+        if not emodels:
+            logger.warning(
+                "In export_emodels_nexus, no emodel for %s that passed validation", emodel_name
+            )
+            return []
+
+    return emodels
+
+
+def export_emodels_sonata(
+    access_point, only_validated=False, only_best=True, seeds=None, map_function=map
+):
     """Export a set of emodels to a set of folder named after them. Each folder will
     contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model."""
 
@@ -115,18 +148,99 @@ def export_emodels(access_point, only_validated=False, seeds=None, map_function=
         store_responses=False,
     )
 
-    if only_validated:
-        emodels = [model for model in emodels if model.passed_validation]
+    emodels = select_emodels(
+        access_point.emodel_metadata.emodel,
+        emodels,
+        only_validated=only_validated,
+        only_best=only_best,
+        seeds=seeds,
+    )
+    if not emodels:
+        return
 
-    if emodels:
+    cell_model = cell_evaluator.cell_model
 
-        logger.info("In export_emodels, %s emodels found to export.", len(emodels))
-        cell_model = cell_evaluator.cell_model
+    for mo in emodels:
+        if not cell_model.morphology.morph_modifiers:  # Turn [] into None
+            cell_model.morphology.morph_modifiers = None
+        export_model_sonata(cell_model, mo, output_dir=None)
 
-        for mo in emodels:
-            if not cell_model.morphology.morph_modifiers:  # Turn [] into None
-                cell_model.morphology.morph_modifiers = None
-            export_model_sonata(cell_model, mo, output_dir=None)
 
-    else:
-        logger.warning("In export_emodels, no emodel for %s", access_point.emodel_metadata.emodel)
+def export_emodels_nexus(
+    local_access_point,
+    nexus_organisation,
+    nexus_project,
+    nexus_endpoint="https://bbp.epfl.ch/nexus/v1",
+    forge_path=None,
+    access_token=None,
+    only_validated=False,
+    only_best=True,
+    seeds=None,
+):
+    """Transfer e-models from the LocalAccessPoint to a Nexus project"""
+
+    emodels = local_access_point.get_emodels()
+    emodels = select_emodels(
+        local_access_point.emodel_metadata.emodel,
+        emodels,
+        only_validated=only_validated,
+        only_best=only_best,
+        seeds=seeds,
+    )
+    if not emodels:
+        return
+
+    metadata = vars(local_access_point.emodel_metadata)
+    iteration = metadata.pop("iteration")
+    nexus_access_point = NexusAccessPoint(
+        **metadata,
+        iteration_tag=iteration,
+        project=nexus_project,
+        organisation=nexus_organisation,
+        endpoint=nexus_endpoint,
+        access_token=access_token,
+        forge_path=forge_path,
+    )
+
+    pipeline_settings = local_access_point.pipeline_settings
+    fitness_configuration = local_access_point.get_fitness_calculator_configuration()
+    model_configuration = local_access_point.get_model_configuration()
+    targets_configuration = local_access_point.get_targets_configuration()
+
+    # Register the morphology if it does not already exists
+    morpho_name = model_configuration.morphology.path
+    resources = nexus_access_point.access_point.fetch(
+        {"type": "NeuronMorphology", "name": morpho_name}
+    )
+    if resources is None:
+        logger.info(
+            "Morphology %s related to the emodel does not exist on Nexus and"
+            " will be registered.",
+            morpho_name,
+        )
+        nexus_access_point.store_morphology(
+            morphology_name=morpho_name,
+            morphology_path=model_configuration.morphology.path,
+            mtype=local_access_point.emodel_metadata.mtype,
+        )
+
+    # Check the mechanisms
+    for mech in model_configuration.mechanisms:
+        resources = nexus_access_point.access_point.fetch(
+            {"type": "SubCellularModelScript", "name": mech.name}
+        )
+        if resources is None:
+            logger.warning(
+                "Registering model %s. However the mechanism %s used by the model is not "
+                "available on the Nexus project.",
+                local_access_point.emodel_metadata.emodel,
+                mech.name,
+            )
+
+    # Register the model(s)
+    nexus_access_point.store_pipeline_settings(pipeline_settings)
+    nexus_access_point.store_fitness_calculator_configuration(fitness_configuration)
+    nexus_access_point.store_model_configuration(model_configuration)
+    nexus_access_point.store_targets_configuration(targets_configuration)
+    for mo in emodels:
+        nexus_access_point.store_emodel(mo)

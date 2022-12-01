@@ -102,12 +102,12 @@ def read_checkpoint(checkpoint_path):
 
     try:
         with open(str(p), "rb") as checkpoint_file:
-            run = pickle.load(checkpoint_file)
+            run = pickle.load(checkpoint_file, encoding="latin1")
             run_metadata = parse_checkpoint_path(str(p))
     except EOFError:
         try:
             with open(str(p_tmp), "rb") as checkpoint_tmp_file:
-                run = pickle.load(checkpoint_tmp_file)
+                run = pickle.load(checkpoint_tmp_file, encoding="latin1")
                 run_metadata = parse_checkpoint_path(str(p_tmp))
         except EOFError:
             logger.error(

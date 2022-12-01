@@ -8,19 +8,34 @@ from bluepyopt import ephys
 logger = logging.getLogger(__name__)
 
 
-def get_loc_ion_list(isection):
+def get_loc_ions(isection):
     """Get all ion concentrations available in a location."""
-    local_ion_list = []
+    local_overall_ions = set()
 
-    # ion concentration
+    # ion overall current & concentration
     ions = isection.psection()["ions"]
     for _, ion in ions.items():
-        for concentration in ion.keys():
+        for var in ion.keys():
             # concentration should have 'i' at the end (e.g. ki, cai, nai, ...)
-            if concentration[-1] == "i":
-                local_ion_list.append(concentration)
+            if var[-1] == "i":
+                local_overall_ions.add(var)
 
-    return local_ion_list
+    return local_overall_ions
+
+
+def get_loc_currents(isection):
+    """Get all overall currents available in a location."""
+    local_overall_currs = set()
+
+    # ion overall current & concentration
+    ions = isection.psection()["ions"]
+    for _, ion in ions.items():
+        for var in ion.keys():
+            # current should have 'i' at the beginning (e.g. ik, ica, ina, ...)
+            if var[0] == "i":
+                local_overall_currs.add(var)
+
+    return local_overall_currs
 
 
 def get_loc_varlist(isection):
@@ -57,7 +72,9 @@ def check_recordings(recordings, icell, sim):
         if section_key in varlists:
             local_varlist = varlists[section_key]
         else:
-            local_varlist = get_loc_varlist(sec) + get_loc_ion_list(sec)
+            local_varlist = (
+                get_loc_varlist(sec) + list(get_loc_ions(sec)) + list(get_loc_currents(sec))
+            )
             varlists[section_key] = local_varlist
 
         # keep recording if its variable is available in its location
@@ -96,7 +113,7 @@ class LooseDtRecordingCustom(ephys.recordings.CompRecording):
         self.varvector.record(getattr(seg, f"_ref_{self.variable}"))
 
         self.segment_area = seg.area()
-        self.local_ion_list = get_loc_ion_list(seg.sec)
+        self.local_ion_list = get_loc_ions(seg.sec)
 
         self.tvector = sim.neuron.h.Vector()
         self.tvector.record(sim.neuron.h._ref_t)  # pylint: disable=W0212
@@ -136,7 +153,7 @@ class FixedDtRecordingCustom(LooseDtRecordingCustom):
         self.varvector.record(getattr(seg, f"_ref_{self.variable}"), 0.1)
 
         self.segment_area = seg.area()
-        self.local_ion_list = get_loc_ion_list(seg.sec)
+        self.local_ion_list = get_loc_ions(seg.sec)
 
         self.tvector = sim.neuron.h.Vector()
         self.tvector.record(sim.neuron.h._ref_t, 0.1)  # pylint: disable=W0212

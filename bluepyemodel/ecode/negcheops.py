@@ -9,8 +9,31 @@ logger = logging.getLogger(__name__)
 
 
 class NegCheops(BPEM_stimulus):
+    # pylint: disable=line-too-long,anomalous-backslash-in-string
 
-    """NegCheops current stimulus"""
+    """NegCheops current stimulus
+
+
+       holdi            holdi+amp              holdi               holdi+amp              holdi               holdi+amp              holdi
+         :                  :                    :                     :                    :                     :                    :
+         :                  :                    :                     :                    :                     :                    :
+    |__________             :             ________________             :             ________________             :             ________________
+    :          :\           :           /:                :\           :           /:                :\           :           /:                ^
+    :          : \          :          / :                : \          :          / :                : \          :          / :                :
+    :          :  \         :         /  :                :  \         :         /  :                :  \         :         /  :                :
+    :          :   \        :        /   :                :   \        :        /   :                :   \        :        /   :                :
+    :          :    \       :       /    :                :    \       :       /    :                :    \       :       /    :                :
+    :          :     \      :      /     :                :     \      :      /     :                :     \      :      /     :                :
+    :          :      \     :     /      :                :      \     :     /      :                :      \     :     /      :                :
+    :          :       \    :    /       :                :       \    :    /       :                :       \    :    /       :                :
+    :          :        \   :   /        :                :        \   :   /        :                :        \   :   /        :                :
+    :          :         \  :  /         :                :         \  :  /         :                :         \  :  /         :                :
+    :          :          \ : /          :                :          \ : /          :                :          \ : /          :                :
+    :          :           \ /           :                :           \ /           :                :           \ /           :                :
+    :          :            '            :                :            '            :                :            '            :                :
+    :          :                         :                :                         :                :                         :                :
+     <- delay -><-- 2 * ramp1_duration --><- inter_delay -><-- 2 * ramp2_duration --><- inter_delay -><-- 2 * ramp3_duration -->      totduration
+    """
 
     name = "NegCheops"
 

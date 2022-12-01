@@ -157,7 +157,7 @@ def store_best_model(
     if "param_names" in run:
         if run["param_names"] != list(cell_evaluator.param_names):
             raise Exception(
-                "The parameter names present in the checkpoint file are different from the"
+                "The parameter names present in the checkpoint file are different from the "
                 f"ones of the evaluator: {run['param_names']} versus "
                 f"{list(cell_evaluator.param_names)}"
             )

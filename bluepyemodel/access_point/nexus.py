@@ -12,6 +12,7 @@ from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.access_point.forge_access_point import check_resource
 from bluepyemodel.access_point.forge_access_point import get_brain_region
+from bluepyemodel.access_point.forge_access_point import get_curated_morphology
 from bluepyemodel.access_point.forge_access_point import ontology_forge_access_point
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
@@ -59,7 +60,7 @@ class NexusAccessPoint(DataAccessPoint):
                 Can be 'INT' for interneurons or 'PYR' for pyramidal neurons.
             synapse_class (str): synapse class.
                 Can be 'EXC' for excitatory or 'INH' for inhibitory.
-            layer (str): leyer of the brain from which the cell comes from.
+            layer (str): layer of the brain from which the cell comes from.
             project (str): name of the Nexus project.
             organisation (str): name of the Nexus organization to which the project belong.
             endpoint (str): Nexus endpoint.
@@ -95,7 +96,8 @@ class NexusAccessPoint(DataAccessPoint):
 
         self.pipeline_settings = self.get_pipeline_settings(strict=False)
 
-        pathlib.Path("./nexus_temp/").mkdir(parents=True, exist_ok=True)
+        directory_name = self.emodel_metadata.as_string()
+        (pathlib.Path("./nexus_temp/") / directory_name).mkdir(parents=True, exist_ok=True)
 
     def check_mettypes(self):
         """Check that etype, mtype and ttype are presnet on nexus"""
@@ -119,12 +121,14 @@ class NexusAccessPoint(DataAccessPoint):
             return self.access_point.nexus_to_object(
                 type_="EModelPipelineSettings",
                 metadata=self.emodel_metadata_ontology.filters_for_resource(),
+                metadata_str=self.emodel_metadata.as_string(),
             )
 
         try:
             return self.access_point.nexus_to_object(
                 type_="EModelPipelineSettings",
                 metadata=self.emodel_metadata_ontology.filters_for_resource(),
+                metadata_str=self.emodel_metadata.as_string(),
             )
         except AccessPointException:
             return EModelPipelineSettings()
@@ -176,7 +180,8 @@ class NexusAccessPoint(DataAccessPoint):
                     "label": "Mus musculus",
                 },
             }
-
+        elif species is None:
+            subject = None
         else:
             raise Exception(f"Unknown species {species}.")
 
@@ -197,11 +202,16 @@ class NexusAccessPoint(DataAccessPoint):
     def store_object(self, object_, seed=None):
         """Store a BPEM object on Nexus"""
 
+        metadata_dict = self.emodel_metadata_ontology.for_resource()
+        if seed is not None:
+            metadata_dict["seed"] = seed
+
         self.access_point.object_to_nexus(
             object_,
-            self.emodel_metadata_ontology.for_resource(),
-            self.emodel_metadata.as_string(seed=seed),
+            metadata_dict,
+            self.emodel_metadata.as_string(),
             replace=True,
+            seed=seed,
         )
 
     def get_targets_configuration(self):
@@ -210,6 +220,7 @@ class NexusAccessPoint(DataAccessPoint):
         configuration = self.access_point.nexus_to_object(
             type_="ExtractionTargetsConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
 
         configuration.available_traces = self.get_available_traces()
@@ -231,6 +242,7 @@ class NexusAccessPoint(DataAccessPoint):
         configuration = self.access_point.nexus_to_object(
             type_="FitnessCalculatorConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
 
         if configuration.name_rmp_protocol is None:
@@ -256,6 +268,7 @@ class NexusAccessPoint(DataAccessPoint):
         configuration = self.access_point.nexus_to_object(
             type_="EModelConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
 
         morph_path = self.download_morphology(
@@ -277,7 +290,11 @@ class NexusAccessPoint(DataAccessPoint):
     def get_distributions(self):
         """Get the list of available distributions"""
 
-        return self.access_point.nexus_to_objects(type_="EModelChannelDistribution", metadata={})
+        return self.access_point.nexus_to_objects(
+            type_="EModelChannelDistribution",
+            metadata={},
+            metadata_str=self.emodel_metadata.as_string(),
+        )
 
     def store_distribution(self, distribution):
         """Store a channel distribution as a resource of type EModelChannelDistribution"""
@@ -317,7 +334,9 @@ class NexusAccessPoint(DataAccessPoint):
         Returns None if the emodel workflow is not present on nexus."""
 
         emodel_workflow = self.access_point.nexus_to_objects(
-            type_="EModelWorkflow", metadata=self.emodel_metadata_ontology.filters_for_resource()
+            type_="EModelWorkflow",
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
         if emodel_workflow:
             return emodel_workflow[0]
@@ -362,7 +381,11 @@ class NexusAccessPoint(DataAccessPoint):
         if seed:
             metadata["seed"] = int(seed)
 
-        emodel = self.access_point.nexus_to_object(type_="EModel", metadata=metadata)
+        emodel = self.access_point.nexus_to_object(
+            type_="EModel",
+            metadata=metadata,
+            metadata_str=self.emodel_metadata.as_string(),
+        )
         emodel.emodel_metadata = copy.deepcopy(self.emodel_metadata)
 
         return emodel
@@ -376,7 +399,9 @@ class NexusAccessPoint(DataAccessPoint):
         """Get all the emodels"""
 
         emodels = self.access_point.nexus_to_objects(
-            type_="EModel", metadata=self.emodel_metadata_ontology.filters_for_resource()
+            type_="EModel",
+            metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            metadata_str=self.emodel_metadata.as_string(),
         )
 
         for em in emodels:
@@ -482,7 +507,7 @@ class NexusAccessPoint(DataAccessPoint):
                     {
                         "type": "SubCellularModelScript",
                         "name": mechanism.name,
-                        "version": mechanism.version,
+                        "modelid": mechanism.version,
                     },
                 )
 
@@ -495,8 +520,8 @@ class NexusAccessPoint(DataAccessPoint):
                 if resources is None:
                     raise AccessPointException(f"SubCellularModelScript {mechanism.name} not found")
 
-                if len(resources) > 1 and all(hasattr(r, "version") for r in resources):
-                    resource = sorted(resources, key=lambda x: x.version)[-1]
+                if len(resources) > 1 and all(hasattr(r, "modelid") for r in resources):
+                    resource = sorted(resources, key=lambda x: x.modelid)[-1]
                 else:
                     resource = resources[0]
 
@@ -521,8 +546,25 @@ class NexusAccessPoint(DataAccessPoint):
     def download_morphology(self, name, format_=None):
         """Download a morphology by name if not already downloaded"""
 
-        resource = self.access_point.fetch_one({"type": "NeuronMorphology", "name": name})
-        filepath = pathlib.Path(self.access_point.download(resource.id, "./nexus_temp/")[0])
+        # Temporary fix for the duplicated morphology issue
+        resources = self.access_point.fetch({"type": "NeuronMorphology", "name": name})
+        if resources is None:
+            raise AccessPointException(f"Could not get resource for morphology {name}")
+        if len(resources) == 1:
+            resource = resources[0]
+        elif len(resources) == 2:
+            resource = get_curated_morphology(resources)
+            if resource is None:
+                raise AccessPointException(f"Could not get resource for morphology {name}")
+        else:
+            raise AccessPointException(f"More than 2 morphologies with name: {name}")
+
+        directory_name = self.emodel_metadata.as_string()
+        filepath = pathlib.Path(
+            self.access_point.download(resource.id, pathlib.Path("./nexus_temp/") / directory_name)[
+                0
+            ]
+        )
 
         # Some morphologies have .h5 attached and we don't want that:
         if format_:
@@ -565,7 +607,8 @@ class NexusAccessPoint(DataAccessPoint):
         if not resource:
             raise Exception(f"No matching resource for {id_} {name}")
 
-        return self.access_point.resource_location(resource)[0]
+        metadata_str = self.emodel_metadata.as_string()
+        return self.access_point.resource_location(resource, metadata_str=metadata_str)[0]
 
     def get_mechanisms_directory(self):
         """Return the path to the directory containing the mechanisms for the current emodel"""
@@ -581,7 +624,8 @@ class NexusAccessPoint(DataAccessPoint):
 
         dataset = self.access_point.fetch_one(filters={"type": "RNASequencing", "name": name})
 
-        filepath = self.access_point.resource_location(dataset)[0]
+        metadata_str = self.emodel_metadata.as_string()
+        filepath = self.access_point.resource_location(dataset, metadata_str=metadata_str)[0]
 
         df = pandas.read_csv(filepath, index_col=["me-type", "t-type", "modality"])
 
@@ -594,7 +638,9 @@ class NexusAccessPoint(DataAccessPoint):
             {"type": "IonChannelMapping", "name": "icmapping"}
         )
 
-        return self.access_point.download(resource_ic_map.id)[0]
+        return self.access_point.download(
+            resource_ic_map.id, metadata_str=self.emodel_metadata.as_string()
+        )[0]
 
     def get_t_types(self, table_name):
         """Get the list of t-types available for the present emodel"""
@@ -715,3 +761,34 @@ class NexusAccessPoint(DataAccessPoint):
             )
 
         return traces
+
+    def store_morphology(self, morphology_name, morphology_path, mtype=None):
+
+        payload = {
+            "type": ["NeuronMorphology", "Entity", "Dataset", "ReconstructedCell"],
+            "name": pathlib.Path(morphology_path).stem,
+            "objectOfStudy": {
+                "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
+                "@type": "ObjectOfStudy",
+                "label": "Single Cell",
+            },
+        }
+
+        if mtype:
+            payload["annotation"] = (
+                {
+                    "@type": ["Annotation", "nsg:MTypeAnnotation"],
+                    "hasBody": {
+                        "@id": "nsg:InhibitoryNeuron",
+                        "@type": ["Mtype", "AnnotationBody"],
+                        "label": mtype,
+                        "prefLabel": mtype,
+                    },
+                    "name": "M-type Annotation",
+                },
+            )
+
+        self.access_point.register(
+            resource_description=payload,
+            distributions=[morphology_path],
+        )
