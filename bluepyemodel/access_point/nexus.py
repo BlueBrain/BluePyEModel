@@ -36,9 +36,7 @@ class NexusAccessPoint(DataAccessPoint):
         species=None,
         brain_region=None,
         iteration_tag=None,
-        morph_class=None,
         synapse_class=None,
-        layer=None,
         project="emodel_pipeline",
         organisation="demo",
         endpoint="https://bbp.epfl.ch/nexus/v1",
@@ -56,11 +54,7 @@ class NexusAccessPoint(DataAccessPoint):
             species (str): name of the species.
             brain_region (str): name of the brain location.
             iteration_tag (str): tag associated to the current run.
-            morph_class (str): morphological class.
-                Can be 'INT' for interneurons or 'PYR' for pyramidal neurons.
-            synapse_class (str): synapse class.
-                Can be 'EXC' for excitatory or 'INH' for inhibitory.
-            layer (str): layer of the brain from which the cell comes from.
+            synapse_class (str): synapse class (neurotransmitter).
             project (str): name of the Nexus project.
             organisation (str): name of the Nexus organization to which the project belong.
             endpoint (str): Nexus endpoint.
@@ -76,9 +70,7 @@ class NexusAccessPoint(DataAccessPoint):
             species,
             brain_region,
             iteration_tag,
-            morph_class,
             synapse_class,
-            layer,
         )
 
         self.access_point = NexusForgeAccessPoint(

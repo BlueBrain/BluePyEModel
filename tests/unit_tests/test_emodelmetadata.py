@@ -13,9 +13,7 @@ metadata_args = {
     "species": "mouse",
     "brain_region": "SSCX",
     "iteration_tag": "v0",
-    "morph_class": "PYR",
     "synapse_class": "EXC",
-    "layer": "L5",
 }
 
 
@@ -28,10 +26,6 @@ def test_init():
     """Test constructor."""
     with pytest.raises(ValueError, match="At least emodel or etype should be informed"):
         metadata = EModelMetadata()
-    with pytest.raises(ValueError, match="morph_class should be 'PYR' or 'INT'"):
-        metadata = EModelMetadata(emodel="L5_TPC:B_cAC", morph_class="bad morph class")
-    with pytest.raises(ValueError, match="synapse_class should be 'EXC' or 'INH'"):
-        metadata = EModelMetadata(emodel="L5_TPC:B_cAC", synapse_class="bad synapse class")
 
     metadata = EModelMetadata(**metadata_args)
 
@@ -42,9 +36,7 @@ def test_init():
     assert metadata.species == "mouse"
     assert metadata.brain_region == "SSCX"
     assert metadata.iteration == "v0"
-    assert metadata.morph_class == "PYR"
     assert metadata.synapse_class == "EXC"
-    assert metadata.layer == "L5"
 
 
 def test_etype_annotation_dict(metadata):
