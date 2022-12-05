@@ -9,7 +9,8 @@ class ProtocolConfiguration:
         self,
         name,
         stimuli,
-        recordings,
+        recordings_from_config=None,
+        recordings=None,
         validation=False,
         ion_variables=None,
         protocol_type="ThresholdBasedProtocol",
@@ -31,14 +32,16 @@ class ProtocolConfiguration:
                     'amp': float, 'thresh_perc': float, 'holding_current': float, 'delay': float,
                     'duration': float, 'totduration': float
                 }]
-            recordings (list of dict): contains the description of the recordings. For a recording
-                at a given compartment, the format is for example:
+            recordings_from_config (list of dict): contains the description of the recordings.
+                For a recording at a given compartment, the format is for example:
                 [{
                     "type": "CompRecording",
                     "name": f"{protocol_name}.soma.v",
                     "location": "soma",
                     "variable": "v",
                 }]
+            recordings (list of dict): same as recordings_from_config.
+                Is here for backward compatibility
             ion_variables (list of str): ion current names and ionic concentration names
                 for all available mechanisms
             protocol_type (str): type of the protocol. Can be "ThresholdBasedProtocol" or
@@ -53,12 +56,16 @@ class ProtocolConfiguration:
         if isinstance(self.stimuli, dict):
             self.stimuli = [self.stimuli]
 
-        if isinstance(recordings, dict):
-            recordings = [recordings]
+        if recordings_from_config is None:
+            if recordings is None:
+                raise ValueError("Expected recordings_from_config to be not None")
+            recordings_from_config = recordings
+        if isinstance(recordings_from_config, dict):
+            recordings_from_config = [recordings_from_config]
 
         self.recordings = []
         self.recordings_from_config = []
-        for recording in recordings:
+        for recording in recordings_from_config:
             self.recordings.append(recording)
             self.recordings_from_config.append(recording)
 
@@ -85,4 +92,6 @@ class ProtocolConfiguration:
     def as_dict(self):
         """Dictionary form"""
 
-        return vars(self)
+        prot_as_dict = vars(self)
+        prot_as_dict.pop("recordings")
+        return prot_as_dict
