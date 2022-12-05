@@ -16,9 +16,7 @@ def get_access_point(access_point, emodel, **kwargs):
         species (str): name of the species.
         brain_region (str): name of the brain location.
         iteration (str): tag associated to the current run.
-        morph_class (str): name of the morphology class, has to be "PYR", "INT".
-        synapse_class (str): name of the synapse class, has to be "EXC", "INH".
-        layer (str): layer of the model.
+        synapse_class (str): synapse class (neurotransmitter).
 
     For local:
         emodel_dir (str): path of the directory containing the parameters,
@@ -62,9 +60,7 @@ def get_access_point(access_point, emodel, **kwargs):
             species=kwargs.get("species", None),
             brain_region=brain_region,
             iteration_tag=kwargs.get("iteration_tag", None),
-            morph_class=kwargs.get("morph_class", None),
             synapse_class=kwargs.get("synapse_class", None),
-            layer=kwargs.get("layer", None),
             project=kwargs.get("project", "ncmv3"),
             organisation=kwargs.get("organisation", "bbp"),
             endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
@@ -84,9 +80,7 @@ def get_access_point(access_point, emodel, **kwargs):
             species=kwargs.get("species", None),
             brain_region=brain_region,
             iteration_tag=kwargs.get("iteration_tag", None),
-            morph_class=kwargs.get("morph_class", None),
             synapse_class=kwargs.get("synapse_class", None),
-            layer=kwargs.get("layer", None),
             recipes_path=kwargs.get("recipes_path", None),
             final_path=kwargs.get("final_path", None),
             legacy_dir_structure=kwargs.get("legacy_dir_structure", False),

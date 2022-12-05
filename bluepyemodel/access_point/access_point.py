@@ -32,9 +32,7 @@ class DataAccessPoint:
         species=None,
         brain_region=None,
         iteration_tag=None,
-        morph_class=None,
         synapse_class=None,
-        layer=None,
     ):
         """Init"""
 
@@ -46,9 +44,7 @@ class DataAccessPoint:
             species,
             brain_region,
             iteration_tag,
-            morph_class,
             synapse_class,
-            layer,
         )
 
     def set_emodel(self, emodel):

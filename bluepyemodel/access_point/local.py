@@ -45,9 +45,7 @@ class LocalAccessPoint(DataAccessPoint):
         species=None,
         brain_region=None,
         iteration_tag=None,
-        morph_class=None,
         synapse_class=None,
-        layer=None,
         final_path=None,
         recipes_path=None,
         legacy_dir_structure=False,
@@ -88,9 +86,7 @@ class LocalAccessPoint(DataAccessPoint):
             species,
             brain_region,
             iteration_tag,
-            morph_class,
             synapse_class,
-            layer,
         )
 
         if emodel_dir is None:
@@ -587,9 +583,7 @@ class LocalAccessPoint(DataAccessPoint):
             species=model_data.get("species", None),
             brain_region=model_data.get("brain_region", None),
             iteration_tag=iteration_tag,
-            morph_class=model_data.get("morph_class", None),
             synapse_class=model_data.get("synapse_class", None),
-            layer=model_data.get("layer", None),
         )
 
         emodel = EModel(

@@ -14,9 +14,7 @@ class EModelMetadata:
         species=None,
         brain_region=None,
         iteration_tag=None,
-        morph_class=None,
         synapse_class=None,
-        layer=None,
     ):
         """Constructor
 
@@ -28,18 +26,11 @@ class EModelMetadata:
             species (str): name of the species.
             brain_region (str): name of the brain location.
             iteration_tag (str): tag associated to the current run.
-            morph_class (str): morphological class.
-                Can be 'INT' for interneurons or 'PYR' for pyramidal neurons.
-            synapse_class (str): synapse class.
-                Can be 'EXC' for excitatory or 'INH' for inhibitory.
-            layer (str): leyer of the brain from which the cell comes from.
+            synapse_class (str): synapse class (neurotransmitter).
         """
+
         if emodel is None and etype is None:
             raise ValueError("At least emodel or etype should be informed")
-        if morph_class not in ["PYR", "INT", None]:
-            raise ValueError("morph_class should be 'PYR' or 'INT'")
-        if synapse_class not in ["EXC", "INH", None]:
-            raise ValueError("synapse_class should be 'EXC' or 'INH'")
 
         self.emodel = emodel
         self.etype = None if etype == "None" else etype
@@ -48,9 +39,7 @@ class EModelMetadata:
         self.species = None if species == "None" else species
         self.brain_region = None if brain_region == "None" else brain_region
         self.iteration = None if iteration_tag == "None" else iteration_tag
-        self.morph_class = morph_class
-        self.synapse_class = synapse_class
-        self.layer = layer
+        self.synapse_class = None if synapse_class == "None" else synapse_class
 
     def etype_annotation_dict(self):
         """Returns an etype annotation dict to be added to annotations list."""
