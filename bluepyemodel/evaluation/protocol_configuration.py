@@ -1,5 +1,7 @@
 """ProtocolConfiguration"""
 
+import copy
+
 
 class ProtocolConfiguration:
 
@@ -92,6 +94,6 @@ class ProtocolConfiguration:
     def as_dict(self):
         """Dictionary form"""
 
-        prot_as_dict = vars(self)
+        prot_as_dict = copy.deepcopy(vars(self))
         prot_as_dict.pop("recordings")
         return prot_as_dict
