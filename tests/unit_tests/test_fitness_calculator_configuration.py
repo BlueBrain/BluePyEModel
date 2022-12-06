@@ -139,7 +139,7 @@ def test_init(config_dict):
     config.remove_featureless_protocols()
     assert len(config.protocols) == 1
 
-    keys = ["name", "stimuli", "recordings", "validation"]
+    keys = ["name", "stimuli", "recordings_from_config", "validation"]
     p_dict = config.protocols[0].as_dict()
     for k in keys:
         assert k in p_dict

@@ -183,7 +183,7 @@ class FitnessCalculatorConfiguration:
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
-            recordings=recordings,
+            recordings_from_config=recordings,
             validation=validation,
             ion_variables=self.ion_variables,
             stochasticity=stochasticity,
@@ -328,7 +328,7 @@ class FitnessCalculatorConfiguration:
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
-            recordings=recordings,
+            recordings_from_config=recordings,
             validation=validation,
             ion_variables=self.ion_variables,
             protocol_type=protocol_type,
