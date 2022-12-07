@@ -311,9 +311,9 @@ def define_holding_protocol(
 def define_threshold_protocol(
     efeatures,
     max_threshold_voltage=-30,
-    step_delay=0.0,
-    step_duration=1000.0,
-    totduration=1000.0,
+    step_delay=500.0,
+    step_duration=2000.0,
+    totduration=3000.0,
     spikecount_timeout=50,
     max_depth=10,
 ):
