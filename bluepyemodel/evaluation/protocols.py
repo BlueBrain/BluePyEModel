@@ -560,9 +560,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         location,
         target_threshold=None,
         current_precision=1e-2,
-        stimulus_delay=0.0,
-        stimulus_duration=1000.0,
-        stimulus_totduration=1000.0,
+        stimulus_delay=500.0,
+        stimulus_duration=2000.0,
+        stimulus_totduration=3000.0,
         max_threshold_voltage=-30,
         spikecount_timeout=50,
         max_depth=10,
@@ -641,10 +641,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.spikecount_timeout = spikecount_timeout
 
     def return_none_responses(self):
-        return {
-            "bpo_threshold_current": None,
-            self.recording_name: None,
-        }
+        return {"bpo_threshold_current": None, self.recording_name: None}
 
     def _get_spikecount(self, current, cell_model, param_values, sim, isolate):
         """Get spikecount at a given current."""
@@ -693,6 +690,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         if threshold is None:
             return response
 
+        self.stimulus.amp = threshold
         response.update(
             self._run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         )
@@ -741,9 +739,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         mid_bound = (upper_bound + lower_bound) * 0.5
         spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
         if abs(lower_bound - upper_bound) < self.current_precision:
-            if spikecount == 1:
-                logger.debug("Depth of threshold search: %s", depth)
-                return upper_bound
+            logger.debug("Depth of threshold search: %s", depth)
+            return upper_bound
 
         if depth > self.max_depth:
             return upper_bound
