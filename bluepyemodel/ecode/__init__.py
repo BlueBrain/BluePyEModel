@@ -14,6 +14,7 @@ from .negcheops import NegCheops
 from .noiseou3 import NoiseOU3
 from .poscheops import PosCheops
 from .ramp import Ramp
+from .random_square_inputs import MultipleRandomStepInputs
 from .sahp import sAHP
 from .sinespec import SineSpec
 from .spikerec import SpikeRecMultiSpikes
@@ -56,4 +57,5 @@ eCodes = {
     "synaptic": Synaptic,
     "bac": BAC,
     "dendritic": DendriticStep,
+    "randomsteps": MultipleRandomStepInputs,
 }
