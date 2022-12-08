@@ -49,6 +49,7 @@ def get_traces_ylabel(var):
 
 def get_traces_names_and_float_responses(responses, recording_names):
     """Extract the names of the traces to be plotted, as well as the float responses values."""
+
     traces_names = []
     threshold = None
     holding = None
@@ -174,6 +175,9 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
     traces_names, threshold, holding, rmp, rin = get_traces_names_and_float_responses(
         responses, recording_names
     )
+
+    if not traces_names:
+        return None, None
 
     fig, axs = plt.subplots(
         len(traces_names), 1, figsize=(10, 2 + (1.6 * len(traces_names))), squeeze=False

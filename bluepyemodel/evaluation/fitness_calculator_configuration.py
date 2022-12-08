@@ -491,15 +491,16 @@ class FitnessCalculatorConfiguration:
         to_remove = []
         efeatures = []
         for i, efeature in enumerate(self.efeatures):
-            loc_name, rec_name = efeature.recording_name.split(".")
-            if loc_name[-1] == "*":
-                to_remove.append(i)
-                protocol = next(p for p in self.protocols if p.name == efeature.protocol_name)
-                for rec in protocol.recordings:
-                    base_rec_name = rec["name"].split(".")[1]
-                    if base_rec_name.startswith(loc_name[:-1]):
-                        efeatures.append(deepcopy(efeature))
-                        efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
+            if isinstance(efeature.recording_name, str):
+                loc_name, rec_name = efeature.recording_name.split(".")
+                if loc_name[-1] == "*":
+                    to_remove.append(i)
+                    protocol = next(p for p in self.protocols if p.name == efeature.protocol_name)
+                    for rec in protocol.recordings:
+                        base_rec_name = rec["name"].split(".")[1]
+                        if base_rec_name.startswith(loc_name[:-1]):
+                            efeatures.append(deepcopy(efeature))
+                            efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
 
         self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove] + efeatures
 
