@@ -173,8 +173,6 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
         else:
             stim_end = protocol.stim_end
 
-    recording_names = {"": f"{feature_config.protocol_name}.{feature_config.recording_name}"}
-
     efel_settings = {**global_efel_settings, **feature_config.efel_settings}
     double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, float)}
     int_settings = {k: v for k, v in efel_settings.items() if isinstance(v, int)}
@@ -183,7 +181,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     efeature = eFELFeatureBPEM(
         feature_config.name,
         efel_feature_name=feature_config.efel_feature_name,
-        recording_names=recording_names,
+        recording_names=feature_config.recording_name_for_instantiation,
         stim_start=stim_start,
         stim_end=stim_end,
         exp_mean=feature_config.mean,
