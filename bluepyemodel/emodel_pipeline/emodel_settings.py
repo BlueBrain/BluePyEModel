@@ -19,6 +19,7 @@ class EModelPipelineSettings:
         rheobase_strategy_extraction="absolute",
         rheobase_settings_extraction=None,
         efel_settings=None,
+        minimum_protocol_delay=0.0,
         stochasticity=False,
         morph_modifiers=None,
         threshold_based_evaluator=None,
@@ -71,6 +72,9 @@ class EModelPipelineSettings:
             efel_settings (dict): efel settings in the form {setting_name: setting_value}.
                 If settings are also informed in the targets per efeature, the latter
                 will have priority.
+            minimum_protocol_delay (float): if a protocol has an initial delay below this value,
+                the delay is set to minimum_protocol_delay. The stim_start, stim_end and
+                totduration are updated accordingly.
             stochasticity (bool or list of str): should channels behave stochastically if they can.
                 If a list of protocol names is provided, the runs will be stochastic
                 for these protocols, and deterministic for the other ones.
@@ -161,6 +165,7 @@ class EModelPipelineSettings:
         self.path_extract_config = path_extract_config
         self.rheobase_strategy_extraction = rheobase_strategy_extraction
         self.rheobase_settings_extraction = rheobase_settings_extraction
+        self.minimum_protocol_delay = minimum_protocol_delay
 
         # Settings related to the evaluator
         self.max_threshold_voltage = max_threshold_voltage

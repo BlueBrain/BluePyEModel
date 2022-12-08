@@ -55,6 +55,39 @@ def attach_efeatures_pdf(emodel, efeatures):
                 efeat["pdfs"] = pdfs
 
 
+def update_minimum_protocols_delay(access_point, config):
+    """Threshold the minimum delay to the value of minimum_protocol_delay provided in the
+    settings."""
+
+    min_delay = access_point.pipeline_settings.minimum_protocol_delay
+
+    for i, protocol in enumerate(config.protocols):
+
+        if "delay" in protocol.stimuli[0] and protocol.stimuli[0]["delay"] < min_delay:
+
+            logger.debug(
+                "Replacing delay %s with %s in protocol %s",
+                protocol.stimuli[0]["delay"],
+                min_delay,
+                protocol.name,
+            )
+
+            delta_delay = min_delay - protocol.stimuli[0]["delay"]
+            config.protocols[i].stimuli[0]["delay"] = min_delay
+            config.protocols[i].stimuli[0]["totduration"] = (
+                protocol.stimuli[0]["totduration"] + delta_delay
+            )
+
+            for j, f in enumerate(config.efeatures):
+                if f.protocol_name == protocol.name:
+                    if "stim_start" in f.efel_settings:
+                        config.efeatures[j].efel_settings["stim_start"] += delta_delay
+                    if "stim_end" in f.efel_settings:
+                        config.efeatures[j].efel_settings["stim_end"] += delta_delay
+
+    return config
+
+
 def extract_save_features_protocols(access_point, mapper=map):
     """Extract the efeatures and saves the results as a configuration for the fitness calculator.
 
@@ -107,6 +140,10 @@ def extract_save_features_protocols(access_point, mapper=map):
 
     fitness_calculator_config.init_from_bluepyefe(
         efeatures, stimuli, current, access_point.pipeline_settings.threshold_efeature_std
+    )
+
+    fitness_calculator_config = update_minimum_protocols_delay(
+        access_point, fitness_calculator_config
     )
 
     access_point.store_fitness_calculator_configuration(fitness_calculator_config)
