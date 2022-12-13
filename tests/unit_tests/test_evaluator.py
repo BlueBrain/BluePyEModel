@@ -13,6 +13,7 @@ from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from tests.unit_tests.test_local_access_point import api_config
 from tests.unit_tests.test_local_access_point import db
 
+
 def test_define_location():
 
     definition = {
@@ -86,24 +87,24 @@ def test_start_from_emodel(db):
     """Test start_from_emodel in get_evaluator_from_access_point"""
     eva = get_evaluator_from_access_point(db)
     assert len(eva.param_names) == 31
-    assert 'constant.distribution_decay' in eva.param_names
-    assert eva.cell_model.params['constant.distribution_decay'].frozen is False
-    assert eva.cell_model.params['constant.distribution_decay'].bounds is not None
+    assert "constant.distribution_decay" in eva.param_names
+    assert eva.cell_model.params["constant.distribution_decay"].frozen is False
+    assert eva.cell_model.params["constant.distribution_decay"].bounds is not None
 
     db.pipeline_settings.start_from_emodel = {"emodel": "cADpyr_L5TPC"}
     db.pipeline_settings.parameters_to_freeze = []
     eva = get_evaluator_from_access_point(db)
     assert len(eva.param_names) == 0
-    assert eva.cell_model.params['constant.distribution_decay'].frozen is True
-    assert eva.cell_model.params['constant.distribution_decay'].bounds is None
+    assert eva.cell_model.params["constant.distribution_decay"].frozen is True
+    assert eva.cell_model.params["constant.distribution_decay"].bounds is None
 
     db.pipeline_settings.parameters_to_freeze = [
-        'constant.distribution_decay', 'g_pas.all', 'e_pas.all', 'gIhbar_Ih.somadend'
+        "constant.distribution_decay", "g_pas.all", "e_pas.all", "gIhbar_Ih.somadend"
     ]
     eva = get_evaluator_from_access_point(db)
     assert len(eva.param_names) == 27
-    assert 'constant.distribution_decay' not in eva.param_names
-    assert eva.cell_model.params['constant.distribution_decay'].frozen is True
-    assert eva.cell_model.params['constant.distribution_decay'].bounds is None
-    assert eva.cell_model.params['gK_Tstbar_K_Tst.axonal'].frozen is False
-    assert eva.cell_model.params['gK_Tstbar_K_Tst.axonal'].bounds is not None
+    assert "constant.distribution_decay" not in eva.param_names
+    assert eva.cell_model.params["constant.distribution_decay"].frozen is True
+    assert eva.cell_model.params["constant.distribution_decay"].bounds is None
+    assert eva.cell_model.params["gK_Tstbar_K_Tst.axonal"].frozen is False
+    assert eva.cell_model.params["gK_Tstbar_K_Tst.axonal"].bounds is not None

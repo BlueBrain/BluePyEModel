@@ -285,7 +285,7 @@ def get_evaluator_from_access_point(
         params_to_freeze = access_point.pipeline_settings.parameters_to_freeze
         if params_to_freeze:
             initial_parameters = {
-                k:v for k, v in initial_parameters.items() if k in params_to_freeze
+                k: v for k, v in initial_parameters.items() if k in params_to_freeze
             }
 
         fill_initial_parameters(evaluator, initial_parameters)
