@@ -192,8 +192,9 @@ def fill_initial_parameters(evaluator, initial_parameters):
             and evaluator.cell_model.params[p]._value is None
         ):
             logger.info(
-                f"Parameter {evaluator.cell_model.params[p].name}"
-                f"is set to its value from previous emodel: {initial_parameters[p]}"
+                "Parameter %s is set to its value from previous emodel: %s",
+                evaluator.cell_model.params[p].name,
+                initial_parameters[p],
             )
             evaluator.cell_model.params[p]._value = initial_parameters[
                 p
