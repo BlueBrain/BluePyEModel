@@ -183,17 +183,25 @@ def compute_responses(
 def fill_initial_parameters(evaluator, initial_parameters):
     """Freezes the parameters of the evaluator that are present in the informed parameter set."""
     # pylint: disable=protected-access
+    replaced = []
 
     for p in evaluator.cell_model.params:
-        if p in initial_parameters and evaluator.cell_model.params[p].bounds is not None:
-            evaluator.cell_model.params[p]._value = initial_parameters[
-                p
-            ]  # pylint: disable=protected-access
+        if (
+            p in initial_parameters
+            and evaluator.cell_model.params[p].bounds is None
+            and evaluator.cell_model.params[p]._value is None
+        ):
+            logger.info(
+                "Parameter %s is set to its value from previous emodel: %s",
+                evaluator.cell_model.params[p].name,
+                initial_parameters[p],
+            )
+            evaluator.cell_model.params[p]._value = initial_parameters[p]
             evaluator.cell_model.params[p].frozen = True
-            evaluator.cell_model.params[p].bounds = None
+            replaced.append(evaluator.cell_model.params[p].name)
 
-    evaluator.params = [p for p in evaluator.params if p.name not in initial_parameters]
-    evaluator.param_names = [pn for pn in evaluator.param_names if pn not in initial_parameters]
+    evaluator.params = [p for p in evaluator.params if p.name not in replaced]
+    evaluator.param_names = [pn for pn in evaluator.param_names if pn not in replaced]
 
 
 def get_evaluator_from_access_point(
