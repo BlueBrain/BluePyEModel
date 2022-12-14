@@ -24,7 +24,6 @@ class EModelPipelineSettings:
         morph_modifiers=None,
         threshold_based_evaluator=None,
         start_from_emodel=None,
-        parameters_to_freeze=None,
         optimiser="IBEA",
         optimizer=None,
         optimisation_params=None,
@@ -92,9 +91,6 @@ class EModelPipelineSettings:
                         "etype": "bNAC",
                         "iteration_tag": "mytest"
                     }.
-            parameters_to_freeze (list): List of parameter names to freeze when
-                start_from_emdoel is given. If empty, all parameters from the emodel
-                will be frozen.
             optimiser (str): algorithm used for optimisation, can be "IBEA", "SO-CMA",
                 "MO-CMA" (use cma option in pip install for CMA optimisers).
             optimizer (str): for legacy reasons, overwrites optimiser when not None.
@@ -183,7 +179,6 @@ class EModelPipelineSettings:
 
         # Settings related to the optimisation
         self.start_from_emodel = start_from_emodel
-        self.parameters_to_freeze = parameters_to_freeze
         self.optimisation_timeout = optimisation_timeout
         self.optimiser = optimiser if optimizer is None else optimizer
         self.optimisation_params = optimisation_params

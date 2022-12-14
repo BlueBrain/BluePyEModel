@@ -183,17 +183,22 @@ def compute_responses(
 def fill_initial_parameters(evaluator, initial_parameters):
     """Freezes the parameters of the evaluator that are present in the informed parameter set."""
     # pylint: disable=protected-access
+    replaced = []
 
     for p in evaluator.cell_model.params:
-        if p in initial_parameters and evaluator.cell_model.params[p].bounds is not None:
+        if (
+            p in initial_parameters
+            and evaluator.cell_model.params[p].bounds is None
+            and evaluator.cell_model.params[p]._value is None
+        ):
             evaluator.cell_model.params[p]._value = initial_parameters[
                 p
             ]  # pylint: disable=protected-access
             evaluator.cell_model.params[p].frozen = True
-            evaluator.cell_model.params[p].bounds = None
+            replaced.append(evaluator.cell_model.params[p].name)
 
-    evaluator.params = [p for p in evaluator.params if p.name not in initial_parameters]
-    evaluator.param_names = [pn for pn in evaluator.param_names if pn not in initial_parameters]
+    evaluator.params = [p for p in evaluator.params if p.name not in replaced]
+    evaluator.param_names = [pn for pn in evaluator.param_names if pn not in replaced]
 
 
 def get_evaluator_from_access_point(
@@ -282,11 +287,6 @@ def get_evaluator_from_access_point(
             )
 
         initial_parameters = sorted(emodels, key=lambda x: x.fitness)[0].parameters
-        params_to_freeze = access_point.pipeline_settings.parameters_to_freeze
-        if params_to_freeze:
-            initial_parameters = {
-                k: v for k, v in initial_parameters.items() if k in params_to_freeze
-            }
 
         fill_initial_parameters(evaluator, initial_parameters)
 
