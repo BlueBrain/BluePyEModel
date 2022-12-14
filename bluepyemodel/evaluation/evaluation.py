@@ -191,9 +191,13 @@ def fill_initial_parameters(evaluator, initial_parameters):
             and evaluator.cell_model.params[p].bounds is None
             and evaluator.cell_model.params[p]._value is None
         ):
+            logger.info(
+                f"Parameter {evaluator.cell_model.params[p].name}"
+                f"is set to its value from previous emodel: {initial_parameters[p]}"
+            )
             evaluator.cell_model.params[p]._value = initial_parameters[
                 p
-            ]  # pylint: disable=protected-access
+            ]
             evaluator.cell_model.params[p].frozen = True
             replaced.append(evaluator.cell_model.params[p].name)
 
