@@ -196,9 +196,7 @@ def fill_initial_parameters(evaluator, initial_parameters):
                 evaluator.cell_model.params[p].name,
                 initial_parameters[p],
             )
-            evaluator.cell_model.params[p]._value = initial_parameters[
-                p
-            ]
+            evaluator.cell_model.params[p]._value = initial_parameters[p]
             evaluator.cell_model.params[p].frozen = True
             replaced.append(evaluator.cell_model.params[p].name)
 
