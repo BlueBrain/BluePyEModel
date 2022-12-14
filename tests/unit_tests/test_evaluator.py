@@ -7,8 +7,13 @@ from bluepyopt.ephys.recordings import CompRecording
 from bluepyemodel.ecode.idrest import IDrest
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import define_location, define_protocol, define_efeature
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
+from bluepyemodel.access_point import get_access_point
+from tests.unit_tests.test_local_access_point import api_config
+from tests.unit_tests.test_local_access_point import db
+from tests.unit_tests.test_local_access_point import DATA
 
 
 def test_define_location():
@@ -78,3 +83,26 @@ def test_define_efeature(protocol):
     numpy.testing.assert_almost_equal(feature.exp_std, 6.664)
     assert feature.stim_start == 300.
     assert feature.recording_names[''] == "Step_250.soma.v"
+
+
+def test_start_from_emodel(db):
+    """Test start_from_emodel in get_evaluator_from_access_point"""
+    eva = get_evaluator_from_access_point(db)
+    assert len(eva.param_names) == 31
+    assert "constant.distribution_decay" in eva.param_names
+    assert eva.cell_model.params["constant.distribution_decay"].frozen is False
+    assert eva.cell_model.params["constant.distribution_decay"].bounds is not None
+    assert eva.cell_model.params["constant.distribution_decay"]._value is None
+
+    new_db = get_access_point(
+        "local",
+        emodel="cADpyr_L5TPC",
+        emodel_dir=DATA,
+        recipes_path=DATA / "config/recipes_restart.json",
+    )
+    new_db.pipeline_settings.start_from_emodel = {"emodel": "cADpyr_L5TPC"}
+    eva = get_evaluator_from_access_point(new_db)
+    assert len(eva.param_names) == 30
+    assert eva.cell_model.params["constant.distribution_decay"].frozen is True
+    assert eva.cell_model.params["constant.distribution_decay"].bounds is None
+    assert eva.cell_model.params["constant.distribution_decay"]._value == -0.00453252486076784
