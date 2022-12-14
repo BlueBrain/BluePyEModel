@@ -155,6 +155,9 @@ def test_init(config_dict):
     for f in config.efeatures:
         assert f.std >= abs(0.05 * f.mean)
 
+    # test recreation from dict output
+    new_config = FitnessCalculatorConfiguration(**config.as_dict())
+
 
 def test_init_from_bpe2(config_dict, config_dict_from_bpe2):
     
