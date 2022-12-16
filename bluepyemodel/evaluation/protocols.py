@@ -47,7 +47,7 @@ class BPEMProtocol(ephys.protocols.SweepProtocol):
     def instantiate(self, sim=None, cell_model=None):
         """Check recordings, then instantiate."""
         if not all(rec.checked for rec in self.recordings):
-            self.recordings = check_recordings(self.recordings, cell_model, sim)
+            self.recordings = check_recordings(self.recordings, cell_model.icell, sim)
 
         super().instantiate(sim, cell_model)
 

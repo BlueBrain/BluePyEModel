@@ -161,7 +161,6 @@ def compute_responses(
             )
 
         if load_from_local and check_local_responses_presence(emodels, cell_evaluator):
-            print("LOAD FROM LOCAL")
             logger.info(
                 "Local responses file found. Loading them from files instead of recomputing them"
             )
