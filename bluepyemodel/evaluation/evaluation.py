@@ -114,6 +114,7 @@ def compute_responses(
     seeds=None,
     preselect_for_validation=False,
     store_responses=False,
+    load_from_local=False,
 ):
     """Compute the responses of the emodel to the optimisation and validation protocols.
 
@@ -128,6 +129,7 @@ def compute_responses(
         preselect_for_validation (bool): if True,
             only select models that have not been through validation yet.
         store_responses (bool): whether to locally store the responses.
+        load_from_local (bool): True to load responses from locally saved recordings.
     Returns:
         emodels (list): list of emodels.
     """
@@ -158,7 +160,8 @@ def compute_responses(
                 }
             )
 
-        if check_local_responses_presence(emodels, cell_evaluator):
+        if load_from_local and check_local_responses_presence(emodels, cell_evaluator):
+            print("LOAD FROM LOCAL")
             logger.info(
                 "Local responses file found. Loading them from files instead of recomputing them"
             )
