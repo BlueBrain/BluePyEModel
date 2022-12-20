@@ -5,6 +5,7 @@ from bluepyemodel.model.distribution_configuration import DistributionConfigurat
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 from bluepyemodel.model.parameter_configuration import ParameterConfiguration
+from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
 
 logger = logging.getLogger(__name__)
 
@@ -350,7 +351,7 @@ class NeuronModelConfiguration:
 
         locations = self._format_locations(locations)
 
-        if mechanism_name not in ["pas", "hh"] and not self.is_mechanism_available(
+        if mechanism_name not in NEURON_BUILTIN_MECHANISMS and not self.is_mechanism_available(
             mechanism_name, version
         ):
             raise Exception(
@@ -359,7 +360,7 @@ class NeuronModelConfiguration:
             )
 
         for loc in locations:
-            if self.available_mechanisms and mechanism_name not in ["pas", "hh"]:
+            if self.available_mechanisms and mechanism_name not in NEURON_BUILTIN_MECHANISMS:
                 mechanism_parameters = next(
                     m.parameters for m in self.available_mechanisms if m.name == mechanism_name
                 )

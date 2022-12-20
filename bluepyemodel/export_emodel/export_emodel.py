@@ -9,6 +9,7 @@ import h5py
 from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,10 @@ def export_emodels_nexus(
 
     # Check the mechanisms
     for mech in model_configuration.mechanisms:
+
+        if mech.name in NEURON_BUILTIN_MECHANISMS:
+            continue
+
         resources = nexus_access_point.access_point.fetch(
             {"type": "SubCellularModelScript", "name": mech.name}
         )
