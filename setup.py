@@ -67,7 +67,7 @@ setup(
         "bluepyefe>=2.0.0",
         "neurom>=3.0,<4.0",
         "efel>=3.1",
-;       "configparser",
+        "configparser",
         "neuron>=8.0",
         "morph_tool>=2.8",
         "fasteners>=0.16",
