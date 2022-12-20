@@ -18,6 +18,7 @@ from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
+from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
 
 # pylint: disable=too-many-arguments,unused-argument
 
@@ -491,7 +492,7 @@ class NexusAccessPoint(DataAccessPoint):
         any_downloaded = False
         for mechanism in mechanisms:
 
-            if mechanism.name == "pas":
+            if mechanism.name in NEURON_BUILTIN_MECHANISMS:
                 continue
 
             if mechanism.version is not None:
