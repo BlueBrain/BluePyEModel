@@ -167,7 +167,7 @@ class EModel_pipeline:
             mapper=self.mapper,
         )
 
-    def plot(self, only_validated=False):
+    def plot(self, only_validated=False, load_from_local=False):
 
         for chkp_path in glob.glob("./checkpoints/*.pkl"):
 
@@ -204,6 +204,7 @@ class EModel_pipeline:
             plot_traces=True,
             plot_currentscape=self.access_point.pipeline_settings.plot_currentscape,
             only_validated=only_validated,
+            load_from_local=load_from_local,
         )
 
     def export_emodels(self, only_validated=False, seeds=None):
