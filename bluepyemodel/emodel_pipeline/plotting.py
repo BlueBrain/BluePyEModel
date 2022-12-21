@@ -423,6 +423,7 @@ def plot_models(
     plot_currentscape=False,
     plot_if_curve=False,
     only_validated=False,
+    load_from_local=False,
 ):
     """Plot the traces, scores and parameter distributions for all the models
         matching the emodels name.
@@ -439,6 +440,8 @@ def plot_models(
         plot_currentscape (bool): True to plot the currentscapes
         plot_if_curve (bool): True to plot the current / frequency curve
         only_validated (bool): True to only plot validated models
+        load_from_local (bool): True to load responses from locally saved recordings.
+            Responses are automatically saved locally when plot_currentscape is True.
 
     Returns:
         emodels (list): list of emodels.
@@ -455,7 +458,12 @@ def plot_models(
 
     if plot_traces or plot_currentscape:
         emodels = compute_responses(
-            access_point, cell_evaluator, mapper, seeds, store_responses=plot_currentscape
+            access_point,
+            cell_evaluator,
+            mapper,
+            seeds,
+            store_responses=plot_currentscape,
+            load_from_local=load_from_local,
         )
     else:
         emodels = access_point.get_emodels([access_point.emodel_metadata.emodel])
