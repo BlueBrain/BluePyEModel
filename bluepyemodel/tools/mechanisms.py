@@ -7,6 +7,9 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+NEURON_BUILTIN_MECHANISMS = ["hh", "pas", "fastpas", "extracellular", "capacitance"]
+
+
 def copy_mechs(mechanism_paths, out_dir):
     """Copy mod files in the designated directory.
 
