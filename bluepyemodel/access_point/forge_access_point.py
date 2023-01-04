@@ -240,21 +240,29 @@ class NexusForgeAccessPoint:
     def register(
         self,
         resource_description,
-        filters_existance=None,
+        filters_existence=None,
         replace=False,
         distributions=None,
     ):
-        """Register a resource from its dictionary description."""
+        """Register a resource from its dictionary description.
+
+        Args:
+            resource_description (dict): contains resource type, name and metadata
+            filters_existence (dict): contains resource type, name and metadata,
+                can be used to search for existence of resource on nexus
+            replace (bool): whether to replace resource if found with filters_existence
+            distributions (list): paths to resource object as json and other distributions
+        """
 
         if "type" not in resource_description:
             raise AccessPointException("The resource description should contain 'type'.")
 
         previous_resources = None
-        if filters_existance:
+        if filters_existence:
 
-            previous_resources = self.fetch(filters_existance)
+            previous_resources = self.fetch(filters_existence)
 
-        if filters_existance and previous_resources:
+        if filters_existence and previous_resources:
 
             if replace:
                 for resource in previous_resources:
@@ -471,13 +479,13 @@ class NexusForgeAccessPoint:
             "type": ["Entity", type_],
             "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
-        payload_existance = {
+        payload_existence = {
             "type": type_,
             "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
 
         base_payload.update(metadata_dict)
-        payload_existance.update(metadata_dict)
+        payload_existence.update(metadata_dict)
         json_payload = object_.as_dict()
 
         path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}__{metadata_str}"
@@ -494,11 +502,11 @@ class NexusForgeAccessPoint:
         with open(path_json, "w") as fp:
             json.dump(json_payload, fp, indent=2)
 
-        payload_existance.pop("annotation", None)
+        payload_existence.pop("annotation", None)
 
         self.register(
             base_payload,
-            filters_existance=payload_existance,
+            filters_existence=payload_existence,
             replace=replace,
             distributions=distributions,
         )
