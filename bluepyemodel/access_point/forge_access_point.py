@@ -245,7 +245,7 @@ class NexusForgeAccessPoint:
         distributions=None,
     ):
         """Register a resource from its dictionary description.
-        
+
         Args:
             resource_description (dict): contains resource type, name and metadata
             filters_existence (dict): contains resource type, name and metadata,
