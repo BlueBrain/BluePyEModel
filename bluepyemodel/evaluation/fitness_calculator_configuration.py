@@ -67,6 +67,7 @@ class FitnessCalculatorConfiguration:
         name_rmp_protocol=None,
         name_rin_protocol=None,
         threshold_efeature_std=None,
+        default_std_value=1e-3,
         validation_protocols=None,
         stochasticity=False,
         ion_variables=None,
@@ -98,6 +99,8 @@ class FitnessCalculatorConfiguration:
                 e.g: ["IV", -20] or "IV_-20"
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional). Legacy.
+             default_std_value (float): during and after extraction, this value will be used
+                to replace the standard deviation if the standard deviation is 0.
             validation_protocols (list of str): name of the protocols used for validation only.
             stochasticity (bool or list of str): should channels behave stochastically if they can.
                 If a list of protocol names is provided, the runs will be stochastic
@@ -129,12 +132,14 @@ class FitnessCalculatorConfiguration:
             for f in efeatures:
                 f_dict = deepcopy(f)
                 f_dict.pop("threshold_efeature_std", None)
+                f_dict.pop("default_std_value", None)
                 self.efeatures.append(
                     EFeatureConfiguration(
                         **f_dict,
                         threshold_efeature_std=f.get(
                             "threshold_efeature_std", threshold_efeature_std
                         ),
+                        default_std_value=f.get("default_std_value", default_std_value),
                     )
                 )
 
