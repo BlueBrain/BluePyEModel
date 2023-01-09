@@ -126,6 +126,7 @@ def extract_save_features_protocols(access_point, mapper=map):
         pickle_cells=access_point.pipeline_settings.pickle_cells_extraction,
         rheobase_strategy=access_point.pipeline_settings.rheobase_strategy_extraction,
         rheobase_settings=access_point.pipeline_settings.rheobase_settings_extraction,
+        default_std_value=access_point.pipeline_settings.default_std_value,
     )
 
     if plot:

@@ -17,6 +17,7 @@ class EFeatureConfiguration:
         original_std=None,
         std=None,
         sample_size=None,
+        default_std_value=1e-3,
     ):
         """Init.
 
@@ -47,6 +48,7 @@ class EFeatureConfiguration:
         self.protocol_name = protocol_name
         self.recording_name = recording_name
         self.threshold_efeature_std = threshold_efeature_std
+        self.default_std_value = default_std_value
 
         self.mean = mean
         self.original_std = original_std if original_std is not None else std
@@ -80,7 +82,9 @@ class EFeatureConfiguration:
             return self.original_std
 
         if self.mean == 0.0:
-            return self.threshold_efeature_std
+            if self.threshold_efeature_std:
+                return self.threshold_efeature_std
+            return self.default_std_value
 
         limit = abs(self.threshold_efeature_std * self.mean)
         if self.original_std < limit:

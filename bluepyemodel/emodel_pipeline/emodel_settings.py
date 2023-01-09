@@ -18,6 +18,7 @@ class EModelPipelineSettings:
         pickle_cells_extraction=False,
         rheobase_strategy_extraction="absolute",
         rheobase_settings_extraction=None,
+        default_std_value=1e-3,
         efel_settings=None,
         minimum_protocol_delay=0.0,
         stochasticity=False,
@@ -69,6 +70,9 @@ class EModelPipelineSettings:
                 sweeps induced at least one spike).
             rheobase_settings_extraction (dict): settings related to the rheobase computation.
                 Keys have to match the arguments expected by the rheobase computation function.
+            default_std_value (float): At the end of efeatures extraction, all features
+                presenting a standard deviation of 0, will see their standard deviation
+                replaced by the present value.
             efel_settings (dict): efel settings in the form {setting_name: setting_value}.
                 If settings are also informed in the targets per efeature, the latter
                 will have priority.
@@ -99,9 +103,10 @@ class EModelPipelineSettings:
                 {"offspring_size": 10, "weight_hv": 0.4}
             optimisation_timeout (float): duration (in second) after which the evaluation
                 of a protocol will be interrupted.
-            threshold_efeature_std (float): if informed, during extraction, the std of the
-                features will be computed as abs(threshold_efeature_std * mean) if
-                std is < threshold_efeature_std * min.
+            threshold_efeature_std (float): if informed, the standard deviations of the
+                efeatures will be thresholded at a minimum of abs(threshold_efeature_std
+                * efeatures_mean). Note that this will not re-write the original standard
+                deviations, but only modify them at instantiation of the optimizer.
             max_ngen (int): maximum number of generations of the evolutionary process of the
                 optimisation.
             validation_threshold (float): score threshold under which the emodel passes
@@ -165,6 +170,7 @@ class EModelPipelineSettings:
         self.path_extract_config = path_extract_config
         self.rheobase_strategy_extraction = rheobase_strategy_extraction
         self.rheobase_settings_extraction = rheobase_settings_extraction
+        self.default_std_value = default_std_value
         self.minimum_protocol_delay = minimum_protocol_delay
 
         # Settings related to the evaluator
