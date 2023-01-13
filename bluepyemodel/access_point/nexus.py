@@ -6,11 +6,13 @@ import pathlib
 import subprocess
 
 import pandas
+from kgforge.core import Resource
 
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.access_point.forge_access_point import check_resource
+from bluepyemodel.access_point.forge_access_point import get_available_traces
 from bluepyemodel.access_point.forge_access_point import get_brain_region
 from bluepyemodel.access_point.forge_access_point import get_curated_morphology
 from bluepyemodel.access_point.forge_access_point import ontology_forge_access_point
@@ -218,6 +220,13 @@ class NexusAccessPoint(DataAccessPoint):
 
         configuration.available_traces = self.get_available_traces()
         configuration.available_efeatures = self.get_available_efeatures()
+
+        if not configuration.files:
+            logger.debug(
+                "Empty list of files in the TargetsConfiguration, filling"
+                "it using what is available on Nexus for the present etype."
+            )
+            configuration.traces = configuration.available_traces
 
         for file in configuration.files:
             file.filepath = self.download_trace(id_=file.resource_id, name=file.filename)
@@ -704,20 +713,19 @@ class NexusAccessPoint(DataAccessPoint):
 
         return available_mechanisms
 
-    def get_available_traces(self, filter_species=False, filter_brain_region=False):
+    def get_available_traces(self, filter_species=True, filter_brain_region=False):
         """Get the list of available Traces for the current species from Nexus"""
 
-        filters = {"type": "Trace", "distribution": {"encodingFormat": "application/nwb"}}
-
         if filter_species:
-            filters["subject"] = self.emodel_metadata_ontology.species
+            species = self.emodel_metadata_ontology.species
         if filter_brain_region:
-            filters["brainLocation"] = self.emodel_metadata_ontology.brain_region
+            brain_region = self.emodel_metadata_ontology.brain_region
 
-        resource_traces = self.access_point.fetch(filters)
+        resource_traces = get_available_traces(
+            species=species, brain_region=brain_region, access_token=self.access_point.access_token
+        )
 
         traces = []
-
         if resource_traces is None:
             return traces
 
@@ -739,19 +747,30 @@ class NexusAccessPoint(DataAccessPoint):
             if hasattr(r, "brainLocation"):
                 brain_region = r.brainLocation
 
-            traces.append(
-                TraceFile(
-                    r.name,
-                    filename=None,
-                    filepath=None,
-                    resource_id=r.id,
-                    ecodes=ecodes,
-                    other_metadata=None,
-                    species=species,
-                    brain_region=brain_region,
-                    etype=None,  # Todo: update when etype will be available
+            etype = None
+            if hasattr(r, "annotation"):
+                if isinstance(r.annotation, Resource):
+                    if "e-type" in r.annotation.name.lower():
+                        etype = r.annotation.hasBody.label
+                else:
+                    for annotation in r.annotation:
+                        if "e-type" in annotation.name.lower():
+                            etype = annotation.hasBody.label
+
+            if etype is not None and etype == self.emodel_metadata.etype:
+                traces.append(
+                    TraceFile(
+                        r.name,
+                        filename=None,
+                        filepath=None,
+                        resource_id=r.id,
+                        ecodes=ecodes,
+                        other_metadata=None,
+                        species=species,
+                        brain_region=brain_region,
+                        etype=etype,
+                    )
                 )
-            )
 
         return traces
 

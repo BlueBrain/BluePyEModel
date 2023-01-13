@@ -648,6 +648,20 @@ def ontology_forge_access_point(access_token=None):
     return access_point
 
 
+def traces_forge_access_point(access_token=None):
+    """Returns an access point targeting the bbp/lnmce project"""
+
+    access_point = NexusForgeAccessPoint(
+        project="lnmce",
+        organisation="bbp",
+        endpoint="https://bbp.epfl.ch/nexus/v1",
+        forge_path=None,
+        access_token=access_token,
+    )
+
+    return access_point
+
+
 def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
     """Raise an exception mentioning the possible appropriate resource names available on nexus
 
@@ -711,6 +725,21 @@ def check_resource(label, category, access_point=None, access_token=None):
     if resource.id not in available_names:
         base_text = f"Resource {label} is not a {category}"
         raise_not_found_exception(base_text, label, access_point, category)
+
+
+def get_available_traces(species=None, brain_region=None, access_token=None):
+    """Returns a list of Resources of type Traces from the bbp/lnmce Nexus project"""
+
+    filters = {"type": "Trace", "distribution": {"encodingFormat": "application/nwb"}}
+
+    if species:
+        filters["subject"] = species
+    if brain_region:
+        filters["brainLocation"] = brain_region
+
+    access_point = traces_forge_access_point(access_token=access_token)
+
+    return access_point.fetch(filters)
 
 
 def get_brain_region(brain_region, access_token=None):
