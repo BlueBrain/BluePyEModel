@@ -67,6 +67,11 @@ NEXUS_ENTRIES = [
     "name",
 ]
 
+NEXUS_PROJECTS_TRACES = [
+    {"project": "lnmce", "organisation": "bbp"},
+    {"project": "thalamus", "organisation": "public"},
+]
+
 
 class AccessPointException(Exception):
     """For Exceptions related to the NexusForgeAccessPoint"""
@@ -648,20 +653,6 @@ def ontology_forge_access_point(access_token=None):
     return access_point
 
 
-def traces_forge_access_point(access_token=None):
-    """Returns an access point targeting the bbp/lnmce project"""
-
-    access_point = NexusForgeAccessPoint(
-        project="lnmce",
-        organisation="bbp",
-        endpoint="https://bbp.epfl.ch/nexus/v1",
-        forge_path=None,
-        access_token=access_token,
-    )
-
-    return access_point
-
-
 def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
     """Raise an exception mentioning the possible appropriate resource names available on nexus
 
@@ -737,9 +728,20 @@ def get_available_traces(species=None, brain_region=None, access_token=None):
     if brain_region:
         filters["brainLocation"] = brain_region
 
-    access_point = traces_forge_access_point(access_token=access_token)
+    resources = []
+    for proj_traces in NEXUS_PROJECTS_TRACES:
+        access_point = NexusForgeAccessPoint(
+            project=proj_traces["project"],
+            organisation=proj_traces["organisation"],
+            endpoint="https://bbp.epfl.ch/nexus/v1",
+            forge_path=None,
+            access_token=access_token,
+        )
+        tmp_resources = access_point.fetch(filters=filters)
+        if tmp_resources:
+            resources += tmp_resources
 
-    return access_point.fetch(filters)
+    return resources
 
 
 def get_brain_region(brain_region, access_token=None):
