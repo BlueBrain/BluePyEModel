@@ -478,7 +478,7 @@ def define_protocol_runner(
                     protocol_name="SearchHoldingCurrent",
                     target_current_name="bpo_holding_current",
                     strict_bounds=strict_holding_bounds,
-                    no_spikes=True,
+                    no_spikes=False,
                 ),
                 "RinProtocol": define_Rin_protocol(features, ais_recording),
                 "SearchThresholdCurrent": define_threshold_protocol(
@@ -509,7 +509,7 @@ def define_protocol_runner(
             strict_bounds=strict_holding_bounds,
             upper_bound=2.0,
             lower_bound=-1.0,
-            no_spikes=True,
+            no_spikes=False,
         )
 
     # Create the protocol runner

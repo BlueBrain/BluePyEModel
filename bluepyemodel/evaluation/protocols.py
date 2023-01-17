@@ -384,6 +384,10 @@ class RinProtocol(ProtocolWithDependencies):
         bpo_rin = self.target_rin.calculate_feature(response)
         response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
 
+        # WARNING: HACK
+        if response["bpo_rin"] < 100.:
+            return {"bpo_rin": None}
+
         return response
 
 
@@ -477,11 +481,12 @@ class SearchCurrentForVoltage(BPEMProtocol):
 
         self.stimuli[0].amp = holding_current
         response = BPEMProtocol.run(
-            self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
+            self, cell_model, param_values, sim=sim, isolate=isolate, timeout=300
         )
 
         spikecount = self.spike_feature.calculate_feature(response)
         if self.no_spikes and spikecount is not None and spikecount > 0:
+            logger.debug("RETURNING NONE BECAUSE SPIKE IS PRESENT")
             return None
 
         voltage_base = self.target_voltage.calculate_feature(response)
@@ -560,7 +565,6 @@ class SearchCurrentForVoltage(BPEMProtocol):
                 self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
             )
         )
-
         return response
 
     def bisection_search(
@@ -915,6 +919,7 @@ class ProtocolRunner(ephys.protocols.Protocol):
         cell_model.freeze(param_values)
 
         for protocol_name in self.execution_order:
+
             logger.debug("Computing protocol %s", protocol_name)
             new_responses = self.protocols[protocol_name].run(
                 cell_model,
