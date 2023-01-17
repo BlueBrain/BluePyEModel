@@ -322,7 +322,7 @@ class RinProtocol(ProtocolWithDependencies):
     """Protocol used to find the input resistance of a model"""
 
     def __init__(
-        self, name, location, target_rin, amp=-0.02, stimulus_delay=500.0, stimulus_duration=500.0
+        self, name, location, target_rin, amp=-0.02, stimulus_delay=1000.0, stimulus_duration=1000.0
     ):
         """Constructor"""
 
@@ -378,6 +378,10 @@ class RinProtocol(ProtocolWithDependencies):
 
         bpo_rin = self.target_rin.calculate_feature(response)
         response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
+
+        # WARNING: HACK
+        if response["bpo_rin"] < 100.:
+            return {"bpo_rin": None}
 
         return response
 
@@ -469,11 +473,12 @@ class SearchCurrentForVoltage(BPEMProtocol):
 
         self.stimuli[0].amp = holding_current
         response = BPEMProtocol.run(
-            self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
+            self, cell_model, param_values, sim=sim, isolate=isolate, timeout=300
         )
 
         spikecount = self.spike_feature.calculate_feature(response)
         if self.no_spikes and spikecount is not None and spikecount > 0:
+            logger.debug("RETURNING NONE BECAUSE SPIKE IS PRESENT")
             return None
 
         return self.target_voltage.calculate_feature(response)
@@ -550,7 +555,6 @@ class SearchCurrentForVoltage(BPEMProtocol):
                 self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
             )
         )
-
         return response
 
     def bisection_search(
@@ -882,17 +886,22 @@ class ProtocolRunner(ephys.protocols.Protocol):
         cell_model.freeze(param_values)
 
         for protocol_name in self.execution_order:
+
             logger.debug("Computing protocol %s", protocol_name)
-            responses.update(
-                self.protocols[protocol_name].run(
-                    cell_model,
-                    param_values={},
-                    sim=sim,
-                    isolate=isolate,
-                    timeout=timeout,
-                    responses=responses,
-                )
+            new_responses = self.protocols[protocol_name].run(
+                cell_model,
+                param_values={},
+                sim=sim,
+                isolate=isolate,
+                timeout=timeout,
+                responses=responses,
             )
+
+            if any(v is None for v in new_responses.values()):
+                logger.debug("None in responses, exiting evaluation")
+                break
+
+            responses.update(new_responses)
 
         cell_model.unfreeze(param_values.keys())
         return responses

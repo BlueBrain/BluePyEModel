@@ -12,6 +12,7 @@ from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tools.multiprocessing import ipyparallel_map_function
+from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.validation.validation import validate
 
 logger = logging.getLogger()
@@ -139,23 +140,21 @@ class EModel_pipeline:
     def store_optimisation_results(self, seed=None):
         """"""
 
-        for chkp_path in glob.glob("./checkpoints/*.pkl"):
+        checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
 
-            if self.access_point.emodel_metadata.emodel not in chkp_path:
+        for chkp_path in glob.glob(checkpoint_path.replace("seed=1", "*")):
+
+            if seed is not None and str(seed) not in chkp_path:
                 continue
 
-            if (
-                self.access_point.emodel_metadata.iteration
-                and self.access_point.emodel_metadata.iteration not in chkp_path
-            ):
-                continue
-
-            if seed and str(seed) not in chkp_path:
-                continue
+            tmp_seed = seed
+            if tmp_seed is None:
+                tmp_path = pathlib.Path(chkp_path).stem
+                tmp_seed = next(int(e.replace("seed=", "")) for e in tmp_path.split("__") if "seed=" in e)
 
             store_best_model(
                 access_point=self.access_point,
-                seed=seed,
+                seed=tmp_seed,
                 checkpoint_path=chkp_path,
             )
 
@@ -195,7 +194,7 @@ class EModel_pipeline:
             plot_distributions=True,
             plot_scores=True,
             plot_traces=True,
-            plot_currentscape=False,
+            plot_currentscape=self.access_point.pipeline_settings.plot_currentscape,
             only_validated=only_validated,
         )
 

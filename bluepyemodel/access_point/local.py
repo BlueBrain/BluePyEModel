@@ -225,8 +225,9 @@ class LocalAccessPoint(DataAccessPoint):
             emodel = self.emodel_metadata.emodel
         return self.get_all_recipes()[emodel]
 
-    def _get_json(self, recipe_entry):
-        """Helper function to load a json using path in recipe."""
+
+    def get_json_path(self, recipe_entry):
+        """Helper function to get a json path in recipe."""
 
         json_path = Path(self.get_recipes()[recipe_entry])
 
@@ -235,7 +236,11 @@ class LocalAccessPoint(DataAccessPoint):
             json_path = self.emodel_dir / emodel / json_path
         elif not json_path.is_absolute():
             json_path = self.emodel_dir / json_path
+        return json_path
 
+    def get_json(self, recipe_entry):
+        """Helper function to load a json using path in recipe."""
+        json_path = self.get_json_path(recipe_entry)
         with open(json_path, "r") as f:
             return json.load(f)
 
@@ -381,9 +386,9 @@ class LocalAccessPoint(DataAccessPoint):
         )
 
         try:
-            parameters = self._get_json("parameters")
+            parameters = self.get_json("parameters")
         except KeyError:
-            parameters = self._get_json("params")
+            parameters = self.get_json("params")
 
         if isinstance(parameters["parameters"], dict):
             parameters["parameters"].pop("__comment", None)
@@ -444,7 +449,7 @@ class LocalAccessPoint(DataAccessPoint):
     def get_fitness_calculator_configuration(self, record_ions_and_currents=False):
         """Get the configuration of the fitness calculator (efeatures and protocols)"""
 
-        config_dict = self._get_json("features")
+        config_dict = self.get_json("features")
 
         legacy = "efeatures" not in config_dict and "protocols" not in config_dict
 
@@ -467,8 +472,8 @@ class LocalAccessPoint(DataAccessPoint):
 
         if legacy:
 
-            efeatures = self._get_json("features")
-            protocols = self._get_json("protocol")
+            efeatures = self.get_json("features")
+            protocols = self.get_json("protocol")
 
             from_bpe = False
             for protocol_name, protocol in protocols.items():
