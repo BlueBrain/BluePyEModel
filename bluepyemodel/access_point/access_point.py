@@ -32,9 +32,7 @@ class DataAccessPoint:
         species=None,
         brain_region=None,
         iteration_tag=None,
-        morph_class=None,
         synapse_class=None,
-        layer=None,
     ):
         """Init"""
 
@@ -46,9 +44,7 @@ class DataAccessPoint:
             species,
             brain_region,
             iteration_tag,
-            morph_class,
             synapse_class,
-            layer,
         )
 
     def set_emodel(self, emodel):
@@ -73,7 +69,7 @@ class DataAccessPoint:
         self,
         scores,
         params,
-        optimizer_name,
+        optimiser_name,
         seed,
         validated=None,
         scores_validation=None,
@@ -163,7 +159,7 @@ class DataAccessPoint:
                 when the optimisation is not complete
 
         Raises:
-            Exception if optimizer in pipeline settings in neither
+            Exception if optimiser in pipeline settings in neither
                 "SO-CMA", "MO-CMA" or "IBEA"
 
         Returns:
@@ -181,14 +177,14 @@ class DataAccessPoint:
             return True
 
         # there is a file & we want to continue optimisation -> check if optimisation if finished
-        optimizer = self.pipeline_settings.optimizer
+        optimiser = self.pipeline_settings.optimiser
         ngen = self.pipeline_settings.max_ngen
 
         with open(str(checkpoint_path), "rb") as checkpoint_file:
-            cp = pickle.load(checkpoint_file)
+            cp = pickle.load(checkpoint_file, encoding="latin1")
 
         # CMA
-        if optimizer in ["SO-CMA", "MO-CMA"]:
+        if optimiser in ["SO-CMA", "MO-CMA"]:
             gen = cp["generation"]
             CMA_es = cp["CMA_es"]
             CMA_es.check_termination(gen)
@@ -198,7 +194,7 @@ class DataAccessPoint:
             return True
 
         # IBEA
-        if optimizer == "IBEA":
+        if optimiser == "IBEA":
             gen = cp["generation"]
             stopping_criteria = [MaxNGen(ngen)]
             # to check if next gen is over max generation
@@ -208,7 +204,7 @@ class DataAccessPoint:
                 return True
             return False
 
-        raise Exception(f"Unknown optimizer: {optimizer}")
+        raise Exception(f"Unknown optimiser: {optimiser}")
 
     def get_ion_currents_concentrations(self):
         """Get all ion currents and ion concentrations.
@@ -220,9 +216,7 @@ class DataAccessPoint:
             (list of str): ionic concentration names for all available mechanisms
         """
         # pylint: disable=assignment-from-no-return
-        logger.debug("in get ions currents")
         mechs = self.get_available_mechanisms()
-        logger.debug(mechs)
         if mechs is None:
             return None, None
         ion_currents = list(chain.from_iterable([mech.get_current() for mech in mechs]))
@@ -231,8 +225,6 @@ class DataAccessPoint:
         )
         # append i_pas which is present by default
         ion_currents.append("i_pas")
-        logger.debug(ion_currents)
-        logger.debug(ionic_concentrations)
         return ion_currents, ionic_concentrations
 
     def __str__(self):

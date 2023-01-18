@@ -107,6 +107,79 @@ class NexusForgeAccessPoint:
         self.agent.id = decoded_token["sub"]
         self.agent.type = ["Person", "Agent"]
 
+        self._available_etypes = None
+        self._available_mtypes = None
+        self._available_ttypes = None
+
+    @property
+    def available_etypes(self):
+        """List of ids of available etypes in this forge graph"""
+        if self._available_etypes is None:
+            self._available_etypes = self.get_available_etypes()
+        return self._available_etypes
+
+    @property
+    def available_mtypes(self):
+        """List of ids of available mtypes in this forge graph"""
+        if self._available_mtypes is None:
+            self._available_mtypes = self.get_available_mtypes()
+        return self._available_mtypes
+
+    @property
+    def available_ttypes(self):
+        """List of ids of available ttypes in this forge graph"""
+        if self._available_ttypes is None:
+            self._available_ttypes = self.get_available_ttypes()
+        return self._available_ttypes
+
+    def get_available_etypes(self):
+        """Returns a list of nexus ids of all the etype resources using sparql"""
+        query = """
+            SELECT ?e_type_id
+
+            WHERE {{
+                    ?e_type_id label ?e_type ;
+                        subClassOf* EType ;
+            }}
+        """
+        # should we use self.limit here?
+        resources = self.forge.sparql(query, limit=self.limit)
+        if resources is None:
+            return []
+        return [r.e_type_id for r in resources]
+
+    def get_available_mtypes(self):
+        """Returns a list of nexus ids of all the mtype resources using sparql"""
+        query = """
+            SELECT ?m_type_id
+
+            WHERE {{
+                    ?m_type_id label ?m_type ;
+                        subClassOf* MType ;
+            }}
+        """
+        # should we use self.limit here?
+        resources = self.forge.sparql(query, limit=self.limit)
+        if resources is None:
+            return []
+        return [r.m_type_id for r in resources]
+
+    def get_available_ttypes(self):
+        """Returns a list of nexus ids of all the ttype resources using sparql"""
+        query = """
+            SELECT ?t_type_id
+
+            WHERE {{
+                    ?t_type_id label ?t_type ;
+                        subClassOf* BrainCellTranscriptomeType ;
+            }}
+        """
+        # should we use self.limit here?
+        resources = self.forge.sparql(query, limit=self.limit)
+        if resources is None:
+            return []
+        return [r.t_type_id for r in resources]
+
     @staticmethod
     def get_access_token():
         """Define access token either from bbp-workflow or provided by the user"""
@@ -167,21 +240,29 @@ class NexusForgeAccessPoint:
     def register(
         self,
         resource_description,
-        filters_existance=None,
+        filters_existence=None,
         replace=False,
         distributions=None,
     ):
-        """Register a resource from its dictionary description."""
+        """Register a resource from its dictionary description.
+
+        Args:
+            resource_description (dict): contains resource type, name and metadata
+            filters_existence (dict): contains resource type, name and metadata,
+                can be used to search for existence of resource on nexus
+            replace (bool): whether to replace resource if found with filters_existence
+            distributions (list): paths to resource object as json and other distributions
+        """
 
         if "type" not in resource_description:
             raise AccessPointException("The resource description should contain 'type'.")
 
         previous_resources = None
-        if filters_existance:
+        if filters_existence:
 
-            previous_resources = self.fetch(filters_existance)
+            previous_resources = self.fetch(filters_existence)
 
-        if filters_existance and previous_resources:
+        if filters_existence and previous_resources:
 
             if replace:
                 for resource in previous_resources:
@@ -271,9 +352,14 @@ class NexusForgeAccessPoint:
 
         return resources[0]
 
-    def download(self, resource_id, download_directory="./nexus_temp"):
+    def download(self, resource_id, download_directory=None, metadata_str=None):
         """Download datafile from nexus if it doesn't already exist."""
-
+        if download_directory is None:
+            if metadata_str is None:
+                raise AccessPointException(
+                    "download_directory or metadata_str should be other than None"
+                )
+            download_directory = pathlib.Path("./nexus_temp") / metadata_str
         resource = self.forge.retrieve(resource_id, cross_bucket=True)
 
         if resource is None:
@@ -332,7 +418,7 @@ class NexusForgeAccessPoint:
 
             self.deprecate(filters)
 
-    def resource_location(self, resource):
+    def resource_location(self, resource, metadata_str):
         """Get the path of the files attached to a resource. If the resource is
         not located on gpfs, download it instead"""
 
@@ -356,14 +442,14 @@ class NexusForgeAccessPoint:
                     filepath = loc["location"].replace("file:/", "")
 
             if filepath is None:
-                filepath = self.download(resource.id)[0]
+                filepath = self.download(resource.id, metadata_str=metadata_str)[0]
 
             paths.append(filepath)
 
         return paths
 
     @staticmethod
-    def resource_name(class_name, metadata):
+    def resource_name(class_name, metadata, seed=None):
         """Create a resource name from the class name and the metadata."""
         name_parts = [CLASS_TO_RESOURCE_NAME[class_name]]
         if "iteration" in metadata:
@@ -372,31 +458,42 @@ class NexusForgeAccessPoint:
             name_parts.append(metadata["emodel"])
         if "ttype" in metadata:
             name_parts.append(metadata["ttype"])
+        if seed is not None:
+            name_parts.append(str(seed))
 
         return "__".join(name_parts)
 
-    def object_to_nexus(self, object_, metadata_dict, metadata_str, replace=True):
+    def object_to_nexus(self, object_, metadata_dict, metadata_str, replace=True, seed=None):
         """Transform a BPEM object into a dict which gets registered into Nexus as
         the distribution of a Dataset of the matching type. The metadata
         are also attached to the object to be able to retrieve the Resource."""
 
-        type_ = CLASS_TO_NEXUS_TYPE[object_.__class__.__name__]
+        class_name = object_.__class__.__name__
+        type_ = CLASS_TO_NEXUS_TYPE[class_name]
+
+        seed = None
+        if class_name == "EModel":
+            seed = object_.seed
 
         base_payload = {
             "type": ["Entity", type_],
-            "name": self.resource_name(object_.__class__.__name__, metadata_dict),
+            "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
-        payload_existance = {
+        payload_existence = {
             "type": type_,
-            "name": self.resource_name(object_.__class__.__name__, metadata_dict),
+            "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
 
         base_payload.update(metadata_dict)
-        payload_existance.update(metadata_dict)
+        payload_existence.update(metadata_dict)
         json_payload = object_.as_dict()
 
-        path_json = f"{CLASS_TO_RESOURCE_NAME[object_.__class__.__name__]}__{metadata_str}.json"
-        path_json = str((pathlib.Path("./nexus_temp") / path_json).resolve())
+        path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}__{metadata_str}"
+        if seed is not None:
+            path_json += f"__{seed}"
+        path_json = str(
+            (pathlib.Path("./nexus_temp") / metadata_str / f"{path_json}.json").resolve()
+        )
 
         distributions = [path_json]
         if "nexus_distributions" in json_payload:
@@ -405,19 +502,19 @@ class NexusForgeAccessPoint:
         with open(path_json, "w") as fp:
             json.dump(json_payload, fp, indent=2)
 
-        payload_existance.pop("annotation", None)
+        payload_existence.pop("annotation", None)
 
         self.register(
             base_payload,
-            filters_existance=payload_existance,
+            filters_existence=payload_existence,
             replace=replace,
             distributions=distributions,
         )
 
-    def resource_to_object(self, type_, resource, metadata):
+    def resource_to_object(self, type_, resource, metadata, metadata_str):
         """Transform a Resource into a BPEM object of the matching type"""
 
-        file_paths = self.download(resource.id)
+        file_paths = self.download(resource.id, metadata_str=metadata_str)
         json_path = next((fp for fp in file_paths if pathlib.Path(fp).suffix == ".json"), None)
 
         if json_path is None:
@@ -437,7 +534,7 @@ class NexusForgeAccessPoint:
 
         return NEXUS_TYPE_TO_CLASS[type_](**payload)
 
-    def nexus_to_object(self, type_, metadata):
+    def nexus_to_object(self, type_, metadata, metadata_str):
         """Search for a single Resource matching the type_ and metadata and return it
         as a BPEM object of the matching type"""
 
@@ -446,9 +543,9 @@ class NexusForgeAccessPoint:
 
         resource = self.fetch_one(filters)
 
-        return self.resource_to_object(type_, resource, metadata)
+        return self.resource_to_object(type_, resource, metadata, metadata_str)
 
-    def nexus_to_objects(self, type_, metadata):
+    def nexus_to_objects(self, type_, metadata, metadata_str):
         """Search for Resources matching the type_ and metadata and return them
         as BPEM objects of the matching type"""
 
@@ -461,7 +558,7 @@ class NexusForgeAccessPoint:
 
         if resources:
             for resource in resources:
-                objects_.append(self.resource_to_object(type_, resource, metadata))
+                objects_.append(self.resource_to_object(type_, resource, metadata, metadata_str))
 
         return objects_
 
@@ -473,6 +570,67 @@ class NexusForgeAccessPoint:
         resource = self.fetch_one(filters)
 
         return resource.id
+
+    @staticmethod
+    def brain_region_filter(resources):
+        """Filter resources to keep only brain regions
+
+        Arguments:
+            resources (list of Resource): resources to be filtered
+
+        Returns:
+            list of Resource: the filtered resources
+        """
+        return [
+            r for r in resources if hasattr(r, "subClassOf") and r.subClassOf == "nsg:BrainRegion"
+        ]
+
+    def type_filter(self, resources, filter):
+        """Filter resources to keep only etypes/mtypes/ttypes
+
+        Arguments:
+            resources (list of Resource): resources to be filtered
+            filter (str): can be "etype", "mytype" or "ttype"
+
+        Returns:
+            list of Resource: the filtered resources
+        """
+        if filter == "etype":
+            available_names = self.available_etypes
+        elif filter == "mtype":
+            available_names = self.available_mtypes
+        elif filter == "ttype":
+            available_names = self.available_ttypes
+        else:
+            raise AccessPointException(
+                f'filter is {filter} but should be in ["etype", "mtype", "ttype"]'
+            )
+        return [r for r in resources if r.id in available_names]
+
+    def filter_resources(self, resources, filter):
+        """Filter resources
+
+        Arguments:
+            resources (list of Resource): resources to be filtered
+            filter (str): which filter to use
+                can be "brain_region", "etype", "mtype", "ttype"
+
+        Returns:
+            list of Resource: the filtered resources
+
+        Raises:
+            AccessPointException if filter not in ["brain_region", "etype", "mtype", "ttype"]
+        """
+        if filter == "brain_region":
+            return self.brain_region_filter(resources)
+        if filter in ["etype", "mtype", "ttype"]:
+            return self.type_filter(resources, filter)
+
+        filters = ["brain_region", "etype", "mtype", "ttype"]
+        raise AccessPointException(
+            f"Filter not expected in filter_resources: {filter}"
+            f"Please choose among the following filters: {filters}"
+        )
 
 
 def ontology_forge_access_point(access_token=None):
@@ -490,50 +648,102 @@ def ontology_forge_access_point(access_token=None):
     return access_point
 
 
-def get_all_brain_regions(access_token=None):
-    """Returns a list of all the brain regions available"""
+def traces_forge_access_point(access_token=None):
+    """Returns an access point targeting the bbp/lnmce project"""
 
-    access_point = ontology_forge_access_point(access_token)
+    access_point = NexusForgeAccessPoint(
+        project="lnmce",
+        organisation="bbp",
+        endpoint="https://bbp.epfl.ch/nexus/v1",
+        forge_path=None,
+        access_token=access_token,
+    )
 
-    filters = {
-        "isDefinedBy": {"id": "http://bbp.epfl.ch/neurosciencegraph/ontologies/mba"},
-        "type": "Class",
-    }
-
-    resources = access_point.forge.search(filters, limit=10000, cross_bucket=True)
-
-    return sorted(set(r.label for r in resources))
+    return access_point
 
 
-def raise_brain_region_exception(base_text, brain_region, access_point):
-    """Raise an exception mentioning the possible brain region names available on nexus
+def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
+    """Raise an exception mentioning the possible appropriate resource names available on nexus
 
     Arguments:
         base_text (str): text to display in the Exception
-        brain_region (str): name of the brain region to search for
+        label (str): name of the resource to search for
         access_point (NexusForgeAccessPoint)
+        filter (str): which filter to use
+            can be "brain_region", "etype", "mtype", or "ttype"
+        limit (int): maximum number of resources to fetch when looking up
+            for resource name suggestions
     """
     if not base_text.endswith("."):
         base_text = f"{base_text}."
-    resources = access_point.resolve(brain_region, strategy="all", limit=20)
+
+    resources = access_point.resolve(label, strategy="all", limit=limit)
     if resources is None:
         raise AccessPointException(base_text)
 
     # make sure that resources is iterable
     if not isinstance(resources, list):
         resources = [resources]
-    brain_regions = "\n".join(
-        set(
-            r.label
-            for r in resources
-            if hasattr(r, "subClassOf") and r.subClassOf == "nsg:BrainRegion"
-        )
+    filtered_names = "\n".join(
+        set(r.label for r in access_point.filter_resources(resources, filter))
     )
-    raise AccessPointException(f"{base_text} Maybe you meant one of those:\n{brain_regions}")
+    if filtered_names:
+        raise AccessPointException(f"{base_text} Maybe you meant one of those:\n{filtered_names}")
+
+    raise AccessPointException(base_text)
+
+
+def check_resource(label, category, access_point=None, access_token=None):
+    """Checks that resource is present on nexus and is part of the provided category
+
+    Arguments:
+        label (str): name of the resource to search for
+        category (str): can be "etype", "mtype" or "ttype"
+        access_point (str):  ontology_forge_access_point(access_token)
+    """
+    allowed_categories = ["etype", "mtype", "ttype"]
+    if category not in allowed_categories:
+        raise AccessPointException(f"Category is {category}, but should be in {allowed_categories}")
+
+    if access_point is None:
+        access_point = ontology_forge_access_point(access_token)
+
+    resource = access_point.resolve(label, strategy="exact")
+    # raise Exception if resource was not found
+    if resource is None:
+        base_text = f"Could not find {category} with name {label}"
+        raise_not_found_exception(base_text, label, access_point, category)
+
+    # if resource found but not of the appropriate category, also raise Exception
+    available_names = []
+    if category == "etype":
+        available_names = access_point.available_etypes
+    elif category == "mtype":
+        available_names = access_point.available_mtypes
+    elif category == "ttype":
+        available_names = access_point.available_ttypes
+    if resource.id not in available_names:
+        base_text = f"Resource {label} is not a {category}"
+        raise_not_found_exception(base_text, label, access_point, category)
+
+
+def get_available_traces(species=None, brain_region=None, access_token=None):
+    """Returns a list of Resources of type Traces from the bbp/lnmce Nexus project"""
+
+    filters = {"type": "Trace", "distribution": {"encodingFormat": "application/nwb"}}
+
+    if species:
+        filters["subject"] = species
+    if brain_region:
+        filters["brainLocation"] = brain_region
+
+    access_point = traces_forge_access_point(access_token=access_token)
+
+    return access_point.fetch(filters)
 
 
 def get_brain_region(brain_region, access_token=None):
-    """Returns a json dict of the resource corresponding to the brain region
+    """Returns a dict with id and label of the resource corresponding to the brain region
 
     If the brain region name is not present in nexus,
     raise an exception mentioning the possible brain region names available on nexus
@@ -543,9 +753,10 @@ def get_brain_region(brain_region, access_token=None):
         access_token (str): nexus connection token
 
     Returns:
-        the nexus resource of the brain region as a json dict
+        dict: the id and label of the nexus resource of the brain region
     """
 
+    filter = "brain_region"
     access_point = ontology_forge_access_point(access_token)
 
     if brain_region in ["SSCX", "sscx"]:
@@ -567,15 +778,19 @@ def get_brain_region(brain_region, access_token=None):
     # raise Exception if resource was not found
     if resource is None:
         base_text = f"Could not find any brain region with name {brain_region}"
-        raise_brain_region_exception(base_text, brain_region, access_point)
+        raise_not_found_exception(base_text, brain_region, access_point, filter)
 
     # if resource found but not a brain region, also raise Exception
     if not hasattr(resource, "subClassOf") or resource.subClassOf != "nsg:BrainRegion":
         base_text = f"Resource {brain_region} is not a brain region"
-        raise_brain_region_exception(base_text, brain_region, access_point)
+        raise_not_found_exception(base_text, brain_region, access_point, filter)
 
-    # if no exception was raised, return brain region as a json dict
-    return access_point.forge.as_json(resource)
+    # if no exception was raised, filter to get id and label and return them
+    brain_region_dict = access_point.forge.as_json(resource)
+    return {
+        "id": brain_region_dict["id"],
+        "label": brain_region_dict["label"],
+    }
 
 
 def get_all_species(access_token=None):
@@ -585,3 +800,16 @@ def get_all_species(access_token=None):
     resources = access_point.forge.search({"subClassOf": "nsg:Species"}, limit=100)
 
     return sorted(set(r.label for r in resources))
+
+
+def get_curated_morphology(resources):
+    """Get curated morphology from multiple resources with same morphology name"""
+    for r in resources:
+        if hasattr(r, "annotation"):
+            for annotation in r.annotation:
+                if "QualityAnnotation" in annotation.type:
+                    if annotation.hasBody.label == "Curated":
+                        return r
+        if hasattr(r, "derivation"):
+            return r
+    return None

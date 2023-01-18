@@ -4,6 +4,7 @@ import logging
 
 from bluepyemodel.efeatures_extraction.target import Target
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
+from bluepyemodel.tools.utils import are_same_protocol
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,9 @@ class TargetsConfiguration:
                         "filepath": f.filepath,
                     }
 
+                    if "protocol_name" not in ecodes_metadata:
+                        ecodes_metadata["protocol_name"] = protocol
+
                     files_metadata[f.cell_name][protocol].append(ecodes_metadata)
 
         for cell_name, protocols in files_metadata.items():
@@ -155,6 +159,35 @@ class TargetsConfiguration:
                 return False
 
         return True
+
+    def check_presence_RMP_Rin_efeatures(self, name_rmp_protocol, name_Rin_protocol):
+        """Check that the protocols supposed to be used for RMP and Rin are present in the target
+        and that they have the correct efeatures. If some features are missing, add them."""
+
+        efeatures_rmp = [
+            t.efeature
+            for t in self.targets
+            if are_same_protocol([t.protocol, t.amplitude], name_rmp_protocol)
+        ]
+        efeatures_rin = [
+            t.efeature
+            for t in self.targets
+            if are_same_protocol([t.protocol, t.amplitude], name_Rin_protocol)
+        ]
+
+        error_message = (
+            "Target for feature {} is missing for RMP protocol {}. Please add "
+            "it if you wish to do a threshold-based optimisation."
+        )
+
+        if "voltage_base" not in efeatures_rmp:
+            raise Exception(error_message.format("voltage_base", name_rmp_protocol))
+        if "voltage_base" not in efeatures_rin:
+            raise Exception(error_message.format("voltage_base", name_rmp_protocol))
+        if "ohmic_input_resistance_vb_ssse" not in efeatures_rin:
+            raise Exception(
+                error_message.format("ohmic_input_resistance_vb_ssse", name_Rin_protocol)
+            )
 
     def as_dict(self):
 

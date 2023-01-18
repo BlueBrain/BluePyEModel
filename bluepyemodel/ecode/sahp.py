@@ -10,7 +10,23 @@ logger = logging.getLogger(__name__)
 
 class sAHP(BPEM_stimulus):
 
-    """sAHP current stimulus"""
+    """sAHP current stimulus
+
+
+       holdi       holdi+long_amp      holdi+amp       holdi+long_amp          holdi
+         :                :                :                 :                   :
+         :                :          ______________          :                   :
+         :                :         |              |         :                   :
+         :      ____________________|              |____________________         :
+         :     |                    ^              ^                    |        :
+         :     |                    :              :                    |        :
+    |__________|                    :              :                    |__________________
+    ^          ^                    :              :                    ^                  ^
+    :          :                    :              :                    :                  :
+    :          :                    :              :                    :                  :
+    t=0        delay                tmid           tmid2                toff     totduration
+
+    """
 
     name = "sAHP"
 
@@ -21,10 +37,10 @@ class sAHP(BPEM_stimulus):
         """
 
         self.amp = kwargs.get("amp", None)
-        self.amp_rel = kwargs.get("thresh_perc", 200.0)
+        self.amp_rel = kwargs.get("thresh_perc", None)
 
         self.long_amp = kwargs.get("long_amp", None)
-        self.long_amp_rel = kwargs.get("long_amp_rel", 40.0)
+        self.long_amp_rel = kwargs.get("long_amp_rel", None)
 
         if self.amp is None and self.amp_rel is None:
             raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")

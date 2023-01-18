@@ -8,7 +8,7 @@ import luigi
 
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
-from bluepyemodel.emodel_pipeline.plotting import optimization
+from bluepyemodel.emodel_pipeline.plotting import optimisation
 from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.optimisation import get_checkpoint_path
 from bluepyemodel.optimisation import store_best_model
@@ -55,6 +55,7 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
 class ExtractEFeatures(WorkflowTask):
     """Luigi wrapper for extract_efeatures in emodel_pipeline.EModel_pipeline."""
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """ """
 
@@ -145,8 +146,8 @@ class OptimisationTarget(WorkflowTarget):
         return self.access_point.optimisation_state(seed=self.seed, continue_opt=self.continue_opt)
 
 
-class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
-    """Luigi wrapper for emodel_pipeline.emodel_creation.optimize
+class Optimise(WorkflowTaskRequiringMechanisms, IPyParallelTask):
+    """Luigi wrapper for emodel_pipeline.emodel_creation.optimise
 
     Parameters:
         seed (int): seed used in the optimisation.
@@ -155,7 +156,7 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
             Has to use multiprocessing event for communicating between processes
             when there is more than 1 luigi worker.
-            When set, will gracefully exit main loop in Optimize (in deap algorithm).
+            When set, will gracefully exit main loop in Optimise (in deap algorithm).
     """
 
     # if default not set, crashes when parameters are read by luigi_tools.copy_params
@@ -194,6 +195,7 @@ class Optimize(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 
         return targets
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
         attrs = [
@@ -328,7 +330,7 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
 
         for seed in range(self.seed, self.seed + batch_size):
             to_run.append(
-                Optimize(
+                Optimise(
                     emodel=self.emodel,
                     etype=self.etype,
                     ttype=self.ttype,
@@ -367,6 +369,7 @@ class StoreBestModels(WorkflowTaskRequiringMechanisms):
 
         return to_run
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """ """
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
@@ -514,6 +517,7 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 
         return to_run
 
+    @WorkflowTask.check_mettypes
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
         attrs = [
@@ -683,8 +687,9 @@ class EModelCreation(WorkflowTask):
         emodel_workflow.state = state
         self.access_point.store_or_update_emodel_workflow(emodel_workflow)
 
+    @WorkflowTask.check_mettypes
     def run(self):
-        """Optimize e-models by batches of batch_size until one is validated."""
+        """Optimise e-models by batches of batch_size until one is validated."""
 
         seed = self.seed
 
@@ -829,8 +834,8 @@ class EModelCreationWrapper(WorkflowWrapperTask):
         return to_run
 
 
-class OptimizeWrapper(WorkflowWrapperTask):
-    """Luigi wrapper for launching multiple seeds to optimize.
+class OptimiseWrapper(WorkflowWrapperTask):
+    """Luigi wrapper for launching multiple seeds to optimise.
 
     Parameters:
         emodel (str): name of the emodel. Has to match the name of the emodel
@@ -839,7 +844,7 @@ class OptimizeWrapper(WorkflowWrapperTask):
         species (str): name of the species.
         brain_region (str): name of the brain region.
         seed (int): seed used in the optimisation.
-        batch_size (int): number of seeds to optimize at the same time before each validation.
+        batch_size (int): number of seeds to optimise at the same time before each validation.
     """
 
     seed = luigi.IntParameter(default=42)
@@ -852,7 +857,7 @@ class OptimizeWrapper(WorkflowWrapperTask):
 
         for seed in range(self.seed, self.seed + batch_size):
             to_run.append(
-                Optimize(
+                Optimise(
                     emodel=self.emodel,
                     etype=self.etype,
                     ttype=self.ttype,
@@ -880,7 +885,7 @@ class PlotOptimisation(WorkflowTask):
 
     def requires(self):
         """ """
-        return Optimize(
+        return Optimise(
             emodel=self.emodel,
             etype=self.etype,
             ttype=self.ttype,
@@ -896,7 +901,11 @@ class PlotOptimisation(WorkflowTask):
 
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
 
-        optimization(
+        optimisation(
+            optimiser=self.access_point.pipeline_settings.optimiser,
+            emodel=self.emodel,
+            iteration=self.iteration_tag,
+            seed=self.seed,
             checkpoint_path=checkpoint_path,
             figures_dir=Path("./figures") / self.emodel / "optimisation",
         )

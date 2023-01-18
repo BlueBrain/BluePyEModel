@@ -4,6 +4,7 @@ import logging
 
 from bluepyemodel.model.model_configurator import ModelConfigurator
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
+from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from targets import filenames, ecodes_metadata, targets, protocols_rheobase
 
@@ -24,7 +25,7 @@ def get_parser():
             "configure_model_from_gene",
             "configure_model_from_json",
             "extract",
-            "test_optimize",
+            "test_optimise",
             "test_analyze"]
     )
     parser.add_argument('--emodel', type=str, required=True)
@@ -53,7 +54,7 @@ def configure_targets(access_point):
                     "tolerance": 10.
                 })
 
-    configurator = TargetsConfigurator(pipeline.access_point)
+    configurator = TargetsConfigurator(access_point)
     configurator.new_configuration(files_metadata, targets_formated, protocols_rheobase)
     configurator.save_configuration()
     print(configurator.configuration.as_dict())
@@ -61,18 +62,16 @@ def configure_targets(access_point):
 
 def store_pipeline_settings(access_point):
 
-    access_point.store_pipeline_settings(
+    pipeline_settings = EModelPipelineSettings(
         extraction_threshold_value_save=1,
-        efel_settings=None,
         stochasticity=False,
-        morph_modifiers=None,
-        optimizer="SO-CMA",
+        optimiser="SO-CMA",
         optimisation_params={"offspring_size": 20},
-        optimisation_timeout=100.0,
+        optimisation_timeout=100.,
         threshold_efeature_std=0.05,
         max_ngen=250,
         validation_threshold=50.,
-        optimization_batch_size=10,
+        optimisation_batch_size=10,
         max_n_batch=10,
         n_model=1,
         name_gene_map="Mouse_met_types_ion_channel_expression",
@@ -83,6 +82,8 @@ def store_pipeline_settings(access_point):
         name_rmp_protocol="IV_0",
     )
 
+    access_point.store_pipeline_settings(pipeline_settings)
+
 
 def configure(pipeline):
     pipeline.access_point.access_point.deprecate_all(
@@ -92,7 +93,7 @@ def configure(pipeline):
     store_pipeline_settings(pipeline.access_point)
 
 
-def configure_model(pipeline, emodel, ttype, morphology_name):
+def configure_model(pipeline, morphology_name):
     configurator = ModelConfigurator(pipeline.access_point)
     configurator.new_configuration()
     
@@ -145,15 +146,15 @@ if __name__ == "__main__":
     elif args.step == "configure_model_from_gene":
         pipeline.configure_model(morphology, use_gene_data=True)
     elif args.step == "configure_model_from_json":
-        configure_model(pipeline, args.emodel, args.ttype, morphology)
+        configure_model(pipeline, morphology)
     elif args.step == "extract":
         pipeline.extract_efeatures()
-    elif args.step == "test_optimize":
+    elif args.step == "test_optimise":
         logger.warning(
-            "test_optimize is only to check that the optimisation works. To "
+            "test_optimise is only to check that the optimisation works. To "
             "optimise the models, please use launch_luigi.sh"
         )
-        pipeline.optimize(seed=args.seed)
+        pipeline.optimise(seed=args.seed)
     elif args.step == "test_analyze":
         logger.warning(
             "test_analyze is only to check that the validation and storing "

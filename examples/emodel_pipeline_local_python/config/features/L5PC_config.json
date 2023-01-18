@@ -1,0 +1,66 @@
+{
+  "emodel": "L5PC",
+  "ttype": null,
+  "files": [
+    {
+      "cell_name": "C010600C1-MT-C1",
+      "filename": "C010600C1-MT-C1",
+      "filepath": "./ephys_data/C010600C1-MT-C1.nwb",
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {},
+        "IDRest": {},
+        "IDthresh": {}
+      },
+      "other_metadata": {},
+      "species": null,
+      "brain_region": null,
+      "etype": null
+    }
+  ],
+  "targets": [
+    {
+      "efeature": "Spikecount",
+      "protocol": "IDRest",
+      "amplitude": 200,
+      "tolerance": 100,
+      "efeature_name": null,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "voltage_base",
+      "protocol": "IDRest",
+      "amplitude": 200,
+      "tolerance": 100,
+      "efeature_name": null,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AP_amplitude",
+      "protocol": "IDRest",
+      "amplitude": 200,
+      "tolerance": 100,
+      "efeature_name": null,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AP_amplitude",
+      "protocol": "APWaveform",
+      "amplitude": 300,
+      "tolerance": 100,
+      "efeature_name": null,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    }
+  ],
+  "protocols_rheobase": [
+    "IDthresh"
+  ]
+}

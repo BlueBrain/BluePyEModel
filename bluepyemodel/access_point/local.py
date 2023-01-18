@@ -45,9 +45,7 @@ class LocalAccessPoint(DataAccessPoint):
         species=None,
         brain_region=None,
         iteration_tag=None,
-        morph_class=None,
         synapse_class=None,
-        layer=None,
         final_path=None,
         recipes_path=None,
         legacy_dir_structure=False,
@@ -60,7 +58,7 @@ class LocalAccessPoint(DataAccessPoint):
             emodel_dir (str): path to the working directory. Default to ./run/iteration_tag if None
             ttype (str): name of the t-type
             iteration_tag (str): iteration tag
-            final_path (str): path to final.json which will contain the optimized models.
+            final_path (str): path to final.json which will contain the optimised models.
             recipes_path (str): path to the json file which should contain the path to the
                 configuration files used for each etype. The content of this file should follow the
                 format:
@@ -88,9 +86,7 @@ class LocalAccessPoint(DataAccessPoint):
             species,
             brain_region,
             iteration_tag,
-            morph_class,
             synapse_class,
-            layer,
         )
 
         if emodel_dir is None:
@@ -224,7 +220,6 @@ class LocalAccessPoint(DataAccessPoint):
         else:
             emodel = self.emodel_metadata.emodel
         return self.get_all_recipes()[emodel]
-
 
     def get_json_path(self, recipe_entry):
         """Helper function to get a json path in recipe."""
@@ -588,9 +583,7 @@ class LocalAccessPoint(DataAccessPoint):
             species=model_data.get("species", None),
             brain_region=model_data.get("brain_region", None),
             iteration_tag=iteration_tag,
-            morph_class=model_data.get("morph_class", None),
             synapse_class=model_data.get("synapse_class", None),
-            layer=model_data.get("layer", None),
         )
 
         emodel = EModel(
@@ -606,10 +599,10 @@ class LocalAccessPoint(DataAccessPoint):
 
         return emodel
 
-    def get_emodel(self):
+    def get_emodel(self, lock_file=True):
         """Get dict with parameter of single emodel (including seed if any)"""
 
-        final = self.get_final()
+        final = self.get_final(lock_file=lock_file)
 
         if self.emodel_metadata.emodel in final:
             return self.format_emodel_data(final[self.emodel_metadata.emodel])

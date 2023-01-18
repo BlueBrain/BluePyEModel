@@ -16,6 +16,8 @@ class EFeatureConfiguration:
         threshold_efeature_std=None,
         original_std=None,
         std=None,
+        sample_size=None,
+        default_std_value=1e-3,
     ):
         """Init.
 
@@ -27,7 +29,9 @@ class EFeatureConfiguration:
             efel_feature_name (str): name of the eFEl feature.
             protocol_name (str): name of the protocol to which the efeature is associated. For
                 example "Step_200".
-            recording_name (str): name of the recording of the protocol. For example: "soma.v"
+            recording_name (str or dict): name of the recording(s) of the protocol. For
+                example: "soma.v" or if and only if the feature depends on several recordings:
+                {"": "soma.v", "location_AIS": "axon.v"}.
             mean (float): mean of the efeature.
             original_std (float): unmodified standard deviation of the efeature
             std (float): kept for legacy purposes.
@@ -36,15 +40,19 @@ class EFeatureConfiguration:
             efel_settings (dict): eFEl settings.
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional).
+            sample_size (float): number of data point that were used to compute the present
+                average and standard deviation.
         """
 
         self.efel_feature_name = efel_feature_name
         self.protocol_name = protocol_name
         self.recording_name = recording_name
         self.threshold_efeature_std = threshold_efeature_std
+        self.default_std_value = default_std_value
 
         self.mean = mean
         self.original_std = original_std if original_std is not None else std
+        self.sample_size = sample_size
 
         self.efeature_name = efeature_name
 
@@ -56,7 +64,15 @@ class EFeatureConfiguration:
     @property
     def name(self):
         n = self.efeature_name if self.efeature_name else self.efel_feature_name
+        if isinstance(self.recording_name, dict):
+            return f"{self.protocol_name}.{self.recording_name['']}.{n}"
         return f"{self.protocol_name}.{self.recording_name}.{n}"
+
+    @property
+    def recording_name_for_instantiation(self):
+        if isinstance(self.recording_name, dict):
+            return {k: f"{self.protocol_name}.{v}" for k, v in self.recording_name.items()}
+        return {"": f"{self.protocol_name}.{self.recording_name}"}
 
     @property
     def std(self):
@@ -66,7 +82,9 @@ class EFeatureConfiguration:
             return self.original_std
 
         if self.mean == 0.0:
-            return self.threshold_efeature_std
+            if self.threshold_efeature_std:
+                return self.threshold_efeature_std
+            return self.default_std_value
 
         limit = abs(self.threshold_efeature_std * self.mean)
         if self.original_std < limit:

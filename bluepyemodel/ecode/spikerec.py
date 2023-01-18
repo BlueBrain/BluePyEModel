@@ -9,8 +9,24 @@ logger = logging.getLogger(__name__)
 
 
 class SpikeRecMultiSpikes(BPEM_stimulus):
+    # pylint: disable=line-too-long
 
-    """SpikeRecMultiSpikes current stimulus"""
+    """SpikeRecMultiSpikes current stimulus
+
+          holdi        holdi+amp        holdi       holdi+amp            .   .   .
+            :               :             :             :
+            :       _________________     :      _________________                      _________________
+            :      |                 |    :     |                 |                    |                 |
+            :      |                 |    :     |                 |     * n_spikes     |                 |
+            :      |                 |    :     |                 |     .   .   .      |                 |
+            :      |                 |    :     |                 |                    |                 |
+    |______________|                 |__________|                 |__                __|                 |___
+    :              :                 :          :                 :                                          ^
+    :              :                 :          :                 :                                          :
+    :              :                 :          :                 :                                          :
+     <--  delay  --><-spike_duration-><- delta -><-spike_duration->     .   .   .                  totduration
+
+    """
 
     name = "SpikeRecMultiSpikes"
 

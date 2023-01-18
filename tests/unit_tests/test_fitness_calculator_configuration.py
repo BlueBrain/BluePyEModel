@@ -139,7 +139,7 @@ def test_init(config_dict):
     config.remove_featureless_protocols()
     assert len(config.protocols) == 1
 
-    keys = ["name", "stimuli", "recordings", "validation"]
+    keys = ["name", "stimuli", "recordings_from_config", "validation"]
     p_dict = config.protocols[0].as_dict()
     for k in keys:
         assert k in p_dict
@@ -154,6 +154,9 @@ def test_init(config_dict):
     assert config.efeatures[0].name == "Step_150.soma.v.voltage_base"
     for f in config.efeatures:
         assert f.std >= abs(0.05 * f.mean)
+
+    # test recreation from dict output
+    new_config = FitnessCalculatorConfiguration(**config.as_dict())
 
 
 def test_init_from_bpe2(config_dict, config_dict_from_bpe2):

@@ -8,6 +8,7 @@ import numpy
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.tools.utils import are_same_protocol
 from bluepyemodel.validation import validation_functions
 
 logger = logging.getLogger(__name__)
@@ -21,27 +22,25 @@ def define_validation_function(access_point):
 
     if validation_function is None or not validation_function:
         logger.warning("Validation function not specified, will use validate_max_score.")
-        validation_function = validation_functions.validate_max_score
+        return validation_functions.validate_max_score
 
-    else:
+    if isinstance(validation_function, str):
+        if validation_function == "max_score":
+            validation_function = validation_functions.validate_max_score
+        elif validation_function == "mean_score":
+            validation_function = validation_functions.validate_mean_score
+        else:
+            raise Exception("validation_function must be 'max_score' or 'mean_score'.")
 
-        if isinstance(validation_function, str):
-            if validation_function == "max_score":
-                validation_function = validation_functions.validate_max_score
-            elif validation_function == "mean_score":
-                validation_function = validation_functions.validate_mean_score
-            else:
-                raise Exception("validation_function must be 'max_score' or 'mean_score'.")
+    elif isinstance(validation_function, list) and len(validation_function) == 2:
+        # pylint: disable=deprecated-method,no-value-for-parameter
+        function_module = SourceFileLoader(
+            pathlib.Path(validation_function[0]).stem, validation_function[0]
+        ).load_module()
+        validation_function = getattr(function_module, validation_function[1])
 
-        elif isinstance(validation_function, list) and len(validation_function) == 2:
-            # pylint: disable=deprecated-method,no-value-for-parameter
-            function_module = SourceFileLoader(
-                pathlib.Path(validation_function[0]).stem, validation_function[0]
-            ).load_module()
-            validation_function = getattr(function_module, validation_function[1])
-
-        if not callable(validation_function):
-            raise Exception("validation_function is not callable nor a list of two strings")
+    if not callable(validation_function):
+        raise Exception("validation_function is not callable nor a list of two strings")
 
     return validation_function
 
@@ -82,35 +81,33 @@ def validate(
 
     logger.info("In validate, %s emodels found to validate.", len(emodels))
 
-    for i, mo in enumerate(emodels):
-        # pylint: disable=unnecessary-list-index-lookup
+    for model in emodels:
 
-        emodels[i].scores = mo.evaluator.fitness_calculator.calculate_scores(mo.responses)
         # turn features from arrays to float to be json serializable
-        emodels[i].features = {}
-        values = mo.evaluator.fitness_calculator.calculate_values(mo.responses)
-        for key, value in values.items():
+        model.features = model.evaluator.fitness_calculator.calculate_values(model.responses)
+        for key, value in model.features.items():
             if value is not None:
-                emodels[i].features[key] = float(numpy.mean([v for v in value if v]))
-            else:
-                emodels[i].features[key] = None
+                model.features[key] = float(numpy.nanmean([v for v in value if v is not None]))
 
-        emodels[i].scores_validation = {}
-        for feature_names, score in mo.scores.items():
-            for p in access_point.pipeline_settings.validation_protocols:
-                if p in feature_names:
-                    emodels[i].scores_validation[feature_names] = score
-                    break
+        scores = model.evaluator.fitness_calculator.calculate_scores(model.responses)
+        for feature_name in scores:
+            if any(
+                are_same_protocol(p, feature_name)
+                for p in access_point.pipeline_settings.validation_protocols
+            ):
+                model.scores_validation[feature_name] = scores[feature_name]
+            else:
+                model.scores[feature_name] = scores[feature_name]
 
         # turn bool_ into bool to be json serializable
-        emodels[i].passed_validation = bool(
+        model.passed_validation = bool(
             validation_function(
-                mo,
+                model,
                 access_point.pipeline_settings.validation_threshold,
                 False,
             )
         )
 
-        access_point.store_emodel(emodels[i])
+        access_point.store_emodel(model)
 
     return emodels

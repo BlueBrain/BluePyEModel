@@ -36,15 +36,75 @@ def save_fig(figures_dir, figure_name):
     plt.clf()
 
 
-def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures", write_fig=True):
-    """Create plots related to a BluePyOpt optimization"""
+def get_traces_ylabel(var):
+    """Get ylabel for traces subplot."""
+    if var == "v":
+        return "Voltage (mV)"
+    if var[0] == "i":
+        return "Current (pA)"
+    if var[-1] == "i":
+        return "Ionic concentration (mM)"
+    return ""
+
+
+def get_traces_names_and_float_responses(responses, recording_names):
+    """Extract the names of the traces to be plotted, as well as the float responses values."""
+
+    traces_names = []
+    threshold = None
+    holding = None
+    rmp = None
+    rin = None
+
+    for resp_name, response in responses.items():
+
+        if not (isinstance(response, float)):
+            if resp_name in recording_names:
+                traces_names.append(resp_name)
+
+        else:
+            if resp_name == "bpo_threshold_current":
+                threshold = response
+            elif resp_name == "bpo_holding_current":
+                holding = response
+            elif resp_name == "bpo_rmp":
+                rmp = response
+            elif resp_name == "bpo_rin":
+                rin = response
+
+    return traces_names, threshold, holding, rmp, rin
+
+
+def optimisation(
+    optimiser,
+    emodel,
+    iteration,
+    seed,
+    checkpoint_path="./checkpoint.pkl",
+    figures_dir="./figures",
+    write_fig=True,
+):
+    """Create plots related to a BluePyOpt optimisation"""
 
     make_dir(figures_dir)
     run, _ = read_checkpoint(checkpoint_path)
 
     nevals = numpy.cumsum(run["logbook"].select("nevals"))
 
+    legend_text = "\n".join(
+        (
+            f"min score = {min(run['logbook'].select('min')):.3f}",
+            f"# of generations = {run['generation']}",
+            f"# of evaluations = {nevals[-1]}",
+            f"evolution algorithm: {optimiser}",
+        )
+    )
+
     fig, axs = plt.subplots(1, figsize=(8, 8), squeeze=False)
+
+    title = str(emodel)
+    title += f"; iteration = {iteration} ; seed = {seed}"
+    axs[0, 0].set_title(title)
 
     axs[0, 0].plot(nevals, run["logbook"].select("min"), label="Minimum", ls="--", c="gray")
 
@@ -53,7 +113,7 @@ def optimization(checkpoint_path="./checkpoint.pkl", figures_dir="./figures", wr
     axs[0, 0].set_yscale("log")
     axs[0, 0].set_xlabel("Number of evaluations")
     axs[0, 0].set_ylabel("Fitness")
-    axs[0, 0].legend(loc="upper right", frameon=False)
+    axs[0, 0].legend(title=legend_text, loc="upper right", frameon=False)
 
     p = Path(checkpoint_path)
 
@@ -93,6 +153,11 @@ def scores(model, figures_dir="./figures", write_fig=True):
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
 
+    title = str(model.emodel_metadata.emodel)
+    title += f"; iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
+    # tweak size and placement so that title does not overcross figure
+    fig.suptitle(title, size="medium", y=0.99)
+
     fname = model.emodel_metadata.as_string(model.seed) + "__scores.pdf"
 
     plt.tight_layout()
@@ -103,49 +168,34 @@ def scores(model, figures_dir="./figures", write_fig=True):
     return fig, axs
 
 
-def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True):
+def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures", write_fig=True):
     """Plot the traces of a model"""
     make_dir(figures_dir)
 
-    traces_name = []
-    threshold = None
-    holding = None
-    rmp = None
-    rin = None
+    traces_names, threshold, holding, rmp, rin = get_traces_names_and_float_responses(
+        responses, recording_names
+    )
 
-    for resp_name, response in responses.items():
-
-        if not (isinstance(response, float)):
-            if resp_name.split(".")[-1] != "v":
-                continue
-            traces_name.append(resp_name)
-
-        else:
-
-            if resp_name == "bpo_threshold_current":
-                threshold = response
-            elif resp_name == "bpo_holding_current":
-                holding = response
-            elif resp_name == "bpo_rmp":
-                rmp = response
-            elif resp_name == "bpo_rin":
-                rin = response
+    if not traces_names:
+        return None, None
 
     fig, axs = plt.subplots(
-        len(traces_name), 1, figsize=(10, 2 + (1.6 * len(traces_name))), squeeze=False
+        len(traces_names), 1, figsize=(10, 2 + (1.6 * len(traces_names))), squeeze=False
     )
 
     axs_c = []
-    for idx, t in enumerate(sorted(traces_name)):
+    for idx, t in enumerate(sorted(traces_names)):
 
         axs[idx, 0].set_title(t)
 
         if responses[t]:
 
+            ylabel = get_traces_ylabel(var=t.split(".")[-1])
+
             # Plot responses (voltage, current, etc.)
             axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
-            axs[idx, 0].set_ylabel("Voltage (mV)")
+            axs[idx, 0].set_ylabel(ylabel)
 
             # Plot current
             basename = t.split(".")[0]
@@ -168,22 +218,15 @@ def traces(model, responses, stimuli={}, figures_dir="./figures", write_fig=True
                     time, current = stimuli[basename].stimulus.generate()
                     axs_c[-1].plot(time, current, color="gray", alpha=0.6)
 
-                    max_current = numpy.max(current)
-                    min_current = numpy.min(current)
-
-                    if (
-                        numpy.isnan(max_current)
-                        or numpy.isinf(max_current)
-                        or numpy.isnan(min_current)
-                        or numpy.isinf(min_current)
-                    ):
-                        continue
-
-                    axs_c[-1].set_ylim(min_current - 0.2, max_current + 0.2)
+                    min_lim = numpy.min(current) - 0.2
+                    max_lim = numpy.max(current) + 0.2
+                    if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
+                        axs_c[-1].set_ylim(min_lim, max_lim)
 
         idx += 1
 
     title = str(model.emodel_metadata.emodel)
+    title += f"\n iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
 
     if threshold:
         title += "\n Threshold current = {:.4f} nA".format(threshold)
@@ -355,7 +398,9 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
     axs[0, 0].set_xlim(0, 1 + len(ubounds))
     axs[0, 0].set_ylim(-1.05, 1.05)
 
-    axs[0, 0].set_title(models[0].emodel_metadata.as_string())
+    title = str(models[0].emodel_metadata.emodel)
+    title += f"; iteration = {models[0].emodel_metadata.iteration}"
+    axs[0, 0].set_title(title)
 
     fname = models[0].emodel_metadata.as_string() + "__parameters_distribution.pdf"
 
@@ -378,6 +423,7 @@ def plot_models(
     plot_currentscape=False,
     plot_if_curve=False,
     only_validated=False,
+    load_from_local=False,
 ):
     """Plot the traces, scores and parameter distributions for all the models
         matching the emodels name.
@@ -394,6 +440,8 @@ def plot_models(
         plot_currentscape (bool): True to plot the currentscapes
         plot_if_curve (bool): True to plot the current / frequency curve
         only_validated (bool): True to only plot validated models
+        load_from_local (bool): True to load responses from locally saved recordings.
+            Responses are automatically saved locally when plot_currentscape is True.
 
     Returns:
         emodels (list): list of emodels.
@@ -410,7 +458,12 @@ def plot_models(
 
     if plot_traces or plot_currentscape:
         emodels = compute_responses(
-            access_point, cell_evaluator, mapper, seeds, store_responses=plot_currentscape
+            access_point,
+            cell_evaluator,
+            mapper,
+            seeds,
+            store_responses=plot_currentscape,
+            load_from_local=load_from_local,
         )
     else:
         emodels = access_point.get_emodels([access_point.emodel_metadata.emodel])
@@ -456,7 +509,13 @@ def plot_models(
             scores(mo, figures_dir_scores)
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
-            traces(mo, mo.responses, stimuli, figures_dir_traces)
+            recording_names = {
+                recording["name"]
+                for prot in access_point.get_fitness_calculator_configuration().protocols
+                for recording in prot.recordings_from_config
+            }
+            traces(mo, mo.responses, recording_names, stimuli, figures_dir_traces)
+
         if plot_currentscape:
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf

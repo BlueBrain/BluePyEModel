@@ -12,6 +12,7 @@ from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.simulators import NrnSimulator
 
 from ..ecode import eCodes
+from ..tools.utils import are_same_protocol
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEMProtocol
 from .protocols import DynamicStepProtocol
@@ -186,8 +187,6 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
         else:
             stim_end = protocol.stim_end
 
-    recording_names = {"": f"{feature_config.protocol_name}.{feature_config.recording_name}"}
-
     efel_settings = {**global_efel_settings, **feature_config.efel_settings}
     double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, float)}
     int_settings = {k: v for k, v in efel_settings.items() if isinstance(v, int)}
@@ -196,7 +195,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     efeature = eFELFeatureBPEM(
         feature_config.name,
         efel_feature_name=feature_config.efel_feature_name,
-        recording_names=recording_names,
+        recording_names=feature_config.recording_name_for_instantiation,
         stim_start=stim_start,
         stim_end=stim_end,
         exp_mean=feature_config.mean,
@@ -212,7 +211,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     return efeature
 
 
-def define_RMP_protocol(efeatures):
+def define_RMP_protocol(efeatures, stimulus_duration=500.0):
     """Define the resting membrane potential protocol"""
 
     target_voltage = None
@@ -229,10 +228,15 @@ def define_RMP_protocol(efeatures):
             "Couldn't find the efeature 'steady_state_voltage_stimend' associated to the "
             "'RMPProtocol' in your FitnessCalculatorConfiguration. It might not have been "
             "extracted from the ephys data you have available or the name of the protocol to"
-            "use for RMP (setting 'name_rmp_protocol') might be wrong."
+            " use for RMP (setting 'name_rmp_protocol') might be wrong."
         )
 
-    rmp_protocol = RMPProtocol(name="RMPProtocol", location=soma_loc, target_voltage=target_voltage)
+    rmp_protocol = RMPProtocol(
+        name="RMPProtocol",
+        location=soma_loc,
+        target_voltage=target_voltage,
+        stimulus_duration=stimulus_duration,
+    )
 
     for f in efeatures:
         if (
@@ -246,7 +250,14 @@ def define_RMP_protocol(efeatures):
     return rmp_protocol
 
 
-def define_Rin_protocol(efeatures, ais_recording=False):
+def define_Rin_protocol(
+    efeatures,
+    ais_recording=False,
+    amp=-0.02,
+    stimulus_delay=500.0,
+    stimulus_duration=500.0,
+    totduration=1000.0,
+):
     """Define the input resistance protocol"""
 
     target_rin = None
@@ -268,7 +279,15 @@ def define_Rin_protocol(efeatures, ais_recording=False):
 
     location = soma_loc if not ais_recording else ais_loc
 
-    return RinProtocol(name="RinProtocol", location=location, target_rin=target_rin)
+    return RinProtocol(
+        name="RinProtocol",
+        location=location,
+        target_rin=target_rin,
+        amp=amp,
+        stimulus_delay=stimulus_delay,
+        stimulus_duration=stimulus_duration,
+        totduration=totduration,
+    )
 
 
 def define_current_for_voltage_protocol(
@@ -309,7 +328,15 @@ def define_current_for_voltage_protocol(
     )
 
 
-def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
+def define_threshold_protocol(
+    efeatures,
+    max_threshold_voltage=-30,
+    step_delay=500.0,
+    step_duration=2000.0,
+    totduration=3000.0,
+    spikecount_timeout=50,
+    max_depth=10,
+):
     """Define the search threshold current protocol"""
 
     target_current = []
@@ -326,6 +353,11 @@ def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
             location=soma_loc,
             target_threshold=target_current[0],
             max_threshold_voltage=max_threshold_voltage,
+            stimulus_delay=step_delay,
+            stimulus_duration=step_duration,
+            stimulus_totduration=totduration,
+            spikecount_timeout=spikecount_timeout,
+            max_depth=max_depth,
         )
 
     raise Exception(
@@ -337,30 +369,14 @@ def define_threshold_protocol(efeatures, max_threshold_voltage=-30):
     )
 
 
-def define_protocols_and_features(
+def define_protocols(
     fitness_calculator_configuration,
     include_validation_protocols,
     stochasticity,
-    efel_settings,
     use_fixed_dt_recordings,
 ):
-    """
-    Args:
-        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
-            fitness calculator.
-        include_validation_protocols (bool): should the validation protocols
-            and validation efeatures be added to the evaluator.
-        stochasticity (bool): Should the stochastic channels be stochastic or
-            deterministic
-        ais_recording (bool): if True all the soma recording will be at the first axonal section.
-        efel_settings (dict): eFEl settings.
-        threshold_efeature_std (float): if informed, compute the std as
-            threshold_efeature_std * mean if std is < threshold_efeature_std * min.
-        strict_holding_bounds (bool): to adaptively enlarge bounds is holding current is outside
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
-    """
+    """Instantiate several efeatures"""
 
-    # Create the threshold and non-threshold protocols
     protocols = {}
     for protocols_def in fitness_calculator_configuration.protocols:
         if not include_validation_protocols and protocols_def.validation:
@@ -369,12 +385,22 @@ def define_protocols_and_features(
             protocols_def, stochasticity, use_fixed_dt_recordings
         )
 
-    # Create the efeatures
+    return protocols
+
+
+def define_efeatures(
+    fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+):
+    """Instantiate several Protocols"""
+
     efeatures = []
     validation_prot = fitness_calculator_configuration.validation_protocols
+
     for feature_def in fitness_calculator_configuration.efeatures:
 
-        if not include_validation_protocols and feature_def.protocol_name in validation_prot:
+        if not include_validation_protocols and any(
+            are_same_protocol(feature_def.protocol_name, p) for p in validation_prot
+        ):
             continue
 
         protocol = None
@@ -387,45 +413,136 @@ def define_protocols_and_features(
 
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
-    return protocols, efeatures
+    return efeatures
 
 
-def define_protocol_runner(
-    protocols,
-    features,
-    ais_recording=False,
-    max_threshold_voltage=-30,
-    strict_holding_bounds=True,
+def define_optimisation_protocol(
+    fitness_calculator_configuration,
+    include_validation_protocols=False,
+    stochasticity=True,
+    efel_settings=None,
+    use_fixed_dt_recordings=False,
 ):
-    """Create a meta protocol in charge of running the other protocols. The amplitude of the
-    "threshold_protocols" depend on the computation of the current threshold.
+    """Create a meta protocol in charge of running the other protocols.
+
+    Args:
+        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
+            fitness calculator.
+        include_validation_protocols (bool): should the validation protocols
+            and validation efeatures be added to the evaluator.
+        stochasticity (bool): Should the stochastic channels be stochastic or
+            deterministic
+        efel_settings (dict): eFEl settings.
+        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
     """
 
+    protocols = define_protocols(
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        stochasticity,
+        use_fixed_dt_recordings,
+    )
+
+    efeatures = define_efeatures(
+        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+    )
+
+    protocol_runner = ProtocolRunner(protocols)
+
+    return protocol_runner, efeatures
+
+
+def define_threshold_based_optimisation_protocol(
+    fitness_calculator_configuration,
+    include_validation_protocols=False,
+    stochasticity=True,
+    ais_recording=False,
+    efel_settings=None,
+    max_threshold_voltage=-30,
+    strict_holding_bounds=True,
+    use_fixed_dt_recordings=False,
+    max_depth_holding_search=7,
+    max_depth_threshold_search=10,
+    spikecount_timeout=50,
+):
+    """Create a meta protocol in charge of running the other protocols.
+
+    The amplitude of the "threshold_protocols" depend on the computation of
+    the current threshold.
+
+    Args:
+        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
+            fitness calculator.
+        include_validation_protocols (bool): should the validation protocols
+            and validation efeatures be added to the evaluator.
+        stochasticity (bool): Should the stochastic channels be stochastic or
+            deterministic
+        ais_recording (bool): if True all the soma recording will be at the first axonal section.
+        efel_settings (dict): eFEl settings.
+        max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
+            will search for the rheobase.
+        strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
+            when set to False
+        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+        max_depth_holding_search (int): maximum depth for the binary search for the
+            holding current
+        max_depth_threshold_search (int): maximum depth for the binary search for the
+            threshold current
+        spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
+            we set spikecount=2 as if many spikes were present, to speed up bisection search.
+    """
+
+    protocols = define_protocols(
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        stochasticity,
+        use_fixed_dt_recordings,
+    )
+
+    efeatures = define_efeatures(
+        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+    )
+
     # Create the special protocols
-    if any(isinstance(p, ThresholdBasedProtocol) for p in protocols.values()):
-        protocols.update(
-            {
-                "RMPProtocol": define_RMP_protocol(features),
-                "SearchHoldingCurrent": define_current_for_voltage_protocol(
-                    features,
-                    protocol_name="SearchHoldingCurrent",
-                    target_current_name="bpo_holding_current",
-                    strict_bounds=strict_holding_bounds,
-                    no_spikes=False,
-                ),
-                "RinProtocol": define_Rin_protocol(features, ais_recording),
-                "SearchThresholdCurrent": define_threshold_protocol(
-                    features, max_threshold_voltage
-                ),
-            }
-        )
+    protocols.update(
+        {
+            "RMPProtocol": define_RMP_protocol(
+                efeatures, stimulus_duration=fitness_calculator_configuration.rmp_duration
+            ),
+            "SearchHoldingCurrent": define_current_for_voltage_protocol(
+                efeatures,
+                protocol_name="SearchHoldingCurrent",
+                target_current_name="bpo_holding_current",
+                strict_bounds=strict_holding_bounds,
+                no_spikes=False,
+            )
+            ,
+            "RinProtocol": define_Rin_protocol(
+                efeatures,
+                ais_recording,
+                amp=fitness_calculator_configuration.rin_step_amp,
+                stimulus_delay=fitness_calculator_configuration.rin_step_delay,
+                stimulus_duration=fitness_calculator_configuration.rin_step_duration,
+                totduration=fitness_calculator_configuration.rin_totduration,
+            ),
+            "SearchThresholdCurrent": define_threshold_protocol(
+                efeatures,
+                max_threshold_voltage,
+                fitness_calculator_configuration.search_threshold_step_delay,
+                fitness_calculator_configuration.search_threshold_step_duration,
+                fitness_calculator_configuration.search_threshold_totduration,
+                spikecount_timeout,
+                max_depth_threshold_search,
+            ),
+        }
+    )
 
     if any(isinstance(p, DynamicStepProtocol) for p in protocols.values()):
 
         for suffix in ["_noburst", "_burst"]:
             hold_protocol_name = f"TRNSearchHolding{suffix}"
             protocols[hold_protocol_name] = define_current_for_voltage_protocol(
-                features,
+                efeatures,
                 protocol_name=hold_protocol_name,
                 target_current_name=f"TRNSearchHolding_current{suffix}",
                 strict_bounds=strict_holding_bounds,
@@ -436,7 +553,7 @@ def define_protocol_runner(
 
         step_protocol_name = "TRNSearchCurrentStep"
         protocols[step_protocol_name] = define_current_for_voltage_protocol(
-            features,
+            efeatures,
             protocol_name=step_protocol_name,
             target_current_name="TRNSearchCurrentStep_current",
             strict_bounds=strict_holding_bounds,
@@ -448,7 +565,7 @@ def define_protocol_runner(
     # Create the protocol runner
     protocol_runner = ProtocolRunner(protocols)
 
-    return protocol_runner
+    return protocol_runner, efeatures
 
 
 def define_fitness_calculator(features):
@@ -542,30 +659,40 @@ def create_evaluator(
     simulator = get_simulator(
         stochasticity=stochasticity,
         cell_model=cell_model,
+        dt=pipeline_settings.neuron_dt,
         mechanisms_directory=mechanisms_directory,
         cvode_minstep=pipeline_settings.cvode_minstep,
     )
 
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
-    protocols, features = define_protocols_and_features(
-        fitness_calculator_configuration,
-        include_validation_protocols,
-        stochasticity=stochasticity,
-        efel_settings=pipeline_settings.efel_settings,
-        use_fixed_dt_recordings=use_fixed_dt_recordings,
-    )
-
-    protocol_runner = define_protocol_runner(
-        protocols,
-        features,
-        ais_recording=False,
-        max_threshold_voltage=pipeline_settings.max_threshold_voltage,
-        strict_holding_bounds=pipeline_settings.strict_holding_bounds,
-    )
+    if any(
+        p.protocol_type == "ThresholdBasedProtocol"
+        for p in fitness_calculator_configuration.protocols
+    ):
+        main_protocol, features = define_threshold_based_optimisation_protocol(
+            fitness_calculator_configuration,
+            include_validation_protocols,
+            stochasticity=stochasticity,
+            efel_settings=pipeline_settings.efel_settings,
+            max_threshold_voltage=pipeline_settings.max_threshold_voltage,
+            strict_holding_bounds=pipeline_settings.strict_holding_bounds,
+            use_fixed_dt_recordings=use_fixed_dt_recordings,
+            max_depth_holding_search=pipeline_settings.max_depth_holding_search,
+            max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
+            spikecount_timeout=pipeline_settings.spikecount_timeout,
+        )
+    else:
+        main_protocol, features = define_optimisation_protocol(
+            fitness_calculator_configuration,
+            include_validation_protocols,
+            stochasticity=stochasticity,
+            efel_settings=pipeline_settings.efel_settings,
+            use_fixed_dt_recordings=use_fixed_dt_recordings,
+        )
 
     fitness_calculator = define_fitness_calculator(features)
-    fitness_protocols = {"main_protocol": protocol_runner}
+    fitness_protocols = {"main_protocol": main_protocol}
 
     param_names = [param.name for param in cell_model.params.values() if not param.frozen]
 

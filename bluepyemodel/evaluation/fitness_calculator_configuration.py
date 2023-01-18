@@ -7,6 +7,7 @@ from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import seclist_to_sec
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
+from bluepyemodel.tools.utils import are_same_protocol
 
 logger = logging.getLogger(__name__)
 
@@ -68,13 +69,14 @@ class FitnessCalculatorConfiguration:
         name_TRN_burst_protocol=None,
         name_TRN_noburst_protocol=None,
         threshold_efeature_std=None,
+        default_std_value=1e-3,
         validation_protocols=None,
         stochasticity=False,
         ion_variables=None,
     ):
         """Init.
 
-        The arguments efeatures and protocols are expected to be in the format ued for the
+        The arguments efeatures and protocols are expected to be in the format used for the
         storage of the fitness calculator configuration. To store the results of an extraction,
         use the method init_from_bluepyefe.
 
@@ -91,12 +93,16 @@ class FitnessCalculatorConfiguration:
                     {"name": str, "stimuli": list of dict, "recordings": list of dict,
                     "validation": bool}
                 ]
-            name_rmp_protocol (str): name of protocol whose features are to be used as targets for
-                the search of the RMP.
-            name_rin_protocol (str): name of protocol whose features are to be used as targets for
-                the search of the Rin.
+            name_rmp_protocol (str or list): name and amplitude of protocol
+                whose features are to be used as targets for the search of the RMP.
+                e.g: ["IV", 0] or "IV_0"
+            name_rin_protocol (str or list): name and amplitude of protocol
+                whose features are to be used as targets for the search of the Rin.
+                e.g: ["IV", -20] or "IV_-20"
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional). Legacy.
+             default_std_value (float): during and after extraction, this value will be used
+                to replace the standard deviation if the standard deviation is 0.
             validation_protocols (list of str): name of the protocols used for validation only.
             stochasticity (bool or list of str): should channels behave stochastically if they can.
                 If a list of protocol names is provided, the runs will be stochastic
@@ -105,6 +111,15 @@ class FitnessCalculatorConfiguration:
                 for all available mechanisms
         """
 
+        self.rmp_duration = 500.0
+        self.rin_step_delay = 500.0
+        self.rin_step_duration = 500.0
+        self.rin_step_amp = -0.02
+        self.rin_totduration = 1000.0
+        self.search_holding_duration = 500.0
+        self.search_threshold_step_delay = 500.0
+        self.search_threshold_step_duration = 2000.0
+        self.search_threshold_totduration = 3000.0
         self.ion_variables = ion_variables
 
         if protocols is None:
@@ -119,12 +134,14 @@ class FitnessCalculatorConfiguration:
             for f in efeatures:
                 f_dict = deepcopy(f)
                 f_dict.pop("threshold_efeature_std", None)
+                f_dict.pop("default_std_value", None)
                 self.efeatures.append(
                     EFeatureConfiguration(
                         **f_dict,
                         threshold_efeature_std=f.get(
                             "threshold_efeature_std", threshold_efeature_std
                         ),
+                        default_std_value=f.get("default_std_value", default_std_value),
                     )
                 )
 
@@ -165,20 +182,21 @@ class FitnessCalculatorConfiguration:
         stimulus = deepcopy(protocol["step"])
         stimulus["holding_current"] = protocol["holding"]["amp"]
 
-        validation = protocol_name in self.validation_protocols
+        validation = any(are_same_protocol(protocol_name, p) for p in self.validation_protocols)
         stochasticity = self.check_stochasticity(protocol_name)
 
+        protocol_type = "Protocol"
         if (self.name_TRN_burst_protocol and self.name_TRN_burst_protocol in protocol_name) or (
             self.name_TRN_noburst_protocol and self.name_TRN_noburst_protocol in protocol_name
         ):
             protocol_type = "DynamicStepProtocol"
-        else:
+        elif self.name_rmp_protocol and self.name_rin_protocol:
             protocol_type = "ThresholdBasedProtocol"
 
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
-            recordings=recordings,
+            recordings_from_config=recordings,
             validation=validation,
             ion_variables=self.ion_variables,
             stochasticity=stochasticity,
@@ -201,16 +219,23 @@ class FitnessCalculatorConfiguration:
             efeature_name=feature.get("efeature_name", None),
             efel_settings=feature.get("efel_settings", {}),
             threshold_efeature_std=threshold_efeature_std,
+            sample_size=feature.get("n", None),
         )
 
-        if protocol_name == self.name_rmp_protocol and feature["feature"] == "voltage_base":
+        if (
+            are_same_protocol(self.name_rmp_protocol, protocol_name)
+            and feature["feature"] == "voltage_base"
+        ):
             tmp_feature.protocol_name = "RMPProtocol"
             tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
-        if protocol_name == self.name_rin_protocol and feature["feature"] == "voltage_base":
+        if (
+            are_same_protocol(self.name_rin_protocol, protocol_name)
+            and feature["feature"] == "voltage_base"
+        ):
             tmp_feature.protocol_name = "SearchHoldingCurrent"
             tmp_feature.efel_feature_name = "steady_state_voltage_stimend"
         if (
-            protocol_name == self.name_rin_protocol
+            are_same_protocol(self.name_rin_protocol, protocol_name)
             and feature["feature"] == "ohmic_input_resistance_vb_ssse"
         ):
             tmp_feature.protocol_name = "RinProtocol"
@@ -242,16 +267,16 @@ class FitnessCalculatorConfiguration:
     def init_from_bluepyefe(self, efeatures, protocols, currents, threshold_efeature_std):
         """Fill the configuration using the output of BluePyEfe"""
 
-        if (
-            self.name_rmp_protocol
-            and self.name_rmp_protocol not in efeatures
-            and self.name_rmp_protocol != "all"
+        if self.name_rmp_protocol and not any(
+            are_same_protocol(self.name_rmp_protocol, p) for p in efeatures
         ):
             raise Exception(
                 f"The stimulus {self.name_rmp_protocol} requested for RMP "
                 "computation couldn't be extracted from the ephys data."
             )
-        if self.name_rin_protocol and self.name_rin_protocol not in efeatures:
+        if self.name_rin_protocol and not any(
+            are_same_protocol(self.name_rin_protocol, p) for p in efeatures
+        ):
             raise Exception(
                 f"The stimulus {self.name_rin_protocol} requested for Rin "
                 "computation couldn't be extracted from the ephys data."
@@ -271,7 +296,7 @@ class FitnessCalculatorConfiguration:
                     )
 
         # Add the current related features
-        if currents:
+        if currents and self.name_rmp_protocol and self.name_rin_protocol:
             self.efeatures.append(
                 EFeatureConfiguration(
                     efel_feature_name="bpo_holding_current",
@@ -322,7 +347,7 @@ class FitnessCalculatorConfiguration:
         else:
             stimulus["holding_current"] = None
 
-        validation = protocol_name in self.validation_protocols
+        validation = any(are_same_protocol(protocol_name, p) for p in self.validation_protocols)
         stochasticity = self.check_stochasticity(protocol_name)
 
         protocol_type = "Protocol"
@@ -332,7 +357,7 @@ class FitnessCalculatorConfiguration:
         tmp_protocol = ProtocolConfiguration(
             name=protocol_name,
             stimuli=[stimulus],
-            recordings=recordings,
+            recordings_from_config=recordings,
             validation=validation,
             ion_variables=self.ion_variables,
             protocol_type=protocol_type,
@@ -396,7 +421,7 @@ class FitnessCalculatorConfiguration:
 
         if (
             self.name_rmp_protocol
-            and self.name_rmp_protocol not in efeatures
+            and not any(are_same_protocol(self.name_rmp_protocol, p) for p in efeatures)
             and "RMP" not in efeatures
         ):
             raise Exception(
@@ -406,7 +431,7 @@ class FitnessCalculatorConfiguration:
 
         if (
             self.name_rin_protocol
-            and self.name_rin_protocol not in efeatures
+            and not any(are_same_protocol(self.name_rin_protocol, p) for p in efeatures)
             and "Rin" not in efeatures
         ):
             raise Exception(
@@ -415,6 +440,24 @@ class FitnessCalculatorConfiguration:
             )
 
         for protocol_name, protocol in protocols.items():
+
+            if protocol_name == "RMP":
+                self.rmp_duration = protocol["stimuli"]["step"]["duration"]
+            if protocol_name == "Rin":
+                self.rin_step_delay = protocol["stimuli"]["step"]["delay"]
+                self.rin_step_duration = protocol["stimuli"]["step"]["duration"]
+                self.rin_step_amp = protocol["stimuli"]["step"]["amp"]
+                self.rin_totduration = protocol["stimuli"]["step"]["totduration"]
+            if protocol_name == "ThresholdDetection":
+                self.search_threshold_step_delay = protocol["step_template"]["stimuli"]["step"][
+                    "delay"
+                ]
+                self.search_threshold_step_duration = protocol["step_template"]["stimuli"]["step"][
+                    "duration"
+                ]
+                self.search_threshold_totduration = protocol["step_template"]["stimuli"]["step"][
+                    "totduration"
+                ]
 
             if protocol_name in PRE_PROTOCOLS + LEGACY_PRE_PROTOCOLS:
                 continue
@@ -477,15 +520,16 @@ class FitnessCalculatorConfiguration:
         to_remove = []
         efeatures = []
         for i, efeature in enumerate(self.efeatures):
-            loc_name, rec_name = efeature.recording_name.split(".")
-            if loc_name[-1] == "*":
-                to_remove.append(i)
-                protocol = next(p for p in self.protocols if p.name == efeature.protocol_name)
-                for rec in protocol.recordings:
-                    base_rec_name = rec["name"].split(".")[1]
-                    if base_rec_name.startswith(loc_name[:-1]):
-                        efeatures.append(deepcopy(efeature))
-                        efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
+            if isinstance(efeature.recording_name, str):
+                loc_name, rec_name = efeature.recording_name.split(".")
+                if loc_name[-1] == "*":
+                    to_remove.append(i)
+                    protocol = next(p for p in self.protocols if p.name == efeature.protocol_name)
+                    for rec in protocol.recordings:
+                        base_rec_name = rec["name"].split(".")[1]
+                        if base_rec_name.startswith(loc_name[:-1]):
+                            efeatures.append(deepcopy(efeature))
+                            efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
 
         self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove] + efeatures
 

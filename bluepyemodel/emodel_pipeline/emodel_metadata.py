@@ -14,17 +14,23 @@ class EModelMetadata:
         species=None,
         brain_region=None,
         iteration_tag=None,
-        morph_class=None,
         synapse_class=None,
-        layer=None,
     ):
+        """Constructor
+
+        Args:
+            emodel (str): name of the emodel
+            etype (str): name of the electric type.
+            ttype (str): name of the transcriptomic type.
+            mtype (str): name of the morphology type.
+            species (str): name of the species.
+            brain_region (str): name of the brain location.
+            iteration_tag (str): tag associated to the current run.
+            synapse_class (str): synapse class (neurotransmitter).
+        """
 
         if emodel is None and etype is None:
-            raise Exception("At least emodel or etype should be informed")
-        if morph_class not in ["PYR", "INT", None]:
-            raise Exception("morph_class should be 'PYR' or 'INT'")
-        if synapse_class not in ["EXC", "INH", None]:
-            raise Exception("synapse_class should be 'EXC' or 'INH'")
+            raise ValueError("At least emodel or etype should be informed")
 
         self.emodel = emodel
         self.etype = None if etype == "None" else etype
@@ -33,9 +39,7 @@ class EModelMetadata:
         self.species = None if species == "None" else species
         self.brain_region = None if brain_region == "None" else brain_region
         self.iteration = None if iteration_tag == "None" else iteration_tag
-        self.morph_class = morph_class
-        self.synapse_class = synapse_class
-        self.layer = layer
+        self.synapse_class = None if synapse_class == "None" else synapse_class
 
     def etype_annotation_dict(self):
         """Returns an etype annotation dict to be added to annotations list."""
@@ -103,8 +107,8 @@ class EModelMetadata:
 
         return annotation_list
 
-    def filters_for_resource(self):
-        """Metadata used for filtering, without the annotation list"""
+    def get_metadata_dict(self):
+        """Metadata as a dict, with keys consistent with nexus."""
 
         metadata = {}
 
@@ -120,13 +124,17 @@ class EModelMetadata:
 
         return metadata
 
+    def filters_for_resource(self):
+        """Metadata used for filtering, without the annotation list"""
+        return self.get_metadata_dict()
+
     def for_resource(self):
         """Metadata to add to a resource to register.
 
         DO NOT use for filtering. For filtering, use self.filters_for_resource() instead.
         """
 
-        metadata = self.filters_for_resource()
+        metadata = self.get_metadata_dict()
 
         metadata["annotation"] = self.annotation_list()
 

@@ -5,6 +5,7 @@ from bluepyemodel.model.distribution_configuration import DistributionConfigurat
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 from bluepyemodel.model.parameter_configuration import ParameterConfiguration
+from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,7 @@ multiloc_map = {
     "all": ["apical", "basal", "somatic", "axonal"],
     "alldend": ["apical", "basal"],
     "somadend": ["apical", "basal", "somatic"],
+    "allnoaxon": ["apical", "basal", "somatic"],
     "somaxon": ["axonal", "somatic"],
     "allact": ["apical", "basal", "somatic", "axonal"],
 }
@@ -263,7 +265,7 @@ class NeuronModelConfiguration:
                 will be instantiated.
             value (float or list of two floats): if float, set the value of the parameter. If list
                 of two floats, sets the upper and lower bound between which the parameter will
-                be optimized.
+                be optimised.
             mechanism (name): name of the mechanism to which the parameter relates (optional).
             distribution_name (str): name of the distribution followed by the parameter.
                 Distributions have to be added before adding the parameters that uses them.
@@ -289,9 +291,6 @@ class NeuronModelConfiguration:
                 f"No distribution of name {distribution_name} in the configuration."
                 " Please register your distributions first."
             )
-
-        if distribution_name != "uniform" and parameter_name[0] != "g":
-            raise Exception("Only channel density parameters can be linked to a distribution")
 
         for loc in locations:
 
@@ -352,7 +351,7 @@ class NeuronModelConfiguration:
 
         locations = self._format_locations(locations)
 
-        if mechanism_name not in ["pas", "hh"] and not self.is_mechanism_available(
+        if mechanism_name not in NEURON_BUILTIN_MECHANISMS and not self.is_mechanism_available(
             mechanism_name, version
         ):
             raise Exception(
@@ -361,7 +360,7 @@ class NeuronModelConfiguration:
             )
 
         for loc in locations:
-            if self.available_mechanisms and mechanism_name not in ["pas", "hh"]:
+            if self.available_mechanisms and mechanism_name not in NEURON_BUILTIN_MECHANISMS:
                 mechanism_parameters = next(
                     m.parameters for m in self.available_mechanisms if m.name == mechanism_name
                 )
@@ -415,9 +414,6 @@ class NeuronModelConfiguration:
         if not location:
             raise Exception("Cannot set a parameter's distribution without specifying a location.")
         locations = self._format_locations(location)
-
-        if distribution_name != "uniform" and parameter_name[0] != "g":
-            raise Exception("Only channel density parameters can be linked to a distribution")
 
         for loc in locations:
             for p in self.parameters:

@@ -15,7 +15,6 @@ cd softwares
 ../$VENV/bin/pip install wheel
 ../$VENV/bin/pip install --ignore-installed --no-deps luigi
 
-../$VENV/bin/pip install -i https://bbpteam.epfl.ch/repository/devpi/simple/ bluepy[all]
 ../$VENV/bin/pip install -i https://bbpteam.epfl.ch/repository/devpi/simple entity-management
 ../$VENV/bin/pip install -i https://bbpteam.epfl.ch/repository/devpi/simple bbp-workflow
 ../$VENV/bin/pip install -i https://bbpteam.epfl.ch/repository/devpi/simple bbp-workflow-cli
@@ -23,7 +22,7 @@ cd softwares
 ../$VENV/bin/pip install nexusforge
 
 git clone https://bbpgitlab.epfl.ch/cells/bluepyemodel.git
-../$VENV/bin/pip install -e ./bluepyemodel[cma,luigi,nexus]
+../$VENV/bin/pip install -e ./bluepyemodel[luigi,nexus]
 
 cd ..
 

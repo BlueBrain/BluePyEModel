@@ -27,6 +27,7 @@ def multi_locations(section_name, additional_multiloc_map):
     multiloc_map = {
         "alldend": ["apical", "basal"],
         "somadend": ["apical", "basal", "somatic"],
+        "allnoaxon": ["apical", "basal", "somatic"],
         "somaxon": ["axonal", "somatic"],
         "allact": ["apical", "basal", "somatic", "axonal"],
     }
@@ -273,7 +274,7 @@ def create_cell_model(
     )
 
     return ephys.models.CellModel(
-        name=name.replace(":", "_"),
+        name=name.replace(":", "_").replace("-", "_"),
         morph=morph,
         mechs=mechanisms,
         params=parameters,

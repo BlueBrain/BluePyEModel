@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy
 from bluepyopt.ephys.responses import TimeVoltageResponse
 
+from bluepyemodel.access_point import get_access_point
 from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.model import model
@@ -33,7 +34,6 @@ def locally_store_responses(emodel):
     output_dir = f"./recordings/{emodel.emodel_metadata.as_string(emodel.seed)}"
     make_dir(output_dir)
     for key, resp in emodel.responses.items():
-        logger.debug(key)
         if not any(fl_key in key for fl_key in float_response_keys):
             output_path = Path(output_dir) / ".".join((key, "dat"))
 
@@ -42,7 +42,6 @@ def locally_store_responses(emodel):
                 data = numpy.array(resp["voltage"])  # even current will be named voltage here
 
                 numpy.savetxt(output_path, numpy.transpose(numpy.vstack((time, data))))
-                logger.debug(f"{key} stored")
 
 
 def check_local_responses_presence(emodels, cell_eval):
@@ -124,6 +123,7 @@ def compute_responses(
     seeds=None,
     preselect_for_validation=False,
     store_responses=False,
+    load_from_local=False,
 ):
     """Compute the responses of the emodel to the optimisation and validation protocols.
 
@@ -138,6 +138,7 @@ def compute_responses(
         preselect_for_validation (bool): if True,
             only select models that have not been through validation yet.
         store_responses (bool): whether to locally store the responses.
+        load_from_local (bool): True to load responses from locally saved recordings.
     Returns:
         emodels (list): list of emodels.
     """
@@ -168,7 +169,7 @@ def compute_responses(
                 }
             )
 
-        if check_local_responses_presence(emodels, cell_evaluator):
+        if load_from_local and check_local_responses_presence(emodels, cell_evaluator):
             logger.info(
                 "Local responses file found. Loading them from files instead of recomputing them"
             )
@@ -190,9 +191,33 @@ def compute_responses(
     return emodels
 
 
+def fill_initial_parameters(evaluator, initial_parameters):
+    """Freezes the parameters of the evaluator that are present in the informed parameter set."""
+    # pylint: disable=protected-access
+    replaced = []
+
+    for p in evaluator.cell_model.params:
+        if (
+            p in initial_parameters
+            and evaluator.cell_model.params[p].bounds is None
+            and evaluator.cell_model.params[p]._value is None
+        ):
+            logger.info(
+                "Parameter %s is set to its value from previous emodel: %s",
+                evaluator.cell_model.params[p].name,
+                initial_parameters[p],
+            )
+            evaluator.cell_model.params[p]._value = initial_parameters[p]
+            evaluator.cell_model.params[p].frozen = True
+            replaced.append(evaluator.cell_model.params[p].name)
+
+    evaluator.params = [p for p in evaluator.params if p.name not in replaced]
+    evaluator.param_names = [pn for pn in evaluator.param_names if pn not in replaced]
+
+
 def get_evaluator_from_access_point(
     access_point,
-    stochasticity=False,
+    stochasticity=None,
     include_validation_protocols=False,
     timeout=None,
     use_fixed_dt_recordings=False,
@@ -238,7 +263,7 @@ def get_evaluator_from_access_point(
     else:
         mechanisms_directory = access_point.get_mechanisms_directory()
 
-    return create_evaluator(
+    evaluator = create_evaluator(
         cell_model=cell_model,
         fitness_calculator_configuration=fitness_calculator_configuration,
         pipeline_settings=access_point.pipeline_settings,
@@ -248,3 +273,35 @@ def get_evaluator_from_access_point(
         mechanisms_directory=mechanisms_directory,
         use_fixed_dt_recordings=use_fixed_dt_recordings,
     )
+
+    start_from_emodel = access_point.pipeline_settings.start_from_emodel
+
+    if start_from_emodel is not None:
+
+        access_point_type = "local" if isinstance(access_point, LocalAccessPoint) else "nexus"
+
+        if access_point_type == "local":
+            kwargs = {
+                "emodel_dir": access_point.emodel_dir,
+                "final_path": access_point.final_path,
+                "recipes_path": access_point.recipes_path,
+            }
+        else:
+            raise Exception("start_from_emodel not implemented for Nexus access point")
+
+        starting_access_point = get_access_point(
+            access_point=access_point_type, **start_from_emodel, **kwargs
+        )
+
+        emodels = starting_access_point.get_emodels()
+        if not emodels:
+            raise Exception(
+                f"Cannot start optimisation of {access_point.emodel_metadata.emodel} because"
+                f" there are no emodels for {start_from_emodel}"
+            )
+
+        initial_parameters = sorted(emodels, key=lambda x: x.fitness)[0].parameters
+
+        fill_initial_parameters(evaluator, initial_parameters)
+
+    return evaluator

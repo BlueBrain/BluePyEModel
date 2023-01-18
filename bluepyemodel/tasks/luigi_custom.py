@@ -12,8 +12,8 @@ class WorkerCustom(luigi.worker.Worker):
     def handle_interrupt(self, signum, _):
         """
         Trigger event to gracefully exit.
-        Gracefully exit optimize deap loop, and allow to store models.
-        All other pending tasks (optimize, validation, emodelcreation) are skipped.
+        Gracefully exit optimise deap loop, and allow to store models.
+        All other pending tasks (optimise, validation, emodelcreation) are skipped.
         """
         if signum == signal.SIGUSR1:
             self._gracefully_exit()

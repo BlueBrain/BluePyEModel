@@ -49,6 +49,18 @@ class WorkflowTask(luigi.Task):
         """Get a mapper for parallel computations."""
         return get_mapper(self.backend)
 
+    @staticmethod
+    def check_mettypes(func):
+        """Decorator to check mtype, etype and ttype presence on nexus"""
+
+        def inner(self):
+            """Inner decorator function"""
+            if EmodelAPIConfig().api == "nexus":
+                self.access_point.check_mettypes()
+            func(self)
+
+        return inner
+
 
 class WorkflowTaskRequiringMechanisms(WorkflowTask):
     """Workflow task with data access point and download of missing mechanisms"""
