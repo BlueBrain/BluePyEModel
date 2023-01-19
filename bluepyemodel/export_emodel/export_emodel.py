@@ -6,7 +6,6 @@ import shutil
 
 import h5py
 
-from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
@@ -179,6 +178,8 @@ def export_emodels_nexus(
     seeds=None,
 ):
     """Transfer e-models from the LocalAccessPoint to a Nexus project"""
+
+    from bluepyemodel.access_point.nexus import NexusAccessPoint
 
     emodels = local_access_point.get_emodels()
     emodels = select_emodels(
