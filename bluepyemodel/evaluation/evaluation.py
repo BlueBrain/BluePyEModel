@@ -267,9 +267,12 @@ def get_evaluator_from_access_point(
 
     start_from_emodel = access_point.pipeline_settings.start_from_emodel
 
+
     if start_from_emodel is not None:
 
         access_point_type = "local" if isinstance(access_point, LocalAccessPoint) else "nexus"
+        
+        seed = start_from_emodel.pop("seed", None)
 
         if access_point_type == "local":
             kwargs = {
@@ -290,8 +293,16 @@ def get_evaluator_from_access_point(
                 f"Cannot start optimisation of {access_point.emodel_metadata.emodel} because"
                 f" there are no emodels for {start_from_emodel}"
             )
-
-        initial_parameters = sorted(emodels, key=lambda x: x.fitness)[0].parameters
+        
+        if seed is None:
+            initial_parameters = sorted(emodels, key=lambda x: x.fitness)[0].parameters
+        else:
+            initial_parameters = next((e.parameters for e in emodels if str(e.seed) == str(seed), None)
+            if initial_parameters is None:
+                raise Exception(
+                f"Cannot start optimisation of {access_point.emodel_metadata.emodel} because"
+                f" there are no emodels for {start_from_emodel}"
+            )
 
         fill_initial_parameters(evaluator, initial_parameters)
 
