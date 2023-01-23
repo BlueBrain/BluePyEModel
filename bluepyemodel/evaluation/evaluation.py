@@ -297,7 +297,7 @@ def get_evaluator_from_access_point(
         if seed is None:
             initial_parameters = sorted(emodels, key=lambda x: x.fitness)[0].parameters
         else:
-            initial_parameters = next((e.parameters for e in emodels if str(e.seed) == str(seed), None)
+            initial_parameters = next((e.parameters for e in emodels if str(e.seed) == str(seed)), None)
             if initial_parameters is None:
                 raise Exception(
                 f"Cannot start optimisation of {access_point.emodel_metadata.emodel} because"
