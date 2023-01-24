@@ -327,9 +327,9 @@ class RinProtocol(ProtocolWithDependencies):
         location,
         target_rin,
         amp=-0.02,
-        stimulus_delay=1000.,
-        stimulus_duration=1000.,
-        totduration=2000.,
+        stimulus_delay=1000.0,
+        stimulus_duration=1000.0,
+        totduration=2000.0,
     ):
         """Constructor"""
 

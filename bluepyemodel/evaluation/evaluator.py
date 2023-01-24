@@ -512,8 +512,7 @@ def define_threshold_based_optimisation_protocol(
                 target_current_name="bpo_holding_current",
                 strict_bounds=strict_holding_bounds,
                 no_spikes=False,
-            )
-            ,
+            ),
             "RinProtocol": define_Rin_protocol(
                 efeatures,
                 ais_recording,
