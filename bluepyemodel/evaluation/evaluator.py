@@ -461,7 +461,6 @@ def define_threshold_based_optimisation_protocol(
     max_threshold_voltage=-30,
     strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
-    max_depth_holding_search=7,
     max_depth_threshold_search=10,
     spikecount_timeout=50,
 ):
@@ -484,8 +483,6 @@ def define_threshold_based_optimisation_protocol(
         strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
             when set to False
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
-        max_depth_holding_search (int): maximum depth for the binary search for the
-            holding current
         max_depth_threshold_search (int): maximum depth for the binary search for the
             threshold current
         spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
@@ -678,7 +675,6 @@ def create_evaluator(
             max_threshold_voltage=pipeline_settings.max_threshold_voltage,
             strict_holding_bounds=pipeline_settings.strict_holding_bounds,
             use_fixed_dt_recordings=use_fixed_dt_recordings,
-            max_depth_holding_search=pipeline_settings.max_depth_holding_search,
             max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
             spikecount_timeout=pipeline_settings.spikecount_timeout,
         )
