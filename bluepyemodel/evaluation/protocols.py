@@ -386,10 +386,6 @@ class RinProtocol(ProtocolWithDependencies):
         bpo_rin = self.target_rin.calculate_feature(response)
         response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
 
-        # WARNING: HACK
-        if response["bpo_rin"] < 100.:
-            return {"bpo_rin": None}
-
         return response
 
 
