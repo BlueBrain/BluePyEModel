@@ -116,6 +116,7 @@ def extract_save_features_protocols(access_point, mapper=map):
         output_directory=output_directory,
         files_metadata=targets_configuration.files_metadata_BPE,
         targets=targets_configuration.targets_BPE,
+        absolute_amplitude=access_point.pipeline_settings.extract_absolute_amplitudes,
         threshold_nvalue_save=threshold_nvalue_save,
         protocols_rheobase=targets_configuration.protocols_rheobase,
         recording_reader=reader_function,
