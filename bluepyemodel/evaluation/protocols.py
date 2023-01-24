@@ -491,7 +491,10 @@ class SearchCurrentForVoltage(BPEMProtocol):
             if n_spikes is None or n_spikes > 0:
                 return None
 
-        return self.target_voltage.calculate_feature(response)[0]
+        voltage_base = self.target_voltage.calculate_feature(response)
+        if voltage_base is None:
+            return None
+        return voltage_base[0]
 
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
