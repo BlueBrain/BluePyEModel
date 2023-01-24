@@ -16,6 +16,7 @@ class EModelPipelineSettings:
         extraction_threshold_value_save=1,
         plot_extraction=True,
         pickle_cells_extraction=False,
+        extract_absolute_amplitudes=False,
         rheobase_strategy_extraction="absolute",
         rheobase_settings_extraction=None,
         default_std_value=1e-3,
@@ -64,6 +65,9 @@ class EModelPipelineSettings:
             plot_extraction (bool): should the efeatures and experimental traces be plotted.
             pickle_cells_extraction (bool): sould the cells object be saved as a pickle file for
                 further analysis during extraction.
+            extract_absolute_amplitudes (bool): if True, will use the absolute amplitudes
+                instead of the relative amplitudes of the recordings when checking
+                if a recording fit a given target.
             rheobase_strategy_extraction (str): function used to compute the rheobase during
                 extraction. Can be 'absolute' (amplitude of the lowest amplitude inducing at
                 least a spike) or 'majority' (amplitude of the bin in which a majority of
@@ -163,6 +167,7 @@ class EModelPipelineSettings:
         self.extraction_reader = extraction_reader
         self.extraction_threshold_value_save = extraction_threshold_value_save
         self.plot_extraction = plot_extraction
+        self.extract_absolute_amplitudes = extract_absolute_amplitudes
         self.pickle_cells_extraction = pickle_cells_extraction
         self.efel_settings = efel_settings  # Also used during optimisation
         if self.efel_settings is None:
