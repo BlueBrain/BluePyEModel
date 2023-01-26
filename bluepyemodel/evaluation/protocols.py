@@ -1,6 +1,7 @@
 """Module with protocol classes."""
 import logging
 from collections import OrderedDict
+import numpy as np
 
 from bluepyopt import ephys
 
@@ -382,8 +383,16 @@ class RinProtocol(ProtocolWithDependencies):
             timeout=timeout,
             responses=responses,
         )
-
-        bpo_rin = self.target_rin.calculate_feature(response)
+        t = response[self.recording_name]["time"]
+        sd = np.std(
+            response[self.recording_name]["voltage"][
+                (t > self.target_rin.stim_end - 100) & (t < self.target_rin.stim_end)
+            ]
+        )
+        if sd > 5:
+            bpo_rin = None
+        else:
+            bpo_rin = self.target_rin.calculate_feature(response)
         response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
 
         return response
@@ -422,13 +431,13 @@ class SearchCurrentForVoltage(BPEMProtocol):
             no_spikes (bool): if True, the holding current will only be considered valid if there
                 are no spikes at holding.
         """
-
+        stimulus_duration = 3000
         stimulus_definition = {
-            "delay": 0.0,
+            "delay": 500.0,
             "amp": 0.0,
             "thresh_perc": None,
             "duration": stimulus_duration,
-            "totduration": stimulus_duration,
+            "totduration": stimulus_duration + 500,
             "holding_current": 0.0,
         }
 
@@ -462,14 +471,15 @@ class SearchCurrentForVoltage(BPEMProtocol):
         self.no_spikes = no_spikes
         self.max_depth = max_depth
 
+        self.recording_name = f"{name}.{location.name}.v"
         self.spike_feature = ephys.efeatures.eFELFeature(
             name="SearchHoldingCurrent.Spikecount",
             efel_feature_name="Spikecount",
-            recording_names={"": f"SearchHoldingCurrent.{location.name}.v"},
+            recording_names={"": self.recording_name},
             stim_start=0.0,
             stim_end=stimulus_duration,
-            exp_mean=1,
-            exp_std=0.1,
+            exp_mean=0,
+            exp_std=0.001,
         )
 
     def get_voltage_base(
@@ -481,12 +491,32 @@ class SearchCurrentForVoltage(BPEMProtocol):
         response = BPEMProtocol.run(
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
-
+        self.no_spikes = True
         if self.no_spikes:
             n_spikes = self.spike_feature.calculate_feature(response)
-            if n_spikes is None or n_spikes > 0:
-                return None
+            t = response[self.recording_name]["time"]
+            sd = np.std(
+                response[self.recording_name]["voltage"][
+                    (t > self.target_voltage.stim_end - 100) & (t < self.target_voltage.stim_end)
+                ]
+            )
+            """
+            import matplotlib.pyplot as plt
 
+            #plt.figure()
+            plt.plot(
+                response[self.recording_name]["time"], response[self.recording_name]["voltage"]
+            )
+            plt.axhline(self.target_voltage.exp_mean, c='k')
+            plt.twinx()
+            plt.plot(*self.stimuli[0].generate(), "r")
+            #plt.savefig(f"vv_test_{holding_current}.pdf")
+            plt.savefig(f"vv_test.pdf")
+            plt.close()
+            """
+
+            if n_spikes is None or n_spikes > 0 or sd > 5:
+                return None
         voltage_base = self.target_voltage.calculate_feature(response)
         if voltage_base is None:
             return None
@@ -496,6 +526,12 @@ class SearchCurrentForVoltage(BPEMProtocol):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
+        self.strict_bounds = True
+        # I'm enforcing this here as it is not consistent in the params, last holding evaluation has
+        # smaller bounds
+        self.upper_bound = 2.0
+        self.lower_bound = -1.0
+        # print('running: ',self.target_voltage.exp_mean)
         if not self.strict_bounds:
             # first readjust the bounds if needed
             voltage_min = 1e10
@@ -541,6 +577,7 @@ class SearchCurrentForVoltage(BPEMProtocol):
                 if n_change >= 5:
                     break
 
+        # print(self.lower_bound, self.upper_bound)
         response = {
             self.target_current_name: self.bisection_search(
                 cell_model,
@@ -561,7 +598,7 @@ class SearchCurrentForVoltage(BPEMProtocol):
                 self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
             )
         )
-
+        # print(response)
         return response
 
     def bisection_search(
@@ -586,12 +623,15 @@ class SearchCurrentForVoltage(BPEMProtocol):
             timeout=timeout,
         )
         # if we don't converge fast enough, we stop and return lower bound, which will not spike
+        self.max_depth = 20
+        # print(depth,  voltage, abs(voltage - self.holding_voltage) , self.voltage_precision)
         if depth > self.max_depth:
             logging.debug(
                 "Exiting search due to reaching max_depth. The required voltage precision "
                 "was not reached."
             )
-            return lower_bound
+            print("max depth")
+            return None
 
         if voltage is not None and abs(voltage - self.holding_voltage) < self.voltage_precision:
             logger.debug("Depth of holding search: %s", depth)
@@ -702,7 +742,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.spike_feature = ephys.efeatures.eFELFeature(
             name=f"{name}.Spikecount",
             efel_feature_name="Spikecount",
-            recording_names={"": f"{name}.{location.name}.v"},
+            recording_names={"": self.recording_name},
             stim_start=stimulus_delay,
             stim_end=stimulus_delay + stimulus_duration,
             exp_mean=1,
@@ -808,6 +848,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         """Do bisection search to find threshold current."""
         mid_bound = (upper_bound + lower_bound) * 0.5
         spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
+
         if abs(lower_bound - upper_bound) < self.current_precision:
             logger.debug("Depth of threshold search: %s", depth)
             return upper_bound
