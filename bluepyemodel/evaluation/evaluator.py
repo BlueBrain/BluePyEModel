@@ -435,8 +435,6 @@ def define_protocols_and_features(
         strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
             when set to False
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
-        max_depth_holding_search (int): maximum depth for the binary search for the
-            holding current
         max_depth_threshold_search (int): maximum depth for the binary search for the
             threshold current
         spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,

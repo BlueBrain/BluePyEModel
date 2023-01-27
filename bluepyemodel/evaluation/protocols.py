@@ -325,9 +325,9 @@ class RinProtocol(ProtocolWithDependencies):
         location,
         target_rin,
         amp=-0.02,
-        stimulus_delay=500.0,
-        stimulus_duration=500.0,
-        totduration=1000.0,
+        stimulus_delay=1000.0,
+        stimulus_duration=1000.0,
+        totduration=2000.0,
     ):
         """Constructor"""
 
@@ -383,10 +383,6 @@ class RinProtocol(ProtocolWithDependencies):
 
         bpo_rin = self.target_rin.calculate_feature(response)
         response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
-
-        # WARNING: HACK
-        if response["bpo_rin"] < 100.:
-            return {"bpo_rin": None}
 
         return response
 
