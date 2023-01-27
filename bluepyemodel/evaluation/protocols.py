@@ -327,9 +327,9 @@ class RinProtocol(ProtocolWithDependencies):
         location,
         target_rin,
         amp=-0.02,
-        stimulus_delay=1000.,
-        stimulus_duration=1000.,
-        totduration=2000.,
+        stimulus_delay=1000.0,
+        stimulus_duration=1000.0,
+        totduration=2000.0,
     ):
         """Constructor"""
 
@@ -385,10 +385,6 @@ class RinProtocol(ProtocolWithDependencies):
 
         bpo_rin = self.target_rin.calculate_feature(response)
         response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
-
-        # WARNING: HACK
-        if response["bpo_rin"] < 100.:
-            return {"bpo_rin": None}
 
         return response
 
@@ -491,7 +487,10 @@ class SearchCurrentForVoltage(BPEMProtocol):
             if n_spikes is None or n_spikes > 0:
                 return None
 
-        return self.target_voltage.calculate_feature(response)[0]
+        voltage_base = self.target_voltage.calculate_feature(response)
+        if voltage_base is None:
+            return None
+        return voltage_base[0]
 
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
