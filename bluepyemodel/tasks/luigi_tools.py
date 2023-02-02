@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class WorkflowTask(luigi.Task):
     """Workflow task with loaded data access point."""
 
-    backend = luigi.Parameter(default=None, config_path=dict(section="parallel", name="backend"))
+    backend = luigi.Parameter(default=None, config_path={"section": 'parallel', "name": 'backend'})
 
     emodel = luigi.Parameter()
     etype = luigi.Parameter(default=None)
