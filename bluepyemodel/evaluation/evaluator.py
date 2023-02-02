@@ -46,7 +46,6 @@ protocol_type_to_class = {
 
 
 def define_location(definition):
-
     if definition["type"] == "CompRecording":
         if definition["location"] == "soma":
             return soma_loc
@@ -375,7 +374,6 @@ def define_efeatures(
     validation_prot = fitness_calculator_configuration.validation_protocols
 
     for feature_def in fitness_calculator_configuration.efeatures:
-
         if not include_validation_protocols and any(
             are_same_protocol(feature_def.protocol_name, p) for p in validation_prot
         ):

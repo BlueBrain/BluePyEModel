@@ -170,7 +170,6 @@ class eFELFeatureBPEM(eFELFeature):
             if efel_trace is None:
                 feature_values = None
             else:
-
                 self._setup_efel()
                 logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
                 import efel
@@ -196,7 +195,6 @@ class eFELFeatureBPEM(eFELFeature):
             score = 0
 
         else:
-
             feature_values = self.calculate_feature(responses)
             if (feature_values is None) or (len(feature_values) == 0):
                 score = self.max_score

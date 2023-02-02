@@ -258,7 +258,6 @@ class LocalAccessPoint(DataAccessPoint):
 
         with self.rw_lock_final.write_lock():
             with self.rw_lock_final_tmp.write_lock():
-
                 final = self.get_final(lock_file=False)
                 model_name = self.get_model_name_for_final(emodel.seed)
 
@@ -456,7 +455,6 @@ class LocalAccessPoint(DataAccessPoint):
                 ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
 
         if legacy:
-
             efeatures = self.get_json("features")
             protocols = self.get_json("protocol")
 
@@ -623,7 +621,6 @@ class LocalAccessPoint(DataAccessPoint):
 
         models = []
         for mod_data in self.get_final().values():
-
             if mod_data["emodel"] in emodels:
                 models.append(self.format_emodel_data(mod_data))
 
@@ -710,7 +707,6 @@ class LocalAccessPoint(DataAccessPoint):
         final = self.get_final()
 
         for _, entry in final.items():
-
             if (
                 entry["iteration"] == self.emodel_metadata.iteration
                 and entry["emodel"] == self.emodel_metadata.emodel

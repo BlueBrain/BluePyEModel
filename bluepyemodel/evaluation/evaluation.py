@@ -148,7 +148,6 @@ def compute_responses(
         emodels = [model for model in emodels if model.passed_validation is None]
 
     if emodels:
-
         logger.info("In compute_responses, %s emodels found to evaluate.", len(emodels))
 
         to_run = []
@@ -268,7 +267,6 @@ def get_evaluator_from_access_point(
     start_from_emodel = access_point.pipeline_settings.start_from_emodel
 
     if start_from_emodel is not None:
-
         access_point_type = "local" if isinstance(access_point, LocalAccessPoint) else "nexus"
 
         seed = start_from_emodel.pop("seed", None)

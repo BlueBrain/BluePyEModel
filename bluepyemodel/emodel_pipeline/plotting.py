@@ -86,7 +86,6 @@ def get_traces_names_and_float_responses(responses, recording_names):
     rin = None
 
     for resp_name, response in responses.items():
-
         if not (isinstance(response, float)):
             if resp_name in recording_names:
                 traces_names.append(resp_name)
@@ -214,11 +213,9 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
 
     axs_c = []
     for idx, t in enumerate(sorted(traces_names)):
-
         axs[idx, 0].set_title(t)
 
         if responses[t]:
-
             ylabel = get_traces_ylabel(var=t.split(".")[-1])
 
             # Plot responses (voltage, current, etc.)
@@ -229,9 +226,7 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
             # Plot current
             basename = t.split(".")[0]
             if basename in stimuli:
-
                 if hasattr(stimuli[basename], "stimulus"):
-
                     if (
                         isinstance(stimuli[basename], ThresholdBasedProtocol)
                         and threshold
@@ -281,7 +276,6 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
 def _get_if_curve_from_evaluator(
     holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
 ):
-
     total_duration = length_step + (2 * delay)
     stim_end = delay + length_step
 
@@ -303,7 +297,6 @@ def _get_if_curve_from_evaluator(
     frequencies = []
     amps = numpy.arange(0.0, threshold + max_offset_current, delta_current)
     for amp in amps:
-
         step_pulse = NrnSquarePulse(
             step_amplitude=amp,
             step_delay=delay,
@@ -721,5 +714,5 @@ def currentscape(
                     plot_currentscape_fct(
                         voltage, currents, config, ions_data=ionic_concentrations, time=time
                     )
-                except (ModuleNotFoundError):
+                except ModuleNotFoundError:
                     logger.warning("Currentscape module not found. Skipping currentscape plotting.")

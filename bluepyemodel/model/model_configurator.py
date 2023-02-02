@@ -57,7 +57,6 @@ class ModelConfigurator:
         the configuration."""
 
         if self.configuration:
-
             if yesno("Save current configuration ?"):
                 self.save_configuration()
 
@@ -118,7 +117,6 @@ class ModelConfigurator:
             )
 
         for m in mechs:
-
             version = None
             for k in nexus_keys:
                 if k["name"] == m["name"]:

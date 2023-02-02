@@ -228,7 +228,6 @@ class DataAccessPoint:
         return ion_currents, ionic_concentrations
 
     def __str__(self):
-
         str_ = "#############################################################\n"
         str_ += "################## SUMMARY: EMODEL CREATION #################\n"
         str_ += "#############################################################\n\n"

@@ -182,12 +182,10 @@ class NeuronModelConfiguration:
             )
 
         for location in parameters["parameters"]:
-
             if location == "__comment":
                 continue
 
             for param in parameters["parameters"][location]:
-
                 mechanism = None
 
                 if param["name"] not in global_parameters and "distribution" not in location:
@@ -293,7 +291,6 @@ class NeuronModelConfiguration:
             )
 
         for loc in locations:
-
             tmp_param = ParameterConfiguration(
                 name=parameter_name,
                 location=loc,
@@ -319,9 +316,7 @@ class NeuronModelConfiguration:
         """Is the mechanism part of the mechanisms available"""
 
         if self.available_mechanisms is not None:
-
             for mech in self.available_mechanisms:
-
                 if version is not None:
                     if mechanism_name in mech.name and version == mech.version:
                         return True

@@ -82,7 +82,6 @@ def validate(
     logger.info("In validate, %s emodels found to validate.", len(emodels))
 
     for model in emodels:
-
         # turn features from arrays to float to be json serializable
         model.features = model.evaluator.fitness_calculator.calculate_values(model.responses)
         for key, value in model.features.items():

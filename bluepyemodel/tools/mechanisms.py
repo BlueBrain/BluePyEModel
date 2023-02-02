@@ -21,12 +21,10 @@ def copy_mechs(mechanism_paths, out_dir):
     """
 
     if mechanism_paths:
-
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
         for m in mechanism_paths:
-
             p = Path(m["path"])
 
             if p.is_file():
@@ -51,7 +49,6 @@ def compile_mechs(mechanisms_dir):
     path_mechanisms_dir = Path(mechanisms_dir)
 
     if path_mechanisms_dir.is_dir():
-
         if Path("x86_64").is_dir():
             os.popen("rm -rf x86_64").read()
         os.popen(f"nrnivmodl {path_mechanisms_dir}").read()
