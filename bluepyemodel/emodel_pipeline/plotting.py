@@ -49,18 +49,16 @@ def get_traces_ylabel(var):
 
 def get_recording_names(protocol_config, stimuli):
     """Get recording names which traces are to be plotted.
-    
+
     Does not return extra ion / current recordings.
-    
+
     Args:
         protocol_config (list): list of ProtocolConfiguration from FitnessCalculatorConfiguration
         stimuli (list): list of all protocols (protocols from configuration + pre-protocols)
     """
     # recordings from fitness calculator
     recording_names = {
-        recording["name"]
-        for prot in protocol_config
-        for recording in prot.recordings_from_config
+        recording["name"] for prot in protocol_config for recording in prot.recordings_from_config
     }
 
     # expects recording names to have prot_name.location_name.variable structure
@@ -69,7 +67,9 @@ def get_recording_names(protocol_config, stimuli):
     # add pre-protocol recordings
     # expects pre-protocol to only have 1 recording
     pre_prot_rec_names = {
-        protocol.recordings[0].name for protocol in stimuli.values() if protocol.name not in prot_names
+        protocol.recordings[0].name
+        for protocol in stimuli.values()
+        if protocol.name not in prot_names
     }
     recording_names.update(pre_prot_rec_names)
 
