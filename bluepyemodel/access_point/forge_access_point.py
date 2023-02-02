@@ -92,7 +92,6 @@ class NexusForgeAccessPoint:
         access_token=None,
         search_endpoint="sparql",
     ):
-
         self.limit = limit
         self.debug = debug
         self.cross_bucket = cross_bucket
@@ -217,7 +216,6 @@ class NexusForgeAccessPoint:
         """Add the contributing agent to the resource"""
 
         if self.agent:
-
             if isinstance(resource, Dataset):
                 resource.add_contribution(self.agent, versioned=False)
             elif isinstance(resource, Resource):
@@ -264,11 +262,9 @@ class NexusForgeAccessPoint:
 
         previous_resources = None
         if filters_existence:
-
             previous_resources = self.fetch(filters_existence)
 
         if filters_existence and previous_resources:
-
             if replace:
                 for resource in previous_resources:
                     rr = self.retrieve(resource.id)
@@ -371,7 +367,6 @@ class NexusForgeAccessPoint:
             raise AccessPointException(f"Could not find resource for id: {resource_id}")
 
         if hasattr(resource, "distribution"):
-
             file_paths = []
             if isinstance(resource.distribution, list):
                 for dist in resource.distribution:
@@ -417,7 +412,6 @@ class NexusForgeAccessPoint:
             return
 
         for type_ in NEXUS_TYPE_TO_CLASS.keys():
-
             filters = {"type": type_}
             filters.update(metadata)
 
@@ -438,7 +432,6 @@ class NexusForgeAccessPoint:
             distribution_iter = [resource.distribution]
 
         for distrib in distribution_iter:
-
             filepath = None
 
             if hasattr(distrib, "atLocation"):
@@ -796,7 +789,6 @@ def get_brain_region(brain_region, access_token=None):
 
 
 def get_all_species(access_token=None):
-
     access_point = ontology_forge_access_point(access_token)
 
     resources = access_point.forge.search({"subClassOf": "nsg:Species"}, limit=100)

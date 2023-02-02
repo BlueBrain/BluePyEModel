@@ -147,7 +147,6 @@ class EModel_pipeline:
             checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
 
             for chkp_path in glob.glob(checkpoint_path.replace("seed=1", "*")):
-
                 file_name = pathlib.Path(chkp_path).stem
                 tmp_seed = next(
                     int(e.replace("seed=", "")) for e in file_name.split("__") if "seed=" in e
@@ -168,9 +167,7 @@ class EModel_pipeline:
         )
 
     def plot(self, only_validated=False, load_from_local=False):
-
         for chkp_path in glob.glob("./checkpoints/*.pkl"):
-
             if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
 
@@ -208,13 +205,11 @@ class EModel_pipeline:
         )
 
     def export_emodels(self, only_validated=False, seeds=None):
-
         export_emodels_sonata(
             self.access_point, only_validated, seeds=seeds, map_function=self.mapper
         )
 
     def summarize(self):
-
         print(self.access_point)
 
 

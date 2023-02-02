@@ -13,7 +13,6 @@ def format_dict_for_resource(d):
         return out
 
     for k, v in d.items():
-
         if v is None or numpy.isnan(v):
             v = None
 
@@ -109,7 +108,6 @@ class EModel:
         return pdfs
 
     def as_dict(self):
-
         scores_validation_resource = format_dict_for_resource(self.scores_validation)
         scores_resource = format_dict_for_resource(self.scores)
         features_resource = format_dict_for_resource(self.features)

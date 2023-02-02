@@ -141,7 +141,6 @@ class EModelMetadata:
         return metadata
 
     def as_string(self, seed=None):
-
         s = ""
 
         for k in ["emodel", "etype", "ttype", "mtype", "species", "brain_region", "iteration"]:

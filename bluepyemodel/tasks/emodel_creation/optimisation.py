@@ -993,7 +993,6 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
 
         outputs = []
         if plot_optimisation:
-
             # distribution
             fname = self.access_point.emodel_metadata.as_string()
             fname += "__parameters_distribution.pdf"

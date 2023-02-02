@@ -94,7 +94,6 @@ def setup_and_run_optimisation(
     mapper=None,
     terminator=None,
 ):
-
     cell_evaluator = get_evaluator_from_access_point(
         access_point=access_point, include_validation_protocols=False
     )
@@ -143,7 +142,6 @@ def store_best_model(
     )
 
     if checkpoint_path is None:
-
         if seed is None:
             raise Exception("Please specify either the seed or the checkpoint_path")
 

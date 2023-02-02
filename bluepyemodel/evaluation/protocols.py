@@ -166,7 +166,6 @@ class ProtocolWithDependencies(BPEMProtocol, ResponseDependencies):
     def _run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
-
         return BPEMProtocol.run(self, cell_model, param_values, sim, isolate, timeout, responses)
 
 
@@ -200,7 +199,6 @@ class ThresholdBasedProtocol(ProtocolWithDependencies):
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
-
         return ResponseDependencies.run(
             self, cell_model, param_values, sim, isolate, timeout, responses
         )
@@ -818,7 +816,6 @@ class ProtocolRunner(ephys.protocols.Protocol):
         cell_model.freeze(param_values)
 
         for protocol_name in self.execution_order:
-
             logger.debug("Computing protocol %s", protocol_name)
             new_responses = self.protocols[protocol_name].run(
                 cell_model,

@@ -68,7 +68,6 @@ class MechanismConfiguration:
         return current
 
     def as_dict(self):
-
         return {
             "name": self.name,
             "stochastic": self.stochastic,

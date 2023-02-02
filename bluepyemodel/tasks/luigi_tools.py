@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class WorkflowTask(luigi.Task):
     """Workflow task with loaded data access point."""
 
-    backend = luigi.Parameter(default=None, config_path=dict(section="parallel", name="backend"))
+    backend = luigi.Parameter(default=None, config_path={"section": "parallel", "name": "backend"})
 
     emodel = luigi.Parameter()
     etype = luigi.Parameter(default=None)
@@ -111,7 +111,6 @@ class IPyParallelTask(IPyParallelExclusive):
 
         for attr in attrs:
             if hasattr(self, attr):
-
                 # Luigi stores lists as tuples, but json cannot load tuple
                 # so here, turning tuples back into lists.
                 # Also turn lists and dicts into json strings.

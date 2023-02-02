@@ -111,7 +111,6 @@ class NexusAccessPoint(DataAccessPoint):
         logger.info("Ttype checked")
 
     def get_pipeline_settings(self, strict=True):
-
         if strict:
             return self.access_point.nexus_to_object(
                 type_="EModelPipelineSettings",
@@ -500,7 +499,6 @@ class NexusAccessPoint(DataAccessPoint):
 
         any_downloaded = False
         for mechanism in mechanisms:
-
             if mechanism.name in NEURON_BUILTIN_MECHANISMS:
                 continue
 
@@ -674,13 +672,11 @@ class NexusAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for r in resources:
-
             version = r.modelid if hasattr(r, "modelid") else None
             stochastic = r.stochastic if hasattr(r, "stochastic") else None
 
             parameters = {}
             if hasattr(r, "exposesParameters"):
-
                 exposes_parameters = r.exposesParameters
                 if not isinstance(exposes_parameters, list):
                     exposes_parameters = [exposes_parameters]
@@ -730,7 +726,6 @@ class NexusAccessPoint(DataAccessPoint):
             return traces
 
         for r in resource_traces:
-
             ecodes = None
             if hasattr(r, "stimulus"):
                 ecodes = [
@@ -775,7 +770,6 @@ class NexusAccessPoint(DataAccessPoint):
         return traces
 
     def store_morphology(self, morphology_name, morphology_path, mtype=None):
-
         payload = {
             "type": ["NeuronMorphology", "Entity", "Dataset", "ReconstructedCell"],
             "name": pathlib.Path(morphology_path).stem,

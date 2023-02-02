@@ -50,5 +50,4 @@ class Target:
             self.efel_settings = efel_settings
 
     def as_dict(self):
-
         return vars(self)
