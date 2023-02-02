@@ -51,7 +51,6 @@ def define_distributions(distributions_definition):
     distributions = collections.OrderedDict()
 
     for definition in distributions_definition:
-
         if definition.name == "uniform":
             distributions[definition.name] = ephys.parameterscalers.NrnSegmentLinearScaler()
         else:
@@ -77,7 +76,6 @@ def define_parameters(parameters_definition, distributions, mapping_multilocatio
     parameters = []
 
     for param_def in parameters_definition:
-
         if isinstance(param_def.value, (list, tuple)):
             is_frozen = False
             value = None
@@ -159,7 +157,6 @@ def define_mechanisms(mechanisms_definition, mapping_multilocation):
     mechanisms = []
 
     for mech_def in mechanisms_definition:
-
         seclist_locations = multi_locations(mech_def.location, mapping_multilocation)
 
         mechanisms.append(

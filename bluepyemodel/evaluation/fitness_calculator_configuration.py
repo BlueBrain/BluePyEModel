@@ -391,7 +391,6 @@ class FitnessCalculatorConfiguration:
         self.efeatures.append(tmp_feature)
 
     def init_from_legacy_dict(self, efeatures, protocols, threshold_efeature_std):
-
         self.protocols = []
         self.efeatures = []
 
@@ -416,7 +415,6 @@ class FitnessCalculatorConfiguration:
             )
 
         for protocol_name, protocol in protocols.items():
-
             if protocol_name == "RMP":
                 self.rmp_duration = protocol["stimuli"]["step"]["duration"]
             if protocol_name == "Rin":
@@ -462,7 +460,6 @@ class FitnessCalculatorConfiguration:
         to_remove = []
 
         for i, protocol in enumerate(self.protocols):
-
             for efeature in self.efeatures:
                 if efeature.protocol_name == protocol.name:
                     break

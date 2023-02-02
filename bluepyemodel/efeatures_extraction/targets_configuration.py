@@ -106,7 +106,6 @@ class TargetsConfiguration:
         for f in self.files:
             for protocol in f.ecodes:
                 if protocol in used_protocols:
-
                     if f.cell_name not in files_metadata:
                         files_metadata[f.cell_name] = {}
                     if protocol not in files_metadata[f.cell_name]:
@@ -190,7 +189,6 @@ class TargetsConfiguration:
             )
 
     def as_dict(self):
-
         return {
             "files": [f.as_dict() for f in self.files],
             "targets": [t.as_dict() for t in self.targets],

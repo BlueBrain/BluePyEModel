@@ -41,7 +41,6 @@ def attach_efeatures_pdf(emodel, efeatures):
 
     for protocol in efeatures:
         for efeat in efeatures[protocol]["soma"]:
-
             pdfs = {}
 
             pdf_amp, pdf_amp_rel = search_figure_efeatures(emodel, protocol, efeat["feature"])
@@ -62,9 +61,7 @@ def update_minimum_protocols_delay(access_point, config):
     min_delay = access_point.pipeline_settings.minimum_protocol_delay
 
     for i, protocol in enumerate(config.protocols):
-
         if "delay" in protocol.stimuli[0] and protocol.stimuli[0]["delay"] < min_delay:
-
             logger.debug(
                 "Replacing delay %s with %s in protocol %s",
                 protocol.stimuli[0]["delay"],

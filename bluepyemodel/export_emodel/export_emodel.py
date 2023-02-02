@@ -19,7 +19,6 @@ def write_node_file(emodel, model_template_path, node_file_path, morphology_path
     circuit-documentation/latest/sonata_tech.html"""
 
     with h5py.File(node_file_path, "w") as f:
-
         population_name = f"{emodel.emodel_metadata.brain_region}_neurons"
         population = f.create_group(f"/nodes/{population_name}/0")
 
@@ -102,7 +101,6 @@ def export_model_sonata(cell_model, emodel, output_dir=None):
 
 
 def select_emodels(emodel_name, emodels, only_validated=False, only_best=True, seeds=None):
-
     if not emodels:
         logger.warning("In export_emodels_nexus, no emodel for %s", emodel_name)
         return []
@@ -228,7 +226,6 @@ def export_emodels_nexus(
 
     # Check the mechanisms
     for mech in model_configuration.mechanisms:
-
         if mech.name in NEURON_BUILTIN_MECHANISMS:
             continue
 

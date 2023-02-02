@@ -58,7 +58,6 @@ class TargetsConfigurator:
         the configuration."""
 
         if self.configuration:
-
             if yesno("Save current configuration ?"):
                 self.save_configuration()
 

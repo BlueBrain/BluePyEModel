@@ -46,7 +46,6 @@ class TraceFile:
         brain_region=None,
         etype=None,
     ):
-
         self.cell_name = cell_name
         self.filename = filename if filename else cell_name
         self.filepath = filepath
@@ -61,13 +60,10 @@ class TraceFile:
         self.etype = etype
 
     def as_dict(self):
-
         return vars(self)
 
     def __eq__(self, other):
-
         if self.cell_name == other.cell_name:
-
             if self.filename and other.filename:
                 if self.filename == other.filename:
                     return True

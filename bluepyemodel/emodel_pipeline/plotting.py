@@ -47,6 +47,35 @@ def get_traces_ylabel(var):
     return ""
 
 
+def get_recording_names(protocol_config, stimuli):
+    """Get recording names which traces are to be plotted.
+
+    Does not return extra ion / current recordings.
+
+    Args:
+        protocol_config (list): list of ProtocolConfiguration from FitnessCalculatorConfiguration
+        stimuli (list): list of all protocols (protocols from configuration + pre-protocols)
+    """
+    # recordings from fitness calculator
+    recording_names = {
+        recording["name"] for prot in protocol_config for recording in prot.recordings_from_config
+    }
+
+    # expects recording names to have prot_name.location_name.variable structure
+    prot_names = {rec_name.split(".")[0] for rec_name in recording_names}
+
+    # add pre-protocol recordings
+    # expects pre-protocol to only have 1 recording
+    pre_prot_rec_names = {
+        protocol.recordings[0].name
+        for protocol in stimuli.values()
+        if protocol.name not in prot_names
+    }
+    recording_names.update(pre_prot_rec_names)
+
+    return recording_names
+
+
 def get_traces_names_and_float_responses(responses, recording_names):
     """Extract the names of the traces to be plotted, as well as the float responses values."""
 
@@ -57,7 +86,6 @@ def get_traces_names_and_float_responses(responses, recording_names):
     rin = None
 
     for resp_name, response in responses.items():
-
         if not (isinstance(response, float)):
             if resp_name in recording_names:
                 traces_names.append(resp_name)
@@ -185,11 +213,9 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
 
     axs_c = []
     for idx, t in enumerate(sorted(traces_names)):
-
         axs[idx, 0].set_title(t)
 
         if responses[t]:
-
             ylabel = get_traces_ylabel(var=t.split(".")[-1])
 
             # Plot responses (voltage, current, etc.)
@@ -200,9 +226,7 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
             # Plot current
             basename = t.split(".")[0]
             if basename in stimuli:
-
                 if hasattr(stimuli[basename], "stimulus"):
-
                     if (
                         isinstance(stimuli[basename], ThresholdBasedProtocol)
                         and threshold
@@ -252,7 +276,6 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
 def _get_if_curve_from_evaluator(
     holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
 ):
-
     total_duration = length_step + (2 * delay)
     stim_end = delay + length_step
 
@@ -274,7 +297,6 @@ def _get_if_curve_from_evaluator(
     frequencies = []
     amps = numpy.arange(0.0, threshold + max_offset_current, delta_current)
     for amp in amps:
-
         step_pulse = NrnSquarePulse(
             step_amplitude=amp,
             step_delay=delay,
@@ -509,11 +531,10 @@ def plot_models(
             scores(mo, figures_dir_scores)
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
-            recording_names = {
-                recording["name"]
-                for prot in access_point.get_fitness_calculator_configuration().protocols
-                for recording in prot.recordings_from_config
-            }
+            recording_names = get_recording_names(
+                access_point.get_fitness_calculator_configuration().protocols,
+                stimuli,
+            )
             traces(mo, mo.responses, recording_names, stimuli, figures_dir_traces)
 
         if plot_currentscape:
@@ -693,5 +714,5 @@ def currentscape(
                     plot_currentscape_fct(
                         voltage, currents, config, ions_data=ionic_concentrations, time=time
                     )
-                except (ModuleNotFoundError):
+                except ModuleNotFoundError:
                     logger.warning("Currentscape module not found. Skipping currentscape plotting.")

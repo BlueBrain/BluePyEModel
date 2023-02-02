@@ -55,7 +55,6 @@ class DistributionConfiguration:
         self.comment = comment
 
     def as_dict(self):
-
         distr_dict = {
             "name": self.name,
             "function": self.function,
@@ -69,7 +68,6 @@ class DistributionConfiguration:
         return distr_dict
 
     def as_legacy_dict(self):
-
         distr_dict = {"fun": self.function}
 
         if self.parameters:

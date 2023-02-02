@@ -57,7 +57,6 @@ class MorphologyConfiguration:
         self.section_index = section_index
 
     def as_dict(self):
-
         return {
             "name": self.name,
             "format": self.format,
