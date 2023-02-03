@@ -87,4 +87,4 @@ def get_access_point(access_point, emodel, **kwargs):
             with_seeds=kwargs.get("with_seeds", False),
         )
 
-    raise Exception(f"Unknown access point: {access_point}")
+    raise ValueError(f"Unknown access point: {access_point}. Should be 'nexus' or 'local'.")

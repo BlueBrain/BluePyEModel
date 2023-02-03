@@ -212,7 +212,7 @@ def define_morphology(
             elif isinstance(morph_modifier, str):
                 morph_modifiers[i] = getattr(modifiers, morph_modifier)
             elif not callable(morph_modifier):
-                raise Exception(
+                raise TypeError(
                     "A morph modifier is not callable nor a string nor a list of two str"
                 )
 

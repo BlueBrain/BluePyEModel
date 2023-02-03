@@ -42,7 +42,9 @@ class ModelConfigurator:
         """Load a previously registered configuration"""
 
         if isinstance(self.access_point, LocalAccessPoint):
-            raise Exception("Loading configuration is not yet implemented for local access point")
+            raise NotImplementedError(
+                "Loading configuration is not yet implemented for local access point"
+            )
 
         self.configuration = self.access_point.get_model_configuration()
 

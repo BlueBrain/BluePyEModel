@@ -98,7 +98,7 @@ class eFELFeatureBPEM(eFELFeature):
 
         trace = {}
         if "" not in self.recording_names:
-            raise Exception("eFELFeature: '' needs to be in recording_names")
+            raise ValueError("eFELFeature: '' needs to be in recording_names")
         for location_name, recording_name in self.recording_names.items():
             if location_name == "":
                 postfix = ""

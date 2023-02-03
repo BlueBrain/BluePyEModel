@@ -31,7 +31,7 @@ def define_extraction_reader_function(access_point):
         extraction_reader = getattr(function_module, extraction_reader[1])
 
     elif not callable(extraction_reader):
-        raise Exception("Extraction reader function is not callable nor a list of two strings")
+        raise TypeError("Extraction reader function is not callable nor a list of two strings")
 
     return extraction_reader
 

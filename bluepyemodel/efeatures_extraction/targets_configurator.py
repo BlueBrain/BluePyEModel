@@ -40,7 +40,9 @@ class TargetsConfigurator:
         """Load a previously registered configuration"""
 
         if isinstance(self.access_point, LocalAccessPoint):
-            raise Exception("Loading configuration is not yet implemented for local access point")
+            raise NotImplementedError(
+                "Loading configuration is not yet implemented for local access point"
+            )
 
         self.access_point.get_targets_configuration()
 
@@ -51,7 +53,7 @@ class TargetsConfigurator:
             if self.configuration.is_configuration_valid:
                 self.access_point.store_targets_configuration(self.configuration)
             else:
-                raise Exception("Couldn't save invalid configuration")
+                raise ValueError("Couldn't save invalid configuration")
 
     def delete_configuration(self):
         """Delete the current configuration. Warning: it does not delete the file or resource of

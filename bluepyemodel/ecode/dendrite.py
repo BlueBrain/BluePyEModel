@@ -18,7 +18,7 @@ class DendriticStep(IDrest):
             sec_name = kwargs.get("seclist_name", "apical")
 
             if sec_name != "apical":
-                raise Exception("With direction 'apical_trunk', sec_name must be apical")
+                raise ValueError("With direction 'apical_trunk', sec_name must be apical")
 
             location = NrnTrunkSomaDistanceCompLocation(
                 name="dend",
@@ -33,7 +33,7 @@ class DendriticStep(IDrest):
                 seclist_name=kwargs.get("seclist_name", "apical"),
             )
         else:
-            raise Exception(f"direction keyword {direction} not understood")
+            raise ValueError(f"direction keyword {direction} not understood")
         super().__init__(location=location, **kwargs)
 
     def instantiate(self, sim=None, icell=None):

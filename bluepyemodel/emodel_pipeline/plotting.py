@@ -654,7 +654,7 @@ def currentscape(
 
     """
     if responses is None and output_dir is None:
-        raise Exception("Responses or output directory must be set.")
+        raise TypeError("Responses or output directory must be set.")
 
     make_dir(figures_dir)
 

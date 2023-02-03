@@ -27,7 +27,7 @@ class SineSpec(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception("In stimulus {self.name}, amp and thresh_perc cannot be both None.")
+            raise TypeError("In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         self.delay = kwargs.get("delay", 0.0)
         self.duration = kwargs.get("duration", 5000.0)
