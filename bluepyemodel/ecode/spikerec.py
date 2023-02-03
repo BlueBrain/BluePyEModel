@@ -62,7 +62,7 @@ class SpikeRecMultiSpikes(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
+            raise TypeError(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         self.delay = kwargs.get("delay", 10.0)
         self.n_spikes = kwargs.get("n_spikes", 2)
