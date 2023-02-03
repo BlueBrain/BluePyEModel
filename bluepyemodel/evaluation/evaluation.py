@@ -278,7 +278,7 @@ def get_evaluator_from_access_point(
                 "recipes_path": access_point.recipes_path,
             }
         else:
-            raise Exception("start_from_emodel not implemented for Nexus access point")
+            raise NotImplementedError("start_from_emodel not implemented for Nexus access point")
 
         starting_access_point = get_access_point(
             access_point=access_point_type, **start_from_emodel, **kwargs
@@ -286,7 +286,7 @@ def get_evaluator_from_access_point(
 
         emodels = starting_access_point.get_emodels()
         if not emodels:
-            raise Exception(
+            raise ValueError(
                 f"Cannot start optimisation of {access_point.emodel_metadata.emodel} because"
                 f" there are no emodels for {start_from_emodel}"
             )
@@ -298,7 +298,7 @@ def get_evaluator_from_access_point(
                 (e.parameters for e in emodels if str(e.seed) == str(seed)), None
             )
             if initial_parameters is None:
-                raise Exception(
+                raise ValueError(
                     f"Cannot start optimisation of {access_point.emodel_metadata.emodel} because"
                     f" there are no emodels for {start_from_emodel}"
                 )

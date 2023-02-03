@@ -159,7 +159,7 @@ class DataAccessPoint:
                 when the optimisation is not complete
 
         Raises:
-            Exception if optimiser in pipeline settings in neither
+            ValueError if optimiser in pipeline settings in neither
                 "SO-CMA", "MO-CMA" or "IBEA"
 
         Returns:
@@ -204,7 +204,7 @@ class DataAccessPoint:
                 return True
             return False
 
-        raise Exception(f"Unknown optimiser: {optimiser}")
+        raise ValueError(f"Unknown optimiser: {optimiser}")
 
     def get_ion_currents_concentrations(self):
         """Get all ion currents and ion concentrations.

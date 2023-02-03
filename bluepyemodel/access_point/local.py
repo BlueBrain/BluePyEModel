@@ -121,7 +121,7 @@ class LocalAccessPoint(DataAccessPoint):
         """Setter for the name of the emodel, check it exists (with or without seed) in recipe."""
         _emodel = "_".join(emodel.split("_")[:2]) if self.with_seeds else emodel
         if _emodel not in self.get_all_recipes():
-            raise Exception(
+            raise ValueError(
                 f"Cannot set the emodel name to {_emodel} which does not exist in the recipes."
             )
 
@@ -141,7 +141,7 @@ class LocalAccessPoint(DataAccessPoint):
     def get_final(self, lock_file=True):
         """Get emodel dictionary from final.json."""
         if self.final_path is None:
-            raise Exception("Final_path is None")
+            raise TypeError("Final_path is None")
 
         if not self.final_path.is_file():
             logger.info("%s does not exist and will be created", self.final_path)
@@ -177,7 +177,7 @@ class LocalAccessPoint(DataAccessPoint):
         """Save final emodels in json"""
 
         if final_path is None:
-            raise Exception("Final_path is None")
+            raise TypeError("Final_path is None")
 
         if lock_file:
             self.rw_lock_final.acquire_write_lock()
@@ -541,7 +541,7 @@ class LocalAccessPoint(DataAccessPoint):
             self.morph_path = Path(self.morph_path)
 
         if str(Path.cwd()) not in str(self.morph_path.resolve()) and self.emodel_metadata.iteration:
-            raise Exception(
+            raise FileNotFoundError(
                 "When using a githash or iteration tag, the path to the morphology must be local"
                 " otherwise it cannot be archived during the creation of the githash. To solve"
                 " this issue, you can copy the morphology from "

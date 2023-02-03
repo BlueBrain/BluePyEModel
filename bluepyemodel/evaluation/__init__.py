@@ -11,7 +11,7 @@ def check_hoc_lib():
     """Check of hoc library path is present"""
 
     if "HOC_LIBRARY_PATH" not in os.environ:
-        raise Exception(
+        raise RuntimeError(
             "BGLibPy: HOC_LIBRARY_PATH not found, this is required to find "
             "Neurodamus. Did you install neurodamus correctly ?"
         )
@@ -43,7 +43,7 @@ def _nrn_disable_banner():
     hoc_so_list = glob.glob(os.path.join(nrnpy_path, "hoc*.so"))
 
     if len(hoc_so_list) != 1:
-        raise Exception(f"hoc shared library not found in {nrnpy_path}")
+        raise FileNotFoundError(f"hoc shared library not found in {nrnpy_path}")
 
     hoc_so = hoc_so_list[0]
     nrndll = ctypes.cdll[hoc_so]

@@ -38,19 +38,19 @@ class MorphologyConfiguration:
         elif path:
             self.name = pathlib.Path(self.path).stem
         else:
-            raise Exception("name or path has to be informed")
+            raise TypeError("name or path has to be informed")
 
         self.format = None
         if format:
             if self.path:
                 if format.lower() != path[-3:].lower():
-                    raise Exception("The format does not match the morphology file")
+                    raise ValueError("The format does not match the morphology file")
             self.format = format
         elif self.path:
             self.format = path[-3:]
 
         if self.format and self.format.lower() not in ["asc", "swc"]:
-            raise Exception("The format of the morphology has to be 'asc' or 'swc'.")
+            raise ValueError("The format of the morphology has to be 'asc' or 'swc'.")
 
         self.seclist_names = seclist_names
         self.secarray_names = secarray_names

@@ -177,7 +177,7 @@ class NexusAccessPoint(DataAccessPoint):
         elif species is None:
             subject = None
         else:
-            raise Exception(f"Unknown species {species}.")
+            raise ValueError(f"Unknown species {species}.")
 
         return subject
 
@@ -602,10 +602,10 @@ class NexusAccessPoint(DataAccessPoint):
                 },
             )
         else:
-            raise Exception("At least id_ or name should be informed.")
+            raise TypeError("At least id_ or name should be informed.")
 
         if not resource:
-            raise Exception(f"No matching resource for {id_} {name}")
+            raise ValueError(f"No matching resource for {id_} {name}")
 
         metadata_str = self.emodel_metadata.as_string()
         return self.access_point.resource_location(resource, metadata_str=metadata_str)[0]

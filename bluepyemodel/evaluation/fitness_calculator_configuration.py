@@ -233,7 +233,7 @@ class FitnessCalculatorConfiguration:
             tmp_feature.protocol_name = "RinProtocol"
 
         if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(protocol_name):
-            raise Exception(
+            raise ValueError(
                 f"Trying to register efeatures for protocol {protocol_name},"
                 " but this protocol does not exist"
             )
@@ -246,14 +246,14 @@ class FitnessCalculatorConfiguration:
         if self.name_rmp_protocol and not any(
             are_same_protocol(self.name_rmp_protocol, p) for p in efeatures
         ):
-            raise Exception(
+            raise ValueError(
                 f"The stimulus {self.name_rmp_protocol} requested for RMP "
                 "computation couldn't be extracted from the ephys data."
             )
         if self.name_rin_protocol and not any(
             are_same_protocol(self.name_rin_protocol, p) for p in efeatures
         ):
-            raise Exception(
+            raise ValueError(
                 f"The stimulus {self.name_rin_protocol} requested for Rin "
                 "computation couldn't be extracted from the ephys data."
             )
@@ -383,7 +383,7 @@ class FitnessCalculatorConfiguration:
             tmp_feature.protocol_name = "SearchThresholdCurrent"
 
         if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(protocol_name):
-            raise Exception(
+            raise ValueError(
                 f"Trying to register efeatures for protocol {protocol_name},"
                 " but this protocol does not exist"
             )
@@ -399,7 +399,7 @@ class FitnessCalculatorConfiguration:
             and not any(are_same_protocol(self.name_rmp_protocol, p) for p in efeatures)
             and "RMP" not in efeatures
         ):
-            raise Exception(
+            raise ValueError(
                 f"The protocol {self.name_rmp_protocol} requested for RMP nor RMPProtocol "
                 "are present in your efeatures json file."
             )
@@ -409,7 +409,7 @@ class FitnessCalculatorConfiguration:
             and not any(are_same_protocol(self.name_rin_protocol, p) for p in efeatures)
             and "Rin" not in efeatures
         ):
-            raise Exception(
+            raise ValueError(
                 f"The protocol {self.name_rin_protocol} requested for Rin nor RinProtocol "
                 "are present in your efeatures json file."
             )
@@ -440,7 +440,7 @@ class FitnessCalculatorConfiguration:
             validation = protocol.get("validation", False)
 
             if validation != self.protocols[-1].validation:
-                raise Exception(
+                raise ValueError(
                     "The protocol was set as a validation protocol in the json but is not present "
                     "as a validation protocol in the settings"
                 )
