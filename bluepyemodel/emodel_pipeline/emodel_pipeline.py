@@ -11,6 +11,7 @@ from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
 from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
+from bluepyemodel.tools.multiprocessing import get_mapper
 from bluepyemodel.tools.multiprocessing import ipyparallel_map_function
 from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.validation.validation import validate
@@ -41,6 +42,7 @@ class EModel_pipeline:
         nexus_project=None,
         nexus_endpoint="staging",
         use_ipyparallel=None,
+        use_multiprocessing=None,
     ):
         """Initialize the emodel_pipeline.
 
@@ -74,12 +76,20 @@ class EModel_pipeline:
                 retrieve the data
             nexus_endpoint (str): Nexus endpoint ("prod" or "staging")
             use_ipyparallel (bool): should the parallelization map be base on ipyparallel.
+            use_multiprocessing (bool): should the parallelization map be based on multiprocessing.
         """
 
         # pylint: disable=too-many-arguments
 
+        if use_ipyparallel and use_multiprocessing:
+            raise ValueError(
+                "use_ipyparallel and use_multiprocessing cannot be both True at the same time. "
+                "Please choose one."
+            )
         if use_ipyparallel:
             self.mapper = ipyparallel_map_function()
+        elif use_multiprocessing:
+            self.mapper = get_mapper(backend="multiprocessing")
         else:
             self.mapper = map
 
