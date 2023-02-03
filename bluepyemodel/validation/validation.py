@@ -30,7 +30,7 @@ def define_validation_function(access_point):
         elif validation_function == "mean_score":
             validation_function = validation_functions.validate_mean_score
         else:
-            raise Exception("validation_function must be 'max_score' or 'mean_score'.")
+            raise ValueError("validation_function must be 'max_score' or 'mean_score'.")
 
     elif isinstance(validation_function, list) and len(validation_function) == 2:
         # pylint: disable=deprecated-method,no-value-for-parameter
@@ -40,7 +40,7 @@ def define_validation_function(access_point):
         validation_function = getattr(function_module, validation_function[1])
 
     if not callable(validation_function):
-        raise Exception("validation_function is not callable nor a list of two strings")
+        raise TypeError("validation_function is not callable nor a list of two strings")
 
     return validation_function
 

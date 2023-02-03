@@ -231,7 +231,7 @@ def sanitize_gitignore():
     path_gitignore = pathlib.Path("./.gitignore")
 
     if not (path_gitignore.is_file()):
-        raise Exception("Could not update .gitignore as it does not exist.")
+        raise FileNotFoundError("Could not update .gitignore as it does not exist.")
 
     with open(str(path_gitignore), "r") as f:
         lines = f.readlines()

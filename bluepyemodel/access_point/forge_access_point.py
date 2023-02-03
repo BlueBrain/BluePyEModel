@@ -233,7 +233,7 @@ class NexusForgeAccessPoint:
         elif strategy == "exact":
             resolving_strategy = ResolvingStrategy.EXACT_MATCH
         else:
-            raise Exception(
+            raise ValueError(
                 f"Resolving strategy {strategy} does not exist. "
                 "Strategy should be 'all', 'best' or 'exact'"
             )

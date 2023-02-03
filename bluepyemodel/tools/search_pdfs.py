@@ -18,7 +18,7 @@ def search_figure_path(pathname):
         return None
 
     if len(matches) > 1:
-        raise Exception(f"More than one pdf for pathname {pathname}")
+        raise ValueError(f"More than one pdf for pathname {pathname}")
 
     return str(Path(matches[0]).resolve())
 

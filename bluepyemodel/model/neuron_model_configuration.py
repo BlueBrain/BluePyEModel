@@ -191,7 +191,7 @@ class NeuronModelConfiguration:
                 if param["name"] not in global_parameters and "distribution" not in location:
                     mechanism = next((m for m in set_mechanisms if m in param["name"]), None)
                     if mechanism is None:
-                        raise Exception(
+                        raise ValueError(
                             f"Could not find mechanism associated to parameter {param['name']}"
                         )
 
@@ -274,7 +274,7 @@ class NeuronModelConfiguration:
         """
 
         if not locations:
-            raise Exception(
+            raise ValueError(
                 "Cannot add a parameter without specifying a location. If "
                 "global parameter, put 'global'."
             )
@@ -285,7 +285,7 @@ class NeuronModelConfiguration:
             distribution_name = "uniform"
 
         if distribution_name not in self.distribution_names:
-            raise Exception(
+            raise ValueError(
                 f"No distribution of name {distribution_name} in the configuration."
                 " Please register your distributions first."
             )
@@ -349,7 +349,7 @@ class NeuronModelConfiguration:
         if mechanism_name not in NEURON_BUILTIN_MECHANISMS and not self.is_mechanism_available(
             mechanism_name, version
         ):
-            raise Exception(
+            raise ValueError(
                 f"You are trying to add mechanism {mechanism_name} (version {version}) "
                 "but it is not available on Nexus or local."
             )
@@ -407,7 +407,7 @@ class NeuronModelConfiguration:
         """Set the distribution of a parameter"""
 
         if not location:
-            raise Exception("Cannot set a parameter's distribution without specifying a location.")
+            raise ValueError("Cannot set a parameter's distribution without specifying a location.")
         locations = self._format_locations(location)
 
         for loc in locations:
@@ -419,7 +419,7 @@ class NeuronModelConfiguration:
         """Set the value of a parameter"""
 
         if not location:
-            raise Exception("Cannot set a parameter's distribution without specifying a location.")
+            raise ValueError("Cannot set a parameter's distribution without specifying a location.")
         locations = self._format_locations(location)
 
         for loc in locations:
@@ -452,7 +452,7 @@ class NeuronModelConfiguration:
         """
 
         if morphology_name not in self.available_morphologies:
-            raise Exception(
+            raise ValueError(
                 "The morphology you want to use is not available in Nexus or in your "
                 "morphology directory"
             )

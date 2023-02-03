@@ -51,7 +51,7 @@ def define_location(definition):
             return soma_loc
         if definition["location"] == "ais":
             return ais_loc
-        raise Exception("Only soma and ais are implemented for CompRecording")
+        raise ValueError("Only soma and ais are implemented for CompRecording")
 
     if definition["type"] == "somadistance":
         return NrnSomaDistanceCompLocation(
@@ -75,7 +75,7 @@ def define_location(definition):
             seclist_name=definition["seclist_name"],
         )
 
-    raise Exception(f"Unknown recording type {definition['type']}")
+    raise ValueError(f"Unknown recording type {definition['type']}")
 
 
 def define_recording(recording_conf, use_fixed_dt_recordings=False):
@@ -120,7 +120,7 @@ def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_re
         recordings.append(define_recording(rec_conf, use_fixed_dt_recordings))
 
     if len(protocol_configuration.stimuli) != 1:
-        raise Exception("Only protocols with a single stimulus implemented")
+        raise ValueError("Only protocols with a single stimulus implemented")
 
     for k, ecode in eCodes.items():
         if k in protocol_configuration.name.lower():
@@ -209,7 +209,7 @@ def define_RMP_protocol(efeatures, stimulus_duration=500.0):
             break
 
     if not target_voltage:
-        raise Exception(
+        raise ValueError(
             "Couldn't find the efeature 'steady_state_voltage_stimend' associated to the "
             "'RMPProtocol' in your FitnessCalculatorConfiguration. It might not have been "
             "extracted from the ephys data you have available or the name of the protocol to"
@@ -255,7 +255,7 @@ def define_Rin_protocol(
             break
 
     if not target_rin:
-        raise Exception(
+        raise ValueError(
             "Couldn't find the efeature 'ohmic_input_resistance_vb_ssse' associated to "
             "the 'RinProtocol' in your FitnessCalculatorConfiguration. It might not have"
             "been extracted from the ephys data you have available or the name of the"
@@ -299,7 +299,7 @@ def define_holding_protocol(
             stimulus_duration=stimulus_duration,
         )
 
-    raise Exception(
+    raise ValueError(
         "Couldn't find the efeature 'bpo_holding_current' associated to "
         "the 'SearchHoldingCurrent' protocol in your FitnessCalculatorConfiguration."
     )
@@ -337,7 +337,7 @@ def define_threshold_protocol(
             max_depth=max_depth,
         )
 
-    raise Exception(
+    raise ValueError(
         "Couldn't find the efeature 'bpo_threshold_current' or "
         "'bpo_holding_current' associated to the 'SearchHoldingCurrent'"
         " in your FitnessCalculatorConfiguration. It might not have"
@@ -385,7 +385,7 @@ def define_efeatures(
                 (p for p in protocols.values() if p.name == feature_def.protocol_name), None
             )
             if protocol is None:
-                raise Exception(f"Could not find protocol named {feature_def.protocol_name}")
+                raise ValueError(f"Could not find protocol named {feature_def.protocol_name}")
 
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 

@@ -53,7 +53,7 @@ class Comb(BPEM_stimulus):
         self.holding = 0.0  # hardcoded holding for now (holding_current is modified externally)
 
         if self.stim_end > self.total_duration:
-            raise Exception(
+            raise ValueError(
                 "stim_end is larger than total_duration: {self.stim_end} > {self.total_duration})"
             )
 

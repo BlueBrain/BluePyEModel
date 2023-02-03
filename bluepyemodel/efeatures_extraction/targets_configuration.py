@@ -66,7 +66,7 @@ class TargetsConfiguration:
             for f in files:
                 tmp_trace = TraceFile(**f)
                 if not self.is_trace_available(tmp_trace):
-                    raise Exception(f"File named {tmp_trace.cell_name} is not present on Nexus")
+                    raise ValueError(f"File named {tmp_trace.cell_name} is not present on Nexus")
                 self.files.append(tmp_trace)
 
         self.targets = []
@@ -74,7 +74,7 @@ class TargetsConfiguration:
             for t in targets:
                 tmp_target = Target(**t)
                 if not self.is_target_available(tmp_target):
-                    raise Exception(f"Efeature name {tmp_target.efeature} does not exist")
+                    raise ValueError(f"Efeature name {tmp_target.efeature} does not exist")
                 self.targets.append(tmp_target)
 
         if protocols_rheobase is None:
@@ -127,7 +127,7 @@ class TargetsConfiguration:
                 if protocol in protocols:
                     break
             else:
-                raise Exception(
+                raise ValueError(
                     f"{protocol} is part of the protocols_rheobase but it has"
                     f" no associated ephys data for cell {cell_name}"
                 )
@@ -175,16 +175,16 @@ class TargetsConfiguration:
         ]
 
         error_message = (
-            "Target for feature {} is missing for RMP protocol {}. Please add "
+            "Target for feature {} is missing for protocol {}. Please add "
             "it if you wish to do a threshold-based optimisation."
         )
 
         if "voltage_base" not in efeatures_rmp:
-            raise Exception(error_message.format("voltage_base", name_rmp_protocol))
+            raise ValueError(error_message.format("voltage_base", name_rmp_protocol))
         if "voltage_base" not in efeatures_rin:
-            raise Exception(error_message.format("voltage_base", name_rmp_protocol))
+            raise ValueError(error_message.format("voltage_base", name_Rin_protocol))
         if "ohmic_input_resistance_vb_ssse" not in efeatures_rin:
-            raise Exception(
+            raise ValueError(
                 error_message.format("ohmic_input_resistance_vb_ssse", name_Rin_protocol)
             )
 

@@ -46,7 +46,7 @@ def setup_optimiser(evaluator, map_function, params, optimiser="IBEA"):
             selector_name="multi_objective",
             **params,
         )
-    raise Exception(f"Unknown optimiser: {optimiser}")
+    raise ValueError(f"Unknown optimiser: {optimiser}")
 
 
 def run_optimisation(optimiser, checkpoint_path, max_ngen, terminator=None):
@@ -143,7 +143,7 @@ def store_best_model(
 
     if checkpoint_path is None:
         if seed is None:
-            raise Exception("Please specify either the seed or the checkpoint_path")
+            raise TypeError("Please specify either the seed or the checkpoint_path")
 
         checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed=seed)
 
@@ -154,7 +154,7 @@ def store_best_model(
 
     if "param_names" in run:
         if run["param_names"] != list(cell_evaluator.param_names):
-            raise Exception(
+            raise ValueError(
                 "The parameter names present in the checkpoint file are different from the "
                 f"ones of the evaluator: {run['param_names']} versus "
                 f"{list(cell_evaluator.param_names)}"

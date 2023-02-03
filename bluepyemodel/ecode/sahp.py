@@ -43,10 +43,10 @@ class sAHP(BPEM_stimulus):
         self.long_amp_rel = kwargs.get("long_amp_rel", None)
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
+            raise TypeError(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         if self.long_amp is None and self.long_amp_rel is None:
-            raise Exception(
+            raise TypeError(
                 f"In stimulus {self.name}, long_amp and long_amp_rel cannot be both None."
             )
 

@@ -44,12 +44,12 @@ class HyperDepol(BPEM_stimulus):
         self.depol_amp_rel = kwargs.get("depol_amp_rel", 100.0)
 
         if self.hyper_amp is None and self.hyper_amp_rel is None:
-            raise Exception(
+            raise TypeError(
                 f"In stimulus {self.name}, hyper_amp and hyper_amp_rel cannot be both None."
             )
 
         if self.depol_amp is None and self.depol_amp_rel is None:
-            raise Exception(
+            raise TypeError(
                 f"In stimulus {self.name}, depol_amp and depol_amp_rel cannot be both None."
             )
 

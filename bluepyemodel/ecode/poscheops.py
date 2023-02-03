@@ -49,10 +49,10 @@ class PosCheops(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise Exception(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
+            raise TypeError(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         if self.amplitude < self.holding_current:
-            raise Exception(
+            raise ValueError(
                 f"Amplitude {self.amplitude} is supposed to be greater than "
                 + f"holding current {self.holding_current} in {self.name} stimulus."
             )

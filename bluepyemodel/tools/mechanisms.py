@@ -32,7 +32,7 @@ def copy_mechs(mechanism_paths, out_dir):
                 shutil.copy(str(p), str(new_p))
 
             else:
-                raise Exception(
+                raise FileNotFoundError(
                     "Cannot copy the .mod files locally because the "
                     f"'mechanism_paths' {p} does not exist."
                 )
@@ -54,7 +54,7 @@ def compile_mechs(mechanisms_dir):
         os.popen(f"nrnivmodl {path_mechanisms_dir}").read()
 
     else:
-        raise Exception(
+        raise FileNotFoundError(
             "Cannot compile the mechanisms because 'mechanisms_dir':"
             f" {path_mechanisms_dir} does not exist."
         )
