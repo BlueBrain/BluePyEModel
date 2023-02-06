@@ -6,7 +6,7 @@ from pathlib import Path
 import luigi
 
 from bluepyemodel.access_point.forge_access_point import AccessPointException
-from bluepyemodel.emodel_pipeline.emodel_pipeline import extract_save_features_protocols
+from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline.plotting import optimisation
 from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.optimisation import get_checkpoint_path
@@ -28,6 +28,47 @@ def _reformat_ttype(ttype):
         return ttype.replace("__", " ")
 
     return None
+
+class CreateTargetsConfigurationTarget(WorkflowTarget):
+    """Luigi target to check if BPEM targets configuraiton for extraction exists."""
+
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag):
+        """Constructor."""
+        super().__init__(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+        )
+
+    def exists(self):
+        """Check if the targets configuration has been created."""
+        return self.access_point.has_targets_configuration()
+
+
+class CreateTargetsConfiguration(WorkflowTask):
+    """Luigi wrapper for create_targets in emodel_pipeline.EModel_pipeline."""
+
+    @WorkflowTask.check_mettypes
+    def run(self):
+        """ """
+
+        _ = create_targets(access_point=self.access_point)
+
+    def output(self):
+        """ """
+        return CreateTargetsConfigurationTarget(
+            emodel=self.emodel,
+            etype=self.etype,
+            ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
+            iteration_tag=self.iteration_tag,
+        )
 
 
 class EfeaturesProtocolsTarget(WorkflowTarget):
@@ -53,6 +94,18 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
 
 class ExtractEFeatures(WorkflowTask):
     """Luigi wrapper for extract_efeatures in emodel_pipeline.EModel_pipeline."""
+
+    def requires(self):
+        """ """
+        return CreateTargetsConfiguration(
+            emodel=self.emodel,
+            etype=self.etype,
+            ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
+            iteration_tag=self.iteration_tag,
+        )
 
     @WorkflowTask.check_mettypes
     def run(self):

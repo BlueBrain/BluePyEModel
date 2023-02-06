@@ -2,6 +2,8 @@
 import itertools
 import logging
 
+from bluepyefe.auto_targets import AutoTarget
+
 from bluepyemodel.efeatures_extraction.target import Target
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.tools.utils import are_same_protocol
@@ -21,6 +23,7 @@ class TargetsConfiguration:
         protocols_rheobase=None,
         available_traces=None,
         available_efeatures=None,
+        auto_targets=None,
     ):
         """Init
 
@@ -56,6 +59,21 @@ class TargetsConfiguration:
                 used to compute the rheobase of the cells. E.g: ['IDthresh'].
             available_traces (list of TraceFile)
             available_efeatures (llist of strings)
+            auto_targets (list): if targets is not given, auto_targets
+                define the efeatures to extract as well as which
+                protocols and current amplitude they should be extracted for,
+                given a list of possible protocols and amplitudes.
+                min_recordings_per_amplitude, preferred_number_protocols and
+                tolerance are optional.
+                Of the form:
+                [{
+                    "protocols": ["IDRest", "IV"],
+                    "amplitudes": [150, 250],
+                    "efeatures": ["AP_amplitude", "mean_frequency"],
+                    "min_recordings_per_amplitude": 10,
+                    "preferred_number_protocols": 1,
+                    "tolerance": 10.,
+                }]
         """
 
         self.available_traces = available_traces
@@ -70,12 +88,15 @@ class TargetsConfiguration:
                 self.files.append(tmp_trace)
 
         self.targets = []
+        self.auto_target=None
         if targets is not None:
             for t in targets:
                 tmp_target = Target(**t)
                 if not self.is_target_available(tmp_target):
                     raise ValueError(f"Efeature name {tmp_target.efeature} does not exist")
                 self.targets.append(tmp_target)
+        elif auto_targets is not None:
+            self.auto_targets = auto_targets
 
         if protocols_rheobase is None:
             self.protocols_rheobase = []
@@ -99,11 +120,17 @@ class TargetsConfiguration:
     def files_metadata_BPE(self):
         """In BPE2 input format"""
 
+        if self.files:
+            files = self.files
+        else:
+            logger.info("No files given. Will use all available traces instead.")
+            files = self.available_traces
+
         files_metadata = {}
 
         used_protocols = set([t.protocol for t in self.targets] + self.protocols_rheobase)
 
-        for f in self.files:
+        for f in files:
             for protocol in f.ecodes:
                 if protocol in used_protocols:
                     if f.cell_name not in files_metadata:
@@ -141,6 +168,12 @@ class TargetsConfiguration:
         return [t.as_dict() for t in self.targets]
 
     @property
+    def auto_targets_BPE(self):
+        """In BPE2 input format"""
+
+        return [AutoTarget(**at) for at in self.auto_targets]
+
+    @property
     def is_configuration_valid(self):
         """Checks that the configuration has targets, traces and that the targets can
         be found in the traces. This check can only be performed if the ecodes present
@@ -149,12 +182,21 @@ class TargetsConfiguration:
         if not self.targets or not self.files:
             return False
 
+        if self.targets and self.auto_targets:
+            return False
+
         ecodes = set(
             itertools.chain(*[file.ecodes for file in self.files if file.ecodes is not None])
         )
 
         for target in self.targets:
             if ecodes and target.protocol not in ecodes:
+                return False
+
+        for at in self.auto_targets:
+            if not (
+                "protocols" in at.keys() and "amplitudes" in at.keys() and "efeatures" in at.keys()
+            ):
                 return False
 
         return True
@@ -193,4 +235,5 @@ class TargetsConfiguration:
             "files": [f.as_dict() for f in self.files],
             "targets": [t.as_dict() for t in self.targets],
             "protocols_rheobase": self.protocols_rheobase,
+            "auto_targets": [at.as_dict() for at in self.auto_targets],
         }
