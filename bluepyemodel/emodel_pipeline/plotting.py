@@ -669,8 +669,6 @@ def currentscape(
     if "names" in config["current"]:
         current_subset = config["current"]["names"].copy()
 
-
-
     if responses is not None:
         ordered_keys = get_ordered_currentscape_keys(
             key for key, item in responses.items() if item is not None
