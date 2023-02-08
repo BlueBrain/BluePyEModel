@@ -147,7 +147,9 @@ class EModelPipelineSettings:
                 according to the currentscape documentation
                 (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config)
                 Note that current.names, output.savefig, output.fname and output.dir
-                do not need to be set, since they are automatically rewritten by BPEM.
+                do not need to be set, since they are automatically overwritten by BPEM.
+                If current.names is set nonetheless, it will be used as the subset
+                of available currents to be selected for the plot.
             neuron_dt (float): dt of the NEURON simulator. If None, cvode will be used.
             cvode_minstep (float): minimum time step allowed for a CVODE step.
             max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
