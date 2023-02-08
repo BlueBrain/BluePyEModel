@@ -59,6 +59,23 @@ def compile_mechs(mechanisms_dir):
             f" {path_mechanisms_dir} does not exist."
         )
 
+def compile_mechs_in_emodel_dir(mechanisms_directory):
+    """Compile mechanisms in emodel directory.
+    
+    Args:
+        mechanisms_dir (Path): path to the directory containing the
+            mod files to compile.
+    """
+    cwd = os.getcwd()
+
+    try:
+        os.chdir(str(mechanisms_directory.parents[0]))
+        compile_mechs("./mechanisms")
+    except Exception as e:
+        print(e)
+    finally:
+        os.chdir(cwd)
+
 
 def copy_and_compile_mechanisms(access_point):
     """Copy mechs if asked, and compile them."""

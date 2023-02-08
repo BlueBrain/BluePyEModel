@@ -249,6 +249,9 @@ def get_evaluator_from_access_point(
     )
 
     mechanisms_directory = access_point.get_mechanisms_directory()
+    if isinstance(access_point, LocalAccessPoint):
+        if Path.cwd() != access_point.emodel_dir:
+            remove_mechs_from_main_repo_and_compile_mechs_from_emodel_dir()
 
     evaluator = create_evaluator(
         cell_model=cell_model,
