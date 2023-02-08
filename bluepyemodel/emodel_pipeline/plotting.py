@@ -640,7 +640,13 @@ def get_voltage_currents_from_files(key_dict, output_dir):
 
 
 def currentscape(
-    responses=None, output_dir=None, config=None, metadata_str="", figures_dir="./figures", emodel="", seed=None,
+    responses=None,
+    output_dir=None,
+    config=None,
+    metadata_str="",
+    figures_dir="./figures",
+    emodel="",
+    seed=None,
 ):
     """Plot the currentscapes for all protocols.
 
