@@ -248,10 +248,7 @@ def get_evaluator_from_access_point(
         morph_modifiers=morph_modifiers,
     )
 
-    if isinstance(access_point, LocalAccessPoint):
-        mechanisms_directory = None
-    else:
-        mechanisms_directory = access_point.get_mechanisms_directory()
+    mechanisms_directory = access_point.get_mechanisms_directory()
 
     evaluator = create_evaluator(
         cell_model=cell_model,
