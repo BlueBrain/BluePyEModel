@@ -712,8 +712,10 @@ class NexusAccessPoint(DataAccessPoint):
     def get_available_traces(self, filter_species=True, filter_brain_region=False):
         """Get the list of available Traces for the current species from Nexus"""
 
+        species = None
         if filter_species:
             species = self.emodel_metadata_ontology.species
+        brain_region = None
         if filter_brain_region:
             brain_region = self.emodel_metadata_ontology.brain_region
 
