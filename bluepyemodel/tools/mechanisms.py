@@ -38,6 +38,11 @@ def copy_mechs(mechanism_paths, out_dir):
                 )
 
 
+def delete_compiled_mechanisms():
+    """Delete compiled mechanisms."""
+    if Path("x86_64").is_dir():
+        os.popen("rm -rf x86_64").read()
+
 def compile_mechs(mechanisms_dir):
     """Compile the mechanisms.
 
@@ -49,8 +54,7 @@ def compile_mechs(mechanisms_dir):
     path_mechanisms_dir = Path(mechanisms_dir)
 
     if path_mechanisms_dir.is_dir():
-        if Path("x86_64").is_dir():
-            os.popen("rm -rf x86_64").read()
+        delete_compiled_mechanisms()
         os.popen(f"nrnivmodl {path_mechanisms_dir}").read()
 
     else:

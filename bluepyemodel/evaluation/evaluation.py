@@ -12,6 +12,8 @@ from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.model import model
 from bluepyemodel.tools.utils import make_dir
+from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
+from bluepyemodel.tools.mechanisms import delete_compiled_mechanisms
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +253,9 @@ def get_evaluator_from_access_point(
     mechanisms_directory = access_point.get_mechanisms_directory()
     if isinstance(access_point, LocalAccessPoint):
         if Path.cwd() != access_point.emodel_dir:
-            remove_mechs_from_main_repo_and_compile_mechs_from_emodel_dir()
+            delete_compiled_mechanisms()
+            if not (access_point.emodel_dir / "x86_64").is_dir():
+                compile_mechs_in_emodel_dir(mechanisms_directory)
 
     evaluator = create_evaluator(
         cell_model=cell_model,
