@@ -256,6 +256,10 @@ def get_evaluator_from_access_point(
             delete_compiled_mechanisms()
             if not (access_point.emodel_dir / "x86_64").is_dir():
                 compile_mechs_in_emodel_dir(mechanisms_directory)
+        else:
+            # if x86_64 present in main repo AND mechanisms_directory given to simulator
+            # NEURON loads mechanisms twice and crash
+            mechanisms_directory = None
 
     evaluator = create_evaluator(
         cell_model=cell_model,
