@@ -545,6 +545,8 @@ def plot_models(
                 config=config,
                 metadata_str=mo.emodel_metadata.as_string(mo.seed),
                 figures_dir=figures_dir_currentscape,
+                emodel=mo.emodel_metadata.emodel,
+                seed=mo.seed,
             )
         if plot_if_curve:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
@@ -640,7 +642,7 @@ def get_voltage_currents_from_files(key_dict, output_dir):
 
 
 def currentscape(
-    responses=None, output_dir=None, config=None, metadata_str="", figures_dir="./figures"
+    responses=None, output_dir=None, config=None, metadata_str="", figures_dir="./figures", emodel="", seed=None,
 ):
     """Plot the currentscapes for all protocols.
 
@@ -651,7 +653,8 @@ def currentscape(
         config (dict): currentscape config. See currentscape package for more info.
         metadata_str (str): Metadata of the model as a string. Used in the files naming.
         figures_dir (str): path to the directory where to put the figures.
-
+        emodel (str): name of the emodel
+        seed (int): random seed number
     """
     if responses is None and output_dir is None:
         raise TypeError("Responses or output directory must be set.")
@@ -701,6 +704,11 @@ def currentscape(
             config["output"]["fname"] = name
             if "dir" not in config["output"]:
                 config["output"]["dir"] = figures_dir
+            if "title" not in config and emodel:
+                title = f"emodel={emodel}"
+                if seed is not None:
+                    title += f" seed={seed}"
+                config["title"] = title
 
             if len(voltage) == 0 or len(currents) == 0:
                 logger.warning(
