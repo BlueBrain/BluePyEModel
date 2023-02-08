@@ -43,6 +43,7 @@ def delete_compiled_mechanisms():
     if Path("x86_64").is_dir():
         os.popen("rm -rf x86_64").read()
 
+
 def compile_mechs(mechanisms_dir):
     """Compile the mechanisms.
 
@@ -56,27 +57,28 @@ def compile_mechs(mechanisms_dir):
     if path_mechanisms_dir.is_dir():
         delete_compiled_mechanisms()
         os.popen(f"nrnivmodl {path_mechanisms_dir}").read()
-
     else:
         raise FileNotFoundError(
             "Cannot compile the mechanisms because 'mechanisms_dir':"
             f" {path_mechanisms_dir} does not exist."
         )
 
+
 def compile_mechs_in_emodel_dir(mechanisms_directory):
     """Compile mechanisms in emodel directory.
-    
+
     Args:
         mechanisms_dir (Path): path to the directory containing the
             mod files to compile.
     """
+    # pylint: disable=broad-exception-caught
     cwd = os.getcwd()
 
     try:
         os.chdir(str(mechanisms_directory.parents[0]))
         compile_mechs("./mechanisms")
-    except Exception as e:
-        print(e)
+    except BaseException as e:
+        logger.warning(e)
     finally:
         os.chdir(cwd)
 

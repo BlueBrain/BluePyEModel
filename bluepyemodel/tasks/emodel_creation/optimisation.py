@@ -1,7 +1,6 @@
 """Luigi tasks for emodel optimisation."""
 import glob
 import multiprocessing
-import os
 from pathlib import Path
 
 import luigi
