@@ -75,14 +75,12 @@ class TargetsConfigurator:
             )
             return
         
-        # add these to pipeline settings
         files = self.access_point.pipeline_settings.files_for_extraction
         targets = self.access_point.pipeline_settings.targets
         protocols_rheobase = self.access_point.pipeline_settings.protocols_rheobase
         # protocols rheobase can be None -> BPE will use default ones
 
         if not targets:
-            # add these to pipeline settings
             auto_targets = self.access_point.pipeline_settings.auto_targets
             auto_targets_presets = self.access_point.pipeline_settings.auto_targets_presets
             if not auto_targets:
