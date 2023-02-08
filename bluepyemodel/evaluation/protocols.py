@@ -2,6 +2,7 @@
 import logging
 from collections import OrderedDict
 
+import numpy
 from bluepyopt import ephys
 
 from ..ecode import eCodes
@@ -701,6 +702,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
     def max_threshold_current(self):
         """Find the current necessary to get to max_threshold_voltage"""
         max_threshold_current = (self.max_threshold_voltage - self.rmp) / self.rin
+        max_threshold_current = numpy.min([max_threshold_current, 2.0])
         logger.debug("Max threshold current: %.6g", max_threshold_current)
         return max_threshold_current
 
