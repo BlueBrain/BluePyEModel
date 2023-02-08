@@ -84,6 +84,11 @@ class TargetsConfigurator:
             auto_targets = self.access_point.pipeline_settings.auto_targets
             auto_targets_presets = self.access_point.pipeline_settings.auto_targets_presets
             if not auto_targets:
+                if not auto_targets_presets:
+                    raise TypeError(
+                        "Please fill either targets, auto_targets or auto_targets_presets."
+                        "Or alternatively save your targets before running your pipeline."
+                    )
                 auto_targets = get_auto_target_from_presets(auto_targets_presets)
 
         self.new_configuration(files, targets, protocols_rheobase, auto_targets)
