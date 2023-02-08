@@ -77,8 +77,8 @@ def compile_mechs_in_emodel_dir(mechanisms_directory):
     try:
         os.chdir(str(mechanisms_directory.parents[0]))
         compile_mechs("./mechanisms")
-    except BaseException as e:
-        logger.warning(e)
+    except Exception as e:
+        logger.exception(e)
     finally:
         os.chdir(cwd)
 
