@@ -53,6 +53,11 @@ class EModelPipelineSettings:
         max_depth_holding_search=7,
         max_depth_threshold_search=10,
         spikecount_timeout=50,
+        files_for_extraction=None,
+        targets=None,
+        protocols_rheobase=None,
+        auto_targets=None,
+        auto_targets_presets=None,
     ):
         """Init
 
@@ -161,6 +166,11 @@ class EModelPipelineSettings:
                 threshold current
             spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
                 we set spikecount=2 as if many spikes were present, to speed up bisection search.
+            files_for_extraction (list): temporary, will come from SBO
+            targets (list): temporary, will come from SBO
+            protocols_rheobase (list): temporary, will come from SBO
+            auto_targets (list): temporary, will come from SBO
+            auto_targets_presets (list): temporary, will come from SBO
         """
 
         # Settings related to E-features extraction
@@ -237,6 +247,14 @@ class EModelPipelineSettings:
             logger.warning(
                 "Setting threshold_based_evaluator is not used anymore and will be deprecated"
             )
+
+        # Settings for targets configuration
+        # Temporarily in pipeline_settings - will come from SBO in the future
+        self.files_for_extraction = files_for_extraction
+        self.targets = targets
+        self.protocols_rheobase = protocols_rheobase
+        self.auto_targets = auto_targets
+        self.auto_targets_presets = auto_targets_presets
 
     def as_dict(self):
         return vars(self)

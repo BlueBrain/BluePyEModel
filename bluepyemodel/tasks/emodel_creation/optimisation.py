@@ -8,6 +8,7 @@ import luigi
 
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
+from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from bluepyemodel.emodel_pipeline.plotting import optimisation
 from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.optimisation import get_checkpoint_path
@@ -57,7 +58,8 @@ class CreateTargetsConfiguration(WorkflowTask):
     def run(self):
         """ """
 
-        _ = create_targets(access_point=self.access_point)
+        configurator = TargetsConfigurator(access_point=self.access_point)
+        configurator.create_and_save_configuration_from_access_point()
 
     def output(self):
         """ """
