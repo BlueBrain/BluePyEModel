@@ -468,7 +468,6 @@ def plot_models(
     Returns:
         emodels (list): list of emodels.
     """
-
     figures_dir = Path(figures_dir)
 
     cell_evaluator = get_evaluator_from_access_point(
@@ -477,7 +476,6 @@ def plot_models(
         use_fixed_dt_recordings=plot_currentscape,
         record_ions_and_currents=plot_currentscape,
     )
-
     if plot_traces or plot_currentscape:
         emodels = compute_responses(
             access_point,
@@ -679,6 +677,10 @@ def currentscape(
     if "output" not in config:
         config["output"] = {}
 
+    current_subset = None
+    if "names" in config["current"]:
+        current_subset = config["current"]["names"].copy()
+
     if responses is not None:
         ordered_keys = get_ordered_currentscape_keys(
             key for key, item in responses.items() if item is not None
@@ -707,7 +709,14 @@ def currentscape(
             name = ".".join((metadata_str, prot, loc))
 
             # adapt config
-            config["current"]["names"] = key_dict["current_names"]
+            if current_subset and key_dict["current_names"]:
+                currents_indices = [
+                    list(key_dict["current_names"]).index(name) for name in current_subset
+                ]
+                currents = numpy.array(currents)[currents_indices]
+                config["current"]["names"] = current_subset
+            else:
+                config["current"]["names"] = key_dict["current_names"]
             config["ions"]["names"] = key_dict["ion_conc_names"]
             config["output"]["savefig"] = True
             config["output"]["fname"] = name
