@@ -547,6 +547,7 @@ def plot_models(
                 figures_dir=figures_dir_currentscape,
                 emodel=mo.emodel_metadata.emodel,
                 seed=mo.seed,
+                iteration_tag=mo.emodel_metadata.iteration
             )
         if plot_if_curve:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
@@ -649,6 +650,7 @@ def currentscape(
     figures_dir="./figures",
     emodel="",
     seed=None,
+    iteration_tag=None,
 ):
     """Plot the currentscapes for all protocols.
 
@@ -661,6 +663,7 @@ def currentscape(
         figures_dir (str): path to the directory where to put the figures.
         emodel (str): name of the emodel
         seed (int): random seed number
+        iteration_tag (str): githash
     """
     if responses is None and output_dir is None:
         raise TypeError("Responses or output directory must be set.")
@@ -711,9 +714,11 @@ def currentscape(
             if "dir" not in config["output"]:
                 config["output"]["dir"] = figures_dir
             if "title" not in config and emodel:
-                title = f"emodel={emodel}"
+                title = str(emodel)
+                if iteration_tag is not None:
+                    title += f" ; iteration = {iteration_tag}"
                 if seed is not None:
-                    title += f" seed={seed}"
+                    title += f" ; seed = {seed}"
                 config["title"] = title
 
             if len(voltage) == 0 or len(currents) == 0:
