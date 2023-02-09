@@ -179,8 +179,9 @@ class TargetsConfiguration:
         be found in the traces. This check can only be performed if the ecodes present
         in each files are known."""
 
-        if not self.targets or not self.files:
-            return False
+        if not self.auto_targets:
+            if not self.targets or not self.files:
+                return False
 
         if self.targets and self.auto_targets:
             return False
