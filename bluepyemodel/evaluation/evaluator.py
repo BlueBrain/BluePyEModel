@@ -294,7 +294,7 @@ def define_holding_protocol(
     protocol_name="SearchHoldingCurrent",
     target_current_name="bpo_holding_current",
     strict_bounds=False,
-    stimulus_duration=500.0,
+    stimulus_duration=1000.0,
     max_depth=20,
     ais_recording=False,
 ):

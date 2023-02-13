@@ -341,6 +341,7 @@ class RinProtocol(ProtocolWithDependencies):
             "holding_current": None,
             "initial_relax": 100,  # ensures we get to proper holding
         }
+
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
@@ -371,6 +372,7 @@ class RinProtocol(ProtocolWithDependencies):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Compute the Rin"""
+
         response = ResponseDependencies.run(
             self,
             cell_model,
@@ -404,7 +406,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         location,
         target_voltage=None,
         voltage_precision=0.1,
-        stimulus_duration=500.0,
+        stimulus_duration=1000.0,
         upper_bound=0.2,
         lower_bound=-0.2,
         strict_bounds=True,
@@ -425,7 +427,6 @@ class SearchHoldingCurrent(BPEMProtocol):
             strict_bounds (bool): to adaptively enlarge bounds if current is outside
             max_depth (int): maximum depth for the binary search
         """
-        stimulus_duration = 3000
         stimulus_definition = {
             "delay": 500.0,
             "amp": 0.0,
@@ -573,7 +574,6 @@ class SearchHoldingCurrent(BPEMProtocol):
                 self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
             )
         )
-        print(response)
         return response
 
     def bisection_search(
@@ -820,7 +820,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         mid_bound = (upper_bound + lower_bound) * 0.5
         spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
 
-        print(lower_bound, upper_bound, spikecount, abs(lower_bound - upper_bound), self.current_precision)
         if abs(lower_bound - upper_bound) < self.current_precision:
             logger.debug("Depth of threshold search: %s", depth)
             return upper_bound
