@@ -1,7 +1,6 @@
 """Luigi tasks for emodel optimisation."""
 import glob
 import multiprocessing
-import os
 from pathlib import Path
 
 import luigi
@@ -17,7 +16,7 @@ from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTaskRequiringMechanisms
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
-from bluepyemodel.tools.mechanisms import compile_mechs
+from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
 
 # pylint: disable=W0235,W0621,W0404,W0611,W0703
 
@@ -77,21 +76,13 @@ class ExtractEFeatures(WorkflowTask):
 
 
 class CompileMechanisms(WorkflowTaskRequiringMechanisms):
-    """Luigi wrapper for optimisation.compile_mechs"""
+    """Luigi wrapper for mechanisms.compile_mechs_in_emodel_dir"""
 
     def run(self):
         """ """
 
         mechanisms_directory = self.access_point.get_mechanisms_directory()
-        cwd = os.getcwd()
-
-        try:
-            os.chdir(str(mechanisms_directory.parents[0]))
-            compile_mechs("./mechanisms")
-        except Exception as e:
-            print(e)
-        finally:
-            os.chdir(cwd)
+        compile_mechs_in_emodel_dir(mechanisms_directory)
 
     def output(self):
         """ """
