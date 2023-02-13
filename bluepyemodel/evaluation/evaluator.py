@@ -448,48 +448,6 @@ def define_efeatures(
     return efeatures
 
 
-def define_protocols_and_features(
-    fitness_calculator_configuration,
-    include_validation_protocols,
-    stochasticity,
-    efel_settings,
-    use_fixed_dt_recordings,
-):
-    """
-    Args:
-        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
-            fitness calculator.
-        include_validation_protocols (bool): should the validation protocols
-            and validation efeatures be added to the evaluator.
-        stochasticity (bool): Should the stochastic channels be stochastic or
-            deterministic
-        ais_recording (bool): if True all the soma recording will be at the first axonal section.
-        efel_settings (dict): eFEl settings.
-        max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
-            will search for the rheobase.
-        strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
-            when set to False
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
-        max_depth_threshold_search (int): maximum depth for the binary search for the
-            threshold current
-        spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
-            we set spikecount=2 as if many spikes were present, to speed up bisection search.
-    """
-
-    protocols = define_protocols(
-        fitness_calculator_configuration,
-        include_validation_protocols,
-        stochasticity,
-        use_fixed_dt_recordings,
-    )
-
-    efeatures = define_efeatures(
-        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
-    )
-
-    return protocols, efeatures
-
-
 def define_threshold_based_optimisation_protocol(
     fitness_calculator_configuration,
     include_validation_protocols=False,

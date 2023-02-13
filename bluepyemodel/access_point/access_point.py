@@ -217,7 +217,6 @@ class DataAccessPoint:
         """
         # pylint: disable=assignment-from-no-return
         mechs = self.get_available_mechanisms()
-        logger.debug(mechs)
         if mechs is None:
             return None, None
         ion_currents = list(chain.from_iterable([mech.get_current() for mech in mechs]))
