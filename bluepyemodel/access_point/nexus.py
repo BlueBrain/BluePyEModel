@@ -129,7 +129,6 @@ class NexusAccessPoint(DataAccessPoint):
 
     def store_pipeline_settings(self, pipeline_settings):
         """Save an EModelPipelineSettings on Nexus"""
-
         self.access_point.object_to_nexus(
             pipeline_settings,
             self.emodel_metadata_ontology.for_resource(),
@@ -248,6 +247,12 @@ class NexusAccessPoint(DataAccessPoint):
 
         if configuration.name_rmp_protocol is None:
             configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
+        if configuration.name_TRN_burst_protocol is None:
+            configuration.name_TRN_burst_protocol = self.pipeline_settings.name_TRN_burst_protocol
+        if configuration.name_TRN_noburst_protocol is None:
+            configuration.name_TRN_noburst_protocol = (
+                self.pipeline_settings.name_TRN_noburst_protocol
+            )
         if configuration.name_rin_protocol is None:
             configuration.name_rin_protocol = self.pipeline_settings.name_Rin_protocol
         if configuration.validation_protocols is None:

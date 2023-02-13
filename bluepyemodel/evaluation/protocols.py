@@ -1,6 +1,7 @@
 """Module with protocol classes."""
 import logging
 from collections import OrderedDict
+import numpy as np
 
 import numpy
 from bluepyopt import ephys
@@ -205,6 +206,60 @@ class ThresholdBasedProtocol(ProtocolWithDependencies):
         )
 
 
+class DynamicStepProtocol(ProtocolWithDependencies):
+
+    """Protocol whose holding and step currents are based on 2 specific pre-protocols"""
+
+    def __init__(
+        self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
+    ):
+
+        suffix = "_noburst" if "noburst" in name else "_burst"
+
+        dependencies = {
+            "stimulus.holding_current": [
+                f"TRNSearchHolding{suffix}",
+                f"TRNSearchHolding_current{suffix}",
+            ],
+            "stimulus_amplitude": ["TRNSearchCurrentStep", "TRNSearchCurrentStep_current"],
+        }
+
+        ProtocolWithDependencies.__init__(
+            self,
+            dependencies=dependencies,
+            name=name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=cvode_active,
+            stochasticity=stochasticity,
+        )
+
+        self._stimulus_amplitude = None
+
+    @property
+    def stimulus_amplitude(self):
+        return self._stimulus_amplitude
+
+    @stimulus_amplitude.setter
+    def stimulus_amplitude(self, v):
+        """In step eCodes, the step amplitue is defined as holding_current + amplitude. But when
+        searching for the step current in the pre-protocols, we did not use a holding_current,
+        therefore, it need to be substracted"""
+        self._stimulus_amplitude = v - self.stimulus.holding_current
+        self.stimulus.amp = v - self.stimulus.holding_current
+
+    def return_none_responses(self):
+        return {k.name: None for k in self.recordings}
+
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
+
+        return ResponseDependencies.run(
+            self, cell_model, param_values, sim, isolate, timeout, responses
+        )
+
+
 class RMPProtocol(BPEMProtocol):
 
     """Protocol consisting of a step of amplitude zero"""
@@ -327,8 +382,16 @@ class RinProtocol(ProtocolWithDependencies):
             timeout=timeout,
             responses=responses,
         )
-
-        bpo_rin = self.target_rin.calculate_feature(response)
+        t = response[self.recording_name]["time"]
+        sd = np.std(
+            response[self.recording_name]["voltage"][
+                (t > self.target_rin.stim_end - 100) & (t < self.target_rin.stim_end)
+            ]
+        )
+        if sd > 5:
+            bpo_rin = None
+        else:
+            bpo_rin = self.target_rin.calculate_feature(response)
         response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
 
         return response
@@ -343,12 +406,12 @@ class SearchHoldingCurrent(BPEMProtocol):
         location,
         target_voltage=None,
         voltage_precision=0.1,
-        stimulus_duration=500.0,
+        stimulus_duration=1000.0,
         upper_bound=0.2,
         lower_bound=-0.2,
         strict_bounds=True,
-        max_depth=7,
-        no_spikes=True,
+        target_current_name="bpo_holding_current",
+        max_depth=20,
     ):
         """Constructor
 
@@ -363,16 +426,13 @@ class SearchHoldingCurrent(BPEMProtocol):
             lower_bound (float): lower bound for the holding current, in pA
             strict_bounds (bool): to adaptively enlarge bounds if current is outside
             max_depth (int): maximum depth for the binary search
-            no_spikes (bool): if True, the holding current will only be considered valid if there
-                are no spikes at holding.
         """
-
         stimulus_definition = {
-            "delay": 0.0,
+            "delay": 500.0,
             "amp": 0.0,
             "thresh_perc": None,
             "duration": stimulus_duration,
-            "totduration": stimulus_duration,
+            "totduration": stimulus_duration + 500,
             "holding_current": 0.0,
         }
 
@@ -393,7 +453,6 @@ class SearchHoldingCurrent(BPEMProtocol):
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
         self.strict_bounds = strict_bounds
-        self.no_spikes = no_spikes
 
         self.target_voltage = target_voltage
         self.holding_voltage = self.target_voltage.exp_mean
@@ -402,16 +461,18 @@ class SearchHoldingCurrent(BPEMProtocol):
         self.target_voltage.stim_end = stimulus_duration
         self.target_voltage.stimulus_current = 0.0
 
+        self.target_current_name = target_current_name
         self.max_depth = max_depth
 
+        self.recording_name = f"{name}.{location.name}.v"
         self.spike_feature = ephys.efeatures.eFELFeature(
             name="SearchHoldingCurrent.Spikecount",
             efel_feature_name="Spikecount",
-            recording_names={"": f"SearchHoldingCurrent.{location.name}.v"},
+            recording_names={"": self.recording_name},
             stim_start=0.0,
             stim_end=stimulus_duration,
-            exp_mean=1,
-            exp_std=0.1,
+            exp_mean=0,
+            exp_std=0.001,
         )
 
     def get_voltage_base(
@@ -424,10 +485,30 @@ class SearchHoldingCurrent(BPEMProtocol):
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
 
-        if self.no_spikes:
-            n_spikes = self.spike_feature.calculate_feature(response)
-            if n_spikes is None or n_spikes > 0:
-                return None
+        n_spikes = self.spike_feature.calculate_feature(response)
+        t = response[self.recording_name]["time"]
+        sd = np.std(
+            response[self.recording_name]["voltage"][
+                (t > self.target_voltage.stim_end - 100) & (t < self.target_voltage.stim_end)
+            ]
+        )
+        """
+        import matplotlib.pyplot as plt
+
+        #plt.figure()
+        plt.plot(
+            response[self.recording_name]["time"], response[self.recording_name]["voltage"]
+        )
+        plt.axhline(self.target_voltage.exp_mean, c='k')
+        plt.twinx()
+        plt.plot(*self.stimuli[0].generate(), "r")
+        #plt.savefig(f"vv_test_{holding_current}.pdf")
+        plt.savefig(f"vv_test.pdf")
+        plt.close()
+        """
+
+        if n_spikes is None or n_spikes > 0 or sd > 5:
+            return None
 
         voltage_base = self.target_voltage.calculate_feature(response)
         if voltage_base is None:
@@ -451,7 +532,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                     timeout=timeout,
                 )
                 if voltage_min is None:
-                    voltage_min = 1e10
+                    return {self.target_current_name: None}
 
                 if voltage_min > self.target_voltage.exp_mean:
                     self.lower_bound -= 0.2
@@ -474,7 +555,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                     self.upper_bound += 0.2
 
         response = {
-            "bpo_holding_current": self.bisection_search(
+            self.target_current_name: self.bisection_search(
                 cell_model,
                 param_values,
                 sim=sim,
@@ -485,7 +566,7 @@ class SearchHoldingCurrent(BPEMProtocol):
             )
         }
 
-        if response["bpo_holding_current"] is None:
+        if response[self.target_current_name] is None:
             return response
 
         response.update(
@@ -493,7 +574,6 @@ class SearchHoldingCurrent(BPEMProtocol):
                 self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
             )
         )
-
         return response
 
     def bisection_search(
@@ -517,13 +597,13 @@ class SearchHoldingCurrent(BPEMProtocol):
             isolate=isolate,
             timeout=timeout,
         )
-        # if we don't converge fast enough, we stop and return lower bound, which will not spike
+        # if we don't converge fast enough, we stop everything
         if depth > self.max_depth:
             logging.debug(
                 "Exiting search due to reaching max_depth. The required voltage precision "
                 "was not reached."
             )
-            return lower_bound
+            return None
 
         if voltage is not None and abs(voltage - self.holding_voltage) < self.voltage_precision:
             logger.debug("Depth of holding search: %s", depth)
@@ -568,7 +648,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         max_threshold_voltage=-30,
         spikecount_timeout=50,
         max_depth=10,
-        no_spikes=True,
     ):
         """Constructor.
 
@@ -588,8 +667,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
                 we set spikecount=2 as if many spikes were present, to speed up bisection search.
             max_depth (int): maximum depth for the binary search
-            no_spikes (bool): if True, will check that the holding current (lower bound) does not
-                trigger spikes.
         """
 
         dependencies = {
@@ -628,13 +705,12 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.target_threshold = target_threshold
         self.max_threshold_voltage = max_threshold_voltage
         self.current_precision = current_precision
-        self.no_spikes = no_spikes
         self.max_depth = max_depth
 
         self.spike_feature = ephys.efeatures.eFELFeature(
             name=f"{name}.Spikecount",
             efel_feature_name="Spikecount",
-            recording_names={"": f"{name}.{location.name}.v"},
+            recording_names={"": self.recording_name},
             stim_start=stimulus_delay,
             stim_end=stimulus_delay + stimulus_duration,
             exp_mean=1,
@@ -667,6 +743,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
+        # pylint: disable=too-many-return-statements
 
         if not self.set_dependencies(responses):
             return self.return_none_responses()

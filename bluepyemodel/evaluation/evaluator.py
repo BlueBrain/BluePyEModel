@@ -15,6 +15,7 @@ from ..ecode import eCodes
 from ..tools.utils import are_same_protocol
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEMProtocol
+from .protocols import DynamicStepProtocol
 from .protocols import ProtocolRunner
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
@@ -29,7 +30,19 @@ logger = logging.getLogger(__name__)
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
 
-PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
+PRE_PROTOCOLS = [
+    "SearchHoldingCurrent",
+    "SearchThresholdCurrent",
+    "RMPProtocol",
+    "RinProtocol",
+    "TRNSearchHolding",
+    "TRNSearchHolding_burst",
+    "TRNSearchCurrentStep_current",
+    "TRNSearchHolding_noburst",
+    "TRNSearchCurrentStep",
+    "TRNSearchCurrentStep_burst",
+    "TRNSearchCurrentStep_noburst",
+]
 LEGACY_PRE_PROTOCOLS = ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]
 
 seclist_to_sec = {
@@ -42,6 +55,7 @@ seclist_to_sec = {
 protocol_type_to_class = {
     "Protocol": BPEMProtocol,
     "ThresholdBasedProtocol": ThresholdBasedProtocol,
+    "DynamicStepProtocol": DynamicStepProtocol,
 }
 
 
@@ -276,14 +290,19 @@ def define_Rin_protocol(
 
 
 def define_holding_protocol(
-    efeatures, strict_bounds=False, ais_recording=False, max_depth=7, stimulus_duration=500.0
+    efeatures,
+    protocol_name="SearchHoldingCurrent",
+    target_current_name="bpo_holding_current",
+    strict_bounds=False,
+    stimulus_duration=1000.0,
+    max_depth=20,
+    ais_recording=False,
 ):
-    """Define the search holding current protocol"""
-
+    """Define the search of current giving a voltage"""
     target_voltage = None
     for f in efeatures:
         if (
-            "SearchHoldingCurrent" in f.recording_names[""]
+            protocol_name in f.recording_names[""]
             and f.efel_feature_name == "steady_state_voltage_stimend"
         ):
             target_voltage = f
@@ -291,11 +310,12 @@ def define_holding_protocol(
 
     if target_voltage:
         return SearchHoldingCurrent(
-            name="SearchHoldingCurrent",
+            name=protocol_name,
             location=soma_loc if not ais_recording else ais_loc,
             target_voltage=target_voltage,
             strict_bounds=strict_bounds,
             max_depth=max_depth,
+            target_current_name=target_current_name,
             stimulus_duration=stimulus_duration,
         )
 
@@ -487,9 +507,10 @@ def define_threshold_based_optimisation_protocol(
             ),
             "SearchHoldingCurrent": define_holding_protocol(
                 efeatures,
-                strict_holding_bounds,
-                ais_recording,
-                max_depth_holding_search,
+                protocol_name="SearchHoldingCurrent",
+                target_current_name="bpo_holding_current",
+                strict_bounds=strict_holding_bounds,
+                ais_recording=ais_recording,
                 stimulus_duration=fitness_calculator_configuration.search_holding_duration,
             ),
             "RinProtocol": define_Rin_protocol(
@@ -511,6 +532,25 @@ def define_threshold_based_optimisation_protocol(
             ),
         }
     )
+
+    if any(isinstance(p, DynamicStepProtocol) for p in protocols.values()):
+
+        for suffix in ["_noburst", "_burst"]:
+            hold_protocol_name = f"TRNSearchHolding{suffix}"
+            protocols[hold_protocol_name] = define_holding_protocol(
+                efeatures,
+                protocol_name=hold_protocol_name,
+                target_current_name=f"TRNSearchHolding_current{suffix}",
+                strict_bounds=strict_holding_bounds,
+            )
+
+        step_protocol_name = "TRNSearchCurrentStep"
+        protocols[step_protocol_name] = define_holding_protocol(
+            efeatures,
+            protocol_name=step_protocol_name,
+            target_current_name="TRNSearchCurrentStep_current",
+            strict_bounds=strict_holding_bounds,
+        )
 
     # Create the protocol runner
     protocol_runner = ProtocolRunner(protocols)
