@@ -325,42 +325,6 @@ def define_holding_protocol(
     )
 
 
-def define_optimisation_protocol(
-    fitness_calculator_configuration,
-    include_validation_protocols=False,
-    stochasticity=True,
-    efel_settings=None,
-    use_fixed_dt_recordings=False,
-):
-    """Create a meta protocol in charge of running the other protocols.
-
-    Args:
-        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
-            fitness calculator.
-        include_validation_protocols (bool): should the validation protocols
-            and validation efeatures be added to the evaluator.
-        stochasticity (bool): Should the stochastic channels be stochastic or
-            deterministic
-        efel_settings (dict): eFEl settings.
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
-    """
-
-    protocols = define_protocols(
-        fitness_calculator_configuration,
-        include_validation_protocols,
-        stochasticity,
-        use_fixed_dt_recordings,
-    )
-
-    efeatures = define_efeatures(
-        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
-    )
-
-    protocol_runner = ProtocolRunner(protocols)
-
-    return protocol_runner, efeatures
-
-
 def define_threshold_protocol(
     efeatures,
     max_threshold_voltage=-30,
@@ -446,6 +410,42 @@ def define_efeatures(
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
     return efeatures
+
+
+def define_optimisation_protocol(
+    fitness_calculator_configuration,
+    include_validation_protocols=False,
+    stochasticity=True,
+    efel_settings=None,
+    use_fixed_dt_recordings=False,
+):
+    """Create a meta protocol in charge of running the other protocols.
+
+    Args:
+        fitness_calculator_configuration (FitnessCalculatorConfiguration): configuration of the
+            fitness calculator.
+        include_validation_protocols (bool): should the validation protocols
+            and validation efeatures be added to the evaluator.
+        stochasticity (bool): Should the stochastic channels be stochastic or
+            deterministic
+        efel_settings (dict): eFEl settings.
+        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+    """
+
+    protocols = define_protocols(
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        stochasticity,
+        use_fixed_dt_recordings,
+    )
+
+    efeatures = define_efeatures(
+        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+    )
+
+    protocol_runner = ProtocolRunner(protocols)
+
+    return protocol_runner, efeatures
 
 
 def define_threshold_based_optimisation_protocol(
