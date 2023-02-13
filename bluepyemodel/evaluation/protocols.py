@@ -1,8 +1,8 @@
 """Module with protocol classes."""
 import logging
 from collections import OrderedDict
-import numpy as np
 
+import numpy as np
 from bluepyopt import ephys
 
 from ..ecode import eCodes
@@ -212,7 +212,6 @@ class DynamicStepProtocol(ProtocolWithDependencies):
     def __init__(
         self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
     ):
-
         suffix = "_noburst" if "noburst" in name else "_burst"
 
         dependencies = {
@@ -253,7 +252,6 @@ class DynamicStepProtocol(ProtocolWithDependencies):
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
-
         return ResponseDependencies.run(
             self, cell_model, param_values, sim, isolate, timeout, responses
         )
@@ -381,16 +379,7 @@ class RinProtocol(ProtocolWithDependencies):
             timeout=timeout,
             responses=responses,
         )
-        t = response[self.recording_name]["time"]
-        sd = np.std(
-            response[self.recording_name]["voltage"][
-                (t > self.target_rin.stim_end - 100) & (t < self.target_rin.stim_end)
-            ]
-        )
-        if sd > 5:
-            bpo_rin = None
-        else:
-            bpo_rin = self.target_rin.calculate_feature(response)
+        bpo_rin = self.target_rin.calculate_feature(response)
         response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
 
         return response
@@ -484,6 +473,7 @@ class SearchHoldingCurrent(BPEMProtocol):
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
 
+        # check that holding is stable, no spike, no oscillations
         n_spikes = self.spike_feature.calculate_feature(response)
         t = response[self.recording_name]["time"]
         sd = np.std(
@@ -491,21 +481,6 @@ class SearchHoldingCurrent(BPEMProtocol):
                 (t > self.target_voltage.stim_end - 100) & (t < self.target_voltage.stim_end)
             ]
         )
-        """
-        import matplotlib.pyplot as plt
-
-        #plt.figure()
-        plt.plot(
-            response[self.recording_name]["time"], response[self.recording_name]["voltage"]
-        )
-        plt.axhline(self.target_voltage.exp_mean, c='k')
-        plt.twinx()
-        plt.plot(*self.stimuli[0].generate(), "r")
-        #plt.savefig(f"vv_test_{holding_current}.pdf")
-        plt.savefig(f"vv_test.pdf")
-        plt.close()
-        """
-
         if n_spikes is None or n_spikes > 0 or sd > 5:
             return None
 
@@ -790,16 +765,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             return None, None
 
         lower_bound = responses["bpo_holding_current"]
-        spikecount = self._get_spikecount(lower_bound, cell_model, param_values, sim, isolate)
-
-        if spikecount > 0:
-            if self.no_spikes:
-                return None, None
-            lower_bound -= 0.5
-
-        if lower_bound > upper_bound:
-            return None, None
-
         return lower_bound, upper_bound
 
     def bisection_search(

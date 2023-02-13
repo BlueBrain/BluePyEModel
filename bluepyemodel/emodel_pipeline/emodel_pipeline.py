@@ -153,7 +153,6 @@ class EModel_pipeline:
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
 
         for chkp_path in glob.glob(checkpoint_path.replace("seed=1", "*")):
-
             if seed is not None and str(seed) not in chkp_path:
                 continue
 

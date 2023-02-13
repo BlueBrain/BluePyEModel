@@ -52,7 +52,7 @@ class EModelPipelineSettings:
         cvode_minstep=0.0,
         max_threshold_voltage=-30,
         strict_holding_bounds=True,
-        max_depth_holding_search=7,
+        max_depth_holding_search=20,
         max_depth_threshold_search=10,
         spikecount_timeout=50,
     ):

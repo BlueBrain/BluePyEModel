@@ -457,7 +457,7 @@ def define_threshold_based_optimisation_protocol(
     max_threshold_voltage=-30,
     strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
-    max_depth_holding_search=7,
+    max_depth_holding_search=20,
     max_depth_threshold_search=10,
     spikecount_timeout=50,
 ):
@@ -512,6 +512,7 @@ def define_threshold_based_optimisation_protocol(
                 strict_bounds=strict_holding_bounds,
                 ais_recording=ais_recording,
                 stimulus_duration=fitness_calculator_configuration.search_holding_duration,
+                max_depth=max_depth_holding_search,
             ),
             "RinProtocol": define_Rin_protocol(
                 efeatures,
@@ -534,7 +535,6 @@ def define_threshold_based_optimisation_protocol(
     )
 
     if any(isinstance(p, DynamicStepProtocol) for p in protocols.values()):
-
         for suffix in ["_noburst", "_burst"]:
             hold_protocol_name = f"TRNSearchHolding{suffix}"
             protocols[hold_protocol_name] = define_holding_protocol(

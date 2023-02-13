@@ -34,7 +34,6 @@ def locally_store_responses(emodel):
     output_dir = f"./recordings/{emodel.emodel_metadata.as_string(emodel.seed)}"
     make_dir(output_dir)
     for key, resp in emodel.responses.items():
-        logger.debug(key)
         if not any(fl_key in key for fl_key in float_response_keys):
             output_path = Path(output_dir) / ".".join((key, "dat"))
 
@@ -43,7 +42,6 @@ def locally_store_responses(emodel):
                 data = numpy.array(resp["voltage"])  # even current will be named voltage here
 
                 numpy.savetxt(output_path, numpy.transpose(numpy.vstack((time, data))))
-                logger.debug(f"{key} stored")
 
 
 def check_local_responses_presence(emodels, cell_eval):
