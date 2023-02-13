@@ -11,6 +11,8 @@ from bluepyemodel.access_point import get_access_point
 from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.evaluation.evaluator import create_evaluator
 from bluepyemodel.model import model
+from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
+from bluepyemodel.tools.mechanisms import delete_compiled_mechanisms
 from bluepyemodel.tools.utils import make_dir
 
 logger = logging.getLogger(__name__)
@@ -248,10 +250,16 @@ def get_evaluator_from_access_point(
         morph_modifiers=morph_modifiers,
     )
 
+    mechanisms_directory = access_point.get_mechanisms_directory()
     if isinstance(access_point, LocalAccessPoint):
-        mechanisms_directory = None
-    else:
-        mechanisms_directory = access_point.get_mechanisms_directory()
+        if Path.cwd() != access_point.emodel_dir and access_point.emodel_metadata.iteration:
+            delete_compiled_mechanisms()
+            if not (access_point.emodel_dir / "x86_64").is_dir():
+                compile_mechs_in_emodel_dir(mechanisms_directory)
+        else:
+            # if x86_64 present in main repo AND mechanisms_directory given to simulator
+            # NEURON loads mechanisms twice and crash
+            mechanisms_directory = None
 
     evaluator = create_evaluator(
         cell_model=cell_model,
