@@ -294,9 +294,8 @@ def define_holding_protocol(
     protocol_name="SearchHoldingCurrent",
     target_current_name="bpo_holding_current",
     strict_bounds=False,
-    upper_bound=0.2,
-    lower_bound=-0.5,
     stimulus_duration=500.0,
+    max_depth=7,
     ais_recording=False,
 ):
     """Define the search of current giving a voltage"""
@@ -315,8 +314,7 @@ def define_holding_protocol(
             location=soma_loc if not ais_recording else ais_loc,
             target_voltage=target_voltage,
             strict_bounds=strict_bounds,
-            upper_bound=upper_bound,
-            lower_bound=lower_bound,
+            max_depth=max_depth,
             target_current_name=target_current_name,
             stimulus_duration=stimulus_duration,
         )
@@ -554,8 +552,6 @@ def define_threshold_based_optimisation_protocol(
                 protocol_name="SearchHoldingCurrent",
                 target_current_name="bpo_holding_current",
                 strict_bounds=strict_holding_bounds,
-                upper_bound=2.0,
-                lower_bound=-1.0,
                 ais_recording=ais_recording,
                 stimulus_duration=fitness_calculator_configuration.search_holding_duration,
             ),
@@ -588,9 +584,6 @@ def define_threshold_based_optimisation_protocol(
                 protocol_name=hold_protocol_name,
                 target_current_name=f"TRNSearchHolding_current{suffix}",
                 strict_bounds=strict_holding_bounds,
-                upper_bound=2.0,
-                lower_bound=-1.0,
-                no_spikes=False,
             )
 
         step_protocol_name = "TRNSearchCurrentStep"
@@ -599,9 +592,6 @@ def define_threshold_based_optimisation_protocol(
             protocol_name=step_protocol_name,
             target_current_name="TRNSearchCurrentStep_current",
             strict_bounds=strict_holding_bounds,
-            upper_bound=2.0,
-            lower_bound=-1.0,
-            no_spikes=False,
         )
 
     # Create the protocol runner

@@ -407,8 +407,8 @@ class SearchHoldingCurrent(BPEMProtocol):
         voltage_precision=0.1,
         stimulus_duration=500.0,
         upper_bound=0.2,
-        lower_bound=-0.3,
-        strict_bounds=False,
+        lower_bound=-0.2,
+        strict_bounds=True,
         target_current_name="bpo_holding_current",
         max_depth=7,
     ):
