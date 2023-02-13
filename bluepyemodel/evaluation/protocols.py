@@ -339,7 +339,6 @@ class RinProtocol(ProtocolWithDependencies):
             "duration": stimulus_duration,
             "totduration": totduration,
             "holding_current": None,
-            "initial_relax": 100,  # ensures we get to proper holding
         }
 
         self.recording_name = f"{name}.{location.name}.v"
@@ -597,7 +596,7 @@ class SearchHoldingCurrent(BPEMProtocol):
             isolate=isolate,
             timeout=timeout,
         )
-        # if we don't converge fast enough, we stop and return lower bound, which will not spike
+        # if we don't converge fast enough, we stop everything
         if depth > self.max_depth:
             logging.debug(
                 "Exiting search due to reaching max_depth. The required voltage precision "
@@ -705,8 +704,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.target_threshold = target_threshold
         self.max_threshold_voltage = max_threshold_voltage
         self.current_precision = current_precision
-        self.max_depth = max_depth
-
         self.max_depth = max_depth
 
         self.spike_feature = ephys.efeatures.eFELFeature(
@@ -819,7 +816,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         """Do bisection search to find threshold current."""
         mid_bound = (upper_bound + lower_bound) * 0.5
         spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
-
         if abs(lower_bound - upper_bound) < self.current_precision:
             logger.debug("Depth of threshold search: %s", depth)
             return upper_bound
@@ -897,7 +893,6 @@ class ProtocolRunner(ephys.protocols.Protocol):
         cell_model.freeze(param_values)
 
         for protocol_name in self.execution_order:
-
             logger.debug("Computing protocol %s", protocol_name)
             new_responses = self.protocols[protocol_name].run(
                 cell_model,

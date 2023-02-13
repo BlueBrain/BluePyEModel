@@ -116,7 +116,7 @@ class FitnessCalculatorConfiguration:
         self.rin_step_duration = 500.0
         self.rin_step_amp = -0.02
         self.rin_totduration = 1000.0
-        self.search_holding_duration = 1000.0
+        self.search_holding_duration = 500.0
         self.search_threshold_step_delay = 500.0
         self.search_threshold_step_duration = 2000.0
         self.search_threshold_totduration = 3000.0
