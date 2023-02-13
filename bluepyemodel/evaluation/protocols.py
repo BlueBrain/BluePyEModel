@@ -440,8 +440,6 @@ class SearchHoldingCurrent(BPEMProtocol):
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [LooseDtRecordingCustom(name=recording_name, location=location, variable="v")]
 
-        self.max_depth = max_depth
-
         BPEMProtocol.__init__(
             self,
             name=name,
@@ -538,7 +536,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                     return {self.target_current_name: None}
 
                 if voltage_min > self.target_voltage.exp_mean:
-                    self.lower_bound -= 1.0
+                    self.lower_bound -= 0.2
 
             voltage_max = -1e10
             while voltage_max < self.target_voltage.exp_mean:
@@ -555,7 +553,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                     voltage_max = 1e10
 
                 elif voltage_max < self.target_voltage.exp_mean:
-                    self.upper_bound += 1.0
+                    self.upper_bound += 0.2
 
         response = {
             self.target_current_name: self.bisection_search(
@@ -602,14 +600,11 @@ class SearchHoldingCurrent(BPEMProtocol):
             timeout=timeout,
         )
         # if we don't converge fast enough, we stop and return lower bound, which will not spike
-        self.max_depth = 20
-        # print(depth,  voltage, abs(voltage - self.holding_voltage) , self.voltage_precision)
         if depth > self.max_depth:
             logging.debug(
                 "Exiting search due to reaching max_depth. The required voltage precision "
                 "was not reached."
             )
-            print("max depth")
             return None
 
         if voltage is not None and abs(voltage - self.holding_voltage) < self.voltage_precision:
@@ -649,12 +644,12 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         location,
         target_threshold=None,
         current_precision=1e-2,
-        stimulus_delay=0.0,
-        stimulus_duration=1000.0,
-        stimulus_totduration=1000.0,
+        stimulus_delay=500.0,
+        stimulus_duration=2000.0,
+        stimulus_totduration=3000.0,
         max_threshold_voltage=-30,
         spikecount_timeout=50,
-        max_depth=5,
+        max_depth=10,
     ):
         """Constructor.
 
