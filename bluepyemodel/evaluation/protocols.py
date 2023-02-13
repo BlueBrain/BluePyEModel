@@ -410,7 +410,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         lower_bound=-0.2,
         strict_bounds=True,
         target_current_name="bpo_holding_current",
-        max_depth=7,
+        max_depth=20,
     ):
         """Constructor
 
@@ -519,6 +519,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
+        print(self.strict_bounds)
         if not self.strict_bounds:
             # first readjust the bounds if needed
             voltage_min = 1e10
@@ -531,7 +532,6 @@ class SearchHoldingCurrent(BPEMProtocol):
                     isolate=isolate,
                     timeout=timeout,
                 )
-
                 if voltage_min is None:
                     return {self.target_current_name: None}
 
@@ -554,7 +554,7 @@ class SearchHoldingCurrent(BPEMProtocol):
 
                 elif voltage_max < self.target_voltage.exp_mean:
                     self.upper_bound += 0.2
-
+        print(self.lower_bound, self.upper_bound)
         response = {
             self.target_current_name: self.bisection_search(
                 cell_model,
@@ -605,9 +605,11 @@ class SearchHoldingCurrent(BPEMProtocol):
                 "Exiting search due to reaching max_depth. The required voltage precision "
                 "was not reached."
             )
+            print('max')
             return None
-
+        print(depth, voltage, upper_bound, lower_bound, self.max_depth)
         if voltage is not None and abs(voltage - self.holding_voltage) < self.voltage_precision:
+            print('good')
             logger.debug("Depth of holding search: %s", depth)
             return mid_bound
 
@@ -752,11 +754,11 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         if not self.set_dependencies(responses):
             return self.return_none_responses()
 
-        upper_bound = self.max_threshold_current()
-        lower_bound = responses["bpo_holding_current"]
-
-        spikecount = self._get_spikecount(upper_bound, cell_model, param_values, sim, isolate)
-        if spikecount == 0:
+        lower_bound, upper_bound = self.define_search_bounds(
+            cell_model, param_values, sim, isolate, responses
+        )
+        if lower_bound is None or upper_bound is None:
+            logger.debug("Threshold search bounds are not good")
             return {"bpo_threshold_current": None}
 
         threshold = self.bisection_search(
