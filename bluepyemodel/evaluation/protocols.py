@@ -601,6 +601,7 @@ class SearchCurrentForVoltage(BPEMProtocol):
                 self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
             )
         )
+        print(response)
         return response
 
     def bisection_search(
@@ -798,19 +799,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             lower_bound -= 0.5
 
         if lower_bound > upper_bound:
-            return {"bpo_threshold_current": None}
-
-        # Search by increasing current
-        n_steps = 5
-        delta_current = (upper_bound - lower_bound) / n_steps
-        for i in range(1, n_steps):
-            current = lower_bound + (i * delta_current)
-            spikecount = self._get_spikecount(current, cell_model, param_values, sim, isolate)
-            if spikecount > 0:
-                upper_bound = current
-                lower_bound = current - delta_current
-                break
-        else:
             return {"bpo_threshold_current": None}
 
         threshold = self.bisection_search(

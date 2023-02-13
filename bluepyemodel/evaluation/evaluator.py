@@ -289,7 +289,7 @@ def define_Rin_protocol(
     )
 
 
-def define_current_for_voltage_protocol(
+def define_holding_protocol(
     efeatures,
     protocol_name,
     target_current_name=None,
@@ -297,6 +297,8 @@ def define_current_for_voltage_protocol(
     upper_bound=0.2,
     lower_bound=-0.5,
     no_spikes=False,
+    stimulus_duration=500.,
+    ais_recording=False,
 ):
     """Define the search of current giving a voltage"""
     target_voltage = None
@@ -311,13 +313,14 @@ def define_current_for_voltage_protocol(
     if target_voltage:
         return SearchCurrentForVoltage(
             name=protocol_name,
-            location=soma_loc,
+            location=soma_loc if not ais_recording else ais_loc,
             target_voltage=target_voltage,
             strict_bounds=strict_bounds,
             upper_bound=upper_bound,
             lower_bound=lower_bound,
             target_current_name=target_current_name,
             no_spikes=no_spikes,
+            stimulus_duration=stimulus_duration,
         )
 
     raise ValueError(
@@ -542,11 +545,47 @@ def define_threshold_based_optimisation_protocol(
         fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
     )
 
+    # Create the special protocols
+    protocols.update(
+        {
+            "RMPProtocol": define_RMP_protocol(
+                efeatures, stimulus_duration=fitness_calculator_configuration.rmp_duration
+            ),
+            "SearchHoldingCurrent": define_holding_protocol(
+                efeatures,
+                protocol_name="SearchHoldingCurrent",
+                target_current_name="bpo_holding_current",
+                strict_bounds=strict_holding_bounds,
+                upper_bound=2.0,
+                lower_bound=-1.0,
+                ais_recording=ais_recording,
+                stimulus_duration=fitness_calculator_configuration.search_holding_duration,
+            ),
+            "RinProtocol": define_Rin_protocol(
+                efeatures,
+                ais_recording,
+                amp=fitness_calculator_configuration.rin_step_amp,
+                stimulus_delay=fitness_calculator_configuration.rin_step_delay,
+                stimulus_duration=fitness_calculator_configuration.rin_step_duration,
+                totduration=fitness_calculator_configuration.rin_totduration,
+            ),
+            "SearchThresholdCurrent": define_threshold_protocol(
+                efeatures,
+                max_threshold_voltage,
+                fitness_calculator_configuration.search_threshold_step_delay,
+                fitness_calculator_configuration.search_threshold_step_duration,
+                fitness_calculator_configuration.search_threshold_totduration,
+                spikecount_timeout,
+                max_depth_threshold_search,
+            ),
+        }
+    )
+
     if any(isinstance(p, DynamicStepProtocol) for p in protocols.values()):
 
         for suffix in ["_noburst", "_burst"]:
             hold_protocol_name = f"TRNSearchHolding{suffix}"
-            protocols[hold_protocol_name] = define_current_for_voltage_protocol(
+            protocols[hold_protocol_name] = define_holding_protocol(
                 efeatures,
                 protocol_name=hold_protocol_name,
                 target_current_name=f"TRNSearchHolding_current{suffix}",
@@ -557,7 +596,7 @@ def define_threshold_based_optimisation_protocol(
             )
 
         step_protocol_name = "TRNSearchCurrentStep"
-        protocols[step_protocol_name] = define_current_for_voltage_protocol(
+        protocols[step_protocol_name] = define_holding_protocol(
             efeatures,
             protocol_name=step_protocol_name,
             target_current_name="TRNSearchCurrentStep_current",
