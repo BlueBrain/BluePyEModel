@@ -19,7 +19,7 @@ from .protocols import DynamicStepProtocol
 from .protocols import ProtocolRunner
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
-from .protocols import SearchCurrentForVoltage
+from .protocols import SearchHoldingCurrent
 from .protocols import SearchThresholdCurrent
 from .protocols import ThresholdBasedProtocol
 from .recordings import FixedDtRecordingCustom
@@ -291,13 +291,12 @@ def define_Rin_protocol(
 
 def define_holding_protocol(
     efeatures,
-    protocol_name,
-    target_current_name=None,
+    protocol_name="SearchHoldingCurrent",
+    target_current_name="bpo_holding_current",
     strict_bounds=False,
     upper_bound=0.2,
     lower_bound=-0.5,
-    no_spikes=False,
-    stimulus_duration=500.,
+    stimulus_duration=500.0,
     ais_recording=False,
 ):
     """Define the search of current giving a voltage"""
@@ -311,7 +310,7 @@ def define_holding_protocol(
             break
 
     if target_voltage:
-        return SearchCurrentForVoltage(
+        return SearchHoldingCurrent(
             name=protocol_name,
             location=soma_loc if not ais_recording else ais_loc,
             target_voltage=target_voltage,
@@ -319,7 +318,6 @@ def define_holding_protocol(
             upper_bound=upper_bound,
             lower_bound=lower_bound,
             target_current_name=target_current_name,
-            no_spikes=no_spikes,
             stimulus_duration=stimulus_duration,
         )
 
