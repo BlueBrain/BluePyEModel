@@ -41,6 +41,9 @@ class IDrest(BPEM_stimulus):
         self.holding_current = kwargs.get("holding_current", None)
         self.threshold_current = None
 
+        # in certain cases, doing to holding from v_init is puts the cell in a strange state
+        self.initial_relax = kwargs.get('initial_relax', 0)
+
         if self.amp is None and self.amp_rel is None:
             raise TypeError(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
@@ -78,6 +81,9 @@ class IDrest(BPEM_stimulus):
         self.time_vec = sim.neuron.h.Vector()
 
         self.time_vec.append(0.0)
+        self.current_vec.append(0.)
+
+        self.time_vec.append(self.initial_relax)
         self.current_vec.append(self.holding_current)
 
         self.time_vec.append(self.delay)

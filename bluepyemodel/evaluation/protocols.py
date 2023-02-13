@@ -326,9 +326,9 @@ class RinProtocol(ProtocolWithDependencies):
         location,
         target_rin,
         amp=-0.02,
-        stimulus_delay=1000.0,
-        stimulus_duration=1000.0,
-        totduration=2000.0,
+        stimulus_delay=500.0,
+        stimulus_duration=500.0,
+        totduration=1000.0,
     ):
         """Constructor"""
 
@@ -339,8 +339,8 @@ class RinProtocol(ProtocolWithDependencies):
             "duration": stimulus_duration,
             "totduration": totduration,
             "holding_current": None,
+            "initial_relax": 100,  # ensures we get to proper holding
         }
-
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
@@ -371,7 +371,6 @@ class RinProtocol(ProtocolWithDependencies):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Compute the Rin"""
-
         response = ResponseDependencies.run(
             self,
             cell_model,
@@ -519,7 +518,6 @@ class SearchHoldingCurrent(BPEMProtocol):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
-        print(self.strict_bounds)
         if not self.strict_bounds:
             # first readjust the bounds if needed
             voltage_min = 1e10
@@ -554,7 +552,7 @@ class SearchHoldingCurrent(BPEMProtocol):
 
                 elif voltage_max < self.target_voltage.exp_mean:
                     self.upper_bound += 0.2
-        print(self.lower_bound, self.upper_bound)
+
         response = {
             self.target_current_name: self.bisection_search(
                 cell_model,
@@ -605,11 +603,9 @@ class SearchHoldingCurrent(BPEMProtocol):
                 "Exiting search due to reaching max_depth. The required voltage precision "
                 "was not reached."
             )
-            print('max')
             return None
-        print(depth, voltage, upper_bound, lower_bound, self.max_depth)
+
         if voltage is not None and abs(voltage - self.holding_voltage) < self.voltage_precision:
-            print('good')
             logger.debug("Depth of holding search: %s", depth)
             return mid_bound
 
@@ -824,15 +820,10 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         mid_bound = (upper_bound + lower_bound) * 0.5
         spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
 
+        print(lower_bound, upper_bound, spikecount, abs(lower_bound - upper_bound), self.current_precision)
         if abs(lower_bound - upper_bound) < self.current_precision:
-            if spikecount == 1:
-                logger.debug("Depth of threshold search: %s", depth)
-                return upper_bound
-
-        if depth > self.max_depth:
-            if spikecount:
-                return upper_bound
-            return None
+            logger.debug("Depth of threshold search: %s", depth)
+            return upper_bound
 
         if depth > self.max_depth:
             return upper_bound

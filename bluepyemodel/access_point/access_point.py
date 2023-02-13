@@ -216,7 +216,6 @@ class DataAccessPoint:
             (list of str): ionic concentration names for all available mechanisms
         """
         # pylint: disable=assignment-from-no-return
-        logger.debug("in get ions currents")
         mechs = self.get_available_mechanisms()
         logger.debug(mechs)
         if mechs is None:
@@ -227,8 +226,6 @@ class DataAccessPoint:
         )
         # append i_pas which is present by default
         ion_currents.append("i_pas")
-        logger.debug(ion_currents)
-        logger.debug(ionic_concentrations)
         return ion_currents, ionic_concentrations
 
     def __str__(self):
