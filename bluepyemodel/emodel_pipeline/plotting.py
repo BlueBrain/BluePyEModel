@@ -103,6 +103,22 @@ def get_traces_names_and_float_responses(responses, recording_names):
     return traces_names, threshold, holding, rmp, rin
 
 
+def get_title(emodel, iteration, seed):
+    """Returns 'emodel ; iteration={iteration} ; seed={seed}'
+
+    Args:
+        emodel (str): emodel name
+        iteration (str): githash
+        seed (int): random number seed
+    """
+    title = str(emodel)
+    if iteration is not None:
+        title += f" ; iteration = {iteration}"
+    if seed is not None:
+        title += f" ; seed = {seed}"
+    return title
+
+
 def optimisation(
     optimiser,
     emodel,
@@ -130,8 +146,7 @@ def optimisation(
 
     fig, axs = plt.subplots(1, figsize=(8, 8), squeeze=False)
 
-    title = str(emodel)
-    title += f"; iteration = {iteration} ; seed = {seed}"
+    title = get_title(emodel, iteration, seed)
     axs[0, 0].set_title(title)
 
     axs[0, 0].plot(nevals, run["logbook"].select("min"), label="Minimum", ls="--", c="gray")
@@ -181,8 +196,7 @@ def scores(model, figures_dir="./figures", write_fig=True):
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
 
-    title = str(model.emodel_metadata.emodel)
-    title += f"; iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
+    title = get_title(model.emodel_metadata.emodel, model.emodel_metadata.iteration, model.seed)
     # tweak size and placement so that title does not overcross figure
     fig.suptitle(title, size="medium", y=0.99)
 
@@ -543,6 +557,9 @@ def plot_models(
                 config=config,
                 metadata_str=mo.emodel_metadata.as_string(mo.seed),
                 figures_dir=figures_dir_currentscape,
+                emodel=mo.emodel_metadata.emodel,
+                iteration_tag=mo.emodel_metadata.iteration,
+                seed=mo.seed,
             )
         if plot_if_curve:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
@@ -638,7 +655,14 @@ def get_voltage_currents_from_files(key_dict, output_dir):
 
 
 def currentscape(
-    responses=None, output_dir=None, config=None, metadata_str="", figures_dir="./figures"
+    responses=None,
+    output_dir=None,
+    config=None,
+    metadata_str="",
+    figures_dir="./figures",
+    emodel="",
+    seed=None,
+    iteration_tag=None,
 ):
     """Plot the currentscapes for all protocols.
 
@@ -649,7 +673,9 @@ def currentscape(
         config (dict): currentscape config. See currentscape package for more info.
         metadata_str (str): Metadata of the model as a string. Used in the files naming.
         figures_dir (str): path to the directory where to put the figures.
-
+        emodel (str): name of the emodel
+        iteration_tag (str): githash
+        seed (int): random seed number
     """
     if responses is None and output_dir is None:
         raise TypeError("Responses or output directory must be set.")
@@ -710,6 +736,9 @@ def currentscape(
             config["output"]["fname"] = name
             if "dir" not in config["output"]:
                 config["output"]["dir"] = figures_dir
+            if "title" not in config and emodel:
+                title = get_title(emodel, iteration_tag, seed)
+                config["title"] = title
 
             if len(voltage) == 0 or len(currents) == 0:
                 logger.warning(
