@@ -46,6 +46,7 @@ class TraceFile:
         brain_region=None,
         etype=None,
     ):
+        """Docstring please"""
         self.cell_name = cell_name
         self.filename = filename if filename else cell_name
         self.filepath = filepath

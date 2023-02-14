@@ -76,7 +76,7 @@ AUTO_TARGET_DICT = {
     },
     "iv": {
         "protocols": ["IV", "Step"],
-        "amplitudes": [-50, -100],
+        "amplitudes": [0, -40, -100],
         "efeatures": [
             "voltage_base",
             "steady_state_voltage_stimend",

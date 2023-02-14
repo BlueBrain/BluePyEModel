@@ -662,6 +662,7 @@ def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
         base_text = f"{base_text}."
 
     resources = access_point.resolve(label, strategy="all", limit=limit)
+
     if resources is None:
         raise AccessPointException(base_text)
 

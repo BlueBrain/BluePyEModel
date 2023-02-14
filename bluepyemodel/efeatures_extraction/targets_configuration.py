@@ -7,6 +7,7 @@ from bluepyefe.auto_targets import AutoTarget
 from bluepyemodel.efeatures_extraction.target import Target
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.tools.utils import are_same_protocol
+from bluepyemodel.tools.utils import format_protocol_name_to_list
 
 logger = logging.getLogger(__name__)
 
@@ -88,14 +89,14 @@ class TargetsConfiguration:
                 self.files.append(tmp_trace)
 
         self.targets = []
-        self.auto_target=None
+        self.auto_targets = None
         if targets is not None:
             for t in targets:
                 tmp_target = Target(**t)
                 if not self.is_target_available(tmp_target):
                     raise ValueError(f"Efeature name {tmp_target.efeature} does not exist")
                 self.targets.append(tmp_target)
-        elif auto_targets is not None:
+        if auto_targets is not None:
             self.auto_targets = auto_targets
 
         if protocols_rheobase is None:
@@ -125,12 +126,21 @@ class TargetsConfiguration:
         else:
             logger.info("No files given. Will use all available traces instead.")
             files = self.available_traces
-
+        print("in files")
+        print(files)
         files_metadata = {}
 
-        used_protocols = set([t.protocol for t in self.targets] + self.protocols_rheobase)
+        if self.targets:
+            used_protocols = set([t.protocol for t in self.targets] + self.protocols_rheobase)
+        elif self.auto_targets:
+            used_protocols = set(
+                [p for t in self.auto_targets for p in t["protocols"]] + self.protocols_rheobase
+            )
+        else:
+            raise TypeError("either targets or autotargets should be set.")
 
         for f in files:
+            # expects f.ecodes to be dict, protocol is key
             for protocol in f.ecodes:
                 if protocol in used_protocols:
                     if f.cell_name not in files_metadata:
@@ -158,7 +168,8 @@ class TargetsConfiguration:
                     f"{protocol} is part of the protocols_rheobase but it has"
                     f" no associated ephys data for cell {cell_name}"
                 )
-
+        print("files metadata")
+        print(files_metadata)
         return files_metadata
 
     @property
@@ -206,16 +217,32 @@ class TargetsConfiguration:
         """Check that the protocols supposed to be used for RMP and Rin are present in the target
         and that they have the correct efeatures. If some features are missing, add them."""
 
-        efeatures_rmp = [
-            t.efeature
-            for t in self.targets
-            if are_same_protocol([t.protocol, t.amplitude], name_rmp_protocol)
-        ]
-        efeatures_rin = [
-            t.efeature
-            for t in self.targets
-            if are_same_protocol([t.protocol, t.amplitude], name_Rin_protocol)
-        ]
+        if self.targets:
+            efeatures_rmp = [
+                t.efeature
+                for t in self.targets
+                if are_same_protocol([t.protocol, t.amplitude], name_rmp_protocol)
+            ]
+            efeatures_rin = [
+                t.efeature
+                for t in self.targets
+                if are_same_protocol([t.protocol, t.amplitude], name_Rin_protocol)
+            ]
+        elif self.auto_targets:
+            efeatures_rmp = [
+                efeat
+                for t in self.auto_targets
+                for efeat in t["efeatures"]
+                if format_protocol_name_to_list(name_rmp_protocol)[0] in t["protocols"]
+            ]
+            efeatures_rin = [
+                efeat
+                for t in self.auto_targets
+                for efeat in t["efeatures"]
+                if format_protocol_name_to_list(name_Rin_protocol)[0] in t["protocols"]
+            ]
+        else:
+            raise TypeError("either targets or autotargets should be set.")
 
         error_message = (
             "Target for feature {} is missing for protocol {}. Please add "
@@ -236,5 +263,5 @@ class TargetsConfiguration:
             "files": [f.as_dict() for f in self.files],
             "targets": [t.as_dict() for t in self.targets],
             "protocols_rheobase": self.protocols_rheobase,
-            "auto_targets": [at.as_dict() for at in self.auto_targets],
+            "auto_targets": self.auto_targets,
         }
