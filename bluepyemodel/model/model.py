@@ -80,6 +80,11 @@ def define_parameters(parameters_definition, distributions, mapping_multilocatio
             is_frozen = False
             value = None
             bounds = param_def.value
+            if bounds[0] > bounds[1]:
+                raise ValueError(
+                    f"Lower bound ({bounds[0]}) is greater than upper bound ({bounds[1]})"
+                    f" for parameter {param_def.name}"
+                )
         else:
             is_frozen = True
             value = param_def.value
