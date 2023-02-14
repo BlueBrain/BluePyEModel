@@ -225,7 +225,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "Empty list of files in the TargetsConfiguration, filling"
                 "it using what is available on Nexus for the present etype."
             )
-            configuration.traces = configuration.available_traces
+            configuration.files = configuration.available_traces
 
         for file in configuration.files:
             file.filepath = self.download_trace(id_=file.resource_id, name=file.filename)
@@ -722,6 +722,7 @@ class NexusAccessPoint(DataAccessPoint):
         resource_traces = get_available_traces(
             species=species, brain_region=brain_region, access_token=self.access_point.access_token
         )
+        print(len(resource_traces))
 
         traces = []
         if resource_traces is None:
@@ -753,7 +754,7 @@ class NexusAccessPoint(DataAccessPoint):
                     for annotation in r.annotation:
                         if "e-type" in annotation.name.lower():
                             etype = annotation.hasBody.label
-
+            print(etype)
             if etype is not None and etype == self.emodel_metadata.etype:
                 traces.append(
                     TraceFile(
@@ -768,7 +769,8 @@ class NexusAccessPoint(DataAccessPoint):
                         etype=etype,
                     )
                 )
-
+        print(len(traces))
+        print(traces)
         return traces
 
     def store_morphology(self, morphology_name, morphology_path, mtype=None):
