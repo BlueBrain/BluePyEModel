@@ -38,6 +38,12 @@ def copy_mechs(mechanism_paths, out_dir):
                 )
 
 
+def delete_compiled_mechanisms():
+    """Delete compiled mechanisms."""
+    if Path("x86_64").is_dir():
+        os.popen("rm -rf x86_64").read()
+
+
 def compile_mechs(mechanisms_dir):
     """Compile the mechanisms.
 
@@ -49,15 +55,32 @@ def compile_mechs(mechanisms_dir):
     path_mechanisms_dir = Path(mechanisms_dir)
 
     if path_mechanisms_dir.is_dir():
-        if Path("x86_64").is_dir():
-            os.popen("rm -rf x86_64").read()
+        delete_compiled_mechanisms()
         os.popen(f"nrnivmodl {path_mechanisms_dir}").read()
-
     else:
         raise FileNotFoundError(
             "Cannot compile the mechanisms because 'mechanisms_dir':"
             f" {path_mechanisms_dir} does not exist."
         )
+
+
+def compile_mechs_in_emodel_dir(mechanisms_directory):
+    """Compile mechanisms in emodel directory.
+
+    Args:
+        mechanisms_dir (Path): path to the directory containing the
+            mod files to compile.
+    """
+    # pylint: disable=broad-exception-caught
+    cwd = os.getcwd()
+
+    try:
+        os.chdir(str(mechanisms_directory.parents[0]))
+        compile_mechs("./mechanisms")
+    except Exception as e:
+        logger.exception(e)
+    finally:
+        os.chdir(cwd)
 
 
 def copy_and_compile_mechanisms(access_point):
