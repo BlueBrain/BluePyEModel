@@ -24,7 +24,9 @@ class TargetsConfigurator:
         self.access_point = access_point
         self.configuration = configuration
 
-    def new_configuration(self, files=None, targets=None, protocols_rheobase=None, auto_targets=None):
+    def new_configuration(
+        self, files=None, targets=None, protocols_rheobase=None, auto_targets=None
+    ):
         """Create a new configuration"""
 
         if self.configuration is not None:
@@ -74,11 +76,10 @@ class TargetsConfigurator:
                 "Will not create another one."
             )
             return
-        
+
         files = self.access_point.pipeline_settings.files_for_extraction
         targets = self.access_point.pipeline_settings.targets
         protocols_rheobase = self.access_point.pipeline_settings.protocols_rheobase
-        # protocols rheobase can be None -> BPE will use default ones
 
         if not targets:
             auto_targets = self.access_point.pipeline_settings.auto_targets
@@ -93,4 +94,3 @@ class TargetsConfigurator:
 
         self.new_configuration(files, targets, protocols_rheobase, auto_targets)
         self.save_configuration()
-        

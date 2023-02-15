@@ -138,7 +138,6 @@ class TargetsConfiguration:
             raise TypeError("either targets or autotargets should be set.")
 
         for f in files:
-            # expects f.ecodes to be dict, protocol is key
             for protocol in f.ecodes:
                 if protocol in used_protocols:
                     if f.cell_name not in files_metadata:
@@ -172,10 +171,8 @@ class TargetsConfiguration:
     @property
     def targets_BPE(self):
         """In BPE2 input format"""
-        # can change None check to not check in bpe.extract instead of using this line
         if not self.targets:
             return None
-
         return [t.as_dict() for t in self.targets]
 
     @property
@@ -183,7 +180,6 @@ class TargetsConfiguration:
         """In BPE2 input format"""
         if not self.auto_targets:
             return None
-
         return [AutoTarget(**at) for at in self.auto_targets]
 
     @property
