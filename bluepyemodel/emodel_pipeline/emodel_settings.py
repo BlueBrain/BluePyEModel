@@ -1,7 +1,7 @@
 """EModelPipelineSettings class"""
 import logging
 
-# pylint: disable=too-many-arguments,too-many-locals
+# pylint: disable=too-many-arguments,too-many-locals,too-many-instance-attributes
 
 logger = logging.getLogger(__name__)
 

@@ -31,6 +31,7 @@ def _reformat_ttype(ttype):
 
     return None
 
+
 class CreateTargetsConfigurationTarget(WorkflowTarget):
     """Luigi target to check if BPEM targets configuraiton for extraction exists."""
 
