@@ -91,7 +91,7 @@ AUTO_TARGET_DICT = {
             "sag_time_constant",
         ],
         "min_recordings_per_amplitude": 1,
-        "preferred_number_protocols": 1,
+        "preferred_number_protocols": 2,
         "tolerance": 10.0,
     },
 }

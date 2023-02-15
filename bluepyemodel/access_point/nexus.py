@@ -722,7 +722,6 @@ class NexusAccessPoint(DataAccessPoint):
         resource_traces = get_available_traces(
             species=species, brain_region=brain_region, access_token=self.access_point.access_token
         )
-        print(len(resource_traces))
 
         traces = []
         if resource_traces is None:
@@ -731,11 +730,11 @@ class NexusAccessPoint(DataAccessPoint):
         for r in resource_traces:
             ecodes = None
             if hasattr(r, "stimulus"):
-                ecodes = [
-                    stim.stimulusType.label
+                ecodes = {
+                    stim.stimulusType.label: {}
                     for stim in r.stimulus
                     if hasattr(stim.stimulusType, "label")
-                ]
+                }
 
             species = None
             if hasattr(r, "subject") and hasattr(r.subject, "species"):
@@ -754,7 +753,7 @@ class NexusAccessPoint(DataAccessPoint):
                     for annotation in r.annotation:
                         if "e-type" in annotation.name.lower():
                             etype = annotation.hasBody.label
-            print(etype)
+
             if etype is not None and etype == self.emodel_metadata.etype:
                 traces.append(
                     TraceFile(
@@ -769,8 +768,6 @@ class NexusAccessPoint(DataAccessPoint):
                         etype=etype,
                     )
                 )
-        print(len(traces))
-        print(traces)
         return traces
 
     def store_morphology(self, morphology_name, morphology_path, mtype=None):
