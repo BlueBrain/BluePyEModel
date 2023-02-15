@@ -184,7 +184,7 @@ class TargetsConfiguration:
 
     @property
     def protocols_rheobase_BPE(self):
-        """Should be None is empty"""
+        """Returns None if empty"""
         if not self.protocols_rheobase:
             return None
         return self.protocols_rheobase
