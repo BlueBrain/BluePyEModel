@@ -126,8 +126,6 @@ class TargetsConfiguration:
         else:
             logger.info("No files given. Will use all available traces instead.")
             files = self.available_traces
-        print("in files")
-        print(files)
         files_metadata = {}
 
         if self.targets:
@@ -160,29 +158,40 @@ class TargetsConfiguration:
                     files_metadata[f.cell_name][protocol].append(ecodes_metadata)
 
         for cell_name, protocols in files_metadata.items():
-            for protocol in self.protocols_rheobase:
-                if protocol in protocols:
-                    break
-            else:
-                raise ValueError(
-                    f"{protocol} is part of the protocols_rheobase but it has"
-                    f" no associated ephys data for cell {cell_name}"
-                )
-        print("files metadata")
-        print(files_metadata)
+            if self.protocols_rheobase:
+                for protocol in self.protocols_rheobase:
+                    if protocol in protocols:
+                        break
+                else:
+                    raise ValueError(
+                        f"{protocol} is part of the protocols_rheobase but it has"
+                        f" no associated ephys data for cell {cell_name}"
+                    )
         return files_metadata
 
     @property
     def targets_BPE(self):
         """In BPE2 input format"""
+        # can change None check to not check in bpe.extract instead of using this line
+        if not self.targets:
+            return None
 
         return [t.as_dict() for t in self.targets]
 
     @property
     def auto_targets_BPE(self):
         """In BPE2 input format"""
+        if not self.auto_targets:
+            return None
 
         return [AutoTarget(**at) for at in self.auto_targets]
+
+    @property
+    def protocols_rheobase_BPE(self):
+        """Should be None is empty"""
+        if not self.protocols_rheobase:
+            return None
+        return self.protocols_rheobase
 
     @property
     def is_configuration_valid(self):
