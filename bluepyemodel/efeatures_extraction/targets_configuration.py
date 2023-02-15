@@ -2,9 +2,12 @@
 import itertools
 import logging
 
+from bluepyefe.auto_targets import AutoTarget
+
 from bluepyemodel.efeatures_extraction.target import Target
 from bluepyemodel.efeatures_extraction.trace_file import TraceFile
 from bluepyemodel.tools.utils import are_same_protocol
+from bluepyemodel.tools.utils import format_protocol_name_to_list
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +24,7 @@ class TargetsConfiguration:
         protocols_rheobase=None,
         available_traces=None,
         available_efeatures=None,
+        auto_targets=None,
     ):
         """Init
 
@@ -56,6 +60,21 @@ class TargetsConfiguration:
                 used to compute the rheobase of the cells. E.g: ['IDthresh'].
             available_traces (list of TraceFile)
             available_efeatures (llist of strings)
+            auto_targets (list): if targets is not given, auto_targets
+                define the efeatures to extract as well as which
+                protocols and current amplitude they should be extracted for,
+                given a list of possible protocols and amplitudes.
+                min_recordings_per_amplitude, preferred_number_protocols and
+                tolerance are optional.
+                Of the form:
+                [{
+                    "protocols": ["IDRest", "IV"],
+                    "amplitudes": [150, 250],
+                    "efeatures": ["AP_amplitude", "mean_frequency"],
+                    "min_recordings_per_amplitude": 10,
+                    "preferred_number_protocols": 1,
+                    "tolerance": 10.,
+                }]
         """
 
         self.available_traces = available_traces
@@ -70,12 +89,15 @@ class TargetsConfiguration:
                 self.files.append(tmp_trace)
 
         self.targets = []
+        self.auto_targets = None
         if targets is not None:
             for t in targets:
                 tmp_target = Target(**t)
                 if not self.is_target_available(tmp_target):
                     raise ValueError(f"Efeature name {tmp_target.efeature} does not exist")
                 self.targets.append(tmp_target)
+        if auto_targets is not None:
+            self.auto_targets = auto_targets
 
         if protocols_rheobase is None:
             self.protocols_rheobase = []
@@ -99,11 +121,23 @@ class TargetsConfiguration:
     def files_metadata_BPE(self):
         """In BPE2 input format"""
 
+        if self.files:
+            files = self.files
+        else:
+            logger.info("No files given. Will use all available traces instead.")
+            files = self.available_traces
         files_metadata = {}
 
-        used_protocols = set([t.protocol for t in self.targets] + self.protocols_rheobase)
+        if self.targets:
+            used_protocols = set([t.protocol for t in self.targets] + self.protocols_rheobase)
+        elif self.auto_targets:
+            used_protocols = set(
+                [p for t in self.auto_targets for p in t["protocols"]] + self.protocols_rheobase
+            )
+        else:
+            raise TypeError("either targets or autotargets should be set.")
 
-        for f in self.files:
+        for f in files:
             for protocol in f.ecodes:
                 if protocol in used_protocols:
                     if f.cell_name not in files_metadata:
@@ -123,22 +157,37 @@ class TargetsConfiguration:
                     files_metadata[f.cell_name][protocol].append(ecodes_metadata)
 
         for cell_name, protocols in files_metadata.items():
-            for protocol in self.protocols_rheobase:
-                if protocol in protocols:
-                    break
-            else:
-                raise ValueError(
-                    f"{protocol} is part of the protocols_rheobase but it has"
-                    f" no associated ephys data for cell {cell_name}"
-                )
-
+            if self.protocols_rheobase:
+                for protocol in self.protocols_rheobase:
+                    if protocol in protocols:
+                        break
+                else:
+                    raise ValueError(
+                        f"{protocol} is part of the protocols_rheobase but it has"
+                        f" no associated ephys data for cell {cell_name}"
+                    )
         return files_metadata
 
     @property
     def targets_BPE(self):
         """In BPE2 input format"""
-
+        if not self.targets:
+            return None
         return [t.as_dict() for t in self.targets]
+
+    @property
+    def auto_targets_BPE(self):
+        """In BPE2 input format"""
+        if not self.auto_targets:
+            return None
+        return [AutoTarget(**at) for at in self.auto_targets]
+
+    @property
+    def protocols_rheobase_BPE(self):
+        """Returns None if empty"""
+        if not self.protocols_rheobase:
+            return None
+        return self.protocols_rheobase
 
     @property
     def is_configuration_valid(self):
@@ -146,7 +195,11 @@ class TargetsConfiguration:
         be found in the traces. This check can only be performed if the ecodes present
         in each files are known."""
 
-        if not self.targets or not self.files:
+        if not self.auto_targets:
+            if not self.targets or not self.files:
+                return False
+
+        if self.targets and self.auto_targets:
             return False
 
         ecodes = set(
@@ -157,22 +210,44 @@ class TargetsConfiguration:
             if ecodes and target.protocol not in ecodes:
                 return False
 
+        for at in self.auto_targets:
+            if not (
+                "protocols" in at.keys() and "amplitudes" in at.keys() and "efeatures" in at.keys()
+            ):
+                return False
+
         return True
 
     def check_presence_RMP_Rin_efeatures(self, name_rmp_protocol, name_Rin_protocol):
         """Check that the protocols supposed to be used for RMP and Rin are present in the target
         and that they have the correct efeatures. If some features are missing, add them."""
 
-        efeatures_rmp = [
-            t.efeature
-            for t in self.targets
-            if are_same_protocol([t.protocol, t.amplitude], name_rmp_protocol)
-        ]
-        efeatures_rin = [
-            t.efeature
-            for t in self.targets
-            if are_same_protocol([t.protocol, t.amplitude], name_Rin_protocol)
-        ]
+        if self.targets:
+            efeatures_rmp = [
+                t.efeature
+                for t in self.targets
+                if are_same_protocol([t.protocol, t.amplitude], name_rmp_protocol)
+            ]
+            efeatures_rin = [
+                t.efeature
+                for t in self.targets
+                if are_same_protocol([t.protocol, t.amplitude], name_Rin_protocol)
+            ]
+        elif self.auto_targets:
+            efeatures_rmp = [
+                efeat
+                for t in self.auto_targets
+                for efeat in t["efeatures"]
+                if format_protocol_name_to_list(name_rmp_protocol)[0] in t["protocols"]
+            ]
+            efeatures_rin = [
+                efeat
+                for t in self.auto_targets
+                for efeat in t["efeatures"]
+                if format_protocol_name_to_list(name_Rin_protocol)[0] in t["protocols"]
+            ]
+        else:
+            raise TypeError("either targets or autotargets should be set.")
 
         error_message = (
             "Target for feature {} is missing for protocol {}. Please add "
@@ -193,4 +268,5 @@ class TargetsConfiguration:
             "files": [f.as_dict() for f in self.files],
             "targets": [t.as_dict() for t in self.targets],
             "protocols_rheobase": self.protocols_rheobase,
+            "auto_targets": self.auto_targets,
         }

@@ -225,7 +225,7 @@ class NexusAccessPoint(DataAccessPoint):
                 "Empty list of files in the TargetsConfiguration, filling"
                 "it using what is available on Nexus for the present etype."
             )
-            configuration.traces = configuration.available_traces
+            configuration.files = configuration.available_traces
 
         for file in configuration.files:
             file.filepath = self.download_trace(id_=file.resource_id, name=file.filename)
@@ -730,11 +730,11 @@ class NexusAccessPoint(DataAccessPoint):
         for r in resource_traces:
             ecodes = None
             if hasattr(r, "stimulus"):
-                ecodes = [
-                    stim.stimulusType.label
+                ecodes = {
+                    stim.stimulusType.label: {}
                     for stim in r.stimulus
                     if hasattr(stim.stimulusType, "label")
-                ]
+                }
 
             species = None
             if hasattr(r, "subject") and hasattr(r.subject, "species"):
@@ -768,7 +768,6 @@ class NexusAccessPoint(DataAccessPoint):
                         etype=etype,
                     )
                 )
-
         return traces
 
     def store_morphology(self, morphology_name, morphology_path, mtype=None):

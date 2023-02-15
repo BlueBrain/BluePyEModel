@@ -2,6 +2,7 @@
 import logging
 
 from bluepyemodel.access_point.local import LocalAccessPoint
+from bluepyemodel.efeatures_extraction.auto_targets import get_auto_target_from_presets
 from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
 from bluepyemodel.tools.utils import yesno
 
@@ -23,7 +24,9 @@ class TargetsConfigurator:
         self.access_point = access_point
         self.configuration = configuration
 
-    def new_configuration(self, files=None, targets=None, protocols_rheobase=None):
+    def new_configuration(
+        self, files=None, targets=None, protocols_rheobase=None, auto_targets=None
+    ):
         """Create a new configuration"""
 
         if self.configuration is not None:
@@ -33,7 +36,7 @@ class TargetsConfigurator:
         available_efeatures = self.access_point.get_available_efeatures()
 
         self.configuration = TargetsConfiguration(
-            files, targets, protocols_rheobase, available_traces, available_efeatures
+            files, targets, protocols_rheobase, available_traces, available_efeatures, auto_targets
         )
 
     def load_configuration(self):
@@ -64,3 +67,30 @@ class TargetsConfigurator:
                 self.save_configuration()
 
             self.configuration = None
+
+    def create_and_save_configuration_from_access_point(self):
+        """Create and save a new configuration given data from access point."""
+        if self.access_point.has_targets_configuration():
+            logger.info(
+                "Targets configuration already present on access point."
+                "Will not create another one."
+            )
+            return
+
+        files = self.access_point.pipeline_settings.files_for_extraction
+        targets = self.access_point.pipeline_settings.targets
+        protocols_rheobase = self.access_point.pipeline_settings.protocols_rheobase
+
+        if not targets:
+            auto_targets = self.access_point.pipeline_settings.auto_targets
+            auto_targets_presets = self.access_point.pipeline_settings.auto_targets_presets
+            if not auto_targets:
+                if not auto_targets_presets:
+                    raise TypeError(
+                        "Please fill either targets, auto_targets or auto_targets_presets."
+                        "Or alternatively save your targets before running your pipeline."
+                    )
+                auto_targets = get_auto_target_from_presets(auto_targets_presets)
+
+        self.new_configuration(files, targets, protocols_rheobase, auto_targets)
+        self.save_configuration()
