@@ -110,3 +110,14 @@ def get_mechanism_currents(mech_file):
                 nonspecific_currents.append(current)
 
     return ion_currs, nonspecific_currents
+
+
+def get_mechanism_suffix(mech_file):
+    """Parse the mech mod file to get the mechanism suffix."""
+    with open(mech_file, "r") as f:
+        mod_lines = f.readlines()
+    for line in mod_lines:
+        if "SUFFIX " in line:
+            suffix = line.split("SUFFIX ")[1].rstrip("\n").split(" ")[0]
+            return suffix
+    raise RuntimeError(f"Could not find SUFFIX in {mech_file}")
