@@ -18,7 +18,7 @@ multiloc_map = {
     "allact": ["apical", "basal", "somatic", "axonal"],
 }
 
-global_parameters = ["v_init", "celsius", "cm", "Ra", "ena", "ek", "cao0_ca_ion"]
+global_parameters = ["v_init", "celsius", "cm", "Ra", "ena", "ek"]
 
 
 class NeuronModelConfiguration:
@@ -188,7 +188,11 @@ class NeuronModelConfiguration:
             for param in parameters["parameters"][location]:
                 mechanism = None
 
-                if param["name"] not in global_parameters and "distribution" not in location:
+                if (
+                    param["name"] not in global_parameters
+                    and "distribution" not in location
+                    and "ion" not in param["name"]
+                ):
                     mechanism = next((m for m in set_mechanisms if m in param["name"]), None)
                     if mechanism is None:
                         raise ValueError(
