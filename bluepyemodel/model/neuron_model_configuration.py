@@ -191,7 +191,7 @@ class NeuronModelConfiguration:
                 if (
                     param["name"] not in global_parameters
                     and "distribution" not in location
-                    and "ion" not in param["name"]
+                    and "_ion" not in param["name"]
                 ):
                     mechanism = next((m for m in set_mechanisms if m in param["name"]), None)
                     if mechanism is None:
