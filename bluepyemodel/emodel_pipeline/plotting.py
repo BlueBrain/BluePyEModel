@@ -605,6 +605,9 @@ def get_ordered_currentscape_keys(keys):
     ordered_keys = {}
     for name in keys:
         n = name.split(".")
+        # case where protocol has '.' in its name, e.g. IV_-100.0
+        if len(n) == 4 and n[1].isdigit():
+            n = [".".join(n[:2]), n[2], n[3]]
         prot_name = n[0]
         if prot_name not in to_skip:
             assert len(n) == 3
