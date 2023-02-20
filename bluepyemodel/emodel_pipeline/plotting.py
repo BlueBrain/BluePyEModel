@@ -728,7 +728,7 @@ def currentscape(
             # adapt config
             if current_subset and key_dict["current_names"]:
                 currents_indices = [
-                    list(key_dict["current_names"]).index(name) for name in current_subset
+                    list(key_dict["current_names"]).index(c_name) for c_name in current_subset
                 ]
                 currents = numpy.array(currents)[currents_indices]
                 config["current"]["names"] = current_subset
