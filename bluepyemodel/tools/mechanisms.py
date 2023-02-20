@@ -93,6 +93,16 @@ def copy_and_compile_mechanisms(access_point):
         compile_mechs("./mechanisms")
 
 
+def to_current(name):
+    """Turn current / ionic concentration name into current name."""
+    # ion current case
+    if name[0] == "i":
+        return name
+    # internal / external ionic concentration case
+    if name[-1] == "i" or name[-1] == "o":
+        return f"i{name[:-1]}"
+    return None
+
 def get_mechanism_currents(mech_file):
     """Parse the mech mod file to get the mechanism ion and non-specific currents if any."""
     ion_currs = []
@@ -101,13 +111,15 @@ def get_mechanism_currents(mech_file):
         mod_lines = f.readlines()
     for line in mod_lines:
         if "WRITE " in line:
-            current = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
-            if current[0] == "i":
-                ion_currs.append(current)
+            ion_var_name = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
+            current_name = to_current(ion_var_name)
+            if current_name is not None:
+                ion_currs.append(current_name)
         elif "NONSPECIFIC_CURRENT" in line:
-            current = line.split("NONSPECIFIC_CURRENT ")[1].rstrip("\n").split(" ")[0]
-            if current[0] == "i":
-                nonspecific_currents.append(current)
+            var_name = line.split("NONSPECIFIC_CURRENT ")[1].rstrip("\n").split(" ")[0]
+            current_name = to_current(var_name)
+            if current_name is not None:
+                nonspecific_currents.append(current_name)
 
     return ion_currs, nonspecific_currents
 
