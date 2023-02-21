@@ -755,8 +755,9 @@ def currentscape(
                     from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
                     logger.info("Plotting currentscape for %s", name)
-                    plot_currentscape_fct(
+                    fig = plot_currentscape_fct(
                         voltage, currents, updated_config, ions_data=ionic_concentrations, time=time
                     )
+                    plt.close(fig)
                 except ModuleNotFoundError:
                     logger.warning("Currentscape module not found. Skipping currentscape plotting.")
