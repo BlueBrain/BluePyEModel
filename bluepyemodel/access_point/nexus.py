@@ -688,13 +688,27 @@ class NexusAccessPoint(DataAccessPoint):
                         parameters[f"{ep.name}_{r.mod.suffix}"] = [lower_limit, upper_limit]
 
             ion_currents = []
+            ionic_concentrations = []
+            # technically, also adds non-specific currents to ion_currents list,
+            # because they are not distinguished in nexus for now, but
+            # the code should work nevertheless
             if hasattr(r.mod, "write"):
-                ions_ = r.mod.write
-                if isinstance(ions_, str):
-                    if ions_[0] == "i":
-                        ion_currents = [ions_]
-                elif isinstance(ions_, list):
-                    ion_currents = [ion for ion in ions_ if ion[0] == "i"]
+                ions_names = r.mod.write
+                if isinstance(ions_names, str):
+                    if ions_names[0] == "i":
+                        ion_currents = [ions_names]
+                        ionic_concentrations = [f"{ions_names[1:]}i"]
+                    elif ions_names[-1] == "i":
+                        ionic_concentrations = [ions_names]
+                elif isinstance(ions_names, list):
+                    ion_currents = [ion for ion in ions_names if ion[0] == "i"]
+                    ionic_conc_from_currents = {
+                        f"{ion[1:]}i" for ion in ions_names if ion[0] == "i"
+                    }
+                    ionic_conc_from_ions = {
+                        ion for ion in ions_names if ion[0] != "i" and ion[-1] == "i"
+                    }
+                    ionic_concentrations = list(ionic_conc_from_currents | ionic_conc_from_ions)
 
             mech = MechanismConfiguration(
                 r.name,
@@ -703,6 +717,7 @@ class NexusAccessPoint(DataAccessPoint):
                 version=version,
                 parameters=parameters,
                 ion_currents=ion_currents,
+                ionic_concentrations=ionic_concentrations,
             )
 
             available_mechanisms.append(mech)
