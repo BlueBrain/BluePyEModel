@@ -687,16 +687,19 @@ def currentscape(
 
     if config is None:
         config = {}
-    if "current" not in config:
-        config["current"] = {}
-    if "ions" not in config:
-        config["ions"] = {}
-    if "output" not in config:
-        config["output"] = {}
+    # copy dict so that changes to dict won't affect next call to this function
+    updated_config = copy.deepcopy(config)
+
+    if "current" not in updated_config:
+        updated_config["current"] = {}
+    if "ions" not in updated_config:
+        updated_config["ions"] = {}
+    if "output" not in updated_config:
+        updated_config["output"] = {}
 
     current_subset = None
-    if "names" in config["current"]:
-        current_subset = config["current"]["names"].copy()
+    if "names" in updated_config["current"]:
+        current_subset = updated_config["current"]["names"].copy()
 
     if responses is not None:
         ordered_keys = get_ordered_currentscape_keys(
@@ -731,17 +734,17 @@ def currentscape(
                     list(key_dict["current_names"]).index(c_name) for c_name in current_subset
                 ]
                 currents = numpy.array(currents)[currents_indices]
-                config["current"]["names"] = current_subset
+                updated_config["current"]["names"] = current_subset
             else:
-                config["current"]["names"] = key_dict["current_names"]
-            config["ions"]["names"] = key_dict["ion_conc_names"]
-            config["output"]["savefig"] = True
-            config["output"]["fname"] = name
-            if "dir" not in config["output"]:
-                config["output"]["dir"] = figures_dir
-            if "title" not in config and emodel:
+                updated_config["current"]["names"] = key_dict["current_names"]
+            updated_config["ions"]["names"] = key_dict["ion_conc_names"]
+            updated_config["output"]["savefig"] = True
+            updated_config["output"]["fname"] = name
+            if "dir" not in updated_config["output"]:
+                updated_config["output"]["dir"] = figures_dir
+            if "title" not in updated_config and emodel:
                 title = get_title(emodel, iteration_tag, seed)
-                config["title"] = title
+                updated_config["title"] = title
 
             if len(voltage) == 0 or len(currents) == 0:
                 logger.warning(
@@ -753,7 +756,7 @@ def currentscape(
 
                     logger.info("Plotting currentscape for %s", name)
                     plot_currentscape_fct(
-                        voltage, currents, config, ions_data=ionic_concentrations, time=time
+                        voltage, currents, updated_config, ions_data=ionic_concentrations, time=time
                     )
                 except ModuleNotFoundError:
                     logger.warning("Currentscape module not found. Skipping currentscape plotting.")
