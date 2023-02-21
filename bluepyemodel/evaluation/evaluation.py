@@ -172,7 +172,7 @@ def compute_responses(
         for mo, r in zip(emodels, responses):
             mo.responses = r
             mo.evaluator = r.pop("evaluator")
-            if store_responses and not check_local_responses_presence(emodels, cell_evaluator):
+            if store_responses and not load_from_local:
                 locally_store_responses(mo)
 
     else:
