@@ -97,19 +97,25 @@ def get_mechanism_currents(mech_file):
     """Parse the mech mod file to get the mechanism ion and non-specific currents if any."""
     ion_currs = []
     nonspecific_currents = []
+    ionic_concentrations = []
     with open(mech_file, "r") as f:
         mod_lines = f.readlines()
     for line in mod_lines:
         if "WRITE " in line:
-            current = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
-            if current[0] == "i":
-                ion_currs.append(current)
+            ion_var_name = line.split("WRITE ")[1].rstrip("\n").split(" ")[0]
+            # ion current case
+            if ion_var_name[0] == "i":
+                ion_currs.append(ion_var_name)
+                ionic_concentrations.append(f"{ion_var_name[1:]}i")
+            # internal ionic concentration case
+            elif ion_var_name[-1] == "i":
+                ionic_concentrations.append(ion_var_name)
         elif "NONSPECIFIC_CURRENT" in line:
-            current = line.split("NONSPECIFIC_CURRENT ")[1].rstrip("\n").split(" ")[0]
-            if current[0] == "i":
-                nonspecific_currents.append(current)
+            var_name = line.split("NONSPECIFIC_CURRENT ")[1].rstrip("\n").split(" ")[0]
+            if var_name[0] == "i":
+                nonspecific_currents.append(var_name)
 
-    return ion_currs, nonspecific_currents
+    return ion_currs, nonspecific_currents, ionic_concentrations
 
 
 def get_mechanism_suffix(mech_file):
