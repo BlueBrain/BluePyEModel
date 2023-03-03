@@ -836,7 +836,7 @@ class ProtocolRunner(ephys.protocols.Protocol):
                 responses=responses,
             )
 
-            if any(v is None for v in new_responses.values()):
+            if new_responses is None or any(v is None for v in new_responses.values()):
                 logger.debug("None in responses, exiting evaluation")
                 break
 
