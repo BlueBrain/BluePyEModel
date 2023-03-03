@@ -257,7 +257,7 @@ class RMPProtocol(BPEMProtocol):
             timeout=timeout,
             responses=responses,
         )
-        if responses is None:
+        if responses is None or response[self.recording_name] is None:
             return {self.recording_name: None, "bpo_rmp": None}
 
         bpo_rmp = self.target_voltage.calculate_feature(response)
@@ -380,9 +380,11 @@ class SearchHoldingCurrent(BPEMProtocol):
             "holding_current": 0.0,
         }
 
-        recording_name = f"{name}.{location.name}.v"
+        self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
-        recordings = [LooseDtRecordingCustom(name=recording_name, location=location, variable="v")]
+        recordings = [
+            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
+        ]
 
         BPEMProtocol.__init__(
             self,
@@ -427,7 +429,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         response = BPEMProtocol.run(
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
-        if response is None:
+        if response is None or response[self.recording_name] is None:
             return None
 
         if self.no_spikes:
