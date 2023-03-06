@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 
 import efel
+import matplotlib
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import numpy
@@ -561,6 +562,9 @@ def plot_models(
                 iteration_tag=mo.emodel_metadata.iteration,
                 seed=mo.seed,
             )
+            # reset rcParams which are modified by currentscape
+            matplotlib.rcParams.update(matplotlib.rcParamsDefault)
+
         if plot_if_curve:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             IF_curve(
