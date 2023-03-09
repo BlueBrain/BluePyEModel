@@ -37,7 +37,7 @@ def write_node_file(emodel, model_template_path, node_file_path, morphology_path
         if morphology_path:
             population["morphology"] = pathlib.Path(morphology_path).stem
 
-        for k in ["layer", "morph_class", "etype", "mtype", "synapse_class"]:
+        for k in ["etype", "mtype", "synapse_class"]:
             v = getattr(emodel.emodel_metadata, k)
             if v is not None:
                 population[k] = v
