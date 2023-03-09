@@ -717,6 +717,8 @@ def currentscape(
 
     for prot, locs in ordered_keys.items():
         for loc, key_dict in locs.items():
+            if key_dict["voltage_key"] is None:
+                continue
             if responses is not None:
                 time = responses[key_dict["voltage_key"]]["time"]
                 voltage = responses[key_dict["voltage_key"]]["voltage"]
