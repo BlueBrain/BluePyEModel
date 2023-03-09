@@ -424,9 +424,9 @@ class SearchHoldingCurrent(BPEMProtocol):
             "holding_current": 0.0,
         }
 
-        recording_name = f"{name}.{location.name}.v"
+        self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
-        recordings = [LooseDtRecordingCustom(name=recording_name, location=location, variable="v")]
+        recordings = [LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")]
 
         BPEMProtocol.__init__(
             self,
@@ -472,6 +472,9 @@ class SearchHoldingCurrent(BPEMProtocol):
         response = BPEMProtocol.run(
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
+
+        if response is None or response[self.recording_name] is None:
+            return None
 
         # check that holding is stable, no spike, no oscillations
         n_spikes = self.spike_feature.calculate_feature(response)

@@ -119,7 +119,7 @@ class LocalAccessPoint(DataAccessPoint):
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel, check it exists (with or without seed) in recipe."""
-        _emodel = "_".join(emodel.split("_")[:2]) if self.with_seeds else emodel
+        _emodel = "_".join(emodel.split("_")[:-1]) if self.with_seeds else emodel
         if _emodel not in self.get_all_recipes():
             raise ValueError(
                 f"Cannot set the emodel name to {_emodel} which does not exist in the recipes."
@@ -202,7 +202,7 @@ class LocalAccessPoint(DataAccessPoint):
         """
 
         if self.legacy_dir_structure:
-            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
+            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:-1])
             recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
             recipes_path = self.emodel_dir / self.recipes_path
@@ -216,7 +216,7 @@ class LocalAccessPoint(DataAccessPoint):
         See docstring of __init__ for the format of the file of recipes.
         """
         if self.with_seeds:
-            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
+            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:-1])
         else:
             emodel = self.emodel_metadata.emodel
         return self.get_all_recipes()[emodel]
@@ -227,7 +227,7 @@ class LocalAccessPoint(DataAccessPoint):
         json_path = Path(self.get_recipes()[recipe_entry])
 
         if self.legacy_dir_structure:
-            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
+            emodel = "_".join(self.emodel_metadata.emodel.split("_")[:-1])
             json_path = self.emodel_dir / emodel / json_path
         elif not json_path.is_absolute():
             json_path = self.emodel_dir / json_path
