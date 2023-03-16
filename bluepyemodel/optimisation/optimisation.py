@@ -14,7 +14,9 @@ from bluepyemodel.tools.utils import read_checkpoint
 logger = logging.getLogger(__name__)
 
 
-def setup_optimiser(evaluator, map_function, params, optimiser="IBEA", use_stagnation_criterion=True):
+def setup_optimiser(
+    evaluator, map_function, params, optimiser="IBEA", use_stagnation_criterion=True
+):
     """Setup the bluepyopt optimiser.
 
     Args:
