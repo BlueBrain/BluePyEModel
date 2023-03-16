@@ -172,10 +172,11 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
         else:
             stim_end = protocol.stim_end
 
-    efel_settings = {**feature_config.efel_settings, **global_efel_settings}
+    efel_settings = {**global_efel_settings, **feature_config.efel_settings}
     double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, float)}
     int_settings = {k: v for k, v in efel_settings.items() if isinstance(v, int)}
     string_settings = {k: v for k, v in efel_settings.items() if isinstance(v, str)}
+
     efeature = eFELFeatureBPEM(
         feature_config.name,
         efel_feature_name=feature_config.efel_feature_name,
