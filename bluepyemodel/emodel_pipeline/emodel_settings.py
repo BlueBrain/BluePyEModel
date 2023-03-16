@@ -32,6 +32,7 @@ class EModelPipelineSettings:
         optimisation_timeout=600.0,
         threshold_efeature_std=None,
         max_ngen=100,
+        use_stagnation_criterion=True,
         validation_threshold=5.0,
         validation_function="max_score",
         plot_optimisation=True,
@@ -118,6 +119,8 @@ class EModelPipelineSettings:
                 deviations, but only modify them at instantiation of the optimizer.
             max_ngen (int): maximum number of generations of the evolutionary process of the
                 optimisation.
+            use_stagnation_criterion (bool): whether to use the stagnation
+                stopping criterion on top of the maximum generation criterion
             validation_threshold (float): score threshold under which the emodel passes
                 validation.
             validation_function (str or list): if str, can be "max_score" or "mean_score".
@@ -209,6 +212,7 @@ class EModelPipelineSettings:
             self.optimisation_params = {"offspring_size": 100}
 
         self.max_ngen = max_ngen
+        self.use_stagnation_criterion = use_stagnation_criterion
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
 
