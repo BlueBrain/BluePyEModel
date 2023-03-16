@@ -14,7 +14,9 @@ from bluepyemodel.tools.utils import read_checkpoint
 logger = logging.getLogger(__name__)
 
 
-def setup_optimiser(evaluator, map_function, params, optimiser="IBEA"):
+def setup_optimiser(
+    evaluator, map_function, params, optimiser="IBEA", use_stagnation_criterion=True
+):
     """Setup the bluepyopt optimiser.
 
     Args:
@@ -24,6 +26,8 @@ def setup_optimiser(evaluator, map_function, params, optimiser="IBEA"):
         params (dict): optimisation meta-parameters.
         optimiser (str): name of the optimiser, has to be "IBEA", "SO-CMA" or
             "MO-CMA".
+        use_stagnation_criterion (bool): whether to use the stagnation
+            stopping criterion on top of the maximum generation criterion for CMA
 
     Returns:
         DEAPOptimisation
@@ -37,6 +41,7 @@ def setup_optimiser(evaluator, map_function, params, optimiser="IBEA"):
             evaluator=evaluator,
             map_function=map_function,
             selector_name="single_objective",
+            use_stagnation_criterion=use_stagnation_criterion,
             **params,
         )
     if optimiser == "MO-CMA":
@@ -44,6 +49,7 @@ def setup_optimiser(evaluator, map_function, params, optimiser="IBEA"):
             evaluator=evaluator,
             map_function=map_function,
             selector_name="multi_objective",
+            use_stagnation_criterion=use_stagnation_criterion,
             **params,
         )
     raise ValueError(f"Unknown optimiser: {optimiser}")
@@ -98,6 +104,7 @@ def setup_and_run_optimisation(
         access_point=access_point, include_validation_protocols=False
     )
 
+    use_stagnation_criterion = access_point.pipeline_settings.use_stagnation_criterion
     opt_params = access_point.pipeline_settings.optimisation_params
     if "centroids" in opt_params and isinstance(opt_params["centroids"][0], dict):
         opt_params["centroids"][0] = [
@@ -111,6 +118,7 @@ def setup_and_run_optimisation(
         mapper,
         params=opt_params,
         optimiser=access_point.pipeline_settings.optimiser,
+        use_stagnation_criterion=use_stagnation_criterion,
     )
 
     checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed)
