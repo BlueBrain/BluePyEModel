@@ -210,11 +210,14 @@ class TargetsConfiguration:
             if ecodes and target.protocol not in ecodes:
                 return False
 
-        for at in self.auto_targets:
-            if not (
-                "protocols" in at.keys() and "amplitudes" in at.keys() and "efeatures" in at.keys()
-            ):
-                return False
+        if self.auto_targets:
+            for at in self.auto_targets:
+                if not (
+                    "protocols" in at.keys()
+                    and "amplitudes" in at.keys()
+                    and "efeatures" in at.keys()
+                ):
+                    return False
 
         return True
 
