@@ -223,7 +223,11 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
         return None, None
 
     fig, axs = plt.subplots(
-        len(traces_names), 1, figsize=(10, 2 + (1.6 * len(traces_names))), squeeze=False
+        len(traces_names),
+        1,
+        figsize=(10, 2 + (1.5 * len(traces_names))),
+        squeeze=False,
+        layout="constrained",
     )
 
     axs_c = []
@@ -279,8 +283,6 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
     fig.suptitle(title)
 
     fname = model.emodel_metadata.as_string(model.seed) + "__traces.pdf"
-
-    plt.tight_layout()
 
     if write_fig:
         save_fig(figures_dir, fname)
