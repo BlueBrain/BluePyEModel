@@ -16,6 +16,7 @@ class EFeatureConfiguration:
         threshold_efeature_std=None,
         original_std=None,
         std=None,
+        values=None,
         sample_size=None,
         default_std_value=1e-3,
     ):
@@ -51,6 +52,7 @@ class EFeatureConfiguration:
         self.default_std_value = default_std_value
 
         self.mean = mean
+        self.values = values
         self.original_std = original_std if original_std is not None else std
         self.sample_size = sample_size
 
