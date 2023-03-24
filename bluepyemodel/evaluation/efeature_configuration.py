@@ -86,9 +86,9 @@ class EFeatureConfiguration:
                 return self.threshold_efeature_std
             return self.default_std_value
 
-        limit = abs(self.threshold_efeature_std * self.mean)
-        if self.original_std < limit:
-            return limit
+        #limit = abs(self.threshold_efeature_std * self.mean)
+        #if self.original_std < limit:
+        #    return limit
 
         return self.original_std
 

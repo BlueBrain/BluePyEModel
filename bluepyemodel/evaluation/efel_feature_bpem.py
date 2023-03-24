@@ -199,6 +199,7 @@ class eFELFeatureBPEM(eFELFeature):
             if (feature_values is None) or (len(feature_values) == 0):
                 score = self.max_score
             else:
+                print(self.efel_feature_name, feature_values, self.exp_mean, self.exp_std)
                 score = (
                     numpy.sum(numpy.fabs(feature_values - self.exp_mean))
                     / self.exp_std
