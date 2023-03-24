@@ -190,7 +190,6 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, float)}
     int_settings = {k: v for k, v in efel_settings.items() if isinstance(v, int)}
     string_settings = {k: v for k, v in efel_settings.items() if isinstance(v, str)}
-    print('--------', feature_config.name, feature_config.std, feature_config.mean)
     efeature = eFELFeatureBPEM(
         feature_config.name,
         efel_feature_name=feature_config.efel_feature_name,
