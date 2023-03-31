@@ -24,6 +24,7 @@ from .whitenoise import WhiteNoise
 # The ecode names have to be lower case only, to avoid having to
 # define duplicates.
 eCodes = {
+    "spontaneous": IDrest,
     "idrest": IDrest,
     "idthres": IDrest,
     "step": IDrest,
