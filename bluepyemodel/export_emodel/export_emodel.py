@@ -13,7 +13,7 @@ from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
 logger = logging.getLogger(__name__)
 
 
-def write_node_file(emodel, model_template_path, node_file_path, morphology_path=None):
+def _write_node_file(emodel, model_template_path, node_file_path, morphology_path=None):
     """Creates a nodes.h5 file in the SONATA format. It contains the information
     needed to run the model. See https://bbpteam.epfl.ch/documentation/projects/
     circuit-documentation/latest/sonata_tech.html"""
@@ -51,7 +51,7 @@ def write_node_file(emodel, model_template_path, node_file_path, morphology_path
             dynamics_params["threshold_current"] = emodel.responses["bpo_threshold_current"]
 
 
-def write_hoc_file(cell_model, emodel, hoc_file_path):
+def _write_hoc_file(cell_model, emodel, hoc_file_path, template="cell_template_neurodamus.jinja2"):
     """Creates a hoc file containing the emodel and its morphology.
     WARNING: this assumes that any morphology modifier has been informed as both
     a python method and a hoc method"""
@@ -60,7 +60,7 @@ def write_hoc_file(cell_model, emodel, hoc_file_path):
 
     hoc_content = cell_model.create_hoc(
         param_values=emodel.parameters,
-        template="cell_template_neurodamus.jinja2",
+        template=template,
         template_dir=template_dir,
     )
 
@@ -68,7 +68,7 @@ def write_hoc_file(cell_model, emodel, hoc_file_path):
         f.writelines(hoc_content)
 
 
-def export_model_sonata(cell_model, emodel, output_dir=None):
+def _export_model_sonata(cell_model, emodel, output_dir=None):
     """Creates the directory and files required for an emodel to be used in circuit building"""
 
     if not emodel.passed_validation:
@@ -89,10 +89,10 @@ def export_model_sonata(cell_model, emodel, output_dir=None):
     shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)
 
     # Exports the BluePyOpt cell model as a hoc file
-    write_hoc_file(cell_model, emodel, hoc_file_path)
+    _write_hoc_file(cell_model, emodel, hoc_file_path, template="cell_template_neurodamus.jinja2")
 
     # Create the SONATA node file
-    write_node_file(
+    _write_node_file(
         emodel,
         model_template_path=hoc_file_path,
         node_file_path=node_file_path,
@@ -100,7 +100,7 @@ def export_model_sonata(cell_model, emodel, output_dir=None):
     )
 
 
-def select_emodels(emodel_name, emodels, only_validated=False, only_best=True, seeds=None):
+def _select_emodels(emodel_name, emodels, only_validated=False, only_best=True, seeds=None):
     if not emodels:
         logger.warning("In export_emodels_nexus, no emodel for %s", emodel_name)
         return []
@@ -131,7 +131,9 @@ def export_emodels_sonata(
     access_point, only_validated=False, only_best=True, seeds=None, map_function=map
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will
-    contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model."""
+    contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model.
+
+    WARNING: this function is not compatible with multiprocessing."""
 
     cell_evaluator = get_evaluator_from_access_point(
         access_point, include_validation_protocols=True
@@ -146,7 +148,7 @@ def export_emodels_sonata(
         store_responses=False,
     )
 
-    emodels = select_emodels(
+    emodels = _select_emodels(
         access_point.emodel_metadata.emodel,
         emodels,
         only_validated=only_validated,
@@ -161,7 +163,65 @@ def export_emodels_sonata(
     for mo in emodels:
         if not cell_model.morphology.morph_modifiers:  # Turn [] into None
             cell_model.morphology.morph_modifiers = None
-        export_model_sonata(cell_model, mo, output_dir=None)
+        _export_model_sonata(cell_model, mo, output_dir=None)
+
+
+def _export_emodel_hoc(cell_model, mo, output_dir=None):
+    if not mo.passed_validation:
+        logger.warning("Exporting a model that did not pass validation.")
+
+    if output_dir is None:
+        output_dir = f"./export_emodels_hoc/{mo.emodel_metadata.as_string(seed=mo.seed)}/"
+    output_path = pathlib.Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    hoc_file_path = str(output_path / "model.hoc")
+    morphology_path = str(output_path / pathlib.Path(cell_model.morphology.morphology_path).name)
+
+    # Copy the morphology
+    shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)
+
+    # Exports the BluePyOpt cell model as a hoc file
+    _write_hoc_file(cell_model, mo, hoc_file_path, template="cell_template.jinja2")
+
+
+def export_emodels_hoc(
+    access_point, only_validated=False, only_best=True, seeds=None, map_function=map
+):
+    """Export a set of emodels to a set of folder named after them. Each folder will contain a hoc
+    version of the model.
+
+    WARNING: this function is not compatible with multiprocessing."""
+
+    cell_evaluator = get_evaluator_from_access_point(
+        access_point, include_validation_protocols=True
+    )
+
+    emodels = compute_responses(
+        access_point,
+        cell_evaluator,
+        map_function,
+        seeds=seeds,
+        preselect_for_validation=False,
+        store_responses=False,
+    )
+
+    emodels = _select_emodels(
+        access_point.emodel_metadata.emodel,
+        emodels,
+        only_validated=only_validated,
+        only_best=only_best,
+        seeds=seeds,
+    )
+    if not emodels:
+        return
+
+    cell_model = cell_evaluator.cell_model
+
+    for mo in emodels:
+        if not cell_model.morphology.morph_modifiers:  # Turn [] into None
+            cell_model.morphology.morph_modifiers = None
+        _export_emodel_hoc(cell_model, mo, output_dir=None)
 
 
 def export_emodels_nexus(
@@ -180,7 +240,7 @@ def export_emodels_nexus(
     from bluepyemodel.access_point.nexus import NexusAccessPoint
 
     emodels = local_access_point.get_emodels()
-    emodels = select_emodels(
+    emodels = _select_emodels(
         local_access_point.emodel_metadata.emodel,
         emodels,
         only_validated=only_validated,
