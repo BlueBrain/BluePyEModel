@@ -193,12 +193,14 @@ class NexusAccessPoint(DataAccessPoint):
             "brainRegion": brain_region_from_nexus,
         }
 
-    def store_object(self, object_, seed=None):
+    def store_object(self, object_, seed=None, description=None):
         """Store a BPEM object on Nexus"""
 
         metadata_dict = self.emodel_metadata_ontology.for_resource()
         if seed is not None:
             metadata_dict["seed"] = seed
+        if description is not None:
+            metadata_dict["description"] = description
 
         self.access_point.object_to_nexus(
             object_,
@@ -391,10 +393,10 @@ class NexusAccessPoint(DataAccessPoint):
 
         return emodel
 
-    def store_emodel(self, emodel):
+    def store_emodel(self, emodel, description=None):
         """Store an EModel on Nexus"""
 
-        self.store_object(emodel, seed=emodel.seed)
+        self.store_object(emodel, seed=emodel.seed, description=description)
 
     def get_emodels(self, emodels=None):
         """Get all the emodels"""
