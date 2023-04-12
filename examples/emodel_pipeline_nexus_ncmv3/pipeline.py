@@ -96,7 +96,7 @@ def configure(pipeline):
 def configure_model(pipeline, morphology_name):
     configurator = ModelConfigurator(pipeline.access_point)
     configurator.new_configuration()
-    
+
     filename = "/gpfs/bbp.cscs.ch/project/proj72/home/mandge/mouse/21062021/config/params/mettypes_v2/L5_TPC_B_cAC_L5_ET_8_v2.json"
 
     with open(filename,'r') as f:
