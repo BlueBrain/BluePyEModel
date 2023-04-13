@@ -509,7 +509,7 @@ class NexusAccessPoint(DataAccessPoint):
                     {
                         "type": "SubCellularModelScript",
                         "name": mechanism.name,
-                        "modelid": mechanism.version,
+                        "modelId": mechanism.version,
                     },
                 )
 
@@ -522,7 +522,7 @@ class NexusAccessPoint(DataAccessPoint):
                 if resources is None:
                     raise AccessPointException(f"SubCellularModelScript {mechanism.name} not found")
 
-                if len(resources) > 1 and all(hasattr(r, "modelid") for r in resources):
+                if len(resources) > 1 and all(hasattr(r, "modelId") for r in resources):
                     resource = sorted(resources, key=lambda x: x.modelid)[-1]
                 else:
                     resource = resources[0]
@@ -674,17 +674,16 @@ class NexusAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for r in resources:
-            version = r.modelid if hasattr(r, "modelid") else None
+            version = r.modelid if hasattr(r, "modelId") else None
             stochastic = r.stochastic if hasattr(r, "stochastic") else None
 
             parameters = {}
-            if hasattr(r, "exposesParameters"):
+            if hasattr(r, "exposesParameter"):
                 exposes_parameters = r.exposesParameters
                 if not isinstance(exposes_parameters, list):
                     exposes_parameters = [exposes_parameters]
-
                 for ep in exposes_parameters:
-                    if ep.type == "NmodlRangeVariable":
+                    if ep.type == "ConductanceDensity":
                         lower_limit = ep.lowerLimit if hasattr(ep, "lowerLimit") else None
                         upper_limit = ep.upperLimit if hasattr(ep, "upperLimit") else None
                         parameters[f"{ep.name}_{r.mod.suffix}"] = [lower_limit, upper_limit]
@@ -694,23 +693,12 @@ class NexusAccessPoint(DataAccessPoint):
             # technically, also adds non-specific currents to ion_currents list,
             # because they are not distinguished in nexus for now, but
             # the code should work nevertheless
-            if hasattr(r.mod, "write"):
-                ions_names = r.mod.write
-                if isinstance(ions_names, str):
-                    if ions_names[0] == "i":
-                        ion_currents = [ions_names]
-                        ionic_concentrations = [f"{ions_names[1:]}i"]
-                    elif ions_names[-1] == "i":
-                        ionic_concentrations = [ions_names]
-                elif isinstance(ions_names, list):
-                    ion_currents = [ion for ion in ions_names if ion[0] == "i"]
-                    ionic_conc_from_currents = {
-                        f"{ion[1:]}i" for ion in ions_names if ion[0] == "i"
-                    }
-                    ionic_conc_from_ions = {
-                        ion for ion in ions_names if ion[0] != "i" and ion[-1] == "i"
-                    }
-                    ionic_concentrations = list(ionic_conc_from_currents | ionic_conc_from_ions)
+            if hasattr(r.mod, "ion"):
+                ions = r.mod.ion if isinstance(r.mod.ion, list) else [r.mod.ion]
+                for ion in ions:
+                    ion_name = ion.label.lower()
+                    ion_currents.append(f"i{ion_name}")
+                    ionic_concentrations.append(f"{ion_name}i")
 
             mech = MechanismConfiguration(
                 r.name,
