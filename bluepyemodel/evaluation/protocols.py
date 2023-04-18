@@ -172,7 +172,9 @@ class ProtocolWithDependencies(BPEMProtocol, ResponseDependencies):
 
 class ThresholdBasedProtocol(ProtocolWithDependencies):
 
-    """Protocol having rheobase-rescaling capabilities"""
+    """Protocol having rheobase-rescaling capabilities. When using ThresholdBasedProtocol,
+    the current amplitude and step amplitude of the stimulus will be ignored and replaced by
+    values obtained from the holding current and rheobase of the cell model respectively."""
 
     def __init__(
         self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
@@ -781,16 +783,23 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
 class ProtocolRunner(ephys.protocols.Protocol):
 
-    """In charge of running the other protocols in the correct order"""
+    """Meta-protocol in charge of running the other protocols in the correct order"""
 
     def __init__(self, protocols, name="ProtocolRunner"):
+        """Initialize the protocol runner
+
+        Args:
+            protocols (dict): Dictionary of protocols to run
+            name (str): Name of the current protocol runner
+        """
+
         super().__init__(name=name)
 
         self.protocols = protocols
         self.execution_order = self.compute_execution_order()
 
     def _add_to_execution_order(self, protocol, execution_order, before_index=None):
-        """Recursively add protocols to the execution order while making sure that their
+        """Recursively adds protocols to the execution order while making sure that their
         dependencies are added before them. Warning: Does not solve all types of dependency graph.
         """
 
