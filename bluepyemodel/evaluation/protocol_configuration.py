@@ -42,14 +42,18 @@ class ProtocolConfiguration:
                     "location": "soma",
                     "variable": "v",
                 }]
-            recordings (list of dict): same as recordings_from_config.
-                Is here for backward compatibility
+            recordings (list of dict): same as recordings_from_config. Is here for backward
+                compatibility only.
             ion_variables (list of str): ion current names and ionic concentration names
-                for all available mechanisms
+                for all available mechanisms.
             protocol_type (str): type of the protocol. Can be "ThresholdBasedProtocol" or
-                "Protocol".
+                "Protocol". When using "ThresholdBasedProtocol", the current amplitude and step
+                amplitude of the stimulus will be ignored and replaced by values obtained from
+                the holding current and rheobase of the cell model respectively. When using
+                "Protocol", the current amplitude and step amplitude of the stimulus will be
+                used directly, in this case, if a "thresh_perc" was informed, it will be ignored.
             stochasticity (bool): whether the mechanisms should be on stochastic mode
-                when the protocol runs, or not
+                when the protocol runs, or not.
         """
 
         self.name = name
