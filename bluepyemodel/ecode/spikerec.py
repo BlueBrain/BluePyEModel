@@ -88,6 +88,12 @@ class SpikeRecMultiSpikes(BPEM_stimulus):
             return self.amp
         return self.threshold_current * (float(self.amp_rel) / 100.0)
 
+    def multi_stim_start(self):
+        return [self.delay + i * (self.spike_duration + self.delta) for i in range(self.n_spikes)]
+
+    def multi_stim_end(self):
+        return [ss + self.spike_duration for ss in self.multi_stim_start()]
+
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
 
