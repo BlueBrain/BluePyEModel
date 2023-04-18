@@ -44,17 +44,17 @@ def main():
         iteration_tag=args.githash,
         use_ipyparallel=args.use_ipyparallel,
     )
-    
+
     if args.step == "extract":
         pipeline.extract_efeatures()
 
     elif args.step == "optimize":
         pipeline.optimise(seed=args.seed)
-    
+
     elif args.step == "analyze":
         pipeline.store_optimisation_results()
         pipeline.plot(only_validated=False)
-        
+
     elif args.step == "validate":
         pipeline.validation()
         pipeline.plot(only_validated=False)
