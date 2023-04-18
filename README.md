@@ -3,41 +3,37 @@
 
 ## Introduction
 
-The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package facilitating the configuration and execution of E-Model building tasks. It covers tasks such as feature extraction, model optimisation, validation, model management and AIS synthesis. As such, it builds on top of BluePyEfe, BluePyOpt and BluePyMM.
+The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package facilitating the configuration and execution of E-Model building tasks. It covers tasks such as feature extraction, model optimisation and validation. As such, it builds on top of eFEL, BluePyEfe and BluePyOpt.
 
 
 ## Installation
 
-If you want to use BluePyEModel, you can either load the `bluepyemodel` module if you are on BB5, or install BluePyEModel in a virtual environment.
+If you want to use BluePyEModel, you can install it in a virtual environment.
 
-For loading the module, type the following lines in your command line interface:
+To do so on BB5, first create a virtual environment using the most recent python version on spack:
 
-    module load unstable
-    module load py-bluepyemodel
-
-For installing BluePyEModel in a virtual environment, you first have to have cmake and GCC installed (the same your python has been compiled with), as some BluePyEModel dependencies need them. If you are on BB5, you can easily load the cmake and gcc modules using the following lines:
-
-    module load unstable
-    module load gcc/9.3.0 cmake
-
-And replace 9.3.0 by the gcc version your python has been compiled with. You might have to load archived modules if gcc < 9.3.0 is needed.
+    module load unstable python
+    python -m venv myvenv
+    module purge all
+    source myvenv/bin/activate
 
 Then, you can install BluePyEModel with the following line:
 
     pip install -i https://bbpteam.epfl.ch/repository/devpi/simple/ bluepyemodel[all]
 
-If you want all the dependencies to be available. You can also select the dependencies you want by putting them into the brackets instead of 'all' (If you want multiple dependencies, you have to separate them by commas). The available dependencies are:
+You can also select the specific dependencies you want by putting them into the brackets instead of 'all' (If you want multiple dependencies, you have to separate them by commas). The available dependencies are:
 
 - luigi
 - nexus
 - all
+- currentscape
 
 
 ## To get started with the E-Model building pipeline
 
-This section will talk specifically about the E-Model building pipeline which for now contains e-features extraction, optimisation and model analysis. For model management and AIS synthesis, documentation is not available yet.
+This section will talk about the E-Model building pipeline which for now contains e-features extraction, optimisation and model analysis. If you only wish to export a model  that was built using the pipeline to hoc, you can jump to the subsection "Exporting the models".
 
-Despite the presence of the following explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact the Cells team for help to get you set up (tanguy.damart@epfl.ch).
+Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact the Cells team for help to get you set up.
 
 The E-Model building pipeline can be executed either step by step using Python or all at once as a Luigi workflow.
 
@@ -55,16 +51,20 @@ The section after that will focus on scenario 4 as it is the most complex. Scena
 
 ### 1) Running using python with local storage
 
-This section presents the general picture of how to create an e-model using python and local storage.
+#### Configuration
+
+This section presents a general picture of how to create an e-model using python and local storage, it relies on the use of the class EModel_pipeline.
+
 For a detailed picture, please refer to the example directory `./examples/emodel_pipeline_local_python` and its README which shows how to setup an optimisation directory and how to run it on BB5 using slurm.
 
-The pipeline is divided in 4 steps:
+The pipeline is divided in 6 steps:
 - extraction: extracts efeatures from the ephys recordings and averages the results along the requested targets.
 - optimisation: builds a NEURON cell model and optimises its parameters using as targets the efeatures computed during efeature extraction.
 - storage of the model: reads the results of the extraction and stores the models (best set of parameters) in local or on Nexus.
 - validation: reads the models and runs the optimisation protocols and/or validation protocols on them. The efeature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
 - plotting: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the efeature scores and parameter distributions.
   These four steps are to be run in order as, for example, validation cannot be run if no models have been stored.
+- exporting: read the parameter of the best models and export them in files that can be used either in NEURON or for circuit building.
 
 In the present case, we will use the local access point. The main configuration file needed by the local access point is a file referred to as "recipes" since it contains the recipe of how a model should be built.
 Therefore, in an empty directory, you will need to create a file `recipes.json`. Here is an example of a recipe for a fictitious L5PC model:
@@ -90,11 +90,11 @@ Therefore, in an empty directory, you will need to create a file `recipes.json`.
 Each entry of the recipe must contain the fields morph_path, morphology, params, protocol, features and these have to point toward the json files that will be used to configure the model and the optimisation.
 The format of each of these files being strictly defined, please refer to the example for the exact format.
 
-The recipes also contain settings used to configure the pipeline. The complete list of the settings available can be seen in the docstring of the class at `bluepyemodel/emodel_pipeline/emodel_settings.py`.
+The recipes also contain settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the docstring of the class at `bluepyemodel/emodel_pipeline/emodel_settings.py`.
 
-Note that the mechanisms used by the models need to be present in a local directory named "mechanisms" and compiled.
+#### Building the models
 
-Then, you will need to create a python file that can be used to instantiate the pipeline and run it. Here is a minimal example:
+Then, you will need to create a python file that can be used to instantiate the pipeline and run it. Here, the pipeline is a python object of the class EModel_pipeline. Here is a minimal example of how to instantiate it:
 ```
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 
@@ -117,15 +117,32 @@ pipeline.store_optimisation_results()
 pipeline.plot(only_validated=False)
 ```
 
-Note that this will only work if your recipes.json and all others .json files are configured properly.
+Note that the mechanisms used by the models need to be present in a local directory named "mechanisms" and compiled using the command:
+```
+nrnivmodl mechanisms
+```
 
 The final models generated using the local access point are stored in the file `final.json` and the traces of the models can be seen in `./figures/`.
+
+#### Exporting the models
+
+If you wish to use the models generated with BluePyEModel outside of Python, you will need to export them as hoc files.
+Following the example above, you can do so with the command:
+```
+from bluepyemodel.export_emodel.export_emodel import export_emodels_hoc
+access_point = pipeline.access_point
+export_emodels_hoc(access_point, only_validated=False, map_function=map)
+```
+This will create a local directory containing the hoc files of the models.
+
+Note that if you wish to use the models in a circuit, you will have to use `export_emodels_sonata` instead.
+However, most of the time, for circuit building, you will want to generalize the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see https://github.com/BlueBrain/BluePyMM)
 
 ### 4) Running using Luigi with Nexus storage
 
 This section present the general picture of how to create an e-model using Luigi and Nexus storage. For a detailed example, please refer to the files in examples/emodel_pipeline_nexus_ncmv3
 
-Warning: to run the emodel pipeline using Nexus as a backend you will first need a fully configured Nexus project and be able to perform cross-bucket in projects containing the morphologies, mechanisms and ephys data you wish to use.
+Warning: to run the emodel pipeline using Nexus as a backend you will first need a fully configured Nexus project and be able to perform cross-bucket in projects containing the morphologies, mechanisms and ephys data you wish to use. All of these have to be setup by the DKE team beforehand.
 
 To run the pipeline with luigi, you will need:
 - a virtual environment with BluePyEModel installed with the options nexus and luigi: (```pip install bluepyemodel[luigi,nexus]```)
