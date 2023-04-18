@@ -77,6 +77,8 @@ It will create a slurm job that will store the results in a local file called `f
 
 If you wish to interact with the models, please have a look at the notebook `./exploit_models.ipynb`.
 
+Currentscape plots can also be plotted by BluePyEModel, along with the other analysis figures. To do so, you simply have to add `"plot_currentscape": true,` to the `"pipeline_settings"` dict of `./config/recipes.json`. This will automatically save the recordings of the voltage, as well as every available ionic currents and ionic concentration to `./recordings`. The currentscape figures are created using the same recordings, and are saved under `./figures/EMODEL_NAME/currentscape`. If you want to customise your currentscape plots, you can pass a currentscape config to the `"pipeline_settings"` dict of `./config/recipes.json` under the key `"currentscape_config"`. You can find more information about currentscape and its config [here](https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config).
+
 #### Validation
 
 If you wish to perform validation on your model (testing the model on protocols unseen during optimisation), you will have to mark these targets as such in your pipeline settings in the recipe file before efeature extraction.
