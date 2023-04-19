@@ -63,7 +63,7 @@ The pipeline is divided in 6 steps:
 - storage of the model: reads the results of the extraction and stores the models (best set of parameters) in local or on Nexus.
 - validation: reads the models and runs the optimisation protocols and/or validation protocols on them. The efeature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
 - plotting: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the efeature scores and parameter distributions.
-  These four steps are to be run in order as, for example, validation cannot be run if no models have been stored.
+These four steps are to be run in order as, for example, validation cannot be run if no models have been stored.
 - exporting: read the parameter of the best models and export them in files that can be used either in NEURON or for circuit building.
 
 In the present case, we will use the local access point. The main configuration file needed by the local access point is a file referred to as "recipes" since it contains the recipe of how a model should be built.

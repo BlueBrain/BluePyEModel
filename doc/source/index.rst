@@ -1,4 +1,4 @@
-.. include:: ../../README.rst
+
 
 BluePyEModel
 ------------
@@ -18,6 +18,7 @@ The :doc:`./api_ref` page contains detailed documentation of:
    :maxdepth: 2
 
    Home <self>
+   readme_link
    emodel_methodology
    config_files
    changelog
