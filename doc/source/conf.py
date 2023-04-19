@@ -38,6 +38,8 @@ extensions = [
     "sphinx.ext.graphviz",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
+    "myst_parser",
+    "sphinx.ext.autosummary",
 ]
 
 autoapi_dirs = [
