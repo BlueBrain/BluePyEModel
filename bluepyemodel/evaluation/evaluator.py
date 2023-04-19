@@ -162,7 +162,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     if feature_config.efel_settings.get("stim_start", None) is not None:
         stim_start = feature_config.efel_settings["stim_start"]
     elif protocol:
-        stim_start = protocol.stim_start
+        stim_start = protocol.stim_start()
 
     if feature_config.efel_settings.get("stim_end", None) is not None:
         stim_end = feature_config.efel_settings["stim_end"]
@@ -170,10 +170,19 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
         if "bAP" in protocol.name:
             stim_end = protocol.total_duration
         else:
-            stim_end = protocol.stim_end
+            stim_end = protocol.stim_end()
 
     efel_settings = {**global_efel_settings, **feature_config.efel_settings}
-    double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, float)}
+
+    # Handle the special case of multiple_decay_time_constant_after_stim
+    if feature_config.efel_feature_name == "multiple_decay_time_constant_after_stim":
+        if hasattr(protocol.stimuli[0], "multi_stim_start"):
+            efel_settings["multi_stim_start"] = protocol.stimuli[0].multi_stim_start()
+            efel_settings["multi_stim_end"] = protocol.stimuli[0].multi_stim_end()
+        else:
+            efel_settings["multi_stim_start"] = [stim_start]
+            efel_settings["multi_stim_end"] = [stim_end]
+    double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, (float, list))}
     int_settings = {k: v for k, v in efel_settings.items() if isinstance(v, int)}
     string_settings = {k: v for k, v in efel_settings.items() if isinstance(v, str)}
 
