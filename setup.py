@@ -43,6 +43,7 @@ EXTRA_DOC = [
     "sphinx",
     "sphinx-autoapi",
     "sphinx-bluebrain-theme",
+    "myst_parser",
 ]
 
 
