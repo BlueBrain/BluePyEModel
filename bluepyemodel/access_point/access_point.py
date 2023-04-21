@@ -1,4 +1,4 @@
-"""Abstract data access point class."""
+"""DataAccessPoint class."""
 import glob
 import logging
 import pathlib
@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class DataAccessPoint:
-    """Data access point"""
+
+    """Abstract data access point class. This class is not meant to be used directly.
+    Instead, it is used through the classes LocalAccessPoint and NexusAccessPoint.
+    """
 
     def __init__(
         self,
