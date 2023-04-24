@@ -49,7 +49,7 @@ class ModelConfigurator:
         self.configuration = self.access_point.get_model_configuration()
 
     def save_configuration(self, path=None):
-        """Save the configuration. The saving medium depends of the access point."""
+        """Save the configuration. The saving medium depends on the access point."""
 
         if self.configuration:
             self.access_point.store_model_configuration(self.configuration, path)

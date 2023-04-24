@@ -1,4 +1,4 @@
-"""Nexus Forge access point used by the Nexus access point"""
+"""NexusForgeAccessPoint class."""
 
 import getpass
 import json

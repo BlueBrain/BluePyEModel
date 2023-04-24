@@ -1,5 +1,4 @@
-"""API to reproduce Singlecell repositories."""
-
+"""Functions related to the plotting of the e-models."""
 import copy
 import glob
 import logging

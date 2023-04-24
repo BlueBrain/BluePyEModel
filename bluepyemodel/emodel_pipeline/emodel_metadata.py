@@ -3,7 +3,10 @@
 
 class EModelMetadata:
 
-    """Contains the metadata of an emodel such as its emodel name or its brain region"""
+    """Contains the metadata of an emodel such as its e-model name or its brain region. These
+    metadata can be understood as a unique identifier of an e-model.
+
+    This class is a backend class and is not meant to be used directly by the user."""
 
     def __init__(
         self,
@@ -19,14 +22,14 @@ class EModelMetadata:
         """Constructor
 
         Args:
-            emodel (str): name of the emodel
-            etype (str): name of the electric type.
-            ttype (str): name of the transcriptomic type.
-            mtype (str): name of the morphology type.
-            species (str): name of the species.
-            brain_region (str): name of the brain location.
+            emodel (str): name of the e-model
+            etype (str): name of the electric type of the e-model.
+            ttype (str): name of the transcriptomic type of the e-model.
+            mtype (str): name of the morphology type of the e-model.
+            species (str): name of the species of the e-model.
+            brain_region (str): name of the brain location of the e-model.
             iteration_tag (str): tag associated to the current run.
-            synapse_class (str): synapse class (neurotransmitter).
+            synapse_class (str): synapse class (neurotransmitter)  of the e-model.
         """
 
         if emodel is None and etype is None:
