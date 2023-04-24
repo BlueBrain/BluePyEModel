@@ -1,4 +1,4 @@
-"""Custom luigi worker and custom luigi launcher."""
+"""CustomFromFile luigi worker and custom luigi launcher."""
 import signal
 
 import luigi
@@ -7,7 +7,7 @@ from bluepyemodel.tasks.emodel_creation.optimisation import EModelCreation
 
 
 class WorkerCustom(luigi.worker.Worker):
-    """Custom Worker class."""
+    """CustomFromFile Worker class."""
 
     def handle_interrupt(self, signum, _):
         """
@@ -36,7 +36,7 @@ class WorkerCustom(luigi.worker.Worker):
 
 
 class FactoryCustom(object):
-    """Custom Worker Scheduler Factory class."""
+    """CustomFromFile Worker Scheduler Factory class."""
 
     def create_local_scheduler(self):
         return luigi.scheduler.Scheduler(prune_on_get_work=True, record_task_history=False)
