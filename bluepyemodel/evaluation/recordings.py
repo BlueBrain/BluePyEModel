@@ -53,6 +53,15 @@ def get_loc_varlist(isection):
     return local_varlist
 
 
+def get_i_membrane(isection):
+    """Look for i_membrane in a location."""
+    raw_dict = isection.psection()["density_mechs"]
+    if "extracellular" in raw_dict:
+        if "i_membrane" in raw_dict["extracellular"]:
+            return ["i_membrane"]
+    return []
+
+
 def check_recordings(recordings, icell, sim):
     """Returns a list of valid recordings (where the variable is in the location)."""
 
@@ -73,7 +82,10 @@ def check_recordings(recordings, icell, sim):
             local_varlist = varlists[section_key]
         else:
             local_varlist = (
-                get_loc_varlist(sec) + list(get_loc_ions(sec)) + list(get_loc_currents(sec))
+                get_loc_varlist(sec)
+                + list(get_loc_ions(sec))
+                + list(get_loc_currents(sec))
+                + get_i_membrane(sec)
             )
             varlists[section_key] = local_varlist
 
