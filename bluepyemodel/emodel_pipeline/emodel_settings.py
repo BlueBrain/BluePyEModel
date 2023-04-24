@@ -8,7 +8,12 @@ logger = logging.getLogger(__name__)
 
 class EModelPipelineSettings:
 
-    """Container for the settings of the E-Model building pipeline"""
+    """Container for the settings used during the different steps of the e-model building pipeline.
+    When using the "local" access point, these settings will be coming from the recipes.json file.
+    When using the "nexus" access point, these settings will be coming from a resource of type
+    EModelPipelineSettings.
+
+    This is a backend container class, not meant to be used directly by the user."""
 
     def __init__(
         self,
@@ -33,8 +38,8 @@ class EModelPipelineSettings:
         threshold_efeature_std=None,
         max_ngen=100,
         use_stagnation_criterion=True,
-        validation_threshold=5.0,
         validation_function="max_score",
+        validation_threshold=5.0,
         plot_optimisation=True,
         compile_mechanisms=False,
         n_model=3,
@@ -60,117 +65,135 @@ class EModelPipelineSettings:
         auto_targets=None,
         auto_targets_presets=None,
     ):
-        """Init
+        """Creator of the EModelPipelineSettings class.
 
         Args:
             extraction_reader (function or list): function used to read the ephys data during
-                efeature extraction. If list, must contain the path to the file containing the
-                function and name of the function. E.g: ["path_to_module", "name_of_function"]
-            extraction_threshold_value_save (int): minimum number of values (data points)
-                needed for an efeature to be returned in the output of the extraction process.
-            plot_extraction (bool): should the efeatures and experimental traces be plotted.
-            pickle_cells_extraction (bool): sould the cells object be saved as a pickle file for
-                further analysis during extraction.
-            extract_absolute_amplitudes (bool): if True, will use the absolute amplitudes
-                instead of the relative amplitudes of the recordings when checking
-                if a recording fit a given target.
-            rheobase_strategy_extraction (str): function used to compute the rheobase during
-                extraction. Can be 'absolute' (amplitude of the lowest amplitude inducing at
-                least a spike) or 'majority' (amplitude of the bin in which a majority of
-                sweeps induced at least one spike).
-            rheobase_settings_extraction (dict): settings related to the rheobase computation.
-                Keys have to match the arguments expected by the rheobase computation function.
-            default_std_value (float): At the end of efeatures extraction, all features
+                efeature extraction. If it is a list, it must contain the path to the file
+                containing the function and name of the function. E.g: ["path_to_module",
+                "name_of_function"]. If None, BluePyEfe will try to automatically use the correct
+                default reader.
+            extraction_threshold_value_save (int): during extraction, define the minimum number of
+                values (data points) needed for an e-feature to be considered valid and be returned
+                in the output of the extraction process. If the number of data point is lower than
+                this value, the e-feature will be ignored.
+            plot_extraction (bool): at the end of extraction, should the e-features and
+                experimental traces be plotted.
+            pickle_cells_extraction (bool): at the end of extraction, should the BluePyEfe objects
+                be saved in pickle files for further analysis. The pickle files will be
+                saved in the folder "./figures/{emodel_name}/efeatures_extraction/".
+            extract_absolute_amplitudes (bool): if True, during extraction, BluePyEfe will assume
+                that the targets are expressed in absolute current amplitudes (nA) instead of the
+                relative amplitudes when checking if a recording fits a given target.
+            rheobase_strategy_extraction (str): during extraction, sets which function is used to
+                compute the rheobase of the experimental cells. Can be 'absolute' (amplitude of
+                the lowest current amplitude inducing at least a spike) or 'flush' (amplitude of
+                the lowest current amplitude inducing at least a spike followed by another
+                recording also inducing a spike).
+            rheobase_settings_extraction (dict): settings related to the rheobase computation
+                strategy. Keys have to match the arguments expected by the rheobase computation
+                function present in the module bluepyefe.rheobase.
+            default_std_value (float): At the end of e-features extraction, all features
                 presenting a standard deviation of 0, will see their standard deviation
                 replaced by the present value.
-            efel_settings (dict): efel settings in the form {setting_name: setting_value}.
-                If settings are also informed in the targets per efeature, the latter
-                will have priority.
-            minimum_protocol_delay (float): if a protocol has an initial delay below this value,
-                the delay is set to minimum_protocol_delay. The stim_start, stim_end and
-                totduration are updated accordingly.
+            efel_settings (dict): efel settings in the form {setting_name: setting_value} to be
+                used during extraction. If settings are also informed in the targets on a per
+                efeature basis, the latter will have priority.
+            minimum_protocol_delay (float): during optimisation, if a protocol has an initial
+                delay shorter than this value, the delay will be set to minimum_protocol_delay.
             stochasticity (bool or list of str): should channels behave stochastically if they can.
-                If a list of protocol names is provided, the runs will be stochastic
-                for these protocols, and deterministic for the other ones.
+                If True, the mechanisms will be stochastic for all protocols. If a list of protocol
+                names is provided, the mechanisms will be stochastic only for these protocols.
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
                 function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
+                If None, the default modifier will replace the axon with a tappered axon initial
+                segment. If you do not wish to use any modifier, set the present argument to "[]".
             threshold_based_evaluator (bool): not used. To be deprecated.
-            start_from_emodel (dict): If informed, the evaluator for the present emodel will
+            start_from_emodel (dict): If informed, the optimisation for the present e-model will
                 be instantiated using as values for the model parameters the ones from the
-                model specified in the present dict. That option can be used or example
-                to perform two steps optimisations. Example:
+                e-model specified in the present dict. That option can be used for example
+                to perform a two-steps optimisations. Example:
                     {
                         "emodel": "bNAC",
                         "etype": "bNAC",
                         "iteration_tag": "mytest"
                     }.
-            optimiser (str): algorithm used for optimisation, can be "IBEA", "SO-CMA",
-                "MO-CMA" (use cma option in pip install for CMA optimisers).
-            optimizer (str): for legacy reasons, overwrites optimiser when not None.
-            optimisation_params (dict): optimisation parameters. Keys have to match the
-                optimiser's call. E.g., for optimiser MO-CMA:
-                {"offspring_size": 10, "weight_hv": 0.4}
+            optimiser (str): name of the algorithm used for optimisation, can be "IBEA", "SO-CMA"
+                or "MO-CMA".
+            optimizer (str): here for backward compatibility. Use optimiser instead.
+            optimisation_params (dict): parameter for the optimisation process. Keys have to match
+                the call of the optimiser. E.g.: {"offspring_size": 15}.
+                For more details, see the documentation of the bluepyopt.deapext package.
             optimisation_timeout (float): duration (in second) after which the evaluation
-                of a protocol will be interrupted.
+                of a protocol will be interrupted. When a protocol is interrupted, its response
+                will be considered as invalid and the score of all the related e-features will
+                be set to the maximum value (250 per default).
             threshold_efeature_std (float): if informed, the standard deviations of the
                 efeatures will be thresholded at a minimum of abs(threshold_efeature_std
-                * efeatures_mean). Note that this will not re-write the original standard
-                deviations, but only modify them at instantiation of the optimizer.
+                * efeature_mean). Note that this will not overwrite the original standard
+                deviations, but only modify them for the optimisation process.
             max_ngen (int): maximum number of generations of the evolutionary process of the
                 optimisation.
-            use_stagnation_criterion (bool): whether to use the stagnation
-                stopping criterion on top of the maximum generation criterion
-            validation_threshold (float): score threshold under which the emodel passes
-                validation.
+            use_stagnation_criterion (bool): whether to use the stagnation stopping criterion on
+                top of the maximum generation criterion during optimisation.
             validation_function (str or list): if str, can be "max_score" or "mean_score".
                 If list, must contain the path to the file containing the function and name
                 of the function. E.g: ["path_to_module", "name_of_function"]
-            optimisation_batch_size (int): number of optimisation seeds to run in parallel.
-            max_n_batch (int): maximum number of optimisation batches.
+            validation_threshold (float): if "max_score" or "mean_score" were specified as the
+                validation_function, this parameter will set the threshold under which the e-models
+                will be considered to pass validation successfully.
+            optimisation_batch_size (int): number of optimisation seeds to run in parallel. Only
+                used by the Luigi workflow.
+            max_n_batch (int): maximum number of optimisation batches. Only used by the Luigi
+                workflow.
             name_gene_map (str): name of the gene mapping csv file. Only required when using the
-                Nexus access_point.
-            n_model (int): minimum number of models to pass validation
-                to consider the EModel building task done.
-            plot_optimisation (bool): should the EModel scores and traces be plotted.
+                Nexus access_point and the IC-selector.
+            n_model (int): minimum number of models to pass validation to consider the e-model
+                building task done. Only used by the Luigi workflow.
+            plot_optimisation (bool): should the e-models scores and traces be plotted. Only used
+                by the Luigi workflow.
             compile_mechanisms (bool): should the mod files be copied in the local
-                mechanisms_dir directory.
-            path_extract_config (str): path to the .json containing the extraction targets, files
-                metadata and the name of the protocols used to compute the threshold of the cell.
-                Only used with local access point.
-            name_Rin_protocol (list or str): name and amplitude of the protocol associated
-                with the efeatures used for the computation of the input resistance scores
-                during optimisation, e.g: ["IV", -20] or "IV_-20".
+                mechanisms_dir directory. Only used by the Luigi workflow.
+            path_extract_config (str): specify the path to the .json file containing the targets
+                for the extraction process. Only used with local access point.
+                See example emodel_pipeline_local_python for more details.
+            name_Rin_protocol (list or str): name and amplitude of the protocol from which the
+                input resistance should be selected from. The matching protocol should have
+                "ohmic_input_resistance_vb_ssse" in its feature targets .E.g: ["IV", -20] or
+                "IV_-20".
                 This setting has to be set before efeature extraction if you wish to run
                 a threshold based evaluator.
-            name_rmp_protocol (list or str): name and amplitude of the protocol associated
-                with the efeatures used for the computation of the resting membrane potential
-                scores during optimisation, e.g: ["IV", 0] or "IV_0".
+            name_rmp_protocol (list or str): name and amplitude of the protocol from which the
+                resting membrane potential should be selected from, e.g: ["IV", 0] or "IV_0". The
+                matching protocol should have "voltage_base" in its feature targets.
                 This setting has to be set before efeature extraction if you wish to run
                 a threshold based evaluator.
-            validation_protocols (list of str): name of the protocols used for validation only.
-                E.g. ["APWaveform_300"]
-            plot_currentscape (bool): should the EModel currentscapes be plotted
-            currentscape_config (dict): currentscape config
-                according to the currentscape documentation
-                (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config)
+            validation_protocols (list of str): name of the protocols to be used for validation
+                only. E.g. ["APWaveform_300"]. These protocols will not be used during
+                optimisation.
+            plot_currentscape (bool): during the plotting, should the currentscapes be
+                plotted for the recordings.
+            currentscape_config (dict): currentscape configuration according to the currentscape
+                documentation (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config).
                 Note that current.names, output.savefig, output.fname and output.dir
-                do not need to be set, since they are automatically overwritten by BPEM.
-                If current.names is set nonetheless, it will be used as the subset
-                of available currents to be selected for the plot.
-            neuron_dt (float): dt of the NEURON simulator. If None, cvode will be used.
-            cvode_minstep (float): minimum time step allowed for a CVODE step.
-            max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
-                will search for the rheobase.
+                do not need to be set, since they are automatically overwritten by BluePyEModel.
+                If current.names is set nonetheless, it will be used as the subset of available
+                currents to be selected for the plot.
+            neuron_dt (float): time step of the NEURON simulator. If None, cvode will be used.
+            cvode_minstep (float): minimum time step allowed when using cvode.
+            max_threshold_voltage (float): upper bound for the voltage during the
+                search for the threshold or rheobase current (see SearchThresholdProtocol).
             strict_holding_bounds (bool): if True, the minimum and maximum values for the current
                 used during the holding current search will be fixed. Otherwise, they will be
-                widened dynamically.
+                widened dynamically if the holding current is beyond the initial bounds.
             max_depth_holding_search (int): maximum depth for the binary search for the
-                holding current
+                holding current.
             max_depth_threshold_search (int): maximum depth for the binary search for the
-                threshold current
-            spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
-                we set spikecount=2 as if many spikes were present, to speed up bisection search.
+                threshold current.
+            spikecount_timeout (float): during the search of the threshold current, if the present
+                timeout is reached, we set spikecount=2 as if many spikes were present, to speed
+                    up bisection search.
             files_for_extraction (list): temporary, will come from SBO
             targets (list): temporary, will come from SBO
             protocols_rheobase (list): temporary, will come from SBO

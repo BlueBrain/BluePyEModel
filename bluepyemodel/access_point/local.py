@@ -1,4 +1,4 @@
-"""Access point to get data from Singlecell-like repositories"""
+"""LocalAccessPoint class."""
 
 import glob
 import json
@@ -34,7 +34,8 @@ seclist_to_sec = {
 
 
 class LocalAccessPoint(DataAccessPoint):
-    """Access point to configuration files organized as project 38."""
+
+    """Access point to access configuration files and e-models when stored locally."""
 
     def __init__(
         self,

@@ -23,7 +23,11 @@ def format_dict_for_resource(d):
 
 class EModel:
 
-    """Contains a set of parameters for the EModel and its matching scores and efeatures"""
+    """Contains all the information related to an optimized e-model, such as its parameters or
+    its e-feature values and scores.
+
+    This class is not meant to be instantiated by hand. It is used to transmit the information
+    about optimized e-model information."""
 
     def __init__(
         self,

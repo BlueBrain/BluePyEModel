@@ -1,4 +1,4 @@
-"""Allows to execute the steps of the e-model building pipeline using python or CLI"""
+"""EModel_pipeline class."""
 
 import glob
 import logging
@@ -21,7 +21,11 @@ logger = logging.getLogger()
 
 class EModel_pipeline:
 
-    """EModel pipeline"""
+    """The EModel_pipeline class is there to allow the execution of the steps
+    of the e-model building pipeline using python (as opposed to the Luigi workflow).
+
+    For an example of how to use to present class, see the example emodel_pipeline_local_python or
+    the README.md file."""
 
     def __init__(
         self,
@@ -44,39 +48,65 @@ class EModel_pipeline:
         use_ipyparallel=None,
         use_multiprocessing=None,
     ):
-        """Initialize the emodel_pipeline.
+        """Initializes the EModel_pipeline.
 
         Args:
-            emodel (str): name of the emodel. Has to match the name of the emodel under which the
-                configuration data are stored.
-            data_access_point (str): name of the access_point used to access the data,
-                can be "nexus" or "local".
-                "local" expect the configuration to be  defined in a "config" directory
-                containing recipes as in proj38. "nexus" expect the configuration to be defined
-                on Nexus using NexusForge, see bluepyemodel/api/nexus.py.
-            etype (str): name of the etype.
-            ttype (str): name of the t-type. Required if using the gene expression or IC selector.
-            mtype (str): name of the mtype.
-            species (str): name of the species.
-            brain_region (str): name of the brain region.
-            iteration_tag (str): tag associated to the current run. If used with the local access
-                point,the pipeline will work in the directory working_dir/run/iteration.
-                If used with the Nexus access point, it will be used to tag the resources
-                generated during the run.
-            morph_class (str): name of the morphology class, has to be "PYR", "INT".
-            synapse_class (str): name of the synapse class, has to be "EXC", "INH".
-            layer (str): layer of the model.
-            recipes_path (str): path of the recipes.json, only needed if the data access point is
-                "local".
-            forge_path (str): path to the .yml used to connect to Nexus Forge, only needed if
-                db_api="nexus".
+            emodel (str): name of the emodel. Can be arbitrary but has to match the name of the
+                emodel in the recipes.json configuration file.
+            data_access_point (str): type of the access_point used to access the configuration
+                data. Can be either "nexus" or "local".
+                In the case "local", a path to a recipes.json file is expected (see argument
+                recipes_path).
+                In the case "nexus", the nexus_project, nexus_organisation and nexus_endpoint
+                argument are expected. Consequently, the matching Nexus project has to be
+                configured beforehand and contain the necessary configuration files.
+            etype (str): name of the e-type of the e-model. Used as an identifier for the e-model.
+            ttype (str): name of the t-type of the e-model. Used as an identifier for the e-model.
+                This argument is required when using the gene expression or IC selector.
+            mtype (str): name of the m-type of the e-model. Used as an identifier for the e-model.
+            species (str): name of the species of the e-model. Used as an identifier for the
+                e-model.
+            brain_region (str): name of the brain region of the e-model. Used as an identifier for
+                the e-model.
+            iteration_tag (str): tag associated to the current run. Used as an identifier for the
+                e-model.
+                If used with an access point of type "local", the current pipeline will execute
+                the model building steps in the subdirectory of "./run/{iteration_tag}/" expected
+                to contain a copy of the configuration files, mechanisms, morphologies needed for
+                model building. This subdirectory can be created, for example using the following
+                shell script (see also the example emodel_pipeline_local_python):
+            .. code-block:: shell
+                git add -A && git commit --allow-empty -a -m "Running optimization"
+                export iteration_tag=$(git rev-parse --short HEAD)
+                git archive --format=tar --prefix=${iteration_tag}/ HEAD | (cd ./run/ && tar xf -)
+                In this case, the current, the iteration_tag can then be passed during the
+                instantiation of the EModel_pipeline.
+                If used with an access point of type "nexus" access point, the iteration_tag can
+                be arbitrary and will only be used for tagging the current run.
+            morph_class (str): name of the morphology class, has to be "PYR", "INT". To be
+                depracted.
+            synapse_class (str): name of the synapse class of the e-model, has to be "EXC", "INH".
+                Not used at the moment.
+            layer (str): layer of the e-model. To be depracted.
+            recipes_path (str): path of the recipes.json configuration file.This configuration
+                file is the main file required when using the access point of type "local". It
+                is expected to be a json file containing a dictionary whose keys are the names
+                of the e-models that will be built. The values associated to these keys are
+                the recipes used to build these e-models. See the example recipes.json file in
+                the example emodel_pipeline_local_python for more details.
+            forge_path (str): path to the .yml used to connect to Nexus Forge. This is only needed
+                when using a "nexus" access point and if you wish to customize the connection to
+                Nexus. If not provided, a default .yml file will be used.
             nexus_organisation (str): name of the Nexus organisation in which the project is
-                located.
+                located. This is only needed when using a "nexus" access point.
             nexus_project (str): name of the Nexus project to which the forge will connect to
-                retrieve the data
-            nexus_endpoint (str): Nexus endpoint ("prod" or "staging")
-            use_ipyparallel (bool): should the parallelization map be base on ipyparallel.
-            use_multiprocessing (bool): should the parallelization map be based on multiprocessing.
+                retrieve the data. This is only needed when using a "nexus" access point.
+            nexus_endpoint (str): Nexus endpoint ("prod" or "staging"). This is only needed when
+                using a "nexus" access point.
+            use_ipyparallel (bool): should the parallelization map used for the different steps of
+                the e-model building pipeline be based on ipyparallel.
+            use_multiprocessing (bool): should the parallelization map used for the different steps
+                of the e-model building pipeline be based on multiprocessing.
         """
 
         # pylint: disable=too-many-arguments
@@ -122,7 +152,7 @@ class EModel_pipeline:
     def configure_model(
         self, morphology_name, morphology_path=None, morphology_format=None, use_gene_data=False
     ):
-        """"""
+        """To be deprecated"""
 
         return configure_model(
             self.access_point,
@@ -133,12 +163,16 @@ class EModel_pipeline:
         )
 
     def extract_efeatures(self):
-        """"""
+        """Extract the e-features related to the current e-model."""
 
         return extract_save_features_protocols(access_point=self.access_point, mapper=self.mapper)
 
     def optimise(self, seed=1):
-        """"""
+        """Optimise the e-model.
+
+        Args:
+            seed (int): seed used for the random number generator used in the optimisation.
+        """
 
         setup_and_run_optimisation(
             self.access_point,
@@ -148,7 +182,16 @@ class EModel_pipeline:
         )
 
     def store_optimisation_results(self, seed=None):
-        """"""
+        """Store the results of the optimisation. That is, reads the pickles file containing
+        checkpoint of the optimisations and store the best model for each seed. When using the
+        "local" access point, the best models are stored in a local json file called "final.json"
+        When using the "nexus" access point, the best models are stored in Nexus resources of type
+        EModel.
+
+        Args:
+            seed (int): specifies which seed to store. If None, the best models for all seeds
+                are stored.
+        """
 
         if seed is not None:
             store_best_model(access_point=self.access_point, seed=seed)
@@ -169,7 +212,9 @@ class EModel_pipeline:
                 )
 
     def validation(self):
-        """"""
+        """Run a validation on the stored e-models. To work, some protocols have to be
+        marked as for validation only. If no protocol is marked as such, the validation will
+        simply check if the scores are all below a given threshold."""
 
         validate(
             access_point=self.access_point,
@@ -177,6 +222,16 @@ class EModel_pipeline:
         )
 
     def plot(self, only_validated=False, load_from_local=False):
+        """Plot the results of the optimisation in a subfolder called "figures".
+
+        Args:
+            only_validated (bool): if True, only the e-models that have successfully passed
+                validation will be plotted.
+            load_from_local (bool): if True, loads responses of the e-models from local files
+                instead of recomputing them. Responses are automatically saved locally when
+                plotting currentscapes.
+        """
+
         for chkp_path in glob.glob("./checkpoints/*.pkl"):
             if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
@@ -215,11 +270,23 @@ class EModel_pipeline:
         )
 
     def export_emodels(self, only_validated=False, seeds=None):
+        """Export the e-models in the SONATA format. The results of the export are stored
+        in a subfolder called export_emodels_sonata.
+
+        Args:
+            only_validated (bool): if True, only the e-models that have successfully passed
+                validation will be exported.
+            seeds (list): list of the seeds of the e-models to export. If None, all the e-models
+                are exported.
+        """
+
         export_emodels_sonata(
             self.access_point, only_validated, seeds=seeds, map_function=self.mapper
         )
 
     def summarize(self):
+        """Prints a summary of the state of the current e-model building procedure"""
+
         print(self.access_point)
 
 
