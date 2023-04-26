@@ -39,7 +39,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "myst_parser",
-    "sphinx.ext.autosummary",
+    "sphinx.ext.autosummary"
 ]
 
 autoapi_dirs = [

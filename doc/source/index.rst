@@ -1,7 +1,5 @@
-
-
-BluePyEModel
-------------
+.. include:: ../../README.md
+   :parser: myst_parser.sphinx_
 
 .. _API Reference:
 
@@ -18,8 +16,5 @@ The :doc:`./api_ref` page contains detailed documentation of:
    :maxdepth: 2
 
    Home <self>
-   readme_link
-   emodel_methodology
-   config_files
    changelog
    api_ref
