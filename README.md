@@ -30,6 +30,8 @@ If you do not wish to install all dependencies, specific dependencies can be sel
 
 ## To get started with the E-Model building pipeline
 
+![E-Model building pipeline](./images/pipeline.png)
+
 This section will talk about the E-Model building pipeline which for now contains e-features extraction, optimisation and model analysis. If you only wish to export a model that was built using the pipeline to hoc, you can jump to the subsection "Exporting the models".
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact the Cells team for help to get you set up.
@@ -178,3 +180,7 @@ The pipeline can then be run using the command:
     bbp-workflow launch-bb5 -f --config=luigi.cfg bluepyemodel.tasks.emodel_creation.optimisation EModelCreation emodel=EMODEL ttype=TTYPE species=SPECIES brain-region=BRAIN_REGION iteration-tag=ITERATION_TAG`
 
 The final models generated using the Nexus access point are stored in the Nexus project in Resources of type `EModel`.
+
+### Schematics of BluePyEModel classes
+
+![Schematics of BluePyEModel classes](./images/classes_schema.png)
