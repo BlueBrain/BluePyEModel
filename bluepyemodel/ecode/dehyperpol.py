@@ -12,20 +12,22 @@ class DeHyperpol(BPEM_stimulus):
 
     """DeHyperpol current stimulus
 
-         holdi         holdi+amp        holdi+amp2     holdi
-           :                :               :            :
-           :         _________________      :            :
-           :        |                 |     :            :
-           :        |                 |     :            :
-    |_______________|                 |     :       ___________
-    ^               ^                 |     :      |           ^
-    :               :                 |     :      |           :
-    :               :                 |     :      |           :
-    :               :                 |____________|           :
-    :               :                 ^            ^           :
-    :               :                 :            :           :
-    :               :                 :            :           :
-    t=0             delay             tmid         toff        totduration
+    .. code-block:: none
+
+             holdi         holdi+amp        holdi+amp2     holdi
+               :                :               :            :
+               :         _________________      :            :
+               :        |                 |     :            :
+               :        |                 |     :            :
+        |_______________|                 |     :       ___________
+        ^               ^                 |     :      |           ^
+        :               :                 |     :      |           :
+        :               :                 |     :      |           :
+        :               :                 |____________|           :
+        :               :                 ^            ^           :
+        :               :                 :            :           :
+        :               :                 :            :           :
+        t=0             delay             tmid         toff        totduration
     """
 
     name = "DeHyperpol"

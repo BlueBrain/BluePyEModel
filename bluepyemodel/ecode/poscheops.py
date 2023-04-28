@@ -13,25 +13,27 @@ class PosCheops(BPEM_stimulus):
 
     """PosCheops current stimulus
 
-        holdi           holdi+amp              holdi               holdi+amp              holdi               holdi+amp              holdi
-          :                 :                    :                     :                    :                     :                    :
-          :                 .                    ;                     .                    :                     .                    :
-          :                / \                   :                    / \                   :                    / \                   :
-          :               /   \                  :                   /   \                  :                   /   \                  :
-          :              /     \                 :                  /     \                 :                  /     \                 :
-          :             /       \                :                 /       \                :                 /       \                :
-          :            /         \               :                /         \               :                /         \               :
-          :           /           \              :               /           \              :               /           \              :
-          :          /             \             :              /             \             :              /             \             :
-          :         /               \            :             /               \            :             /               \            :
-          :        /                 \           :            /                 \           :            /                 \           :
-          :       /                   \          :           /                   \          :           /                   \          :
-          :      /                     \         :          /                     \         :          /                     \         :
-    |__________ /                       \ ________________ /                       \ ________________ /                       \ ________________
-    :          :                         :                :                         :                :                         :                ^
-    :          :                         :                :                         :                :                         :                :
-    :          :                         :                :                         :                :                         :                :
-     <- delay -><-- 2 * ramp1_duration --><- inter_delay -><-- 2 * ramp2_duration --><- inter_delay -><-- 2 * ramp3_duration -->      totduration
+    .. code-block:: none
+
+            holdi           holdi+amp              holdi               holdi+amp              holdi               holdi+amp              holdi
+              :                 :                    :                     :                    :                     :                    :
+              :                 .                    ;                     .                    :                     .                    :
+              :                / \                   :                    / \                   :                    / \                   :
+              :               /   \                  :                   /   \                  :                   /   \                  :
+              :              /     \                 :                  /     \                 :                  /     \                 :
+              :             /       \                :                 /       \                :                 /       \                :
+              :            /         \               :                /         \               :                /         \               :
+              :           /           \              :               /           \              :               /           \              :
+              :          /             \             :              /             \             :              /             \             :
+              :         /               \            :             /               \            :             /               \            :
+              :        /                 \           :            /                 \           :            /                 \           :
+              :       /                   \          :           /                   \          :           /                   \          :
+              :      /                     \         :          /                     \         :          /                     \         :
+        |__________ /                       \ ________________ /                       \ ________________ /                       \ ________________
+        :          :                         :                :                         :                :                         :                ^
+        :          :                         :                :                         :                :                         :                :
+        :          :                         :                :                         :                :                         :                :
+         <- delay -><-- 2 * ramp1_duration --><- inter_delay -><-- 2 * ramp2_duration --><- inter_delay -><-- 2 * ramp3_duration -->      totduration
     """
 
     name = "PosCheops"
