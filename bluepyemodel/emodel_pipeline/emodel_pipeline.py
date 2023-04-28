@@ -7,6 +7,7 @@ import pathlib
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
+from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
 from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
@@ -232,15 +233,23 @@ class EModel_pipeline:
                 plotting currentscapes.
         """
 
+        cell_evaluator = get_evaluator_from_access_point(
+            self.access_point,
+            include_validation_protocols=True,
+            record_ions_and_currents=self.access_point.pipeline_settings.plot_currentscape,
+        )
+
+        # Filter the checkpoints to plot
+        checkpoint_paths = []
         for chkp_path in glob.glob("./checkpoints/*.pkl"):
             if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
-
             if (
                 self.access_point.emodel_metadata.iteration
                 and self.access_point.emodel_metadata.iteration not in chkp_path
             ):
                 continue
+            checkpoint_paths.append(chkp_path)
 
             stem = str(pathlib.Path(chkp_path).stem)
             seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
@@ -256,6 +265,14 @@ class EModel_pipeline:
                 / "optimisation",
             )
 
+        plotting.evolution_parameters_density(
+            evaluator=cell_evaluator,
+            checkpoint_paths=checkpoint_paths,
+            figures_dir=pathlib.Path("./figures")
+            / self.access_point.emodel_metadata.emodel
+            / "optimisation",
+        )
+
         return plotting.plot_models(
             access_point=self.access_point,
             mapper=self.mapper,
@@ -267,6 +284,7 @@ class EModel_pipeline:
             plot_currentscape=self.access_point.pipeline_settings.plot_currentscape,
             only_validated=only_validated,
             load_from_local=load_from_local,
+            cell_evaluator=cell_evaluator,
         )
 
     def export_emodels(self, only_validated=False, seeds=None):

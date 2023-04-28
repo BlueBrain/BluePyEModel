@@ -13,11 +13,14 @@ from bluepyopt.ephys.locations import NrnSeclistCompLocation
 from bluepyopt.ephys.protocols import SweepProtocol
 from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.stimuli import NrnSquarePulse
+from matplotlib import cm
+from matplotlib import colors
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from bluepyemodel.tools.utils import make_dir
+from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
 
 # pylint: disable=W0612,W0102,C0209
@@ -167,6 +170,142 @@ def optimisation(
 
     if write_fig:
         save_fig(figures_dir, figure_name)
+
+    return fig, axs
+
+
+def _create_figure_parameter_histograms(
+    histograms, evaluator, checkpoint_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+):
+    """Create figure and plot the data for the evolution of the density of parameters."""
+
+    ncols = 5
+    nrows = len(evaluator.params) // ncols + 1
+
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(25, 2 * nrows))
+    axs = axs.flat
+
+    # Plot the histograms
+    for param_index, param in enumerate(evaluator.params):
+        axs[param_index].imshow(
+            100.0 * numpy.flip(histograms[param_index].T, 0), aspect="auto", interpolation="none"
+        )
+
+        axs[param_index].set_title(list(evaluator.param_names)[param_index])
+
+        x_ticks_pos = [0, int(max_n_gen / gen_per_bin) - 1]
+        x_ticks_label = [0, int(max_n_gen / gen_per_bin) * gen_per_bin]
+        axs[param_index].set_xticks(x_ticks_pos, x_ticks_label)
+        axs[param_index].set_yticks([0, 19], [param.bounds[1], param.bounds[0]])
+        axs[param_index].set_xlim(0, int(max_n_gen / gen_per_bin) - 1)
+
+    for axs_index in range(len(evaluator.params), len(axs)):
+        axs[axs_index].set_visible(False)
+
+    # Add a colorbar common to all subplots
+    norm = colors.Normalize(vmin=0, vmax=100, clip=False)
+    fig.colorbar(
+        mappable=cm.ScalarMappable(norm=norm, cmap="viridis"),
+        orientation="vertical",
+        ax=axs[-1],
+        label="% of population",
+    )
+
+    fig.supxlabel("Generations", size="xx-large")
+    fig.supylabel("Parameter value", size="xx-large")
+
+    suptitle = "Parameter evolution\n"
+    metadata = parse_checkpoint_path(checkpoint_path)
+    if metadata.get("emodel", None) is not None:
+        suptitle += f"e-model = {metadata['emodel']}"
+    if metadata.get("iteration", None) is not None:
+        suptitle += f" ; iteration = {metadata['iteration']}"
+    if metadata.get("seed", None) is not None:
+        suptitle += f" ; seed = {metadata['seed']}"
+    fig.suptitle(suptitle, size="xx-large")
+
+    p = Path(checkpoint_path)
+
+    figure_name = p.stem
+    figure_name += "_evo_parameter_density.pdf"
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.92)
+
+    if write_fig:
+        save_fig(figures_dir, figure_name)
+
+    return fig, axs
+
+
+def evolution_parameters_density(
+    evaluator, checkpoint_paths, figures_dir="./figures", write_fig=True
+):
+    """Create plots of the evolution of the density of parameters in the population as the
+    optimisation progresses. Create one plot per checkpoint plus one plot with all checkpoints.
+
+    WARNING: This plotting function assumes that all the checkpoint files come from the same run
+    and have the same parameters with the same bounds, therefore, that they come from the same
+    evaluator. Do not use otherwise.
+
+    Args:
+        evaluator (CellEvaluator): evaluator used to evaluate the individuals.
+        checkpoint_paths (list of str): list of paths to the checkpoints .pkl.
+        figures_dir (str): path to the directory where the figures will be saved.
+        write_fig (bool): whether to write the figures to disk.
+    """
+
+    make_dir(figures_dir)
+
+    max_n_gen = 0
+    genealogies = {}
+    for checkpoint_path in checkpoint_paths:
+        run, _ = read_checkpoint(checkpoint_path)
+        if run["generation"] < 4:
+            continue
+
+        max_n_gen = max(max_n_gen, run["generation"])
+        genealogies[checkpoint_path] = run["history"].genealogy_history
+
+    gen_per_bin = 4
+    pop_size = len(run["population"])
+    histo_bins = (int(max_n_gen / gen_per_bin), 20)
+    normalization_factor = gen_per_bin * pop_size
+
+    # Compute and plot the histograms for each checkpoint
+    sum_histograms = {}
+    for checkpoint_path, genealogy in genealogies.items():
+        # Get the histograms for all parameters
+        histograms = {}
+        for param_index in range(len(genealogy[1])):
+            x = [(ind_idx - 1) // pop_size for ind_idx in genealogy.keys()]
+            y = [ind[param_index] for ind in genealogy.values()]
+
+            histo_range = [
+                [0, max_n_gen],
+                [evaluator.params[param_index].bounds[0], evaluator.params[param_index].bounds[1]],
+            ]
+
+            h, _, _ = numpy.histogram2d(x, y, bins=histo_bins, range=histo_range)
+            normalized_h = h / normalization_factor
+
+            histograms[param_index] = normalized_h
+            if param_index not in sum_histograms:
+                sum_histograms[param_index] = normalized_h
+            else:
+                sum_histograms[param_index] = sum_histograms[param_index] + normalized_h
+
+        # Create the figure
+        _ = _create_figure_parameter_histograms(
+            histograms, evaluator, checkpoint_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+        )
+
+    # Plot the figure with the sums of all histograms
+    sum_histograms = {idx: h / len(checkpoint_path) for idx, h in sum_histograms.items()}
+    dummy_path = checkpoint_paths[0].partition("__seed=")[0] + "__all_seeds.pkl"
+    fig, axs = _create_figure_parameter_histograms(
+        sum_histograms, evaluator, dummy_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+    )
 
     return fig, axs
 
@@ -462,6 +601,7 @@ def plot_models(
     plot_if_curve=False,
     only_validated=False,
     load_from_local=False,
+    cell_evaluator=None,
 ):
     """Plot the traces, scores and parameter distributions for all the models
         matching the emodels name.
@@ -480,17 +620,21 @@ def plot_models(
         only_validated (bool): True to only plot validated models
         load_from_local (bool): True to load responses from locally saved recordings.
             Responses are automatically saved locally when plot_currentscape is True.
+        cell_evaluator (CellEvaluator): cell evaluator used to compute the responses.
 
     Returns:
         emodels (list): list of emodels.
     """
+
     figures_dir = Path(figures_dir)
 
-    cell_evaluator = get_evaluator_from_access_point(
-        access_point,
-        include_validation_protocols=True,
-        record_ions_and_currents=plot_currentscape,
-    )
+    if cell_evaluator is None:
+        cell_evaluator = get_evaluator_from_access_point(
+            access_point,
+            include_validation_protocols=True,
+            record_ions_and_currents=plot_currentscape,
+        )
+
     if plot_traces or plot_currentscape:
         emodels = compute_responses(
             access_point,
