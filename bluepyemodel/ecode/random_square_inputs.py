@@ -11,19 +11,22 @@ logger = logging.getLogger(__name__)
 class MultipleRandomStepInputs(BPEM_stimulus):
 
     """MultipleRandomStepInputs current stimulus on one or several chosen sections
-          holdi              Random steps              holdi
-            :                     :                      :
-            :                     :                      :
-            :           ___       :                      :
-            :          |  |       :   _________          :
-            :          |  |     _____|        |          :
-            :          |  |____|              |          :
-            :          |                      |          :
-    |__________________|                      |______________________
-    ^                  ^                      ^                      ^
-    :                  :                      :                      :
-    :                  :                      :                      :
-    t=0                delay                  delay+duration         totduration
+
+    .. code-block:: none
+
+              holdi              Random steps              holdi
+                :                     :                      :
+                :                     :                      :
+                :           ___       :                      :
+                :          |  |       :   _________          :
+                :          |  |     _____|        |          :
+                :          |  |____|              |          :
+                :          |                      |          :
+        |__________________|                      |______________________
+        ^                  ^                      ^                      ^
+        :                  :                      :                      :
+        :                  :                      :                      :
+        t=0                delay                  delay+duration         totduration
     """
 
     name = "MultipleRandomStepInputs"

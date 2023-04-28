@@ -10,16 +10,16 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../../.'))
 
 from pkg_resources import get_distribution
 
 
 # -- Project information -----------------------------------------------------
 
-project = "BluePyEmode"
+project = "BluePyEModel"
 
 # The short X.Y version
 version = get_distribution("bluepyemodel").version
