@@ -12,22 +12,25 @@ logger = logging.getLogger(__name__)
 
 
 class Comb(BPEM_stimulus):
+    # pylint: disable=line-too-long,anomalous-backslash-in-string
 
     """Comb current stimulus
 
-          holdi         amp       holdi        amp       holdi           .   .   .
-            :            :          :           :          :
-            :       ___________     :      ___________     :     ___                  _____
-            :      |           |    :     |           |    :    |                          |
-            :      |           |    :     |           |    :    |        * n_steps         |
-            :      |           |    :     |           |    :    |        .   .   .         |
-            :      |           |    :     |           |    :    |                          |
-    |______________|           |__________|           |_________|                          |_____
-    :              :           :          :           :         :                                ^
-    :              :           :          :           :         :                                :
-    :              :           :          :           :         :                                :
-     <--  delay  --><-duration->           <-duration->         :        .   .   .     totduration
-                    <--   inter_delay  --><--  inter_delay   -->
+    .. code-block:: none
+
+              holdi         amp       holdi        amp       holdi           .   .   .
+                :            :          :           :          :
+                :       ___________     :      ___________     :     ___                  _____
+                :      |           |    :     |           |    :    |                          |
+                :      |           |    :     |           |    :    |        * n_steps         |
+                :      |           |    :     |           |    :    |        .   .   .         |
+                :      |           |    :     |           |    :    |                          |
+        |______________|           |__________|           |_________|                          |_____
+        :              :           :          :           :         :                                ^
+        :              :           :          :           :         :                                :
+        :              :           :          :           :         :                                :
+         <--  delay  --><-duration->           <-duration->         :        .   .   .     totduration
+                        <--   inter_delay  --><--  inter_delay   -->
 
     """
 

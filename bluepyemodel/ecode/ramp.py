@@ -12,24 +12,25 @@ class Ramp(BPEM_stimulus):
 
     """Ramp current stimulus
 
+    .. code-block:: none
 
-        holdi          holdi+amp       holdi
-          :                :             :
-          :                :             :
-          :               /|             :
-          :              / |             :
-          :             /  |             :
-          :            /   |             :
-          :           /    |             :
-          :          /     |             :
-          :         /      |             :
-          :        /       |             :
-          :       /        |             :
-    |___________ /         |__________________________
-    ^           ^          ^                          ^
-    :           :          :                          :
-    :           :          :                          :
-    t=0         delay      delay+duration             totduration
+            holdi          holdi+amp       holdi
+              :                :             :
+              :                :             :
+              :               /|             :
+              :              / |             :
+              :             /  |             :
+              :            /   |             :
+              :           /    |             :
+              :          /     |             :
+              :         /      |             :
+              :        /       |             :
+              :       /        |             :
+        |___________ /         |__________________________
+        ^           ^          ^                          ^
+        :           :          :                          :
+        :           :          :                          :
+        t=0         delay      delay+duration             totduration
     """
 
     name = "Ramp"

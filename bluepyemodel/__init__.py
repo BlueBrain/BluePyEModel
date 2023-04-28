@@ -1,1 +1,1 @@
-"""init file"""
+"""Main module of BluePyEModel."""

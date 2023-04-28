@@ -6,10 +6,7 @@
 API Reference
 -------------
 
-The :doc:`./api_ref` page contains detailed documentation of:
-
-	* :py:mod:`evaluation <evaluation>`
-	* :py:mod:`all workflow tasks<tasks>`
+The :doc:`./api_ref` page contains detailed documentation of the API.
 
 .. toctree::
    :hidden:
