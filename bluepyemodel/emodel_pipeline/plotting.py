@@ -600,6 +600,7 @@ def plot_models(
     plot_currentscape=False,
     plot_if_curve=False,
     only_validated=False,
+    save_recordings=False,
     load_from_local=False,
     cell_evaluator=None,
 ):
@@ -618,8 +619,11 @@ def plot_models(
         plot_currentscape (bool): True to plot the currentscapes
         plot_if_curve (bool): True to plot the current / frequency curve
         only_validated (bool): True to only plot validated models
+        save_recordings (bool): Whether to save the responses data under a folder
+            named `recordings`. Responses can then be loaded using load_from_local
+            instead of being re-run.
         load_from_local (bool): True to load responses from locally saved recordings.
-            Responses are automatically saved locally when plot_currentscape is True.
+            Responses are saved locally when save_recordings is True.
         cell_evaluator (CellEvaluator): cell evaluator used to compute the responses.
 
     Returns:
@@ -641,7 +645,7 @@ def plot_models(
             cell_evaluator,
             mapper,
             seeds,
-            store_responses=plot_currentscape,
+            store_responses=save_recordings,
             load_from_local=load_from_local,
         )
     else:

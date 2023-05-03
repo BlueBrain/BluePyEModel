@@ -52,6 +52,7 @@ class EModelPipelineSettings:
         name_gene_map=None,
         plot_currentscape=False,
         currentscape_config=None,
+        save_recordings=False,
         neuron_dt=None,
         cvode_minstep=0.0,
         max_threshold_voltage=-30,
@@ -180,6 +181,8 @@ class EModelPipelineSettings:
                 do not need to be set, since they are automatically overwritten by BluePyEModel.
                 If current.names is set nonetheless, it will be used as the subset of available
                 currents to be selected for the plot.
+            save_recordings (bool): Whether to save the responses data under a folder
+                named `recordings`.
             neuron_dt (float): time step of the NEURON simulator. If None, cvode will be used.
             cvode_minstep (float): minimum time step allowed when using cvode.
             max_threshold_voltage (float): upper bound for the voltage during the
@@ -268,6 +271,9 @@ class EModelPipelineSettings:
         # Settings specific to the currentscape plotting
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
+
+        # Settings specific to the recordings
+        self.save_recordings = save_recordings
 
         # Settings specific to the cell model
         self.morph_modifiers = morph_modifiers
