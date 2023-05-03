@@ -77,7 +77,11 @@ It will create a slurm job that will store the results in a local file called `f
 
 If you wish to interact with the models, please have a look at the notebook `./exploit_models.ipynb`.
 
-Currentscape plots can also be plotted by BluePyEModel, along with the other analysis figures. To do so, you simply have to add `"plot_currentscape": true,` to the `"pipeline_settings"` dict of `./config/recipes.json`. This will automatically save the recordings of the voltage, as well as every available ionic currents and ionic concentration to `./recordings`. The currentscape figures are created using the same recordings, and are saved under `./figures/EMODEL_NAME/currentscape`. If you want to customise your currentscape plots, you can pass a currentscape config to the `"pipeline_settings"` dict of `./config/recipes.json` under the key `"currentscape_config"`. You can find more information about currentscape and its config [here](https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config).
+Currentscape plots can also be plotted by BluePyEModel, along with the other analysis figures. To do so, you simply have to add `"plot_currentscape": true,` to the `"pipeline_settings"` dict of `./config/recipes.json`. All currents are recorded in [pA]. The currentscape figures are created using the same recordings, and are saved under `./figures/EMODEL_NAME/currentscape`. If you want to customise your currentscape plots, you can pass a currentscape config to the `"pipeline_settings"` dict of `./config/recipes.json` under the key `"currentscape_config"`. You can find more information about currentscape and its config [here](https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config).
+
+The recordings of the voltage, as well as every available ionic currents and ionic concentration can be saved locally to `./recordings` when setting `save_recordings` to `true` in the `pipeline_settings`. 
+
+If you don't want to have mechanism-specific currents in the currentscape plots, but have e.g. whole ionic currents plotted, it is possible by calling `pipeline.py` with the `--step='currentscape'` argument. You'll have to change the `vars` list in `pipeline.py` to match the variables to want to plot with currentscape.
 
 #### Validation
 
