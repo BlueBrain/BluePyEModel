@@ -893,11 +893,20 @@ def currentscape(
 
             # adapt config
             if current_subset and key_dict["current_names"]:
-                currents_indices = [
-                    list(key_dict["current_names"]).index(c_name) for c_name in current_subset
-                ]
-                currents = numpy.array(currents)[currents_indices]
-                updated_config["current"]["names"] = current_subset
+                try:
+                    currents_indices = [
+                        list(key_dict["current_names"]).index(c_name) for c_name in current_subset
+                    ]
+                    currents = numpy.array(currents)[currents_indices]
+                    updated_config["current"]["names"] = current_subset
+                except ValueError:
+                    logger.warning(
+                        "Recorded currents do not match current names given in config. "
+                        "Skipping currentscape plotting."
+                    )
+                    # skip plotting by having an empty current list
+                    currents = numpy.array([])
+                    updated_config["current"]["names"] = []
             else:
                 updated_config["current"]["names"] = key_dict["current_names"]
             updated_config["ions"]["names"] = key_dict["ion_conc_names"]
