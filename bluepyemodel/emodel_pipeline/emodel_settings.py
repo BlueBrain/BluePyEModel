@@ -2,6 +2,7 @@
 import logging
 
 # pylint: disable=too-many-arguments,too-many-locals,too-many-instance-attributes
+# pylint: disable=too-many-statements
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +125,20 @@ class EModelPipelineSettings:
                 or "MO-CMA".
             optimizer (str): here for backward compatibility. Use optimiser instead.
             optimisation_params (dict): parameter for the optimisation process. Keys have to match
-                the call of the optimiser. E.g.: {"offspring_size": 15}.
+                the call of the optimiser. Here are the possible options and default values for the
+                different optimisers:
+                - IBEA: {
+                    "offspring_size": 100 # number of individuals in the population
+                }
+                - SO-CMA: {
+                    "offspring_size": 20, # number of individuals in the population
+                    sigma=0.4 # initial standard deviation of the gaussian distribution
+                }
+                - MO-CMA: {
+                    "offspring_size": 20, # number of individuals in the population
+                    sigma=0.4, # initial standard deviation of the gaussian distribution
+                    weight_hv=0.5 # weight of the hypervolume score in the selection process
+                }
                 For more details, see the documentation of the bluepyopt.deapext package.
             optimisation_timeout (float): duration (in second) after which the evaluation
                 of a protocol will be interrupted. When a protocol is interrupted, its response
@@ -196,7 +210,7 @@ class EModelPipelineSettings:
                 threshold current.
             spikecount_timeout (float): during the search of the threshold current, if the present
                 timeout is reached, we set spikecount=2 as if many spikes were present, to speed
-                    up bisection search.
+                up bisection search.
             files_for_extraction (list): temporary, will come from SBO
             targets (list): temporary, will come from SBO
             protocols_rheobase (list): temporary, will come from SBO
@@ -235,7 +249,10 @@ class EModelPipelineSettings:
         self.optimiser = optimiser if optimizer is None else optimizer
         self.optimisation_params = optimisation_params
         if self.optimisation_params is None:
-            self.optimisation_params = {"offspring_size": 100}
+            if self.optimiser == "IBEA":
+                self.optimisation_params = {"offspring_size": 100}
+            else:
+                self.optimisation_params = {"offspring_size": 20}
 
         self.max_ngen = max_ngen
         self.use_stagnation_criterion = use_stagnation_criterion
