@@ -841,6 +841,7 @@ def currentscape(
         iteration_tag (str): githash
         seed (int): random seed number
     """
+    # pylint: disable=too-many-branches
     if responses is None and output_dir is None:
         raise TypeError("Responses or output directory must be set.")
 
