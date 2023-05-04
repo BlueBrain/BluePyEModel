@@ -552,9 +552,11 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
         data.append(_)
     data = numpy.array(data)
 
-    fig, axs = plt.subplots(1, figsize=(0.8 + 0.21 * len(ubounds), 5), squeeze=False)
+    figure_width = 2.5 + 0.08 * max(len(pn) for pn in ubounds.keys())
+    figure_height = 0.8 + 0.21 * len(ubounds)
+    fig, axs = plt.subplots(1, figsize=(figure_width, figure_height), squeeze=False)
 
-    v = axs[0, 0].violinplot(data)
+    v = axs[0, 0].violinplot(data, vert=False)
 
     for partname in ("cbars", "cmins", "cmaxes", "cmeans", "cmedians"):
         if partname in v:
@@ -563,17 +565,24 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
     for pc in v["bodies"]:
         pc.set_facecolor("black")
 
-    axs[0, 0].set_xticks(ticks=range(1, 1 + len(ubounds)))
-    axs[0, 0].set_xticklabels(labels=list(ubounds.keys()), rotation=90)
+    axs[0, 0].set_yticks(ticks=range(1, 1 + len(ubounds)))
+    axs[0, 0].set_yticklabels(labels=list(ubounds.keys()))
 
-    axs[0, 0].plot([0, 1 + len(ubounds)], [-1, -1], c="black", ls="--", alpha=0.6, zorder=1)
-    axs[0, 0].plot([0, 1 + len(ubounds)], [1, 1], c="black", ls="--", alpha=0.6, zorder=1)
+    # Guides for the eye
+    for p in range(len(ubounds)):
+        axs[0, 0].plot([-1, 1], [p + 1, p + 1], c="black", ls="dotted", alpha=0.7, lw=0.7, zorder=1)
+    axs[0, 0].plot([-1, -1], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1)
+    axs[0, 0].plot([0, 0], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1)
+    axs[0, 0].plot([1, 1], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1)
 
-    axs[0, 0].set_yticks(ticks=[-1, 1])
-    axs[0, 0].set_yticklabels(labels=["Lower bounds", "Upper bounds"])
+    axs[0, 0].set_xticks(ticks=[-1, 0, 1])
+    axs[0, 0].set_xticklabels(labels=["Lower bounds", "50%", "Upper bounds"], rotation=90)
 
-    axs[0, 0].set_xlim(0, 1 + len(ubounds))
-    axs[0, 0].set_ylim(-1.05, 1.05)
+    axs[0, 0].set_ylim(0, 1 + len(ubounds))
+    axs[0, 0].set_xlim(-1.05, 1.05)
+
+    for _, spine in axs[0, 0].spines.items():
+        spine.set_visible(False)
 
     title = str(models[0].emodel_metadata.emodel)
     title += f"; iteration = {models[0].emodel_metadata.iteration}"
