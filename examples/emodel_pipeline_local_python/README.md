@@ -81,7 +81,7 @@ Currentscape plots can also be plotted by BluePyEModel, along with the other ana
 
 The recordings of the voltage, as well as every available ionic currents and ionic concentration can be saved locally to `./recordings` when setting `save_recordings` to `true` in the `pipeline_settings`. 
 
-If you don't want to have mechanism-specific currents in the currentscape plots, but have e.g. whole ionic currents plotted, it is possible by calling `pipeline.py` with the `--step='currentscape'` argument. You'll have to change the `vars` list in `pipeline.py` to match the variables to want to plot with currentscape.
+If you don't want to have mechanism-specific currents in the currentscape plots, but have e.g. whole ionic currents plotted, it is possible by putting the names of the variables you want to plot under `["current"]["names"]` in the currentscape_config.
 
 #### Validation
 

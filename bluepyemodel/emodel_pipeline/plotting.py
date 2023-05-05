@@ -18,6 +18,7 @@ from matplotlib import colors
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
@@ -648,6 +649,18 @@ def plot_models(
             record_ions_and_currents=plot_currentscape,
         )
 
+    if (
+        plot_currentscape
+        and access_point.pipeline_settings.currentscape_config is not None
+        and "current" in access_point.pipeline_settings.currentscape_config
+        and "names" in access_point.pipeline_settings.currentscape_config["current"]
+    ):
+        add_recordings_to_evaluator(
+            cell_evaluator,
+            access_point.pipeline_settings.currentscape_config["current"]["names"],
+            use_fixed_dt_recordings=False,
+        )
+
     if plot_traces or plot_currentscape:
         emodels = compute_responses(
             access_point,
@@ -841,6 +854,7 @@ def currentscape(
         iteration_tag (str): githash
         seed (int): random seed number
     """
+    # pylint: disable=too-many-branches
     if responses is None and output_dir is None:
         raise TypeError("Responses or output directory must be set.")
 
@@ -893,11 +907,20 @@ def currentscape(
 
             # adapt config
             if current_subset and key_dict["current_names"]:
-                currents_indices = [
-                    list(key_dict["current_names"]).index(c_name) for c_name in current_subset
-                ]
-                currents = numpy.array(currents)[currents_indices]
-                updated_config["current"]["names"] = current_subset
+                try:
+                    currents_indices = [
+                        list(key_dict["current_names"]).index(c_name) for c_name in current_subset
+                    ]
+                    currents = numpy.array(currents)[currents_indices]
+                    updated_config["current"]["names"] = current_subset
+                except ValueError:
+                    logger.warning(
+                        "Recorded currents do not match current names given in config. "
+                        "Skipping currentscape plotting."
+                    )
+                    # skip plotting by having an empty current list
+                    currents = numpy.array([])
+                    updated_config["current"]["names"] = []
             else:
                 updated_config["current"]["names"] = key_dict["current_names"]
             updated_config["ions"]["names"] = key_dict["ion_conc_names"]

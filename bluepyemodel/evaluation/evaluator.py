@@ -667,3 +667,25 @@ def create_evaluator(
     cell_eval.prefix = cell_model.name
 
     return cell_eval
+
+
+def add_recordings_to_evaluator(cell_evaluator, vars, use_fixed_dt_recordings=False):
+    """Add a recording for each new variable for each protocol in cell evaluator."""
+    # add recording for each protocol x new variable combination
+    for prot in cell_evaluator.fitness_protocols["main_protocol"].protocols.values():
+        if prot.name not in PRE_PROTOCOLS:
+            base_rec = prot.recordings[0]
+            for var in vars:
+                location = base_rec.location
+
+                split_name = base_rec.name.split(".")
+                split_name[-1] = var
+                name = ".".join(split_name)
+
+                # FixedDtRecordingCustom for fixed time steps.
+                # Use LooseDtRecordingCustom for variable time steps
+                if use_fixed_dt_recordings:
+                    new_rec = FixedDtRecordingCustom(name=name, location=location, variable=var)
+                else:
+                    new_rec = LooseDtRecordingCustom(name=name, location=location, variable=var)
+                prot.recordings.append(new_rec)
