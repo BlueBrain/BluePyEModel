@@ -18,6 +18,7 @@ from matplotlib import colors
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
@@ -646,6 +647,16 @@ def plot_models(
             access_point,
             include_validation_protocols=True,
             record_ions_and_currents=plot_currentscape,
+        )
+
+    if (plot_currentscape and
+        access_point.pipeline_settings.currentscape_config is not None and
+        "current" in access_point.pipeline_settings.currentscape_config and
+        "names" in access_point.pipeline_settings.currentscape_config["current"]):
+        add_recordings_to_evaluator(
+            cell_evaluator,
+            access_point.pipeline_settings.currentscape_config["current"]["nanmes"],
+            use_fixed_dt_recordings=False
         )
 
     if plot_traces or plot_currentscape:
