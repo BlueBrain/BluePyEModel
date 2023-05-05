@@ -649,10 +649,12 @@ def plot_models(
             record_ions_and_currents=plot_currentscape,
         )
 
-    if (plot_currentscape and
+    if (
+        plot_currentscape and
         access_point.pipeline_settings.currentscape_config is not None and
         "current" in access_point.pipeline_settings.currentscape_config and
-        "names" in access_point.pipeline_settings.currentscape_config["current"]):
+        "names" in access_point.pipeline_settings.currentscape_config["current"]
+    ):
         add_recordings_to_evaluator(
             cell_evaluator,
             access_point.pipeline_settings.currentscape_config["current"]["nanmes"],
