@@ -650,15 +650,15 @@ def plot_models(
         )
 
     if (
-        plot_currentscape and
-        access_point.pipeline_settings.currentscape_config is not None and
-        "current" in access_point.pipeline_settings.currentscape_config and
-        "names" in access_point.pipeline_settings.currentscape_config["current"]
+        plot_currentscape
+        and access_point.pipeline_settings.currentscape_config is not None
+        and "current" in access_point.pipeline_settings.currentscape_config
+        and "names" in access_point.pipeline_settings.currentscape_config["current"]
     ):
         add_recordings_to_evaluator(
             cell_evaluator,
             access_point.pipeline_settings.currentscape_config["current"]["nanmes"],
-            use_fixed_dt_recordings=False
+            use_fixed_dt_recordings=False,
         )
 
     if plot_traces or plot_currentscape:
