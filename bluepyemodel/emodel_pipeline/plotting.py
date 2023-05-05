@@ -657,7 +657,7 @@ def plot_models(
     ):
         add_recordings_to_evaluator(
             cell_evaluator,
-            access_point.pipeline_settings.currentscape_config["current"]["nanmes"],
+            access_point.pipeline_settings.currentscape_config["current"]["names"],
             use_fixed_dt_recordings=False,
         )
 
