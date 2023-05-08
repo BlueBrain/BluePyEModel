@@ -138,6 +138,9 @@ def optimisation(
     run, _ = read_checkpoint(checkpoint_path)
 
     nevals = numpy.cumsum(run["logbook"].select("nevals"))
+    is_finished_msg = ""
+    if "CMA" in optimiser:
+        is_finished_msg = f"is finished: {not run['CMA_es'].active}"
 
     legend_text = "\n".join(
         (
@@ -145,6 +148,7 @@ def optimisation(
             f"# of generations = {run['generation']}",
             f"# of evaluations = {nevals[-1]}",
             f"evolution algorithm: {optimiser}",
+            is_finished_msg,
         )
     )
 
