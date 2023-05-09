@@ -123,7 +123,7 @@ def format_protocol_name_to_list(protocol_name):
 
     if isinstance(protocol_name, str):
         try:
-            name_parts = [e for e in protocol_name.split("_")]
+            name_parts = protocol_name.split("_")
             if name_parts[-1] == "hyp":
                 amplitude = float(name_parts[-2])
                 name_parts.pop(-2)
