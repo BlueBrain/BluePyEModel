@@ -13,7 +13,7 @@ def get_checkpoint_path(metadata, seed=None):
 
     filename = metadata.as_string(seed=seed)
 
-    return f"./checkpoints/{filename}.pkl"
+    return f"./checkpoints/{metadata.emodel}/{metadata.iteration}/{filename}.pkl"
 
 
 def make_dir(path_dir):
