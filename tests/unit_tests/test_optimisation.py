@@ -1,7 +1,7 @@
 import pytest
 
-from bluepyemodel.optimisation.optimisation import get_checkpoint_path
-from bluepyemodel.optimisation.optimisation import get_legacy_checkpoint_path
+from bluepyemodel.tools.utils import get_checkpoint_path
+from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 
