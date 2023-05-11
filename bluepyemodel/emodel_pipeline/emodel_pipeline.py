@@ -247,7 +247,7 @@ class EModel_pipeline:
 
         # Filter the checkpoints to plot
         checkpoint_paths = []
-        for chkp_path in glob.glob("./checkpoints/*.pkl"):
+        for chkp_path in glob.glob("./checkpoints/**/*.pkl", recursive=True):
             if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
             if (
