@@ -11,7 +11,6 @@ from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfig
 from bluepyemodel.emodel_pipeline.plotting import optimisation
 from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.optimisation import get_checkpoint_path
-from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tasks.luigi_tools import IPyParallelTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
@@ -19,6 +18,7 @@ from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTaskRequiringMechanisms
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
 from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
+from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 
 # pylint: disable=W0235,W0621,W0404,W0611,W0703
 
