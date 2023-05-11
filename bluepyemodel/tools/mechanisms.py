@@ -127,3 +127,18 @@ def get_mechanism_suffix(mech_file):
             suffix = line.split("SUFFIX ")[1].rstrip("\n").split(" ")[0]
             return suffix
     raise RuntimeError(f"Could not find SUFFIX in {mech_file}")
+
+
+def discriminate_by_temp(resources, temperatures):
+    """Select sublist of resources with given temperature."""
+    temp = temperatures.pop(0)
+    tmp_resources = [r for r in resources if r.temperature.value == temp]
+    if len(tmp_resources) > 0 and len(tmp_resources) < len(resources):
+        logger.warning(
+            "Discriminating resources based on temperature. "
+            f"Keeping only resource with temperature == {temp} C."
+        )
+        return tmp_resources
+    elif len(temperatures) > 0:
+        return discriminate_by_temp(resources, temperatures)
+    return resources

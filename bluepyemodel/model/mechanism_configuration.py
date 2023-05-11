@@ -12,6 +12,8 @@ class MechanismConfiguration:
         location,
         stochastic=None,
         version=None,
+        temperature=None,
+        ljp_corrected=None,
         parameters=None,
         ion_currents=None,
         nonspecific_currents=None,
@@ -25,6 +27,8 @@ class MechanismConfiguration:
                  will be instantiated.
              stochastic (bool): Can the mechanisms behave stochastically (optional).
              version (str): version id of the mod file.
+             temperature (int): temperature of the mechanism
+             ljp_corrected (bool): whether the mechanism is ljp corrected
              parameters (list): list of the possible parameter for this mechanism.
              ion_currents (list): list of the ion currents that this mechanism writes.
              nonspecific_currents (list): list of non-specific currents
@@ -35,6 +39,8 @@ class MechanismConfiguration:
         self.name = name
         self.location = location
         self.version = version
+        self.temperature = temperature
+        self.ljp_corrected = ljp_corrected
         self.ion_currents = ion_currents
         self.nonspecific_currents = nonspecific_currents
         self.ionic_concentrations = ionic_concentrations
@@ -73,4 +79,6 @@ class MechanismConfiguration:
             "stochastic": self.stochastic,
             "location": self.location,
             "version": self.version,
+            "temperature": self.temperature,
+            "ljp_corrected": self.ljp_corrected,
         }

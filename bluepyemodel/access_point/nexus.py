@@ -21,6 +21,7 @@ from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
+from bluepyemodel.tools.mechanisms import discriminate_by_temp
 
 # pylint: disable=too-many-arguments,unused-argument
 
@@ -496,6 +497,8 @@ class NexusAccessPoint(DataAccessPoint):
 
     def download_mechanisms(self, mechanisms):
         """Download the mod files if not already downloaded"""
+        default_temperatures = [34, 35, 37]
+        default_ljp = True
 
         mechanisms_directory = self.get_mechanisms_directory()
 
@@ -504,28 +507,58 @@ class NexusAccessPoint(DataAccessPoint):
             if mechanism.name in NEURON_BUILTIN_MECHANISMS:
                 continue
 
+            resources = self.access_point.fetch(
+                {"type": "SubCellularModelScript", "name": mechanism.name}
+            )
+            if resources is None:
+                raise AccessPointException(f"SubCellularModelScript {mechanism.name} not found")
+
+            error_msg = ""
             if mechanism.version is not None:
-                resource = self.access_point.fetch_one(
-                    {
-                        "type": "SubCellularModelScript",
-                        "name": mechanism.name,
-                        "modelId": mechanism.version,
-                    },
-                )
+                error_msg += f"version = {mechanism.version}"
+                resources = [r for r in resources if r.modelId == mechanism.version]
+            if mechanism.temperature is not None:
+                error_msg += f"temperature = {mechanism.temperature}"
+                resources = [r for r in resources if r.temperature.value == mechanism.temperature]
+            if mechanism.ljp_corrected is not None:
+                error_msg += f"ljp correction = {mechanism.ljp_corrected}"
+                resources = [r for r in resources if r.isLjpCorrected == mechanism.ljp_corrected]
 
+            if len(resources) == 0:
+                raise AccessPointException(
+                    f"SubCellularModelScript {mechanism.name} not found with {error_msg}"
+                )
+            
+            # use default values
+            if len(resources) > 1:
+                logger.warning(
+                    f"More than one resource fetched for mechanism {mechanism.name}"
+                )
+            if len(resources) > 1 and mechanism.temperature is None:
+                resources = discriminate_by_temp(resources, default_temperatures)
+
+            if len(resources) > 1 and mechanism.ljp_corrected is None:
+                tmp_resources = [r for r in resources if r.isLjpCorrected is default_ljp]
+                if len(tmp_resources) > 0 and len(tmp_resources) < len(resources):
+                    logger.warning(
+                        "Discriminating resources based on ljp correction. "
+                        "Keeping only resource with ljp correction."
+                    )
+                    resources = tmp_resources
+
+            # use latest version
+            if len(resources) > 1 and all(hasattr(r, "modelId") for r in resources):
+                logger.warning(
+                    "Discriminating resources based on version. Keeping only the latest version."
+                )
+                resource = sorted(resources, key=lambda x: x.modelid)[-1]
             else:
-                resources = self.access_point.fetch(
-                    {"type": "SubCellularModelScript", "name": mechanism.name}
-                )
-
-                # If version not specified, we take the most recent one:
-                if resources is None:
-                    raise AccessPointException(f"SubCellularModelScript {mechanism.name} not found")
-
-                if len(resources) > 1 and all(hasattr(r, "modelId") for r in resources):
-                    resource = sorted(resources, key=lambda x: x.modelid)[-1]
-                else:
-                    resource = resources[0]
+                if len(resources) > 1:
+                    logger.warning(
+                        "Could not reduce the number of resources fetched down to one. "
+                        "Keeping the 1st resource of the list."
+                    )
+                resource = resources[0]
 
             mod_file_name = f"{mechanism.name}.mod"
             if os.path.isfile(str(mechanisms_directory / mod_file_name)):
