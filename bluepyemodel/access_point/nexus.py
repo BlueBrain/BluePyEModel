@@ -528,7 +528,7 @@ class NexusAccessPoint(DataAccessPoint):
                 raise AccessPointException(
                     f"SubCellularModelScript {mechanism.name} not found with {error_msg}"
                 )
-            
+
             # use default values
             if len(resources) > 1:
                 logger.warning(
