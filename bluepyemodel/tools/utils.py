@@ -13,6 +13,13 @@ def get_checkpoint_path(metadata, seed=None):
 
     filename = metadata.as_string(seed=seed)
 
+    return f"./checkpoints/{metadata.emodel}/{metadata.iteration}/{filename}.pkl"
+
+
+def get_legacy_checkpoint_path(checkpoint_path):
+    """Get legacy checkpoint path from checkpoint path"""
+
+    filename = Path(checkpoint_path).stem
     return f"./checkpoints/{filename}.pkl"
 
 
@@ -99,6 +106,12 @@ def read_checkpoint(checkpoint_path):
 
     p = Path(checkpoint_path)
     p_tmp = p.with_suffix(p.suffix + ".tmp")
+
+    # legacy case
+    if not p.is_file() and not p_tmp.is_file():
+        legacy_checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
+        p = Path(legacy_checkpoint_path)
+        p_tmp = p.with_suffix(p.suffix + ".tmp")
 
     try:
         with open(str(p), "rb") as checkpoint_file:
