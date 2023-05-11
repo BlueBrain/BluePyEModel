@@ -283,6 +283,7 @@ class EModel_pipeline:
             plot_traces=True,
             plot_currentscape=self.access_point.pipeline_settings.plot_currentscape,
             only_validated=only_validated,
+            save_recordings=self.access_point.pipeline_settings.save_recordings,
             load_from_local=load_from_local,
             cell_evaluator=cell_evaluator,
         )
