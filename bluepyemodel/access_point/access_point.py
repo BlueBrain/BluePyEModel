@@ -13,6 +13,7 @@ from bluepyopt.deapext.stoppingCriteria import MaxNGen
 from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.tools.utils import get_checkpoint_path
+from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
 
 # pylint: disable=no-member,unused-argument,assignment-from-no-return,no-value-for-parameter
@@ -173,7 +174,9 @@ class DataAccessPoint:
 
         # no file -> target not complete
         if not pathlib.Path(checkpoint_path).is_file():
-            return False
+            checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
+            if not pathlib.Path(checkpoint_path).is_file():
+                return False
 
         # there is a file & continue opt is False -> target considered complete
         if not continue_opt:
@@ -255,7 +258,7 @@ class DataAccessPoint:
         str_ += f"  Has a model configuration: {self.has_model_configuration()}\n\n"
 
         if pathlib.Path("./checkpoints/").is_dir():
-            checkpoints = glob.glob("./checkpoints/*.pkl")
+            checkpoints = glob.glob("./checkpoints/**/*.pkl", recursive=True)
             template_path = self.emodel_metadata.as_string()
             checkpoints = [c for c in checkpoints if template_path in c]
             str_ += "OPTIMISATION STATUS\n"

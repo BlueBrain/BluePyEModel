@@ -15,6 +15,7 @@ from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tools.multiprocessing import get_mapper
 from bluepyemodel.tools.multiprocessing import ipyparallel_map_function
 from bluepyemodel.tools.utils import get_checkpoint_path
+from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.validation.validation import validate
 
 logger = logging.getLogger()
@@ -199,8 +200,13 @@ class EModel_pipeline:
 
         else:
             checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
+            checkpoint_list = glob.glob(checkpoint_path.replace("seed=1", "*"))
+            if not checkpoint_list:
+                checkpoint_list = glob.glob(
+                    get_legacy_checkpoint_path(checkpoint_path).replace("seed=1", "*")
+                )
 
-            for chkp_path in glob.glob(checkpoint_path.replace("seed=1", "*")):
+            for chkp_path in checkpoint_list:
                 file_name = pathlib.Path(chkp_path).stem
                 tmp_seed = next(
                     int(e.replace("seed=", "")) for e in file_name.split("__") if "seed=" in e
@@ -241,7 +247,7 @@ class EModel_pipeline:
 
         # Filter the checkpoints to plot
         checkpoint_paths = []
-        for chkp_path in glob.glob("./checkpoints/*.pkl"):
+        for chkp_path in glob.glob("./checkpoints/**/*.pkl", recursive=True):
             if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
             if (
