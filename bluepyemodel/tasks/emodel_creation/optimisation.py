@@ -949,8 +949,8 @@ class PlotOptimisation(WorkflowTask):
 
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
         if (
-            not Path(checkpoint_path).is_file() and
-            Path(get_legacy_checkpoint_path(checkpoint_path)).is_file()
+            not Path(checkpoint_path).is_file()
+            and Path(get_legacy_checkpoint_path(checkpoint_path)).is_file()
         ):
             checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
 
