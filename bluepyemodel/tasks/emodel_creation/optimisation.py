@@ -11,6 +11,7 @@ from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfig
 from bluepyemodel.emodel_pipeline.plotting import optimisation
 from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.optimisation import get_checkpoint_path
+from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tasks.luigi_tools import IPyParallelTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
@@ -947,6 +948,11 @@ class PlotOptimisation(WorkflowTask):
         """ """
 
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
+        if (
+            not Path(checkpoint_path).is_file() and
+            Path(get_legacy_checkpoint_path(checkpoint_path)).is_file()
+        ):
+            checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
 
         optimisation(
             optimiser=self.access_point.pipeline_settings.optimiser,
