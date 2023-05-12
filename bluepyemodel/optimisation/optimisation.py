@@ -56,7 +56,9 @@ def setup_optimiser(
     raise ValueError(f"Unknown optimiser: {optimiser}")
 
 
-def run_optimisation(optimiser, checkpoint_path, max_ngen, terminator=None, cp_period=None):
+def run_optimisation(
+    optimiser, checkpoint_path, max_ngen, terminator=None, optimisation_checkpoint_period=None
+):
     """Run the optimisation.
 
     Args:
@@ -94,7 +96,7 @@ def run_optimisation(optimiser, checkpoint_path, max_ngen, terminator=None, cp_p
     pop, hof, log, history = optimiser.run(
         max_ngen=max_ngen,
         cp_filename=str(checkpoint_path),
-        cp_period=cp_period,
+        cp_period=optimisation_checkpoint_period,
         continue_cp=continue_opt,
         terminator=terminator,
     )
@@ -132,12 +134,13 @@ def setup_and_run_optimisation(
 
     checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed)
 
+    optimisation_checkpoint_period = access_point.pipeline_settings.optimisation_checkpoint_period
     run_optimisation(
         optimiser=opt,
         checkpoint_path=checkpoint_path,
         max_ngen=access_point.pipeline_settings.max_ngen,
         terminator=terminator,
-        cp_period=access_point.pipeline_settings.cp_period,
+        optimisation_checkpoint_period=optimisation_checkpoint_period,
     )
 
 
