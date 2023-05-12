@@ -38,6 +38,7 @@ class EModelPipelineSettings:
         optimisation_timeout=600.0,
         threshold_efeature_std=None,
         max_ngen=100,
+        optimisation_checkpoint_period=None,
         use_stagnation_criterion=True,
         validation_function="max_score",
         validation_threshold=5.0,
@@ -150,6 +151,8 @@ class EModelPipelineSettings:
                 deviations, but only modify them for the optimisation process.
             max_ngen (int): maximum number of generations of the evolutionary process of the
                 optimisation.
+            optimisation_checkpoint_period (float): minimum time (in s) between checkpoint save.
+                None to save checkpoint independently of the time between them
             use_stagnation_criterion (bool): whether to use the stagnation stopping criterion on
                 top of the maximum generation criterion during optimisation.
             validation_function (str or list): if str, can be "max_score" or "mean_score".
@@ -255,6 +258,7 @@ class EModelPipelineSettings:
                 self.optimisation_params = {"offspring_size": 20}
 
         self.max_ngen = max_ngen
+        self.optimisation_checkpoint_period = optimisation_checkpoint_period
         self.use_stagnation_criterion = use_stagnation_criterion
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
