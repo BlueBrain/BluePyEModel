@@ -2,6 +2,7 @@
 
 from .apwaveform import APWaveform
 from .comb import Comb
+from .customfromfile import CustomFromFile
 from .dehyperpol import DeHyperpol
 from .dendrite import BAC
 from .dendrite import DendriticStep
@@ -59,4 +60,5 @@ eCodes = {
     "bac": BAC,
     "dendritic": DendriticStep,
     "randomsteps": MultipleRandomStepInputs,
+    "custom": CustomFromFile,
 }
