@@ -61,4 +61,5 @@ eCodes = {
     "dendritic": DendriticStep,
     "randomsteps": MultipleRandomStepInputs,
     "custom": CustomFromFile,
+    "startnohold": IDrest,
 }
