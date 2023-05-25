@@ -276,7 +276,7 @@ class EModel_pipeline:
             checkpoint_paths=checkpoint_paths,
             figures_dir=pathlib.Path("./figures")
             / self.access_point.emodel_metadata.emodel
-            / "optimisation",
+            / "parameter_evolution",
         )
 
         return plotting.plot_models(
