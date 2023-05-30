@@ -39,7 +39,7 @@ class LocalAccessPoint(DataAccessPoint):
 
     def __init__(
         self,
-        emodel,
+        emodel=None,
         emodel_dir=None,
         etype=None,
         ttype=None,
@@ -116,8 +116,22 @@ class LocalAccessPoint(DataAccessPoint):
         self.rw_lock_final = fasteners.InterProcessReaderWriterLock(".tmp/final.lock")
         self.rw_lock_final_tmp = fasteners.InterProcessReaderWriterLock(".tmp/final_tmp.lock")
 
-        self.pipeline_settings = self.load_pipeline_settings()
+        self.emodel = emodel
+        self._pipeline_settings = None
+        self._pipeline_emodel = emodel
         self.unfrozen_params = None
+
+    @property
+    def pipeline_settings(self):
+        """Pipeline settings getter that reload if self.emodel is updated."""
+        if self.emodel is not None:
+            if self._pipeline_emodel is None:
+                self._pipeline_emodel = self.emodel
+            if self._pipeline_settings is None or self.emodel != self._pipeline_emodel:
+                self._pipeline_settings = self.load_pipeline_settings()
+        else:
+            raise Exception("Please set an emodel to load the settings.")
+        return self._pipeline_settings
 
     def set_emodel(self, emodel):
         """Setter for the name of the emodel, check it exists (with or without seed) in recipe."""
@@ -207,7 +221,7 @@ class LocalAccessPoint(DataAccessPoint):
             emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
             recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
-            recipes_path = self.emodel_dir / self.recipes_path
+            recipes_path = self.recipes_path
 
         with open(recipes_path, "r") as f:
             return json.load(f)
@@ -455,6 +469,7 @@ class LocalAccessPoint(DataAccessPoint):
         ion_variables = None
         if record_ions_and_currents:
             ion_currents, ionic_concentrations = self.get_ion_currents_concentrations()
+            print(ion_currents, ionic_concentrations)
             if ion_currents is not None and ionic_concentrations is not None:
                 ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
 
@@ -627,11 +642,12 @@ class LocalAccessPoint(DataAccessPoint):
         for mod_data in self.get_final().values():
             if mod_data["emodel"] in emodels:
                 models.append(self.format_emodel_data(mod_data))
-
+        return models
         filtered_models = []
         api_metadata = self.emodel_metadata.for_resource()
         for m in models:
             model_metadata = m.emodel_metadata.for_resource()
+            print(m.emodel_metadata.get_metadata_dict())
             for f, v in api_metadata.items():
                 if f in model_metadata and v != model_metadata[f]:
                     break
