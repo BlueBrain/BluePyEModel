@@ -1,7 +1,7 @@
 """E-model access_point module"""
 
 
-def get_access_point(access_point, emodel, **kwargs):
+def get_access_point(access_point="local", emodel=None, **kwargs):
     """Returns a DataAccessPoint object.
 
     Args:

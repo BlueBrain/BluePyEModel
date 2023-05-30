@@ -31,10 +31,6 @@ class EModelMetadata:
             iteration_tag (str): tag associated to the current run.
             synapse_class (str): synapse class (neurotransmitter)  of the e-model.
         """
-
-        if emodel is None and etype is None:
-            raise ValueError("At least emodel or etype should be informed")
-
         self.emodel = emodel
         self.etype = None if etype == "None" else etype
         self.ttype = None if ttype == "None" else ttype
