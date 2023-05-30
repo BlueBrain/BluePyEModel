@@ -469,7 +469,6 @@ class LocalAccessPoint(DataAccessPoint):
         ion_variables = None
         if record_ions_and_currents:
             ion_currents, ionic_concentrations = self.get_ion_currents_concentrations()
-            print(ion_currents, ionic_concentrations)
             if ion_currents is not None and ionic_concentrations is not None:
                 ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
 
@@ -647,7 +646,6 @@ class LocalAccessPoint(DataAccessPoint):
         api_metadata = self.emodel_metadata.for_resource()
         for m in models:
             model_metadata = m.emodel_metadata.for_resource()
-            print(m.emodel_metadata.get_metadata_dict())
             for f, v in api_metadata.items():
                 if f in model_metadata and v != model_metadata[f]:
                     break
