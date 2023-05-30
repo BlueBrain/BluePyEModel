@@ -274,7 +274,7 @@ class NexusForgeAccessPoint:
                 logger.warning(
                     "The resource you are trying to register already exist and will be ignored."
                 )
-                return
+                return None
 
         resource_description["objectOfStudy"] = {
             "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
@@ -293,6 +293,8 @@ class NexusForgeAccessPoint:
                 resource.add_distribution(path)
 
         self.forge.register(resource)
+
+        return resource.id
 
     def retrieve(self, id_):
         """Retrieve a resource based on its id"""
@@ -483,6 +485,11 @@ class NexusForgeAccessPoint:
         }
 
         base_payload.update(metadata_dict)
+        if hasattr(object_, "get_related_nexus_ids"):
+            related_nexus_ids = object_.get_related_nexus_ids()
+            if related_nexus_ids:
+                base_payload.update(related_nexus_ids)
+
         payload_existence.update(metadata_dict)
         json_payload = object_.as_dict()
 
@@ -502,7 +509,7 @@ class NexusForgeAccessPoint:
 
         payload_existence.pop("annotation", None)
 
-        self.register(
+        return self.register(
             base_payload,
             filters_existence=payload_existence,
             replace=replace,
@@ -553,12 +560,14 @@ class NexusForgeAccessPoint:
         resources = self.fetch(filters)
 
         objects_ = []
+        ids = []
 
         if resources:
             for resource in resources:
                 objects_.append(self.resource_to_object(type_, resource, metadata, metadata_str))
+                ids.append(resource.id)
 
-        return objects_
+        return objects_, ids
 
     def get_nexus_id(self, type_, metadata):
         """Search for a single Resource matching the type_ and metadata and return its id"""

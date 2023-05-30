@@ -506,6 +506,17 @@ class NeuronModelConfiguration:
             self.mechanisms = [m for m in self.mechanisms if m.name != mechanism_name]
             self.parameters = [p for p in self.parameters if p.mechanism != mechanism_name]
 
+    def get_related_nexus_ids(self):
+        uses = []
+        if self.morphology.id:
+            uses.append({"id": self.morphology.id, "type": "NeuronMorphology"})
+
+        for m in self.mechanisms:
+            if m.id:
+                uses.append({"id": m.id, "type": "SubCellularModelScript"})
+
+        return {"uses": uses}
+
     def as_dict(self):
         """Returns the configuration as dict of parameters, mechanisms and
         a list of mechanism names"""

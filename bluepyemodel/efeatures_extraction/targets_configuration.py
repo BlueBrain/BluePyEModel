@@ -266,6 +266,14 @@ class TargetsConfiguration:
                 error_message.format("ohmic_input_resistance_vb_ssse", name_Rin_protocol)
             )
 
+    def get_related_nexus_ids(self):
+        uses = []
+        for f in self.files:
+            if f.id:
+                uses.append({"id": f.id, "type": "Trace"})
+
+        return {"uses": uses}
+
     def as_dict(self):
         return {
             "files": [f.as_dict() for f in self.files],

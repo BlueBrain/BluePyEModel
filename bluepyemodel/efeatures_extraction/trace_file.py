@@ -45,6 +45,7 @@ class TraceFile:
         species=None,
         brain_region=None,
         etype=None,
+        id=None,
     ):
         """Docstring please"""
         self.cell_name = cell_name
@@ -59,6 +60,8 @@ class TraceFile:
         self.species = species
         self.brain_region = brain_region
         self.etype = etype
+
+        self.id = id
 
     def as_dict(self):
         return vars(self)
