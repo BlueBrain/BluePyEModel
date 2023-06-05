@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 import shutil
+import time
 
 import h5py
 
@@ -302,8 +303,12 @@ def export_emodels_nexus(
 
     # Register the model(s)
     nexus_access_point.store_pipeline_settings(pipeline_settings)
+    nexus_access_point.store_targets_configuration(targets_configuration)
     nexus_access_point.store_fitness_calculator_configuration(fitness_configuration)
     nexus_access_point.store_model_configuration(model_configuration)
-    nexus_access_point.store_targets_configuration(targets_configuration)
+    time.sleep(10)  # Necessary in case indexing is slow
+    emw = nexus_access_point.create_emodel_workflow(state="done")
+    nexus_access_point.store_or_update_emodel_workflow(emw)
     for mo in emodels:
+        time.sleep(10)  # Necessary to avoid revision issue
         nexus_access_point.store_emodel(mo)

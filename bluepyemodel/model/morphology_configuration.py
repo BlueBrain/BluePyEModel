@@ -13,6 +13,7 @@ class MorphologyConfiguration:
         seclist_names=None,
         secarray_names=None,
         section_index=None,
+        id=None,
     ):
         """Init.
 
@@ -27,6 +28,7 @@ class MorphologyConfiguration:
             secarray_names (list): Optional. Names of the sections (e.g: ['soma', ...]).
             section_index (list): Optional. Index to a specific section, used for
                 non-somatic recordings.
+            id (str): Optional. Nexus ID of the morphology.
         """
 
         self.path = None
@@ -56,6 +58,8 @@ class MorphologyConfiguration:
         self.secarray_names = secarray_names
         self.section_index = section_index
 
+        self.id = id
+
     def as_dict(self):
         return {
             "name": self.name,
@@ -64,4 +68,5 @@ class MorphologyConfiguration:
             "seclist_names": self.seclist_names,
             "secarray_names": self.secarray_names,
             "section_index": self.section_index,
+            "id": self.id,
         }
