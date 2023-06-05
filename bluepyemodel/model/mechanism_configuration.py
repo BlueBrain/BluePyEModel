@@ -16,6 +16,7 @@ class MechanismConfiguration:
         ion_currents=None,
         nonspecific_currents=None,
         ionic_concentrations=None,
+        id=None,
     ):
         """Init
 
@@ -30,6 +31,7 @@ class MechanismConfiguration:
              nonspecific_currents (list): list of non-specific currents
              ionic_concentrations (list): list of the ionic concentration linked to the ion current
                 If None, will be deduced from the ions list.
+             id (str): Optional. Nexus ID of the mechanism.
         """
 
         self.name = name
@@ -56,6 +58,8 @@ class MechanismConfiguration:
         else:
             self.parameters = parameters
 
+        self.id = id
+
     def get_current(self):
         """Return the ion current names."""
         current = []
@@ -73,4 +77,5 @@ class MechanismConfiguration:
             "stochastic": self.stochastic,
             "location": self.location,
             "version": self.version,
+            "id": self.id,
         }
