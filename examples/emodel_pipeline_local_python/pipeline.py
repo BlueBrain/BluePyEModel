@@ -1,12 +1,23 @@
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import logging
 import argparse
-import pathlib
 
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
-from bluepyemodel.evaluation.evaluation import compute_responses
-from bluepyemodel.evaluation.recordings import FixedDtRecordingCustom
-from bluepyemodel.emodel_pipeline.plotting import currentscape
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 
 logger = logging.getLogger()
 
