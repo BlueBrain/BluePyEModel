@@ -3,22 +3,18 @@
 
 ## Introduction
 
-The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package facilitating the configuration and execution of E-Model building tasks. It covers tasks such as feature extraction, model optimisation and validation. As such, it builds on top of [eFEL](https://github.com/BlueBrain/eFEL), [BluePyEfe](https://github.com/BlueBrain/BluePyEfe) and [BluePyOpt](https://github.com/BlueBrain/BluePyOpt).
+The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package facilitating the configuration and execution of electrical neuron model (e-model) building tasks. It covers tasks such as extraction of electrical features from electrophysiology data, e-model parameters optimisation and model validation. As such, it builds on top of [eFEL](https://github.com/BlueBrain/eFEL), [BluePyEfe](https://github.com/BlueBrain/BluePyEfe) and [BluePyOpt](https://github.com/BlueBrain/BluePyOpt).
 
 For a general overview and example of electrical model building, please refer to the preprint: [A universal workflow for creation, validation and generalization of detailed neuronal models](https://www.biorxiv.org/content/10.1101/2022.12.13.520234v1.full.pdf).
 
+Note that this package only covers e-model building based on patch-clamp data and that it relies solely on the [NEURON](https://www.neuron.yale.edu/neuron/) simulator.
+
 ## Installation
 
-To use BluePyEModel on BB5, it is easier to do so in a virtual environment.
-It is possible to create a virtual environment using the most recent python version present on spack:
+To use BluePyEModel you will first need to install NEURON with Python support on your machine.
 
-    module load unstable python
-    python -m venv myvenv
-    module purge all
-    source myvenv/bin/activate
-
-Then, BluePyEModel can be installed with the command::
-
+And then bluepyemodel itself:
+    
     pip install -i https://bbpteam.epfl.ch/repository/devpi/simple/ bluepyemodel[all]
 
 If you do not wish to install all dependencies, specific dependencies can be selected by indicating which ones to install between brackets in place of 'all' (If you want multiple dependencies, they have to be separated by commas). The available dependencies are:
@@ -27,7 +23,6 @@ If you do not wish to install all dependencies, specific dependencies can be sel
 - nexus
 - all
 - currentscape
-
 
 ## To get started with the E-Model building pipeline
 
@@ -185,3 +180,7 @@ The final models generated using the Nexus access point are stored in the Nexus 
 ### Schematics of BluePyEModel classes
 
 ![Schematics of BluePyEModel classes](./images/classes_schema.png)
+
+### Acknowledgment
+
+This work has been partially funded by the European Union Seventh Framework Program (FP7/2007­2013) under grant agreement no. 604102 (HBP), and by the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreements No. 720270 (Human Brain Project SGA1) and No. 785907 (Human Brain Project SGA2) and by the EBRAINS research infrastructure, funded from the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreement No. 945539 (Human Brain Project SGA3).
