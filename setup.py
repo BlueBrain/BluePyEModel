@@ -21,8 +21,8 @@ import sys
 
 from setuptools import setup, find_packages
 
-if sys.version_info < (3, 6):
-    sys.exit("Sorry, Python < 3.6 is not supported")
+if sys.version_info < (3, 7):
+    sys.exit("Sorry, Python < 3.7 is not supported")
 
 VERSION = imp.load_source("", "bluepyemodel/version.py").__version__
 
@@ -65,13 +65,13 @@ EXTRA_DOC = [
 
 setup(
     name="bluepyemodel",
-    author="BlueBrain cells",
-    author_email="bbp-ou-cell@groupes.epfl.ch",
+    author="Blue Brain Project, EPFL",
+    author_email="",
     version=VERSION,
-    description="Electrical modeling pipeline",
+    description="Blue Brain Python E-Model Building Library",
     long_description=README,
     long_description_content_type="text/x-rst",
-    license="BBP-internal-confidential",
+    license="Apache 2.0",
     install_requires=[
         "numpy",
         "scipy",
