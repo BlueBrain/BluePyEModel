@@ -70,6 +70,7 @@ class EModelPipelineSettings:
         validation_protocols=None,
         name_gene_map=None,
         plot_currentscape=False,
+        plot_parameter_evolution=True,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -209,6 +210,8 @@ class EModelPipelineSettings:
                 optimisation.
             plot_currentscape (bool): during the plotting, should the currentscapes be
                 plotted for the recordings.
+            plot_parameter_evolution (bool): during the plotting, should the evolution of the
+                parameters be plotted.
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config).
                 Note that current.names, output.savefig, output.fname and output.dir
@@ -309,6 +312,8 @@ class EModelPipelineSettings:
         # Settings specific to the currentscape plotting
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
+
+        self.plot_parameter_evolution = plot_parameter_evolution
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings
