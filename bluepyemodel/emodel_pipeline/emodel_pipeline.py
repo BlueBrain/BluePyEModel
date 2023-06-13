@@ -287,13 +287,14 @@ class EModel_pipeline:
                 / "optimisation",
             )
 
-        plotting.evolution_parameters_density(
-            evaluator=cell_evaluator,
-            checkpoint_paths=checkpoint_paths,
-            figures_dir=pathlib.Path("./figures")
-            / self.access_point.emodel_metadata.emodel
-            / "parameter_evolution",
-        )
+        if self.access_point.pipeline_settings.plot_parameter_evolution:
+            plotting.evolution_parameters_density(
+                evaluator=cell_evaluator,
+                checkpoint_paths=checkpoint_paths,
+                figures_dir=pathlib.Path("./figures")
+                / self.access_point.emodel_metadata.emodel
+                / "parameter_evolution",
+            )
 
         return plotting.plot_models(
             access_point=self.access_point,
