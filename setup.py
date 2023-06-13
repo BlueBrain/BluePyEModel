@@ -38,13 +38,6 @@ EXTRA_LUIGI = [
     "bbp-workflow-cli",
 ]
 
-EXTRA_NEXUS = [
-    "icselector",
-    "nexusforge>=0.7.1",
-    "entity_management>=1.2",
-    "pyJWT>=2.1.0"
-]
-
 EXTRA_CURRENTSCAPE = [
     "currentscape>=0.0.11"
 ]
@@ -92,9 +85,8 @@ setup(
     ],
     extras_require={
         "luigi": EXTRA_LUIGI + EXTRA_CURRENTSCAPE,
-        "nexus": EXTRA_NEXUS,
         "currentscape": EXTRA_CURRENTSCAPE,
-        "all": EXTRA_LUIGI + EXTRA_NEXUS + EXTRA_TEST + EXTRA_CURRENTSCAPE,
+        "all": EXTRA_LUIGI + EXTRA_TEST + EXTRA_CURRENTSCAPE,
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
     },

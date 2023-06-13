@@ -85,7 +85,12 @@ class ModelConfigurator:
         """Get the gene mapping from Nexus and retrieve the matching parameters and mechanisms
         from the ion channel selector"""
 
-        import icselector
+        try:
+            import icselector
+        except ImportError as exc:
+            raise ImportError(
+                "The internal icselector package is required to use gene based configuration."
+            ) from exc
 
         if not self.access_point.pipeline_settings.name_gene_map:
             logger.warning(
