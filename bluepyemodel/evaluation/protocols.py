@@ -13,7 +13,6 @@ from .recordings import check_recordings
 
 logger = logging.getLogger(__name__)
 
-
 class BPEMProtocol(ephys.protocols.SweepProtocol):
 
     """Base protocol"""
@@ -415,18 +414,21 @@ class SearchHoldingCurrent(BPEMProtocol):
             strict_bounds (bool): to adaptively enlarge bounds if current is outside
             max_depth (int): maximum depth for the binary search
         """
+        delay = 500
         stimulus_definition = {
-            "delay": 500.0,
+            "delay": delay,
             "amp": 0.0,
             "thresh_perc": None,
             "duration": stimulus_duration,
-            "totduration": stimulus_duration + 500,
+            "totduration": stimulus_duration + delay,
             "holding_current": 0.0,
         }
 
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
-        recordings = [LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")]
+        recordings = [
+            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
+        ]
 
         BPEMProtocol.__init__(
             self,
@@ -445,20 +447,19 @@ class SearchHoldingCurrent(BPEMProtocol):
         self.target_voltage = target_voltage
         self.holding_voltage = self.target_voltage.exp_mean
 
-        self.target_voltage.stim_start = stimulus_duration - 100.0
-        self.target_voltage.stim_end = stimulus_duration
+        self.target_voltage.stim_start = delay + stimulus_duration - 100.0
+        self.target_voltage.stim_end = delay + stimulus_duration
         self.target_voltage.stimulus_current = 0.0
 
         self.target_current_name = target_current_name
         self.max_depth = max_depth
 
-        self.recording_name = f"{name}.{location.name}.v"
         self.spike_feature = ephys.efeatures.eFELFeature(
             name="SearchHoldingCurrent.Spikecount",
             efel_feature_name="Spikecount",
             recording_names={"": self.recording_name},
-            stim_start=0.0,
-            stim_end=stimulus_duration,
+            stim_start=0,  # this is not used by efel, but required by bpopt
+            stim_end=stimulus_duration + delay,  # this is not used by efel, but required by bpopt
             exp_mean=0,
             exp_std=0.001,
         )
@@ -472,18 +473,20 @@ class SearchHoldingCurrent(BPEMProtocol):
         response = BPEMProtocol.run(
             self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
         )
-
+        #print(response)
         if response is None or response[self.recording_name] is None:
             return None
 
         # check that holding is stable, no spike, no oscillations
         n_spikes = self.spike_feature.calculate_feature(response)
         t = response[self.recording_name]["time"]
+        v = response[self.recording_name]["voltage"]
         sd = np.std(
-            response[self.recording_name]["voltage"][
-                (t > self.target_voltage.stim_end - 100) & (t < self.target_voltage.stim_end)
+            v[
+                (t > self.target_voltage.stim_start) & (t < self.target_voltage.stim_end)
             ]
         )
+        #print(n_spikes, sd)
         if n_spikes is None or n_spikes > 0 or sd > 5:
             return None
 
@@ -859,7 +862,6 @@ class ProtocolRunner(ephys.protocols.Protocol):
 
         responses = OrderedDict()
         cell_model.freeze(param_values)
-
         for protocol_name in self.execution_order:
             logger.debug("Computing protocol %s", protocol_name)
             new_responses = self.protocols[protocol_name].run(

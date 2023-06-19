@@ -593,17 +593,9 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None,
             mechs_parent_dir = str(mech_dir.parents[0])
     else:
         mechs_parent_dir = None
-
     if stochasticity:
-        for mechanism in cell_model.mechanisms:
-            if not mechanism.deterministic:
-                return NrnSimulator(
-                    dt=dt or 0.025, cvode_active=False, mechanisms_directory=mechs_parent_dir
-                )
-
-        logger.warning(
-            "Stochasticity is True but no mechanisms are stochastic. Switching to "
-            "non-stochastic."
+        return NrnSimulator(
+            dt=dt or 0.025, cvode_active=False, mechanisms_directory=mechs_parent_dir
         )
 
     if dt is None:
@@ -652,6 +644,12 @@ def create_evaluator(
         mechanisms_directory=mechanisms_directory,
         cvode_minstep=pipeline_settings.cvode_minstep,
     )
+
+    # set smaller tolerance to handle michaelis-mentens term with cvode
+    import neuron
+    cvode = neuron.h.CVode()
+    cvode.atolscale("cai", 1e-8)
+    cvode.atol(1e-8)
 
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
