@@ -45,10 +45,6 @@ EXTRA_NEXUS = [
     "pyJWT>=2.1.0"
 ]
 
-EXTRA_CURRENTSCAPE = [
-    "currentscape>=0.0.11"
-]
-
 EXTRA_TEST = [
     "pytest>=6.2",
     "dictdiffer>=0.8"
@@ -88,13 +84,13 @@ setup(
         "neuron>=8.0",
         "morph_tool>=2.8",
         "fasteners>=0.16",
-        "jinja2==3.0.3"
+        "jinja2==3.0.3",
+        "currentscape>=0.0.11"
     ],
     extras_require={
-        "luigi": EXTRA_LUIGI + EXTRA_CURRENTSCAPE,
+        "luigi": EXTRA_LUIGI,
         "nexus": EXTRA_NEXUS,
-        "currentscape": EXTRA_CURRENTSCAPE,
-        "all": EXTRA_LUIGI + EXTRA_NEXUS + EXTRA_TEST + EXTRA_CURRENTSCAPE,
+        "all": EXTRA_LUIGI + EXTRA_NEXUS + EXTRA_TEST,
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
     },
