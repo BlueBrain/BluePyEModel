@@ -44,6 +44,7 @@ class ThresholdAddition(IDrest):
 
     @property
     def amplitude(self):
+        """Special amplitude: rheobase + self.amp"""
         if self.threshold_current is None:
             raise ValueError("threshold_current should not be None")
         return self.threshold_current + self.amp

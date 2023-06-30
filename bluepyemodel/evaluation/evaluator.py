@@ -596,7 +596,6 @@ def define_threshold_based_optimisation_protocol(
 
                 protocols.update(
                     {
-                        # change these to have protocols at location
                         rmp_prot_name: define_RMP_protocol(
                             efeatures,
                             stimulus_duration=fitness_calculator_configuration.rmp_duration,

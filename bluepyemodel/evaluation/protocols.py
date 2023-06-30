@@ -69,7 +69,7 @@ class BPEMProtocol(ephys.protocols.SweepProtocol):
 
         param_values = {} if param_values is None else param_values
         responses = {} if responses is None else responses
-        print(f"run {self.name}")
+
         return super().run(
             cell_model=cell_model,
             param_values=param_values,
@@ -129,9 +129,7 @@ class ResponseDependencies:
         responses = {} if responses is None else responses
 
         if not self.set_dependencies(responses):
-            print(f"{self.name} has not dependencies set")
             return self.return_none_responses()
-        print(f"{self.name} has dependencies set")
 
         return self._run(cell_model, param_values, sim, isolate, timeout)
 
@@ -381,8 +379,6 @@ class RinProtocol(ProtocolWithDependencies):
 
         bpo_rin = self.target_rin.calculate_feature(response)
         response[self.output_key] = bpo_rin if bpo_rin is None else bpo_rin[0]
-        if response[self.output_key] is None:
-            raise ValueError("stop here for now")
 
         return response
 

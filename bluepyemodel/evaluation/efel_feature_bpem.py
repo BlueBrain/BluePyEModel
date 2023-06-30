@@ -107,7 +107,6 @@ class eFELFeatureBPEM(eFELFeature):
                 postfix = f";{location_name}"
 
             if recording_name not in responses:
-                print(f"Recording named {recording_name} not found in responses {str(responses)}")
                 logger.debug(
                     "Recording named %s not found in responses %s", recording_name, str(responses)
                 )
@@ -170,13 +169,12 @@ class eFELFeatureBPEM(eFELFeature):
             efel_trace = self._construct_efel_trace(responses)
 
             if efel_trace is None:
-                print(f"efel trace is None for {self.name}")
                 feature_values = None
             else:
                 self._setup_efel()
                 logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
                 import efel
-                print(f"computing feature for {self.name}")
+
                 values = efel.getFeatureValues(
                     [efel_trace], [self.efel_feature_name], raise_warnings=raise_warnings
                 )
@@ -279,11 +277,9 @@ class DendFitFeature(eFELFeatureBPEM):
                 logger.debug(
                     "Recording named %s not found in responses %s", recording_name, str(responses)
                 )
-                logger.warning(f"{recording_name} not found in responses") # to remove before merging
                 return None
 
             if responses[self.recording_names[""]] is None or responses[recording_name] is None:
-                logger.warning("responses is None") # to ermove before merging
                 return None
             
             trace = {}
@@ -332,7 +328,6 @@ class DendFitFeature(eFELFeatureBPEM):
             efel_traces = self._construct_efel_trace(responses)
 
             if efel_traces is None:
-                logger.warning("efel traces is None in dendritic feature") # remove this before merging
                 feature_values = None
             else:
                 self._setup_efel()
@@ -346,12 +341,8 @@ class DendFitFeature(eFELFeatureBPEM):
                 feature_values_ = [val[self.efel_feature_name][0] for val in values]
                 # expects keys in recordings names to be distances from soma (e.g. "50") or "" if at soma
                 distances = [int(rec_name) if rec_name != "" else 0 for rec_name in self.recording_names.keys()]
-                logger.warning(self.name)
-                logger.warning(f"distances: {distances}")
-                logger.warning(f"values: {feature_values_}")
 
                 feature_values = numpy.array([self.fit(distances, feature_values_)])
-                logger.warning(f"feature: {feature_values}")
 
                 efel.reset()
 
