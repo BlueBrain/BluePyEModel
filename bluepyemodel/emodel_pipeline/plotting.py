@@ -20,6 +20,7 @@ from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
+from bluepyemodel.evaluation.protocols import LocalThresholdBasedProtocol
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
@@ -400,14 +401,16 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
                     axs_c.append(axs[idx, 0].twinx())
                     axs_c[-1].set_xlabel("Time (ms)")
                     axs_c[-1].set_ylabel("Stim Current (nA)")
+                    
+                    # TODO: also plot current for LocalThresholdBasedProtocol (need for threshold, etc. for each location)
+                    if not isinstance(stimuli[basename], LocalThresholdBasedProtocol):
+                        time, current = stimuli[basename].stimulus.generate()
+                        axs_c[-1].plot(time, current, color="gray", alpha=0.6)
 
-                    time, current = stimuli[basename].stimulus.generate()
-                    axs_c[-1].plot(time, current, color="gray", alpha=0.6)
-
-                    min_lim = numpy.min(current) - 0.2
-                    max_lim = numpy.max(current) + 0.2
-                    if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
-                        axs_c[-1].set_ylim(min_lim, max_lim)
+                        min_lim = numpy.min(current) - 0.2
+                        max_lim = numpy.max(current) + 0.2
+                        if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
+                            axs_c[-1].set_ylim(min_lim, max_lim)
 
         idx += 1
 

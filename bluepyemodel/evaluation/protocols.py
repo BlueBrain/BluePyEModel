@@ -731,7 +731,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
     ):
         """Run protocol"""
-
         if not self.set_dependencies(responses):
             return self.return_none_responses()
 
