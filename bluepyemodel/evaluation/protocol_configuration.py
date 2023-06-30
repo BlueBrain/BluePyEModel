@@ -32,8 +32,10 @@ class ProtocolConfiguration:
                 the format will be:
                 [{
                     'amp': float, 'thresh_perc': float, 'holding_current': float, 'delay': float,
-                    'duration': float, 'totduration': float
+                    'duration': float, 'totduration': float, 'location': 'soma'
                 }]
+                The location should have a format that can be read by
+                evaluation.evaluator.define_location()
             recordings_from_config (list of dict): contains the description of the recordings.
                 For a recording at a given compartment, the format is for example:
                 [{

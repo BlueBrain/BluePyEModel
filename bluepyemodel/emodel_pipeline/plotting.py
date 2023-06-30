@@ -384,10 +384,12 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
             axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
             axs[idx, 0].set_ylabel(ylabel)
+            if "bAP" in t:
+                axs[idx, 0].set_xlim([650, 1000])
 
             # Plot current
             basename = t.split(".")[0]
-            if basename in stimuli:
+            if basename in stimuli and not "bAP" in basename:
                 if hasattr(stimuli[basename], "stimulus"):
                     if (
                         isinstance(stimuli[basename], ThresholdBasedProtocol)

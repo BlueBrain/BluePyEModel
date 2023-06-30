@@ -3,6 +3,7 @@ import logging
 import math
 
 import numpy
+from scipy import optimize as opt
 from bluepyopt.ephys.efeatures import eFELFeature
 
 logger = logging.getLogger(__name__)
@@ -106,6 +107,7 @@ class eFELFeatureBPEM(eFELFeature):
                 postfix = f";{location_name}"
 
             if recording_name not in responses:
+                print(f"Recording named {recording_name} not found in responses {str(responses)}")
                 logger.debug(
                     "Recording named %s not found in responses %s", recording_name, str(responses)
                 )
@@ -168,12 +170,13 @@ class eFELFeatureBPEM(eFELFeature):
             efel_trace = self._construct_efel_trace(responses)
 
             if efel_trace is None:
+                print(f"efel trace is None for {self.name}")
                 feature_values = None
             else:
                 self._setup_efel()
                 logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
                 import efel
-
+                print(f"computing feature for {self.name}")
                 values = efel.getFeatureValues(
                     [efel_trace], [self.efel_feature_name], raise_warnings=raise_warnings
                 )
@@ -212,3 +215,145 @@ class eFELFeatureBPEM(eFELFeature):
             return self.max_score
 
         return score
+
+
+class DendFitFeature(eFELFeatureBPEM):
+
+    """Fit to back propagation feature
+    
+    To use this class:
+        - have "dendrite_backpropagation_fit" as the efeature name
+        - have "maximum_voltage_from_voltagebase" as the efel_feature_name
+        - have keys in recording names matching the distance from soma, and "" for soma, e.g.
+            {"": "soma.v", "50": "dend50.v", "100": "dend100.v", "150": "dend150.v", "200": "dend200.v"}
+        - have appropriate recordings in protocols
+    """
+
+    def __init__(
+        self,
+        name,
+        efel_feature_name=None,
+        recording_names=None,
+        stim_start=None,
+        stim_end=None,
+        exp_mean=None,
+        exp_std=None,
+        threshold=None,
+        stimulus_current=None,
+        comment="",
+        interp_step=None,
+        double_settings=None,
+        int_settings=None,
+        string_settings=None,
+        decay=None,
+    ):
+        """Constructor"""
+        super().__init__(
+            name,
+            efel_feature_name,
+            recording_names,
+            stim_start,
+            stim_end,
+            exp_mean,
+            exp_std,
+            threshold,
+            stimulus_current,
+            comment,
+            interp_step,
+            double_settings,
+            int_settings,
+            string_settings,
+        )
+        self.decay = decay
+
+
+    def _construct_efel_trace(self, responses):
+        """Construct trace that can be passed to eFEL"""
+
+        traces = []
+        if "" not in self.recording_names:
+            raise ValueError("eFELFeature: '' needs to be in recording_names")
+
+        for recording_name in self.recording_names.values():
+            if recording_name not in responses:
+                logger.debug(
+                    "Recording named %s not found in responses %s", recording_name, str(responses)
+                )
+                logger.warning(f"{recording_name} not found in responses") # to remove before merging
+                return None
+
+            if responses[self.recording_names[""]] is None or responses[recording_name] is None:
+                logger.warning("responses is None") # to ermove before merging
+                return None
+            
+            trace = {}
+            trace["T"] = responses[self.recording_names[""]]["time"]
+            trace["V"] = responses[recording_name]["voltage"]
+            if callable(self.stim_start):
+                trace["stim_start"] = [self.stim_start()]
+            else:
+                trace["stim_start"] = [self.stim_start]
+
+            if callable(self.stim_end):
+                trace["stim_end"] = [self.stim_end()]
+            else:
+                trace["stim_end"] = [self.stim_end]
+            traces.append(trace)
+
+        return traces
+
+    def exp_decay(self, x, p):
+        return numpy.exp(-x / p) * self.ymult
+
+    def exp(self, x, p):
+        return numpy.exp(x / p) * self.ymult
+
+    def fit(self, distances, values):
+        """Fit back propagation"""
+        guess = [50]
+        self.ymult = values[distances.index(0)]
+        if self.decay:
+            params, _ = opt.minpack.curve_fit(
+                self.exp_decay, distances, values, p0=guess
+            )
+        else:
+            params, _ = opt.minpack.curve_fit(
+                self.exp, distances, values, p0=guess
+            )
+
+        return params[0]
+
+    def calculate_feature(self, responses, raise_warnings=False):
+        """Calculate feature value"""
+        if self.efel_feature_name.startswith("bpo_"):
+            feature_values = numpy.array([self.calculate_bpo_feature(responses)])
+
+        else:
+            efel_traces = self._construct_efel_trace(responses)
+
+            if efel_traces is None:
+                logger.warning("efel traces is None in dendritic feature") # remove this before merging
+                feature_values = None
+            else:
+                self._setup_efel()
+                logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
+                import efel
+
+                values = efel.getFeatureValues(
+                    efel_traces, [self.efel_feature_name], raise_warnings=raise_warnings
+                )
+
+                feature_values_ = [val[self.efel_feature_name][0] for val in values]
+                # expects keys in recordings names to be distances from soma (e.g. "50") or "" if at soma
+                distances = [int(rec_name) if rec_name != "" else 0 for rec_name in self.recording_names.keys()]
+                logger.warning(self.name)
+                logger.warning(f"distances: {distances}")
+                logger.warning(f"values: {feature_values_}")
+
+                feature_values = numpy.array([self.fit(distances, feature_values_)])
+                logger.warning(f"feature: {feature_values}")
+
+                efel.reset()
+
+        logger.debug("Calculated values for %s: %s", self.name, str(feature_values))
+        return feature_values

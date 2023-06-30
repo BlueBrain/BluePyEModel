@@ -69,7 +69,7 @@ class BPEMProtocol(ephys.protocols.SweepProtocol):
 
         param_values = {} if param_values is None else param_values
         responses = {} if responses is None else responses
-
+        print(f"run {self.name}")
         return super().run(
             cell_model=cell_model,
             param_values=param_values,
@@ -110,7 +110,7 @@ class ResponseDependencies:
     def set_dependencies(self, responses):
         for attribute_name, dep in self.dependencies.items():
             if responses.get(dep[1], None) is None:
-                logger.debug("Dependency %s missing", dep[1])
+                logger.warning("Dependency %s missing", dep[1])
                 return False
             self.set_attribute(attribute_name, responses[dep[1]])
         return True
@@ -129,7 +129,9 @@ class ResponseDependencies:
         responses = {} if responses is None else responses
 
         if not self.set_dependencies(responses):
+            print(f"{self.name} has not dependencies set")
             return self.return_none_responses()
+        print(f"{self.name} has dependencies set")
 
         return self._run(cell_model, param_values, sim, isolate, timeout)
 
@@ -207,11 +209,49 @@ class ThresholdBasedProtocol(ProtocolWithDependencies):
         )
 
 
+class LocalThresholdBasedProtocol(ThresholdBasedProtocol):
+
+    """Protocol having rheobase-rescaling capabilities. When using ThresholdBasedProtocol,
+    the current amplitude and step amplitude of the stimulus will be ignored and replaced by
+    values obtained from the holding current and rheobase of the cell model respectively.
+    Modify docstring.
+    """
+
+    def __init__(
+        self,
+        name=None,
+        stimulus=None,
+        recordings=None,
+        cvode_active=None,
+        stochasticity=False,
+        hold_key= "bpo_holding_current",
+        thres_key="bpo_threshold_current",
+        hold_prot_name="SearchHoldingCurrent",
+        thres_prot_name="SearchThresholdCurrent",
+    ):
+        """Constructor"""
+
+        dependencies = {
+            "stimulus.holding_current": [hold_prot_name, hold_key],
+            "stimulus.threshold_current": [thres_prot_name, thres_key],
+        }
+
+        ProtocolWithDependencies.__init__(
+            self,
+            dependencies=dependencies,
+            name=name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=cvode_active,
+            stochasticity=stochasticity,
+        )
+
+
 class RMPProtocol(BPEMProtocol):
 
     """Protocol consisting of a step of amplitude zero"""
 
-    def __init__(self, name, location, target_voltage, stimulus_duration=500.0):
+    def __init__(self, name, location, target_voltage, stimulus_duration=500.0, output_key="bpo_rmp"):
         """Constructor"""
 
         stimulus_definition = {
@@ -228,6 +268,7 @@ class RMPProtocol(BPEMProtocol):
         recordings = [
             LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
         ]
+        self.output_key = output_key
 
         BPEMProtocol.__init__(
             self,
@@ -260,10 +301,10 @@ class RMPProtocol(BPEMProtocol):
             responses=responses,
         )
         if responses is None or response[self.recording_name] is None:
-            return {self.recording_name: None, "bpo_rmp": None}
+            return {self.recording_name: None, self.output_key: None}
 
         bpo_rmp = self.target_voltage.calculate_feature(response)
-        response["bpo_rmp"] = bpo_rmp if bpo_rmp is None else bpo_rmp[0]
+        response[self.output_key] = bpo_rmp if bpo_rmp is None else bpo_rmp[0]
 
         return response
 
@@ -281,6 +322,9 @@ class RinProtocol(ProtocolWithDependencies):
         stimulus_delay=500.0,
         stimulus_duration=500.0,
         totduration=1000.0,
+        output_key="bpo_rin",
+        hold_key="bpo_holding_current",
+        hold_prot_name="SearchHoldingCurrent",
     ):
         """Constructor"""
 
@@ -298,8 +342,9 @@ class RinProtocol(ProtocolWithDependencies):
         recordings = [
             LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
         ]
+        self.output_key = output_key
 
-        dependencies = {"stimulus.holding_current": ["SearchHoldingCurrent", "bpo_holding_current"]}
+        dependencies = {"stimulus.holding_current": [hold_prot_name, hold_key]}
 
         ProtocolWithDependencies.__init__(
             self,
@@ -317,7 +362,7 @@ class RinProtocol(ProtocolWithDependencies):
         self.target_rin.stimulus_current = amp
 
     def return_none_responses(self):
-        return {self.recording_name: None, "bpo_rin": None}
+        return {self.recording_name: None, self.output_key: None}
 
     def run(
         self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
@@ -335,7 +380,9 @@ class RinProtocol(ProtocolWithDependencies):
         )
 
         bpo_rin = self.target_rin.calculate_feature(response)
-        response["bpo_rin"] = bpo_rin if bpo_rin is None else bpo_rin[0]
+        response[self.output_key] = bpo_rin if bpo_rin is None else bpo_rin[0]
+        if response[self.output_key] is None:
+            raise ValueError("stop here for now")
 
         return response
 
@@ -355,6 +402,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         strict_bounds=True,
         max_depth=7,
         no_spikes=True,
+        output_key="bpo_holding_current",
     ):
         """Constructor
 
@@ -387,6 +435,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         recordings = [
             LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
         ]
+        self.output_key = output_key
 
         BPEMProtocol.__init__(
             self,
@@ -484,7 +533,7 @@ class SearchHoldingCurrent(BPEMProtocol):
                     self.upper_bound += 0.2
 
         response = {
-            "bpo_holding_current": self.bisection_search(
+            self.output_key: self.bisection_search(
                 cell_model,
                 param_values,
                 sim=sim,
@@ -495,7 +544,7 @@ class SearchHoldingCurrent(BPEMProtocol):
             )
         }
 
-        if response["bpo_holding_current"] is None:
+        if response[self.output_key] is None:
             return response
 
         response.update(
@@ -579,6 +628,13 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         spikecount_timeout=50,
         max_depth=10,
         no_spikes=True,
+        output_key="bpo_threshold_current",
+        hold_key="bpo_holding_current",
+        rmp_key="bpo_rmp",
+        rin_key="bpo_rin",
+        hold_prot_name="SearchHoldingCurrent",
+        rmp_prot_name="RMPProtocol",
+        rin_prot_name="RinProtocol",
     ):
         """Constructor.
 
@@ -603,9 +659,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         """
 
         dependencies = {
-            "stimulus.holding_current": ["SearchHoldingCurrent", "bpo_holding_current"],
-            "rin": ["RinProtocol", "bpo_rin"],
-            "rmp": ["RMPProtocol", "bpo_rmp"],
+            "stimulus.holding_current": [hold_prot_name, hold_key],
+            "rin": [rin_prot_name, rin_key],
+            "rmp": [rmp_prot_name, rmp_key],
         }
 
         stimulus_definition = {
@@ -622,6 +678,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         recordings = [
             LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
         ]
+        self.output_key = output_key
+        self.hold_key = hold_key
 
         super().__init__(
             dependencies=dependencies,
@@ -653,7 +711,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.spikecount_timeout = spikecount_timeout
 
     def return_none_responses(self):
-        return {"bpo_threshold_current": None, self.recording_name: None}
+        return {self.output_key: None, self.recording_name: None}
 
     def _get_spikecount(self, current, cell_model, param_values, sim, isolate):
         """Get spikecount at a given current."""
@@ -686,7 +744,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         )
         if lower_bound is None or upper_bound is None:
             logger.debug("Threshold search bounds are not good")
-            return {"bpo_threshold_current": None}
+            return {self.output_key: None}
 
         threshold = self.bisection_search(
             cell_model,
@@ -698,7 +756,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             timeout=timeout,
         )
 
-        response = {"bpo_threshold_current": threshold}
+        response = {self.output_key: threshold}
         if threshold is None:
             return response
 
@@ -724,7 +782,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         if spikecount == 0:
             return None, None
 
-        lower_bound = responses["bpo_holding_current"]
+        lower_bound = responses[self.hold_key]
         spikecount = self._get_spikecount(lower_bound, cell_model, param_values, sim, isolate)
 
         if spikecount > 0:

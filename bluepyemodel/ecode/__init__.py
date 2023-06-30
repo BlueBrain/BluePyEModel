@@ -20,6 +20,7 @@ from .sahp import sAHP
 from .sinespec import SineSpec
 from .spikerec import SpikeRecMultiSpikes
 from .subwhitenoise import SubWhiteNoise
+from .thresholdaddition import ThresholdAddition
 from .whitenoise import WhiteNoise
 
 # The ecode names have to be lower case only, to avoid having to
@@ -62,4 +63,5 @@ eCodes = {
     "randomsteps": MultipleRandomStepInputs,
     "custom": CustomFromFile,
     "startnohold": IDrest,
+    "thresholdaddition": ThresholdAddition,
 }

@@ -25,6 +25,7 @@ class DendriticStep(IDrest):
                 soma_distance=kwargs["somadistance"],
                 sec_index=kwargs.get("sec_index", None),
                 seclist_name="apical",
+                direction="radial",
             )
         elif direction == "random":
             location = NrnSomaDistanceCompLocation(

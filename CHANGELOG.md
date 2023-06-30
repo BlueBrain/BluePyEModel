@@ -1,5 +1,11 @@
 # Changelog
 
+## [BluePyEModel-v0.0.14]
+
+- Added DendFitFeature, a feature fitting an exponential curve of a feature in function of the distance accross the dendrites
+- Can pass a location for each stimulus, default stays soma
+- Can have local threshold-based optimisation (e.g. at dendrite location)
+
 ## [BluePyEModel-v0.0.6](https://bbpgitlab.epfl.ch/cells/bluepyemodel/compare/BluePyEModel-v0.0.5...BluePyEModel-v0.0.6)
 
 > 10 September 2021
