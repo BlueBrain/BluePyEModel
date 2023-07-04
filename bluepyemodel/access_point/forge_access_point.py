@@ -306,7 +306,8 @@ class NexusForgeAccessPoint:
         if distributions:
             resource = Dataset.from_resource(self.forge, resource)
             for path in distributions:
-                resource.add_distribution(path)
+                resource.add_distribution(path, content_type=f"application/{path.split('.')[-1]}")
+
 
         self.forge.register(resource)
 
