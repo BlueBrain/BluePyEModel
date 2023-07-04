@@ -854,7 +854,7 @@ class NexusAccessPoint(DataAccessPoint):
 
     def store_morphology(self, morphology_name, morphology_path, mtype=None):
         payload = {
-            "type": ["NeuronMorphology", "Entity", "Dataset", "ReconstructedCell"],
+            "type": ["NeuronMorphology", "Entity", "Dataset"],
             "name": pathlib.Path(morphology_path).stem,
             "objectOfStudy": {
                 "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
