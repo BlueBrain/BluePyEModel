@@ -308,7 +308,6 @@ class NexusForgeAccessPoint:
             for path in distributions:
                 resource.add_distribution(path, content_type=f"application/{path.split('.')[-1]}")
 
-
         self.forge.register(resource)
 
         return resource.id
