@@ -523,7 +523,7 @@ def IF_curve(
     holding = responses.get("bpo_holding_current", None)
     threshold = responses.get("bpo_threshold_current", None)
     if holding is None or threshold is None:
-        logger.warning("Not plotting IF curve, holing or threshold current is missing")
+        logger.warning("Not plotting IF curve, holding or threshold current is missing")
         return fig, [ax, ax2]
 
     amps, frequencies, spike_freq_equivalent = _get_if_curve_from_evaluator(
