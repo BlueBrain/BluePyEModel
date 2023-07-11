@@ -6,6 +6,7 @@ from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 from bluepyemodel.model.parameter_configuration import ParameterConfiguration
 from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
+from bluepyemodel.model.utils import temp_ljp_check
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ class NeuronModelConfiguration:
 
         return locations
 
-    def init_from_dict(self, configuration_dict):
+    def init_from_dict(self, configuration_dict, auto_mechanism=False):
         """Instantiate the object from its dictionary form"""
 
         if "distributions" in configuration_dict:
@@ -155,12 +156,18 @@ class NeuronModelConfiguration:
                     param["value"],
                     param.get("mechanism", None),
                     param.get("dist", None),
+                    auto_mechanism=auto_mechanism,
                 )
 
         if "mechanisms" in configuration_dict:
             for mechanism in configuration_dict["mechanisms"]:
                 self.add_mechanism(
-                    mechanism["name"], mechanism["location"], mechanism.get("stochastic", None)
+                    mechanism["name"],
+                    mechanism["location"],
+                    mechanism.get("stochastic", None),
+                    mechanism.get("version", None),
+                    mechanism.get("temperature", None),
+                    mechanism.get("ljp_corrected", None),
                 )
 
         self.morphology = MorphologyConfiguration(**configuration_dict["morphology"])
@@ -256,7 +263,7 @@ class NeuronModelConfiguration:
         mechanism=None,
         distribution_name=None,
         stochastic=None,
-        auto_mechanism=True,
+        auto_mechanism=False,
     ):
         """Add a parameter to the configuration
 
@@ -274,7 +281,8 @@ class NeuronModelConfiguration:
             stochastic (bool): Can the mechanisms to which the parameter relates behave
                 stochastically (optional).
             auto_mechanism (bool): if True, will automatically add the mechanism associated to
-                the parameter.
+                the parameter. Attention! auto_mechanism cannot handle
+                mechanism version, temperature and ljp correction.
         """
 
         if not locations:
@@ -316,52 +324,65 @@ class NeuronModelConfiguration:
             if mechanism and auto_mechanism:
                 self.add_mechanism(mechanism, loc, stochastic=stochastic)
 
-    def is_mechanism_available(self, mechanism_name, version=None):
+    def is_mechanism_available(
+        self, mechanism_name, version=None, temperature=None, ljp_corrected=None
+    ):
         """Is the mechanism part of the mechanisms available"""
 
         if self.available_mechanisms is not None:
             for mech in self.available_mechanisms:
-                if version is not None:
-                    if mechanism_name in mech.name and version == mech.version:
-                        return True
-                elif mechanism_name in mech.name:
-                    return True
+                if mechanism_name in mech.name:
+                    if version is None or (version is not None and version == mech.version):
+                        if temp_ljp_check(temperature, ljp_corrected, mech):
+                            return True
 
             return False
 
         return True
 
     def add_mechanism(
-        self, mechanism_name, locations, stochastic=None, version=None, auto_parameter=False
+        self,
+        mechanism_name,
+        locations,
+        stochastic=None,
+        version=None,
+        temperature=None,
+        ljp_corrected=None,
+        auto_parameter=False,
     ):
         """Add a mechanism to the configuration. This function should rarely be called directly as
-         mechanisms are added automatically when using add_parameters. But it might be needed if a
-         mechanism is not associated to any parameters.
+        mechanisms are added automatically when using add_parameters. But it might be needed if a
+        mechanism is not associated to any parameters.
 
         Args:
-             mechanism_name (str): name of the mechanism.
-             locations (str or list of str): sections of the neuron on which this mechanism
-                 will be instantiated.
-             stochastic (bool): Can the mechanisms behave stochastically (optional).
-             version (str): version id of the mod file.
-             auto_parameter (bool): if True, will automatically add the parameters of the mechanism
-                if they are known.
+            mechanism_name (str): name of the mechanism.
+            locations (str or list of str): sections of the neuron on which this mechanism
+                will be instantiated.
+            stochastic (bool): Can the mechanisms behave stochastically (optional).
+            version (str): version id of the mod file.
+            temperature (int): temperature associated with the mechanism if any
+            ljp_corrected (bool): whether the mechanims is ljp corrected
+            auto_parameter (bool): if True, will automatically add the parameters of the mechanism
+            if they are known.
         """
 
         locations = self._format_locations(locations)
 
         if mechanism_name not in NEURON_BUILTIN_MECHANISMS and not self.is_mechanism_available(
-            mechanism_name, version
+            mechanism_name, version, temperature, ljp_corrected
         ):
             raise ValueError(
                 f"You are trying to add mechanism {mechanism_name} (version {version}) "
+                f"(with temperature {temperature} C) (ljp_corrected is {ljp_corrected}) "
                 "but it is not available on Nexus or local."
             )
 
         for loc in locations:
             if self.available_mechanisms and mechanism_name not in NEURON_BUILTIN_MECHANISMS:
                 mechanism_parameters = next(
-                    m.parameters for m in self.available_mechanisms if m.name == mechanism_name
+                    m.parameters
+                    for m in self.available_mechanisms
+                    if (m.name == mechanism_name and temp_ljp_check(temperature, ljp_corrected, m))
                 )
             else:
                 mechanism_parameters = None
@@ -371,26 +392,28 @@ class NeuronModelConfiguration:
                 location=loc,
                 stochastic=stochastic,
                 version=version,
+                temperature=temperature,
+                ljp_corrected=ljp_corrected,
                 parameters=mechanism_parameters,
             )
 
             # Check if mech is not already part of the configuration
             for m in self.mechanisms:
-                if m.name == mechanism_name and m.location == loc:
+                if m.name == mechanism_name and m.location == loc and temp_ljp_check(temperature, ljp_corrected, m):
                     return
 
             # Handle the case where the new mech is a key of the multilocation map
             if loc in multiloc_map:
                 tmp_mechanisms = []
                 for m in self.mechanisms:
-                    if not (m.name == mechanism_name and m.location in multiloc_map[loc]):
+                    if not (m.name == mechanism_name and m.location in multiloc_map[loc] and temp_ljp_check(temperature, ljp_corrected, m)):
                         tmp_mechanisms.append(m)
                 self.mechanisms = tmp_mechanisms + [tmp_mechanism]
 
             # Handle the case where the new mech is a value of the multilocation map
             else:
                 for m in self.mechanisms:
-                    if m.name == tmp_mechanism.name:
+                    if m.name == tmp_mechanism.name and temp_ljp_check(temperature, ljp_corrected, m):
                         if m.location in multiloc_map and loc in multiloc_map[m.location]:
                             return
 

@@ -708,6 +708,8 @@ class NexusAccessPoint(DataAccessPoint):
         available_mechanisms = []
         for r in resources:
             version = r.modelid if hasattr(r, "modelId") else None
+            temperature = r.temperature.value if hasattr(r, "temperature") else None
+            ljp_corrected = r.isLjpCorrected if hasattr(r, "isLjpCorrected") else None
             stochastic = r.stochastic if hasattr(r, "stochastic") else None
 
             parameters = {}
@@ -738,6 +740,8 @@ class NexusAccessPoint(DataAccessPoint):
                 location=None,
                 stochastic=stochastic,
                 version=version,
+                temperature=temperature,
+                ljp_corrected=ljp_corrected,
                 parameters=parameters,
                 ion_currents=ion_currents,
                 ionic_concentrations=ionic_concentrations,
