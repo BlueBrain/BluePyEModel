@@ -1,4 +1,21 @@
 """Neuron Model Configuration"""
+
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import logging
 
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
@@ -538,6 +555,17 @@ class NeuronModelConfiguration:
         else:
             self.mechanisms = [m for m in self.mechanisms if m.name != mechanism_name]
             self.parameters = [p for p in self.parameters if p.mechanism != mechanism_name]
+
+    def get_related_nexus_ids(self):
+        uses = []
+        if self.morphology.id:
+            uses.append({"id": self.morphology.id, "type": "NeuronMorphology"})
+
+        for m in self.mechanisms:
+            if m.id:
+                uses.append({"id": m.id, "type": "SubCellularModelScript"})
+
+        return {"uses": uses}
 
     def as_dict(self):
         """Returns the configuration as dict of parameters, mechanisms and

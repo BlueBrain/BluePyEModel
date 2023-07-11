@@ -1,5 +1,21 @@
 """EModel_pipeline class."""
 
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import glob
 import logging
 import pathlib
@@ -15,6 +31,7 @@ from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tools.multiprocessing import get_mapper
 from bluepyemodel.tools.multiprocessing import ipyparallel_map_function
 from bluepyemodel.tools.utils import get_checkpoint_path
+from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.validation.validation import validate
 
 logger = logging.getLogger()
@@ -199,8 +216,13 @@ class EModel_pipeline:
 
         else:
             checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
+            checkpoint_list = glob.glob(checkpoint_path.replace("seed=1", "*"))
+            if not checkpoint_list:
+                checkpoint_list = glob.glob(
+                    get_legacy_checkpoint_path(checkpoint_path).replace("seed=1", "*")
+                )
 
-            for chkp_path in glob.glob(checkpoint_path.replace("seed=1", "*")):
+            for chkp_path in checkpoint_list:
                 file_name = pathlib.Path(chkp_path).stem
                 tmp_seed = next(
                     int(e.replace("seed=", "")) for e in file_name.split("__") if "seed=" in e
@@ -241,7 +263,7 @@ class EModel_pipeline:
 
         # Filter the checkpoints to plot
         checkpoint_paths = []
-        for chkp_path in glob.glob("./checkpoints/*.pkl"):
+        for chkp_path in glob.glob("./checkpoints/**/*.pkl", recursive=True):
             if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
             if (
@@ -265,13 +287,14 @@ class EModel_pipeline:
                 / "optimisation",
             )
 
-        plotting.evolution_parameters_density(
-            evaluator=cell_evaluator,
-            checkpoint_paths=checkpoint_paths,
-            figures_dir=pathlib.Path("./figures")
-            / self.access_point.emodel_metadata.emodel
-            / "optimisation",
-        )
+        if self.access_point.pipeline_settings.plot_parameter_evolution:
+            plotting.evolution_parameters_density(
+                evaluator=cell_evaluator,
+                checkpoint_paths=checkpoint_paths,
+                figures_dir=pathlib.Path("./figures")
+                / self.access_point.emodel_metadata.emodel
+                / "parameter_evolution",
+            )
 
         return plotting.plot_models(
             access_point=self.access_point,

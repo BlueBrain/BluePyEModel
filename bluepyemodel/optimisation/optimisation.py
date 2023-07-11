@@ -1,4 +1,21 @@
 """Optimisation function"""
+
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import logging
 import os
 from pathlib import Path
@@ -8,6 +25,7 @@ import bluepyopt
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.tools.utils import get_checkpoint_path
+from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.tools.utils import logger
 from bluepyemodel.tools.utils import read_checkpoint
 
@@ -55,7 +73,9 @@ def setup_optimiser(
     raise ValueError(f"Unknown optimiser: {optimiser}")
 
 
-def run_optimisation(optimiser, checkpoint_path, max_ngen, terminator=None):
+def run_optimisation(
+    optimiser, checkpoint_path, max_ngen, terminator=None, optimisation_checkpoint_period=None
+):
     """Run the optimisation.
 
     Args:
@@ -78,6 +98,13 @@ def run_optimisation(optimiser, checkpoint_path, max_ngen, terminator=None):
             "Will continue optimisation from last generation in checkpoint"
         )
         continue_opt = True
+    elif Path(get_legacy_checkpoint_path(checkpoint_path)).is_file():
+        checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
+        continue_opt = True
+        logger.info(
+            "Found a legacy checkpoint path. Will use it instead "
+            "and continue optimisation from last generation."
+        )
     else:
         logger.info("No checkpoint found. Will start optimisation from scratch.")
         continue_opt = False
@@ -86,6 +113,7 @@ def run_optimisation(optimiser, checkpoint_path, max_ngen, terminator=None):
     pop, hof, log, history = optimiser.run(
         max_ngen=max_ngen,
         cp_filename=str(checkpoint_path),
+        cp_period=optimisation_checkpoint_period,
         continue_cp=continue_opt,
         terminator=terminator,
     )
@@ -123,11 +151,13 @@ def setup_and_run_optimisation(
 
     checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed)
 
+    optimisation_checkpoint_period = access_point.pipeline_settings.optimisation_checkpoint_period
     run_optimisation(
         optimiser=opt,
         checkpoint_path=checkpoint_path,
         max_ngen=access_point.pipeline_settings.max_ngen,
         terminator=terminator,
+        optimisation_checkpoint_period=optimisation_checkpoint_period,
     )
 
 

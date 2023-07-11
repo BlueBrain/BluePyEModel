@@ -3,21 +3,18 @@
 
 ## Introduction
 
-The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package facilitating the configuration and execution of E-Model building tasks. It covers tasks such as feature extraction, model optimisation and validation. As such, it builds on top of eFEL, BluePyEfe and BluePyOpt.
+The Blue Brain Python E-Model Building Library (BluePyEModel) is a Python package facilitating the configuration and execution of electrical neuron model (e-model) building tasks. It covers tasks such as extraction of electrical features from electrophysiology data, e-model parameters optimisation and model validation. As such, it builds on top of [eFEL](https://github.com/BlueBrain/eFEL), [BluePyEfe](https://github.com/BlueBrain/BluePyEfe) and [BluePyOpt](https://github.com/BlueBrain/BluePyOpt).
 
+For a general overview and example of electrical model building, please refer to the preprint: [A universal workflow for creation, validation and generalization of detailed neuronal models](https://www.biorxiv.org/content/10.1101/2022.12.13.520234v1.full.pdf).
+
+Note that this package only covers e-model building based on patch-clamp data and that it relies solely on the [NEURON](https://www.neuron.yale.edu/neuron/) simulator.
 
 ## Installation
 
-To use BluePyEModel on BB5, it is easier to do so in a virtual environment.
-It is possible to create a virtual environment using the most recent python version present on spack:
+To use BluePyEModel you will first need to install NEURON with Python support on your machine.
 
-    module load unstable python
-    python -m venv myvenv
-    module purge all
-    source myvenv/bin/activate
-
-Then, BluePyEModel can be installed with the command::
-
+And then bluepyemodel itself:
+    
     pip install -i https://bbpteam.epfl.ch/repository/devpi/simple/ bluepyemodel[all]
 
 If you do not wish to install all dependencies, specific dependencies can be selected by indicating which ones to install between brackets in place of 'all' (If you want multiple dependencies, they have to be separated by commas). The available dependencies are:
@@ -26,7 +23,6 @@ If you do not wish to install all dependencies, specific dependencies can be sel
 - nexus
 - all
 - currentscape
-
 
 ## To get started with the E-Model building pipeline
 
@@ -54,7 +50,7 @@ The section after that will focus on scenario 4 as it is the most complex. Scena
 
 This section presents a general picture of how to create an e-model using python and local storage, it relies on the use of the class EModel_pipeline.
 
-For a detailed picture, please refer to the example directory `./examples/emodel_pipeline_local_python` and its README which shows how to setup an optimisation directory and how to run it on BB5 using slurm.
+For a detailed picture, please refer to the example directory [`./examples/emodel_pipeline_local_python`](bluepyemodel/examples/emodel_pipeline_local_python) and its [README](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/examples/emodel_pipeline_local_python/README.md) which shows how to setup an optimisation directory and how to run it on BB5 using slurm.
 
 The pipeline is divided in 6 steps:
 - extraction: extracts e-features from ephys recordings and averages the results e-feature values along the requested targets.
@@ -93,12 +89,12 @@ Let's go over the content of this file:
 - The keys of the dictionary are the names of the models that will be built. Here, we only have one model named "L5PC". This name is important as it will be used in every following step to specify which model is to be acted upon.
 - `morph_path` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
 - `morphology` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by `morph_path`.
-- `params` and `features` contains the path to the file containing the configuration of the parameters of the model and optimisation targets of the model respectively. As for the morphology, this file has to be in a local subdirectory. By convention, these files are put in the directory `./config/` or in a subdirectory of it.  To see the specific format of these configuration files, please refer to the example `./examples/emodel_pipeline_local_python`. If the step "extraction" is done through the pipeline, the file containing the optimisation targets will be created programmatically by the pipeline.
-- `pipeline_settings` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings`. An important settings if you wish to run e-feature extraction through the pipeline is `path_extract_config` which points to the path of the json file containing the targets of the extraction process. Once again, for the format of this file, please refer to the example `./examples/emodel_pipeline_local_python`.
+- `params` and `features` contains the path to the file containing the configuration of the parameters of the model and optimisation targets of the model respectively. As for the morphology, this file has to be in a local subdirectory. By convention, these files are put in the directory `./config/` or in a subdirectory of it.  To see the specific format of these configuration files, please refer to the example [`./examples/emodel_pipeline_local_python`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/tree/main/examples/emodel_pipeline_local_python). If the step "extraction" is done through the pipeline, the file containing the optimisation targets will be created programmatically by the pipeline.
+- `pipeline_settings` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings`. An important settings if you wish to run e-feature extraction through the pipeline is `path_extract_config` which points to the path of the json file containing the targets of the extraction process. Once again, for the format of this file, please refer to the example [`./examples/emodel_pipeline_local_python`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/tree/main/examples/emodel_pipeline_local_python).
 
 #### Building the models
 
-To run the modeling pipeline, you will need to create a python script used to instantiate the pipeline and execute its different steps. The pipeline is a python object of the class EModel_pipeline. Here is a minimal example of how to instantiate it:
+To run the modeling pipeline, you will need to create a python script used to instantiate the pipeline and execute its different steps. The pipeline is a python object of the class [`EModel_pipeline`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/bluepyemodel/emodel_pipeline/emodel_pipeline.py#L23). Here is a minimal example of how to instantiate it:
 ```
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 
@@ -140,7 +136,7 @@ export_emodels_hoc(access_point, only_validated=False, map_function=map)
 ```
 This will create a local directory containing the hoc files of the models.
 
-Note that if you wish to use the models in a circuit, you will have to use `export_emodels_sonata` instead.
+Note that if you wish to use the models in a circuit, you will have to use [`export_emodels_sonata`](bluepyemodel/export_emodel/export_emodel.py#L130) instead.
 However, most of the time, for circuit building, you will want to generalize the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see https://github.com/BlueBrain/BluePyMM)
 
 #### Summary of the local directory structure
@@ -162,25 +158,29 @@ The final structure of the local directory for this simpler case should be as fo
 │    └── L5TPC.asc
 ```
 
-In the more complex case where githash versioning and slurm are used, refer to the structure of the example of `./examples/emodel_pipeline_local_python`.
+In the more complex case where githash versioning and slurm are used, refer to the structure of the example of [`./examples/emodel_pipeline_local_python`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/tree/main/examples/emodel_pipeline_local_python).
 
 ### 4) Running using Luigi with Nexus storage
 
-This section present the general picture of how to create an e-model using Luigi and Nexus storage. For a detailed example, please refer to the files in examples/emodel_pipeline_nexus_ncmv3
+This section present the general picture of how to create an e-model using Luigi and Nexus storage. For a detailed example, please refer to the files in [`examples/emodel_pipeline_nexus_ncmv3`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/tree/main/examples/emodel_pipeline_nexus_ncmv3).
 
 Warning: to run the emodel pipeline using Nexus as a backend you will first need a fully configured Nexus project and be able to perform cross-bucket in projects containing the morphologies, mechanisms and ephys data you wish to use. All of these have to be setup by the DKE team beforehand.
 
 To run the pipeline with luigi, you will need:
 - A virtual environment with BluePyEModel installed with the options nexus and luigi: (```pip install bluepyemodel[luigi,nexus]```)
-- A `luigi.cfg` file containing the Luigi specific settings (see example `./examples/emodel_pipeline_nexus_ncmv3/luigi.cfg`).
-- On Nexus, entities of the type "EModelConfiguration", "EModelPipelineSettings" and "ExtractionTargetsConfiguration" (or "FitnessCalculatorConfiguration" if you already have optimisation targets). Please refer to the files `pipeline.py` and the notebooks for an example of how to create such resources.
+- A `luigi.cfg` file containing the Luigi specific settings (see example [`./examples/emodel_pipeline_nexus_ncmv3/luigi.cfg`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/examples/emodel_pipeline_nexus_ncmv3/luigi.cfg)).
+- On Nexus, entities of the type "EModelConfiguration", "EModelPipelineSettings" and "ExtractionTargetsConfiguration" (or "FitnessCalculatorConfiguration" if you already have optimisation targets). Please refer to the file [`pipeline.py`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/examples/emodel_pipeline_nexus_ncmv3/pipeline.py) and the notebooks for an example of how to create such resources.
 
 The pipeline can then be run using the command:
 
     bbp-workflow launch-bb5 -f --config=luigi.cfg bluepyemodel.tasks.emodel_creation.optimisation EModelCreation emodel=EMODEL ttype=TTYPE species=SPECIES brain-region=BRAIN_REGION iteration-tag=ITERATION_TAG`
 
-The final models generated using the Nexus access point are stored in the Nexus project in Resources of type `EModel`.
+The final models generated using the Nexus access point are stored in the Nexus project in Resources of type [`EModel`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/bluepyemodel/emodel_pipeline/emodel.py#L24).
 
 ### Schematics of BluePyEModel classes
 
 ![Schematics of BluePyEModel classes](./images/classes_schema.png)
+
+### Acknowledgment
+
+This work has been partially funded by the European Union Seventh Framework Program (FP7/2007­2013) under grant agreement no. 604102 (HBP), and by the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreements No. 720270 (Human Brain Project SGA1) and No. 785907 (Human Brain Project SGA2) and by the EBRAINS research infrastructure, funded from the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreement No. 945539 (Human Brain Project SGA3).

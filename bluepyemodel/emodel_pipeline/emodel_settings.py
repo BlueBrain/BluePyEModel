@@ -1,4 +1,21 @@
 """EModelPipelineSettings class"""
+
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import logging
 
 # pylint: disable=too-many-arguments,too-many-locals,too-many-instance-attributes
@@ -38,6 +55,7 @@ class EModelPipelineSettings:
         optimisation_timeout=600.0,
         threshold_efeature_std=None,
         max_ngen=100,
+        optimisation_checkpoint_period=None,
         use_stagnation_criterion=True,
         validation_function="max_score",
         validation_threshold=5.0,
@@ -52,6 +70,7 @@ class EModelPipelineSettings:
         validation_protocols=None,
         name_gene_map=None,
         plot_currentscape=False,
+        plot_parameter_evolution=True,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -150,6 +169,8 @@ class EModelPipelineSettings:
                 deviations, but only modify them for the optimisation process.
             max_ngen (int): maximum number of generations of the evolutionary process of the
                 optimisation.
+            optimisation_checkpoint_period (float): minimum time (in s) between checkpoint save.
+                None to save checkpoint independently of the time between them
             use_stagnation_criterion (bool): whether to use the stagnation stopping criterion on
                 top of the maximum generation criterion during optimisation.
             validation_function (str or list): if str, can be "max_score" or "mean_score".
@@ -189,6 +210,8 @@ class EModelPipelineSettings:
                 optimisation.
             plot_currentscape (bool): during the plotting, should the currentscapes be
                 plotted for the recordings.
+            plot_parameter_evolution (bool): during the plotting, should the evolution of the
+                parameters be plotted.
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config).
                 Note that current.names, output.savefig, output.fname and output.dir
@@ -255,6 +278,7 @@ class EModelPipelineSettings:
                 self.optimisation_params = {"offspring_size": 20}
 
         self.max_ngen = max_ngen
+        self.optimisation_checkpoint_period = optimisation_checkpoint_period
         self.use_stagnation_criterion = use_stagnation_criterion
         self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
@@ -288,6 +312,8 @@ class EModelPipelineSettings:
         # Settings specific to the currentscape plotting
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
+
+        self.plot_parameter_evolution = plot_parameter_evolution
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings

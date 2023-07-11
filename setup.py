@@ -1,12 +1,28 @@
 #!/usr/bin/env python
 
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import imp
 import sys
 
 from setuptools import setup, find_packages
 
-if sys.version_info < (3, 6):
-    sys.exit("Sorry, Python < 3.6 is not supported")
+if sys.version_info < (3, 7):
+    sys.exit("Sorry, Python < 3.7 is not supported")
 
 VERSION = imp.load_source("", "bluepyemodel/version.py").__version__
 
@@ -49,13 +65,13 @@ EXTRA_DOC = [
 
 setup(
     name="bluepyemodel",
-    author="BlueBrain cells",
-    author_email="bbp-ou-cell@groupes.epfl.ch",
+    author="Blue Brain Project, EPFL",
+    author_email="",
     version=VERSION,
-    description="Electrical modeling pipeline",
+    description="Blue Brain Python E-Model Building Library",
     long_description=README,
     long_description_content_type="text/x-rst",
-    license="BBP-internal-confidential",
+    license="Apache 2.0",
     install_requires=[
         "numpy",
         "scipy",
@@ -65,9 +81,9 @@ setup(
         "pyyaml",
         "gitpython",
         "bluepyopt>=1.12.12",
-        "bluepyefe>=2.0.0",
+        "bluepyefe>=2.2.0",
         "neurom>=3.0,<4.0",
-        "efel>=3.1,<=4.1.91",
+        "efel>=3.1",
         "configparser",
         "neuron>=8.0",
         "morph_tool>=2.8",

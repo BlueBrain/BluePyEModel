@@ -1,5 +1,21 @@
 """Mechanism Configuration"""
 
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from itertools import chain
 
 
@@ -18,6 +34,7 @@ class MechanismConfiguration:
         ion_currents=None,
         nonspecific_currents=None,
         ionic_concentrations=None,
+        id=None,
     ):
         """Init
 
@@ -34,6 +51,7 @@ class MechanismConfiguration:
              nonspecific_currents (list): list of non-specific currents
              ionic_concentrations (list): list of the ionic concentration linked to the ion current
                 If None, will be deduced from the ions list.
+             id (str): Optional. Nexus ID of the mechanism.
         """
 
         self.name = name
@@ -62,6 +80,8 @@ class MechanismConfiguration:
         else:
             self.parameters = parameters
 
+        self.id = id
+
     def get_current(self):
         """Return the ion current names."""
         current = []
@@ -81,4 +101,5 @@ class MechanismConfiguration:
             "version": self.version,
             "temperature": self.temperature,
             "ljp_corrected": self.ljp_corrected,
+            "id": self.id,
         }

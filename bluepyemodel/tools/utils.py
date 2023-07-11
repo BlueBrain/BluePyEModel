@@ -1,4 +1,21 @@
 """Utils"""
+
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import logging
 import pickle
 from pathlib import Path
@@ -13,6 +30,13 @@ def get_checkpoint_path(metadata, seed=None):
 
     filename = metadata.as_string(seed=seed)
 
+    return f"./checkpoints/{metadata.emodel}/{metadata.iteration}/{filename}.pkl"
+
+
+def get_legacy_checkpoint_path(checkpoint_path):
+    """Get legacy checkpoint path from checkpoint path"""
+
+    filename = Path(checkpoint_path).stem
     return f"./checkpoints/{filename}.pkl"
 
 
@@ -99,6 +123,12 @@ def read_checkpoint(checkpoint_path):
 
     p = Path(checkpoint_path)
     p_tmp = p.with_suffix(p.suffix + ".tmp")
+
+    # legacy case
+    if not p.is_file() and not p_tmp.is_file():
+        legacy_checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
+        p = Path(legacy_checkpoint_path)
+        p_tmp = p.with_suffix(p.suffix + ".tmp")
 
     try:
         with open(str(p), "rb") as checkpoint_file:

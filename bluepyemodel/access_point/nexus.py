@@ -1,4 +1,21 @@
 """Access point using Nexus Forge"""
+
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import copy
 import logging
 import os
@@ -203,7 +220,7 @@ class NexusAccessPoint(DataAccessPoint):
         if description is not None:
             metadata_dict["description"] = description
 
-        self.access_point.object_to_nexus(
+        return self.access_point.object_to_nexus(
             object_,
             metadata_dict,
             self.emodel_metadata.as_string(),
@@ -237,6 +254,24 @@ class NexusAccessPoint(DataAccessPoint):
 
     def store_targets_configuration(self, configuration):
         """Store the configuration of the targets (targets and ephys files used)"""
+
+        # Search for all Traces on Nexus and add their Nexus ids to the configuration
+        traces = get_available_traces(
+            species=self.emodel_metadata.species,
+            brain_region=self.emodel_metadata.brain_region,
+            access_token=self.access_point.access_token,
+        )
+        if not traces:
+            raise AccessPointException(
+                "Cannot find Traces on Nexus. Please make sure that Traces can be reached from"
+                " the current Nexus session."
+            )
+
+        available_traces_names = [trace.name for trace in traces]
+
+        for file in configuration.files:
+            if file.cell_name in available_traces_names:
+                file.resource_id = traces[available_traces_names.index(file.cell_name)].id
 
         self.store_object(configuration)
 
@@ -289,6 +324,35 @@ class NexusAccessPoint(DataAccessPoint):
     def store_model_configuration(self, configuration, path=None):
         """Store a model configuration as a resource of type EModelConfiguration"""
 
+        # Search for all Morphologies on Nexus and add their Nexus ids to the configuration
+        morphologies = self.access_point.fetch({"type": "NeuronMorphology"})
+        if not morphologies:
+            raise AccessPointException(
+                "Cannot find morphologies on Nexus. Please make sure that "
+                "morphologies can be reached from the current Nexus session."
+            )
+
+        available_morphologies_names = [morphology.name for morphology in morphologies]
+
+        if configuration.morphology.name in available_morphologies_names:
+            configuration.morphology.nexus_id = morphologies[
+                available_morphologies_names.index(configuration.morphology.name)
+            ].id
+
+        # Search for all Mechanisms on Nexus and add their Nexus ids to the configuration
+        mechanisms = self.get_available_mechanisms()
+        if not mechanisms:
+            raise AccessPointException(
+                "Cannot find mechanisms on Nexus. Please make sure that "
+                "mechanisms can be reached from the current Nexus session."
+            )
+
+        available_mechanisms_names = [mechanism.name for mechanism in mechanisms]
+
+        for mechanism in configuration.mechanisms:
+            if mechanism.name in available_mechanisms_names:
+                mechanism.nexus_id = mechanisms[available_mechanisms_names.index(mechanism.name)].id
+
         self.store_object(configuration)
 
     def get_distributions(self):
@@ -298,7 +362,7 @@ class NexusAccessPoint(DataAccessPoint):
             type_="EModelChannelDistribution",
             metadata={},
             metadata_str=self.emodel_metadata.as_string(),
-        )
+        )[0]
 
     def store_distribution(self, distribution):
         """Store a channel distribution as a resource of type EModelChannelDistribution"""
@@ -337,14 +401,16 @@ class NexusAccessPoint(DataAccessPoint):
 
         Returns None if the emodel workflow is not present on nexus."""
 
-        emodel_workflow = self.access_point.nexus_to_objects(
+        emodel_workflow, ids = self.access_point.nexus_to_objects(
             type_="EModelWorkflow",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
             metadata_str=self.emodel_metadata.as_string(),
         )
+
         if emodel_workflow:
-            return emodel_workflow[0]
-        return None
+            return emodel_workflow[0], ids[0]
+
+        return None, None
 
     def check_emodel_workflow_configurations(self, emodel_workflow):
         """Return True if the emodel workflow's configurations are on nexus, and False otherwise"""
@@ -397,12 +463,23 @@ class NexusAccessPoint(DataAccessPoint):
     def store_emodel(self, emodel, description=None):
         """Store an EModel on Nexus"""
 
-        self.store_object(emodel, seed=emodel.seed, description=description)
+        workflow, nexus_id = self.get_emodel_workflow()
+
+        if workflow is None:
+            raise AccessPointException(
+                "No EModelWorkflow available to which the EModels can be linked"
+            )
+
+        emodel.workflow_id = nexus_id
+        model_id = self.store_object(emodel, seed=emodel.seed, description=description)
+        workflow.add_emodel_id(model_id)
+
+        self.store_or_update_emodel_workflow(workflow)
 
     def get_emodels(self, emodels=None):
         """Get all the emodels"""
 
-        emodels = self.access_point.nexus_to_objects(
+        emodels, _ = self.access_point.nexus_to_objects(
             type_="EModel",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
             metadata_str=self.emodel_metadata.as_string(),
@@ -705,14 +782,14 @@ class NexusAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for r in resources:
-            version = r.modelid if hasattr(r, "modelId") else None
+            version = r.modelId if hasattr(r, "modelId") else None
             temperature = r.temperature.value if hasattr(r, "temperature") else None
             ljp_corrected = r.isLjpCorrected if hasattr(r, "isLjpCorrected") else None
             stochastic = r.stochastic if hasattr(r, "stochastic") else None
 
             parameters = {}
             if hasattr(r, "exposesParameter"):
-                exposes_parameters = r.exposesParameters
+                exposes_parameters = r.exposesParameter
                 if not isinstance(exposes_parameters, list):
                     exposes_parameters = [exposes_parameters]
                 for ep in exposes_parameters:
@@ -812,7 +889,7 @@ class NexusAccessPoint(DataAccessPoint):
 
     def store_morphology(self, morphology_name, morphology_path, mtype=None):
         payload = {
-            "type": ["NeuronMorphology", "Entity", "Dataset", "ReconstructedCell"],
+            "type": ["NeuronMorphology", "Entity", "Dataset"],
             "name": pathlib.Path(morphology_path).stem,
             "objectOfStudy": {
                 "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",

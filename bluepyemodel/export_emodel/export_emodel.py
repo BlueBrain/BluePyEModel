@@ -1,8 +1,26 @@
 """Export the emodels in the SONATA format"""
+
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import logging
 import os
 import pathlib
 import shutil
+import time
 
 import h5py
 
@@ -302,8 +320,12 @@ def export_emodels_nexus(
 
     # Register the model(s)
     nexus_access_point.store_pipeline_settings(pipeline_settings)
+    nexus_access_point.store_targets_configuration(targets_configuration)
     nexus_access_point.store_fitness_calculator_configuration(fitness_configuration)
     nexus_access_point.store_model_configuration(model_configuration)
-    nexus_access_point.store_targets_configuration(targets_configuration)
+    time.sleep(10)  # Necessary in case indexing is slow
+    emw = nexus_access_point.create_emodel_workflow(state="done")
+    nexus_access_point.store_or_update_emodel_workflow(emw)
     for mo in emodels:
+        time.sleep(10)  # Necessary to avoid revision issue
         nexus_access_point.store_emodel(mo)

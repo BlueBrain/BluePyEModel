@@ -1,5 +1,21 @@
 """NexusForgeAccessPoint class."""
 
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import getpass
 import json
 import logging
@@ -274,7 +290,7 @@ class NexusForgeAccessPoint:
                 logger.warning(
                     "The resource you are trying to register already exist and will be ignored."
                 )
-                return
+                return None
 
         resource_description["objectOfStudy"] = {
             "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
@@ -290,9 +306,11 @@ class NexusForgeAccessPoint:
         if distributions:
             resource = Dataset.from_resource(self.forge, resource)
             for path in distributions:
-                resource.add_distribution(path)
+                resource.add_distribution(path, content_type=f"application/{path.split('.')[-1]}")
 
         self.forge.register(resource)
+
+        return resource.id
 
     def retrieve(self, id_):
         """Retrieve a resource based on its id"""
@@ -483,6 +501,11 @@ class NexusForgeAccessPoint:
         }
 
         base_payload.update(metadata_dict)
+        if hasattr(object_, "get_related_nexus_ids"):
+            related_nexus_ids = object_.get_related_nexus_ids()
+            if related_nexus_ids:
+                base_payload.update(related_nexus_ids)
+
         payload_existence.update(metadata_dict)
         json_payload = object_.as_dict()
 
@@ -502,7 +525,7 @@ class NexusForgeAccessPoint:
 
         payload_existence.pop("annotation", None)
 
-        self.register(
+        return self.register(
             base_payload,
             filters_existence=payload_existence,
             replace=replace,
@@ -553,12 +576,14 @@ class NexusForgeAccessPoint:
         resources = self.fetch(filters)
 
         objects_ = []
+        ids = []
 
         if resources:
             for resource in resources:
                 objects_.append(self.resource_to_object(type_, resource, metadata, metadata_str))
+                ids.append(resource.id)
 
-        return objects_
+        return objects_, ids
 
     def get_nexus_id(self, type_, metadata):
         """Search for a single Resource matching the type_ and metadata and return its id"""

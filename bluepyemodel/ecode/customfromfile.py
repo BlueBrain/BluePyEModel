@@ -1,4 +1,4 @@
-"""Noise stimulus class"""
+"""CustomFromFile stimulus class"""
 
 """
 Copyright 2023, EPFL/Blue Brain Project
@@ -18,23 +18,37 @@ limitations under the License.
 
 import logging
 
+import numpy
+
 from bluepyemodel.ecode.stimulus import BPEM_stimulus
 
 logger = logging.getLogger(__name__)
 
 
-class NoiseMixin(BPEM_stimulus):
+class CustomFromFile(BPEM_stimulus):
 
-    """Noise current stimulus"""
+    """CustomFromFile current stimulus to be loaded from a file"""
 
-    name = "Noise"
+    name = "CustomFromFile"
 
-    def __init__(self, location):
+    def __init__(self, location, **kwargs):
         """Constructor
 
         Args:
             location(Location): location of stimulus
+            **kwargs: See below
+
+        Keyword Arguments:
+            data_filepath (str): path to the noise .txt data file. The file should have two columns:
+                time (ms) and current (nA).
         """
+
+        data_filepath = kwargs["data_filepath"]
+        series = numpy.loadtxt(data_filepath)
+
+        self.time_series = series[:, 0]
+        self.current_series = series[:, 1]
+
         super().__init__(
             location=location,
         )
@@ -54,9 +68,4 @@ class NoiseMixin(BPEM_stimulus):
     def generate(self, dt=0.1):
         """Return current time series"""
 
-        if dt != 0.1:
-            raise ValueError(f"For eCode {self.name}, dt has to be 0.1ms.")
-
-        current = self.holding_current + self.current_series * (self.mu / 2.0) + self.mu
-
-        return self.time_series, current
+        return self.time_series, self.current_series

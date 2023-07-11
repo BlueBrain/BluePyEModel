@@ -1,4 +1,21 @@
-"""Custom luigi worker and custom luigi launcher."""
+"""CustomFromFile luigi worker and custom luigi launcher."""
+
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import signal
 
 import luigi
@@ -7,7 +24,7 @@ from bluepyemodel.tasks.emodel_creation.optimisation import EModelCreation
 
 
 class WorkerCustom(luigi.worker.Worker):
-    """Custom Worker class."""
+    """CustomFromFile Worker class."""
 
     def handle_interrupt(self, signum, _):
         """
@@ -36,7 +53,7 @@ class WorkerCustom(luigi.worker.Worker):
 
 
 class FactoryCustom(object):
-    """Custom Worker Scheduler Factory class."""
+    """CustomFromFile Worker Scheduler Factory class."""
 
     def create_local_scheduler(self):
         return luigi.scheduler.Scheduler(prune_on_get_work=True, record_task_history=False)

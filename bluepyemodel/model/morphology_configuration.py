@@ -1,4 +1,21 @@
 """Morphology Configuration"""
+
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import pathlib
 
 
@@ -13,6 +30,7 @@ class MorphologyConfiguration:
         seclist_names=None,
         secarray_names=None,
         section_index=None,
+        id=None,
     ):
         """Init.
 
@@ -27,6 +45,7 @@ class MorphologyConfiguration:
             secarray_names (list): Optional. Names of the sections (e.g: ['soma', ...]).
             section_index (list): Optional. Index to a specific section, used for
                 non-somatic recordings.
+            id (str): Optional. Nexus ID of the morphology.
         """
 
         self.path = None
@@ -56,6 +75,8 @@ class MorphologyConfiguration:
         self.secarray_names = secarray_names
         self.section_index = section_index
 
+        self.id = id
+
     def as_dict(self):
         return {
             "name": self.name,
@@ -64,4 +85,5 @@ class MorphologyConfiguration:
             "seclist_names": self.seclist_names,
             "secarray_names": self.secarray_names,
             "section_index": self.section_index,
+            "id": self.id,
         }
