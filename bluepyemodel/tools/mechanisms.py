@@ -136,7 +136,8 @@ def discriminate_by_temp(resources, temperatures):
     if len(tmp_resources) > 0 and len(tmp_resources) < len(resources):
         logger.warning(
             "Discriminating resources based on temperature. "
-            "Keeping only resource with temperature == %s C.", temp
+            "Keeping only resource with temperature == %s C.",
+            temp,
         )
         return tmp_resources
     if len(temperatures) > 0:

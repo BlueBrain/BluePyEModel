@@ -531,9 +531,7 @@ class NexusAccessPoint(DataAccessPoint):
 
             # use default values
             if len(resources) > 1:
-                logger.warning(
-                    "More than one resource fetched for mechanism %s", mechanism.name
-                )
+                logger.warning("More than one resource fetched for mechanism %s", mechanism.name)
             if len(resources) > 1 and mechanism.temperature is None:
                 resources = discriminate_by_temp(resources, default_temperatures)
 

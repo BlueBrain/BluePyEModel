@@ -5,8 +5,8 @@ from bluepyemodel.model.distribution_configuration import DistributionConfigurat
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.morphology_configuration import MorphologyConfiguration
 from bluepyemodel.model.parameter_configuration import ParameterConfiguration
-from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
 from bluepyemodel.model.utils import temp_ljp_check
+from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
 
 logger = logging.getLogger(__name__)
 
@@ -399,21 +399,31 @@ class NeuronModelConfiguration:
 
             # Check if mech is not already part of the configuration
             for m in self.mechanisms:
-                if m.name == mechanism_name and m.location == loc and temp_ljp_check(temperature, ljp_corrected, m):
+                if (
+                    m.name == mechanism_name
+                    and m.location == loc
+                    and temp_ljp_check(temperature, ljp_corrected, m)
+                ):
                     return
 
             # Handle the case where the new mech is a key of the multilocation map
             if loc in multiloc_map:
                 tmp_mechanisms = []
                 for m in self.mechanisms:
-                    if not (m.name == mechanism_name and m.location in multiloc_map[loc] and temp_ljp_check(temperature, ljp_corrected, m)):
+                    if not (
+                        m.name == mechanism_name
+                        and m.location in multiloc_map[loc]
+                        and temp_ljp_check(temperature, ljp_corrected, m)
+                    ):
                         tmp_mechanisms.append(m)
                 self.mechanisms = tmp_mechanisms + [tmp_mechanism]
 
             # Handle the case where the new mech is a value of the multilocation map
             else:
                 for m in self.mechanisms:
-                    if m.name == tmp_mechanism.name and temp_ljp_check(temperature, ljp_corrected, m):
+                    if m.name == tmp_mechanism.name and temp_ljp_check(
+                        temperature, ljp_corrected, m
+                    ):
                         if m.location in multiloc_map and loc in multiloc_map[m.location]:
                             return
 
