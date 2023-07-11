@@ -790,8 +790,10 @@ def get_ordered_currentscape_keys(keys):
         if len(n) == 4 and n[1].isdigit():
             n = [".".join(n[:2]), n[2], n[3]]
         prot_name = n[0]
-        if prot_name not in to_skip:
-            assert len(n) == 3
+        # prot_name can be e.g. RMPProtocol, or RMPProtocol_apical055
+        if not any(to_skip_ in prot_name for to_skip_ in to_skip):
+            if len(n) != 3:
+                raise ValueError(f"Expected 3 elements in {n}")
             loc_name = n[1]
             curr_name = n[2]
 

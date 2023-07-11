@@ -624,6 +624,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         spikecount_timeout=50,
         max_depth=10,
         no_spikes=True,
+        efel_threshold=None,
         output_key="bpo_threshold_current",
         hold_key="bpo_holding_current",
         rmp_key="bpo_rmp",
@@ -652,6 +653,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             max_depth (int): maximum depth for the binary search
             no_spikes (bool): if True, will check that the holding current (lower bound) does not
                 trigger spikes.
+            efel_threshold: spike threshold for the efel settings.
+                Set to None to keep the default value (currently -20 mV in efel)
         """
 
         dependencies = {
@@ -703,6 +706,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             stim_end=stimulus_delay + stimulus_duration,
             exp_mean=1,
             exp_std=0.1,
+            threshold=efel_threshold,
         )
         self.spikecount_timeout = spikecount_timeout
 

@@ -403,6 +403,7 @@ def define_threshold_protocol(
     spikecount_timeout=50,
     max_depth=10,
     location=soma_loc,
+    efel_threshold=None,
     output_key="bpo_threshold_current",
     hold_key="bpo_holding_current",
     rmp_key="bpo_rmp",
@@ -435,6 +436,7 @@ def define_threshold_protocol(
         stimulus_totduration=totduration,
         spikecount_timeout=spikecount_timeout,
         max_depth=max_depth,
+        efel_threshold=efel_threshold,
         output_key=output_key,
         hold_key=hold_key,
         rmp_key=rmp_key,
@@ -539,6 +541,7 @@ def define_threshold_based_optimisation_protocol(
     max_depth_holding_search=7,
     max_depth_threshold_search=10,
     spikecount_timeout=50,
+    efel_threshold_for_threshold_search=None,
 ):
     """Create a meta protocol in charge of running the other protocols.
 
@@ -565,6 +568,9 @@ def define_threshold_based_optimisation_protocol(
             threshold current
         spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
             we set spikecount=2 as if many spikes were present, to speed up bisection search.
+        efel_threshold_for_threshold_search: spike threshold for the efel settings
+            to use in SearchThresholdCurrent protocol. Set to None to keep the default value
+            (currently -20 mV in efel)
     """
 
     protocols = define_protocols(
@@ -636,6 +642,7 @@ def define_threshold_based_optimisation_protocol(
                             spikecount_timeout,
                             max_depth_threshold_search,
                             location=location,
+                            efel_threshold=efel_threshold_for_threshold_search,
                             output_key=thres_key,
                             hold_key=hold_key,
                             rmp_key=rmp_key,
@@ -678,6 +685,7 @@ def define_threshold_based_optimisation_protocol(
                 fitness_calculator_configuration.search_threshold_totduration,
                 spikecount_timeout,
                 max_depth_threshold_search,
+                efel_threshold=efel_threshold_for_threshold_search,
             ),
         }
     )
@@ -801,6 +809,7 @@ def create_evaluator(
             max_depth_holding_search=pipeline_settings.max_depth_holding_search,
             max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
             spikecount_timeout=pipeline_settings.spikecount_timeout,
+            efel_threshold_for_threshold_search=pipeline_settings.efel_settings.get("Threshold", None),
         )
     else:
         main_protocol, features = define_optimisation_protocol(
