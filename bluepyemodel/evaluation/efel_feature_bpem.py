@@ -5,6 +5,8 @@ import math
 import numpy
 from scipy import optimize as opt
 from bluepyopt.ephys.efeatures import eFELFeature
+from bluepyemodel.tools.multiprotocols_efeatures_utils import get_distances_from_recording_name
+from bluepyemodel.tools.multiprotocols_efeatures_utils import get_protocol_list_from_recording_name
 
 logger = logging.getLogger(__name__)
 
@@ -264,7 +266,15 @@ class DendFitFeature(eFELFeatureBPEM):
         )
         self.decay = decay
 
-
+    @property
+    def recording_names_list(self):
+        return self.recording_names.values()
+    
+    @property
+    def distances(self):
+        # expects keys in recordings names to be distances from soma (e.g. "50") or "" if at soma
+        return [int(rec_name) if rec_name != "" else 0 for rec_name in self.recording_names.keys()]
+    
     def _construct_efel_trace(self, responses):
         """Construct trace that can be passed to eFEL"""
 
@@ -272,18 +282,22 @@ class DendFitFeature(eFELFeatureBPEM):
         if "" not in self.recording_names:
             raise ValueError("eFELFeature: '' needs to be in recording_names")
 
-        for recording_name in self.recording_names.values():
+        for recording_name in self.recording_names_list:
             if recording_name not in responses:
-                logger.debug(
+                # logger.debug(
+                #     "Recording named %s not found in responses %s", recording_name, str(responses)
+                # )
+                logger.warning(
                     "Recording named %s not found in responses %s", recording_name, str(responses)
                 )
                 return None
 
-            if responses[self.recording_names[""]] is None or responses[recording_name] is None:
+            if responses[recording_name] is None:
+                logger.warning(f"resp of {responses[recording_name]} is None")
                 return None
             
             trace = {}
-            trace["T"] = responses[self.recording_names[""]]["time"]
+            trace["T"] = responses[recording_name]["time"]
             trace["V"] = responses[recording_name]["voltage"]
             if callable(self.stim_start):
                 trace["stim_start"] = [self.stim_start()]
@@ -337,14 +351,40 @@ class DendFitFeature(eFELFeatureBPEM):
                 values = efel.getFeatureValues(
                     efel_traces, [self.efel_feature_name], raise_warnings=raise_warnings
                 )
+                # print(values)
+                feature_values_ = [val[self.efel_feature_name][0] for val in values if val[self.efel_feature_name] is not None]
+                distances = [d for d, v in zip(self.distances, values) if v[self.efel_feature_name] is not None]
 
-                feature_values_ = [val[self.efel_feature_name][0] for val in values]
-                # expects keys in recordings names to be distances from soma (e.g. "50") or "" if at soma
-                distances = [int(rec_name) if rec_name != "" else 0 for rec_name in self.recording_names.keys()]
-
+                logger.warning(f"distances: {distances}")
+                logger.warning(f"values: {feature_values_}")
                 feature_values = numpy.array([self.fit(distances, feature_values_)])
+                logger.warning(f"fit: {feature_values}")
 
                 efel.reset()
 
         logger.debug("Calculated values for %s: %s", self.name, str(feature_values))
         return feature_values
+
+
+class DendFitMultiProtocolsFeature(DendFitFeature):
+
+    """Fit across apical dendrite using multiple protocols.
+    
+    To use this class:
+        - have a protocol_name with distances in brackets in it
+            e.g. LocalInjectionIDrestapic[050,100,150,200]_100
+        - same with recording_name
+            e.g. apical[055,080,110,200,340].v
+        - have corresponding protocols with normal names under "protocols" in config
+            e.g. LocalInjectionIDrestapic050_100, LocalInjectionIDrestapic100_100, etc.
+        - have a soma protocol under "protocols" with same ecode in config
+            e.g. IDrest_100
+    """
+
+    @property
+    def recording_names_list(self):
+        return get_protocol_list_from_recording_name(self.recording_names[""])
+    
+    @property
+    def distances(self):
+        return get_distances_from_recording_name(self.recording_names[""])

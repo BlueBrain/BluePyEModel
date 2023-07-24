@@ -283,6 +283,7 @@ class EModel_pipeline:
             access_point=self.access_point,
             mapper=self.mapper,
             seeds=None,
+            # seeds=[11], # remove before merging
             figures_dir=pathlib.Path("./figures") / self.access_point.emodel_metadata.emodel,
             plot_distributions=True,
             plot_scores=True,

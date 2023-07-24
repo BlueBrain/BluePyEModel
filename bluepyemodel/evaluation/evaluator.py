@@ -13,8 +13,10 @@ from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.simulators import NrnSimulator
 
 from ..ecode import eCodes
+from ..tools.multiprotocols_efeatures_utils import get_protocol_list_from_protocol_name
 from ..tools.utils import are_same_protocol
 from .efel_feature_bpem import DendFitFeature
+from .efel_feature_bpem import DendFitMultiProtocolsFeature
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEMProtocol
 from .protocols import LocalThresholdBasedProtocol
@@ -216,6 +218,25 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     if "dendrite_backpropagation_fit" in feature_config.name:
         decay = "decay" in feature_config.name
         efeature = DendFitFeature(
+            feature_config.name,
+            efel_feature_name=feature_config.efel_feature_name,
+            recording_names=feature_config.recording_name_for_instantiation,
+            stim_start=stim_start,
+            stim_end=stim_end,
+            exp_mean=feature_config.mean,
+            exp_std=feature_config.std,
+            stimulus_current=stim_amp,
+            threshold=efel_settings.get("Threshold", None),
+            interp_step=efel_settings.get("interp_step", None),
+            double_settings=double_settings,
+            int_settings=int_settings,
+            string_settings=string_settings,
+            decay=decay,
+        )
+    # protocol name contains list of location, e.g. 'apic[050,100,150]'
+    elif "[" in feature_config.recording_name_for_instantiation[""]:
+        decay = "decay" in feature_config.name
+        efeature = DendFitMultiProtocolsFeature(
             feature_config.name,
             efel_feature_name=feature_config.efel_feature_name,
             recording_names=feature_config.recording_name_for_instantiation,
@@ -482,11 +503,16 @@ def define_efeatures(
 
         protocol = None
         if feature_def.protocol_name not in PRE_PROTOCOLS:
-            protocol = next(
-                (p for p in protocols.values() if p.name == feature_def.protocol_name), None
-            )
-            if protocol is None:
-                raise ValueError(f"Could not find protocol named {feature_def.protocol_name}")
+            if "[" in feature_def.protocol_name:
+                prot_names = get_protocol_list_from_protocol_name(feature_def.protocol_name)
+            else:
+                prot_names = [feature_def.protocol_name]
+            for prot_name in prot_names:
+                protocol = next(
+                    (p for p in protocols.values() if p.name == prot_name), None
+                )
+                if protocol is None:
+                    raise ValueError(f"Could not find protocol named {prot_name}")
 
         efeatures.append(define_efeature(feature_def, protocol, efel_settings))
 
