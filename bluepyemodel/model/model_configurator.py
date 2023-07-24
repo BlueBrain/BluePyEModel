@@ -92,7 +92,6 @@ class ModelConfigurator:
                 "The internal icselector package is required to use gene based configuration."
             ) from exc
 
-
         if not self.access_point.pipeline_settings.name_gene_map:
             logger.warning(
                 "No gene mapping name informed. Only parameters registered by the user"
