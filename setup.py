@@ -38,16 +38,11 @@ EXTRA_LUIGI = [
     "bbp-workflow-cli",
 ]
 
-<<<<<<< HEAD
 EXTRA_NEXUS = [
     "icselector",
     "nexusforge>=0.7.1",
     "entity_management>=1.2",
     "pyJWT>=2.1.0"
-=======
-EXTRA_CURRENTSCAPE = [
-    "currentscape>=0.0.11"
->>>>>>> a28c3ee (Remove Nexus related files)
 ]
 
 EXTRA_TEST = [
