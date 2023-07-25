@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /gpfs/bbp.cscs.ch/project/proj130/singlecell/myvenv/bin/activate
+source ./myvenv/bin/activate
 
 cd ..
 
