@@ -71,6 +71,7 @@ def validate(
         cell_evaluator=cell_evaluator,
         map_function=mapper,
         # preselect_for_validation=True,
+        seeds=[15] # remove before merging
     )
 
     if not emodels:

@@ -242,7 +242,8 @@ class EModel_pipeline:
         cell_evaluator = get_evaluator_from_access_point(
             self.access_point,
             include_validation_protocols=True,
-            record_ions_and_currents=self.access_point.pipeline_settings.plot_currentscape,
+            # record_ions_and_currents=self.access_point.pipeline_settings.plot_currentscape,
+            record_ions_and_currents=True,
         )
 
         # Filter the checkpoints to plot
@@ -282,8 +283,8 @@ class EModel_pipeline:
         return plotting.plot_models(
             access_point=self.access_point,
             mapper=self.mapper,
-            seeds=None,
-            # seeds=[11], # remove before merging
+            # seeds=None,
+            seeds=[11], # remove before merging
             figures_dir=pathlib.Path("./figures") / self.access_point.emodel_metadata.emodel,
             plot_distributions=True,
             plot_scores=True,

@@ -344,6 +344,7 @@ class DendFitFeature(eFELFeatureBPEM):
             if efel_traces is None:
                 feature_values = None
             else:
+                logger.warning("setting settings")
                 self._setup_efel()
                 logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
                 import efel
@@ -351,7 +352,7 @@ class DendFitFeature(eFELFeatureBPEM):
                 values = efel.getFeatureValues(
                     efel_traces, [self.efel_feature_name], raise_warnings=raise_warnings
                 )
-                # print(values)
+                logger.warning(values)
                 feature_values_ = [val[self.efel_feature_name][0] for val in values if val[self.efel_feature_name] is not None]
                 distances = [d for d, v in zip(self.distances, values) if v[self.efel_feature_name] is not None]
 
