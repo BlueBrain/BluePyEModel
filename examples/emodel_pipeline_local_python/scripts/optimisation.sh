@@ -22,6 +22,12 @@ export RUNDIR="./run/${GITHASH}"
 echo "Githash: $GITHASH"
 echo "E-model: $OPT_ETYPE"
 
+if [ ! -f "${RUNDIR}/x86_64/special" ]; then
+    cd ${RUNDIR}
+    nrnivmodl mechanisms
+    cd -
+fi
+
 for seed in {1..4}; do
     export OPT_SEED=${seed}
     sbatch -J "${JOBNAME}_${OPT_SEED}" ./scripts/optimisation.sbatch
