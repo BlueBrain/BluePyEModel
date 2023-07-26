@@ -20,13 +20,11 @@ import logging
 import os
 import pathlib
 import shutil
-import time
 
 import h5py
 
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
-from bluepyemodel.tools.mechanisms import NEURON_BUILTIN_MECHANISMS
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +116,7 @@ def _export_model_sonata(cell_model, emodel, output_dir=None):
     )
 
 
-def _select_emodels(emodel_name, emodels, only_validated=False, only_best=True, seeds=None):
+def select_emodels(emodel_name, emodels, only_validated=False, only_best=True, seeds=None):
     if not emodels:
         logger.warning("In export_emodels_nexus, no emodel for %s", emodel_name)
         return []
@@ -166,7 +164,7 @@ def export_emodels_sonata(
         store_responses=False,
     )
 
-    emodels = _select_emodels(
+    emodels = select_emodels(
         access_point.emodel_metadata.emodel,
         emodels,
         only_validated=only_validated,
@@ -224,7 +222,7 @@ def export_emodels_hoc(
         store_responses=False,
     )
 
-    emodels = _select_emodels(
+    emodels = select_emodels(
         access_point.emodel_metadata.emodel,
         emodels,
         only_validated=only_validated,
@@ -240,92 +238,3 @@ def export_emodels_hoc(
         if not cell_model.morphology.morph_modifiers:  # Turn [] into None
             cell_model.morphology.morph_modifiers = None
         _export_emodel_hoc(cell_model, mo, output_dir=None)
-
-
-def export_emodels_nexus(
-    local_access_point,
-    nexus_organisation,
-    nexus_project,
-    nexus_endpoint="https://bbp.epfl.ch/nexus/v1",
-    forge_path=None,
-    access_token=None,
-    only_validated=False,
-    only_best=True,
-    seeds=None,
-):
-    """Transfer e-models from the LocalAccessPoint to a Nexus project"""
-
-    from bluepyemodel.access_point.nexus import NexusAccessPoint
-
-    emodels = local_access_point.get_emodels()
-    emodels = _select_emodels(
-        local_access_point.emodel_metadata.emodel,
-        emodels,
-        only_validated=only_validated,
-        only_best=only_best,
-        seeds=seeds,
-    )
-    if not emodels:
-        return
-
-    metadata = vars(local_access_point.emodel_metadata)
-    iteration = metadata.pop("iteration")
-    nexus_access_point = NexusAccessPoint(
-        **metadata,
-        iteration_tag=iteration,
-        project=nexus_project,
-        organisation=nexus_organisation,
-        endpoint=nexus_endpoint,
-        access_token=access_token,
-        forge_path=forge_path,
-    )
-
-    pipeline_settings = local_access_point.pipeline_settings
-    fitness_configuration = local_access_point.get_fitness_calculator_configuration()
-    model_configuration = local_access_point.get_model_configuration()
-    targets_configuration = local_access_point.get_targets_configuration()
-
-    # Register the morphology if it does not already exists
-    morpho_name = model_configuration.morphology.path
-    resources = nexus_access_point.access_point.fetch(
-        {"type": "NeuronMorphology", "name": morpho_name}
-    )
-    if resources is None:
-        logger.info(
-            "Morphology %s related to the emodel does not exist on Nexus and"
-            " will be registered.",
-            morpho_name,
-        )
-        nexus_access_point.store_morphology(
-            morphology_name=morpho_name,
-            morphology_path=model_configuration.morphology.path,
-            mtype=local_access_point.emodel_metadata.mtype,
-        )
-
-    # Check the mechanisms
-    for mech in model_configuration.mechanisms:
-        if mech.name in NEURON_BUILTIN_MECHANISMS:
-            continue
-
-        resources = nexus_access_point.access_point.fetch(
-            {"type": "SubCellularModelScript", "name": mech.name}
-        )
-        if resources is None:
-            logger.warning(
-                "Registering model %s. However the mechanism %s used by the model is not "
-                "available on the Nexus project.",
-                local_access_point.emodel_metadata.emodel,
-                mech.name,
-            )
-
-    # Register the model(s)
-    nexus_access_point.store_pipeline_settings(pipeline_settings)
-    nexus_access_point.store_targets_configuration(targets_configuration)
-    nexus_access_point.store_fitness_calculator_configuration(fitness_configuration)
-    nexus_access_point.store_model_configuration(model_configuration)
-    time.sleep(10)  # Necessary in case indexing is slow
-    emw = nexus_access_point.create_emodel_workflow(state="done")
-    nexus_access_point.store_or_update_emodel_workflow(emw)
-    for mo in emodels:
-        time.sleep(10)  # Necessary to avoid revision issue
-        nexus_access_point.store_emodel(mo)

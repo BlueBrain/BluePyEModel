@@ -20,7 +20,6 @@ And then bluepyemodel itself:
 If you do not wish to install all dependencies, specific dependencies can be selected by indicating which ones to install between brackets in place of 'all' (If you want multiple dependencies, they have to be separated by commas). The available dependencies are:
 
 - luigi
-- nexus
 - all
 - currentscape
 
@@ -34,19 +33,7 @@ Note that despite the present explanation, building an e-model is not a trivial 
 
 The E-Model building pipeline can be executed either step by step using Python or all at once as a Luigi workflow.
 
-Both python and luigi execution can rely on either local storage or Nexus to store the configuration files and results.
-
-This gives 4 possible scenarios:
-1) Running using python with local storage
-2) Running using python with Nexus storage
-3) Running using Luigi with local storage
-4) Running using Luigi with Nexus storage
-
-Unless you have a Nexus project already set up and are part of one of Blue Brain's major projects, you will be in case number 1. For that reason, the next section will focus on scenario 1.
-
-The section after that will focus on scenario 4 as it is the most complex. Scenario 2 and 3 can be achieved by taking the relevant elements from these two sections and their related examples.
-
-### 1) Running using python with local storage
+### Running using python with local storage
 
 This section presents a general picture of how to create an e-model using python and local storage, it relies on the use of the class EModel_pipeline.
 
@@ -55,7 +42,7 @@ For a detailed picture, please refer to the example directory [`./examples/emode
 The pipeline is divided in 6 steps:
 - extraction: extracts e-features from ephys recordings and averages the results e-feature values along the requested targets.
 - optimisation: builds a NEURON cell model and optimises its parameters using as targets the efeatures computed during e-feature extraction.
-- storage of the model: reads the results of the extraction and stores the models (best set of parameters) in a local json file or on Nexus.
+- storage of the model: reads the results of the extraction and stores the models (best set of parameters) in a local json file.
 - validation: reads the models and runs the optimisation protocols and/or validation protocols on them. The e-feature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
 - plotting: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the e-feature scores and parameter distributions.
 - exporting: read the parameter of the best models and export them in files that can be used either in NEURON or for circuit building.
@@ -159,23 +146,6 @@ The final structure of the local directory for this simpler case should be as fo
 ```
 
 In the more complex case where githash versioning and slurm are used, refer to the structure of the example of [`./examples/emodel_pipeline_local_python`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/tree/main/examples/emodel_pipeline_local_python).
-
-### 4) Running using Luigi with Nexus storage
-
-This section present the general picture of how to create an e-model using Luigi and Nexus storage. For a detailed example, please refer to the files in [`examples/emodel_pipeline_nexus_ncmv3`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/tree/main/examples/emodel_pipeline_nexus_ncmv3).
-
-Warning: to run the emodel pipeline using Nexus as a backend you will first need a fully configured Nexus project and be able to perform cross-bucket in projects containing the morphologies, mechanisms and ephys data you wish to use. All of these have to be setup by the DKE team beforehand.
-
-To run the pipeline with luigi, you will need:
-- A virtual environment with BluePyEModel installed with the options nexus and luigi: (```pip install bluepyemodel[luigi,nexus]```)
-- A `luigi.cfg` file containing the Luigi specific settings (see example [`./examples/emodel_pipeline_nexus_ncmv3/luigi.cfg`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/examples/emodel_pipeline_nexus_ncmv3/luigi.cfg)).
-- On Nexus, entities of the type "EModelConfiguration", "EModelPipelineSettings" and "ExtractionTargetsConfiguration" (or "FitnessCalculatorConfiguration" if you already have optimisation targets). Please refer to the file [`pipeline.py`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/examples/emodel_pipeline_nexus_ncmv3/pipeline.py) and the notebooks for an example of how to create such resources.
-
-The pipeline can then be run using the command:
-
-    bbp-workflow launch-bb5 -f --config=luigi.cfg bluepyemodel.tasks.emodel_creation.optimisation EModelCreation emodel=EMODEL ttype=TTYPE species=SPECIES brain-region=BRAIN_REGION iteration-tag=ITERATION_TAG`
-
-The final models generated using the Nexus access point are stored in the Nexus project in Resources of type [`EModel`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/bluepyemodel/emodel_pipeline/emodel.py#L24).
 
 ### Schematics of BluePyEModel classes
 

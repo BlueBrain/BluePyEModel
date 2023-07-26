@@ -48,7 +48,6 @@ class EModel_pipeline:
     def __init__(
         self,
         emodel,
-        data_access_point,
         etype=None,
         ttype=None,
         mtype=None,
@@ -59,10 +58,6 @@ class EModel_pipeline:
         synapse_class=None,
         layer=None,
         recipes_path=None,
-        forge_path=None,
-        nexus_organisation=None,
-        nexus_project=None,
-        nexus_endpoint="staging",
         use_ipyparallel=None,
         use_multiprocessing=None,
     ):
@@ -71,13 +66,6 @@ class EModel_pipeline:
         Args:
             emodel (str): name of the emodel. Can be arbitrary but has to match the name of the
                 emodel in the recipes.json configuration file.
-            data_access_point (str): type of the access_point used to access the configuration
-                data. Can be either "nexus" or "local".
-                In the case "local", a path to a recipes.json file is expected (see argument
-                recipes_path).
-                In the case "nexus", the nexus_project, nexus_organisation and nexus_endpoint
-                argument are expected. Consequently, the matching Nexus project has to be
-                configured beforehand and contain the necessary configuration files.
             etype (str): name of the e-type of the e-model. Used as an identifier for the e-model.
             ttype (str): name of the t-type of the e-model. Used as an identifier for the e-model.
                 This argument is required when using the gene expression or IC selector.
@@ -99,8 +87,6 @@ class EModel_pipeline:
                 git archive --format=tar --prefix=${iteration_tag}/ HEAD | (cd ./run/ && tar xf -)
                 In this case, the current, the iteration_tag can then be passed during the
                 instantiation of the EModel_pipeline.
-                If used with an access point of type "nexus" access point, the iteration_tag can
-                be arbitrary and will only be used for tagging the current run.
             morph_class (str): name of the morphology class, has to be "PYR", "INT". To be
                 depracted.
             synapse_class (str): name of the synapse class of the e-model, has to be "EXC", "INH".
@@ -112,15 +98,6 @@ class EModel_pipeline:
                 of the e-models that will be built. The values associated to these keys are
                 the recipes used to build these e-models. See the example recipes.json file in
                 the example emodel_pipeline_local_python for more details.
-            forge_path (str): path to the .yml used to connect to Nexus Forge. This is only needed
-                when using a "nexus" access point and if you wish to customize the connection to
-                Nexus. If not provided, a default .yml file will be used.
-            nexus_organisation (str): name of the Nexus organisation in which the project is
-                located. This is only needed when using a "nexus" access point.
-            nexus_project (str): name of the Nexus project to which the forge will connect to
-                retrieve the data. This is only needed when using a "nexus" access point.
-            nexus_endpoint (str): Nexus endpoint ("prod" or "staging"). This is only needed when
-                using a "nexus" access point.
             use_ipyparallel (bool): should the parallelization map used for the different steps of
                 the e-model building pipeline be based on ipyparallel.
             use_multiprocessing (bool): should the parallelization map used for the different steps
@@ -142,10 +119,6 @@ class EModel_pipeline:
             self.mapper = map
 
         endpoint = None
-        if nexus_endpoint == "prod":
-            endpoint = "https://bbp.epfl.ch/nexus/v1"
-        elif nexus_endpoint == "staging":
-            endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
 
         self.access_point = get_access_point(
             emodel=emodel,
@@ -158,13 +131,10 @@ class EModel_pipeline:
             morph_class=morph_class,
             synapse_class=synapse_class,
             layer=layer,
-            access_point=data_access_point,
+            access_point="local",
             recipes_path=recipes_path,
             final_path="final.json",
-            organisation=nexus_organisation,
-            project=nexus_project,
             endpoint=endpoint,
-            forge_path=forge_path,
         )
 
     def configure_model(
