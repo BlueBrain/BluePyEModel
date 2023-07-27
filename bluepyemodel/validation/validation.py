@@ -70,8 +70,7 @@ def validate(
         access_point,
         cell_evaluator=cell_evaluator,
         map_function=mapper,
-        # preselect_for_validation=True,
-        seeds=[15] # remove before merging
+        # preselect_for_validation=True, # uncomment before merging
     )
 
     if not emodels:
