@@ -382,6 +382,21 @@ class RinProtocol(ProtocolWithDependencies):
 
         return response
 
+class NoHoldingCurrent(ephys.protocols.Protocol):
+    """Empty class returning a holding current of zero."""
+
+    def __init__(self, name, output_key="bpo_holding_current"):
+        """Constructor."""
+        super().__init__(
+            name=name,
+        )
+        self.output_key = output_key
+        self.recordings = {}
+
+    def run(self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None):
+        return {
+            self.output_key: 0
+        }
 
 class SearchHoldingCurrent(BPEMProtocol):
     """Protocol used to find the holding current of a model"""
@@ -779,6 +794,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         upper_bound = self.max_threshold_current()
         spikecount = self._get_spikecount(upper_bound, cell_model, param_values, sim, isolate)
         if spikecount == 0:
+            logger.debug("No spikes at upper bound during threshold search")
             return None, None
 
         lower_bound = responses[self.hold_key]
@@ -786,10 +802,12 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
         if spikecount > 0:
             if self.no_spikes:
+                logger.debug("Spikes at lower bound during threshold search")
                 return None, None
-            lower_bound -= 0.5
+            # lower_bound -= 0.5 # ask alexis if ok to remove that. we did not use self.no_spikes = False before anyway
 
         if lower_bound > upper_bound:
+            logger.debug("lower bound higher than upper bound in threshold search")
             return None, None
 
         return lower_bound, upper_bound

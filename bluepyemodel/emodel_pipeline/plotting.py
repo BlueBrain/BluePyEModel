@@ -74,7 +74,7 @@ def get_recording_names(protocol_config, stimuli):
     pre_prot_rec_names = {
         protocol.recordings[0].name
         for protocol in stimuli.values()
-        if protocol.name not in prot_names
+        if protocol.name not in prot_names and protocol.recordings
     }
     recording_names.update(pre_prot_rec_names)
 

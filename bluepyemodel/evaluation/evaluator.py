@@ -20,6 +20,7 @@ from .efel_feature_bpem import DendFitMultiProtocolsFeature
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEMProtocol
 from .protocols import LocalThresholdBasedProtocol
+from .protocols import NoHoldingCurrent
 from .protocols import ProtocolRunner
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
@@ -424,6 +425,7 @@ def define_threshold_protocol(
     spikecount_timeout=50,
     max_depth=10,
     location=soma_loc,
+    no_spikes=True,
     efel_threshold=None,
     output_key="bpo_threshold_current",
     hold_key="bpo_holding_current",
@@ -457,6 +459,7 @@ def define_threshold_protocol(
         stimulus_totduration=totduration,
         spikecount_timeout=spikecount_timeout,
         max_depth=max_depth,
+        no_spikes=no_spikes,
         efel_threshold=efel_threshold,
         output_key=output_key,
         hold_key=hold_key,
@@ -636,15 +639,11 @@ def define_threshold_based_optimisation_protocol(
                             rmp_prot_name=rmp_prot_name,
                             recording_name=recording_name,
                         ),
-                        hold_prot_name: define_holding_protocol(
-                            efeatures,
-                            strict_holding_bounds,
-                            max_depth_holding_search,
-                            stimulus_duration=fitness_calculator_configuration.search_holding_duration,
-                            location=location,
+                        # use holding current = 0 for local injection protocols
+                        # TODO: let the user decide when to use noholding and when to use holding
+                        hold_prot_name: NoHoldingCurrent(
+                            name=hold_prot_name,
                             output_key=hold_key,
-                            hold_prot_name=hold_prot_name,
-                            recording_name=recording_name,
                         ),
                         rin_prot_name: define_Rin_protocol(
                             efeatures,
@@ -668,6 +667,7 @@ def define_threshold_based_optimisation_protocol(
                             spikecount_timeout,
                             max_depth_threshold_search,
                             location=location,
+                            no_spikes=False, # without holding current, cell can spike spontaneously
                             efel_threshold=efel_threshold_for_threshold_search,
                             output_key=thres_key,
                             hold_key=hold_key,
