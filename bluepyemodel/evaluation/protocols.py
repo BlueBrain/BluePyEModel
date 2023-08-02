@@ -808,7 +808,8 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
         if lower_bound > upper_bound:
             logger.debug("lower bound higher than upper bound in threshold search")
-            return None, None
+            # return None, None
+            return lower_bound, lower_bound
 
         return lower_bound, upper_bound
 
