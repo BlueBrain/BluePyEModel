@@ -71,7 +71,9 @@ class EModelWorkflow:
         if self.pipeline_settings_id:
             has_part.append({"id": self.pipeline_settings_id, "type": "EModelPipelineSettings"})
         if self.emodel_configuration_id:
-            has_part.append({"id": self.emodel_configuration_id, "type": "NeuronModelConfiguration"})
+            has_part.append(
+                {"id": self.emodel_configuration_id, "type": "NeuronModelConfiguration"}
+            )
 
         ids = {}
         if generates:
