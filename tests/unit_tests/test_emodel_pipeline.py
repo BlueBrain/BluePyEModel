@@ -37,7 +37,6 @@ def pipeline():
 
     pipe = EModel_pipeline(
         emodel="cADpyr_L5TPC",
-        data_access_point='local',
         recipes_path=DATA / "config/recipes.json",
         ttype="test",
         species='mouse',

@@ -22,7 +22,6 @@ from pathlib import Path
 
 import luigi
 
-from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from bluepyemodel.emodel_pipeline.plotting import optimisation
@@ -37,7 +36,7 @@ from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
 from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
 from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 
-# pylint: disable=W0235,W0621,W0404,W0611,W0703
+# pylint: disable=W0235,W0621,W0404,W0611,W0703,E1128
 
 
 def _reformat_ttype(ttype):
@@ -740,7 +739,7 @@ class EModelCreation(WorkflowTask):
         # check
         has_configuration = self.access_point.check_emodel_workflow_configurations(emodel_workflow)
         if not has_configuration:
-            raise AccessPointException(
+            raise ValueError(
                 "There are configuration files missing on nexus for the workflow."
                 "Please check that you have registered on nexus the following resources:\n"
                 "ExtractionTargetsConfiguration\n"

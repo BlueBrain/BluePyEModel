@@ -2,26 +2,26 @@
   "bAP": {
     "soma.v": [
       {"feature": "Spikecount", "val": [1.0, 0.01]}
-    ], 
+    ],
     "dend1.v": [
       {"feature": "maximum_voltage_from_voltagebase", "val": [72.468461, 5.381914], "weight": 1, "__comment": "Stuart and Sakmann 1994"}
-    ], 
+    ],
     "dend2.v": [
       {"feature": "maximum_voltage_from_voltagebase", "val": [57.683854, 6.253299], "weight": 1, "__comment": "Stuart and Sakmann 1994"}
-    ], 
+    ],
     "ca_prox_apic.cai": [
       {"feature": "maximum_voltage_from_voltagebase", "val": [0.000262, 9.01e-05], "__comment": "Helmchen et al. 1996 (P12-14, wistar): [Ca]i (proximal apical dendrite) = 262nM (SEM:25nM, N=13) = 262e-6mM (STD:90.1mM) (STD = SEM * sqrt(N)"}
-    ], 
+    ],
     "ca_prox_basal.cai": [
       {"feature": "maximum_voltage_from_voltagebase", "val": [0.000524, 9.01e-05], "__comment": "Schiller et al. 1995 (P13-17, wistar): [Ca]i (basal) = 2 * [Ca]i (proximal apical dendrite)"}
-    ], 
+    ],
     "ca_soma.cai": [
       {"feature": "maximum_voltage_from_voltagebase", "val": [0.000131, 9.01e-05], "__comment": "Schiller et al. 1995 (P13-17, wistar): [Ca]i (soma and ais) = 0.5 * [Ca]i (proximal apical dendrite)"}
-    ], 
+    ],
     "ca_ais.cai": [
       {"feature": "maximum_voltage_from_voltagebase", "val": [0.000131, 9.01e-05], "__comment": "Schiller et al. 1995 (P13-17, wistar): [Ca]i (soma and ais) = 0.5 * [Ca]i (proximal apical dendrite)"}
     ]
-  }, 
+  },
   "Step_150": {
     "soma.v": [
       {"feature": "voltage_base", "val": [-83.1596, 1.0102, -0.9881161150323902, 0.00014208722844722543, 3.0, 0], "n": 44, "fid": 607, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
@@ -38,7 +38,7 @@
       {"feature": "inv_fourth_ISI", "val": [4.3957, 2.3208, 4.668509537506129, 2.5095584513336715, 1.0499999999999998, 0], "n": 44, "fid": 473, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "inv_fifth_ISI", "val": [4.3432, 2.4048, 4.6143942505535716, 2.5970174741895344, 1.0499999999999998, 0], "n": 44, "fid": 485, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}}
     ]
-  }, 
+  },
   "Step_200": {
     "soma.v": [
       {"feature": "voltage_base", "val": [-83.0025, 1.0195, -0.9880938545910543, 0.00014337665036368713, 3.0, 0], "n": 44, "fid": 609, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
@@ -55,7 +55,7 @@
       {"feature": "inv_fourth_ISI", "val": [9.0741, 2.7074, 6.153556825811996, 1.529816026774217, 0.75, 0], "n": 44, "fid": 475, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "inv_fifth_ISI", "val": [8.8448, 2.6711, 6.024650615020881, 1.515002258038391, 0.75, 0], "n": 44, "fid": 487, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}}
     ]
-  }, 
+  },
   "Step_280": {
     "soma.v": [
       {"feature": "voltage_base", "val": [-83.3036, 1.1789, -0.9881357976580722, 0.00016505740138087458, 3.0, 0], "n": 44, "fid": 612, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
@@ -72,7 +72,7 @@
       {"feature": "inv_fourth_ISI", "val": [16.229, 3.184, 2.829733218781311, 0.18361446929513778, 0.0, 0], "n": 44, "fid": 478, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "inv_fifth_ISI", "val": [15.7018, 3.1844, 5.631131387316921, 0.6795037256893818, 0.44999999999999973, 0], "n": 44, "fid": 490, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}}
     ]
-  }, 
+  },
   "APWaveform_320": {
     "soma.v": [
       {"feature": "AP_amplitude", "val": [85.2915, 6.2142, 18614.887241529716, 3160.7435289743075, 2.3999999999999995, 0], "n": 31, "fid": 220, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
@@ -81,37 +81,37 @@
       {"feature": "AP_duration_half_width", "val": [1.3054, 0.2678, 1.1581160639517298, 0.21765676372562812, 0.75, 0], "n": 31, "fid": 242, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "AHP_depth", "val": [25.0453, 3.2117, 1.707199217200925, 0.028191979705268492, -0.4500000000000002, 0], "n": 31, "fid": 73, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}}
     ]
-  }, 
+  },
   "Rin": {
     "soma.v": [
       {"feature": "ohmic_input_resistance_vb_ssse", "val": [53.3741, 17.1169, 1.0786281445281536, 0.00735083683400671, -0.8999999999999999, 0], "n": 44, "fid": 254, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "voltage_base", "val": [-82.9501, 0.8908, -0.988086819086504, 0.0001262431767808621, 3.0, 0], "n": 44, "fid": 246, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}}
     ]
-  }, 
+  },
   "RMP": {
     "soma.v": [
       {"feature": "voltage_base", "val": [-77.1196, 3.6608, -594373292.234575, 132020936.71506067, -3.0, 0], "n": 16, "fid": 251, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "Spikecount", "val": [0.0, 0.001, 0.0, 0.001, -3.0, 0], "n": 16, "fid": 271, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}}
     ]
-  }, 
+  },
   "IV_-100": {
     "soma.v": [
       {"feature": "voltage_deflection", "val": [-13.5153, 2.8884, -7.176765255428026, 1.1386533776661925, 1.3499999999999996, 0], "n": 44, "fid": 257, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "voltage_deflection_begin", "val": [-16.9475, 3.0761, -11.312521865269083, 1.7310533267145125, 1.2000000000000002, 0], "n": 44, "fid": 261, "strict_stim": true, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}}
     ]
-  }, 
+  },
   "SpikeRec_600": {
     "soma.v": [
       {"feature": "decay_time_constant_after_stim", "val": [11.8442, 4.9832, 1.7393063368405668, 0.1794978862679156, -0.30000000000000027, 0], "n": 34, "fid": 273, "strict_stim": false, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "voltage_after_stim", "val": [-73.8447, 2.8696, -6.8508940461345755, 0.09088224081177426, 1.7999999999999998, 0], "n": 34, "fid": 275, "strict_stim": false, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}},
       {"feature": "Spikecount", "val": [0.7941, 0.4715, 1.0443037555349572, 0.6544816264682893, 1.6499999999999995, 0], "n": 34, "fid": 277, "strict_stim": false, "__comment": {"source": "cADpyr/cADpyr", "meta": {"version": "1991ab3"}}}
     ]
-  }, 
+  },
   "RinHoldCurrent": {
     "soma.v": [
       {"feature": "bpo_holding_current", "val": [-0.1573, 0.0996]}
     ]
-  }, 
+  },
   "Threshold": {
     "soma.v": [
       {"feature": "bpo_threshold_current", "val": [0.3094, 0.0942]}

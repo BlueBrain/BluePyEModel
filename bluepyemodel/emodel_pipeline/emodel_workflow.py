@@ -65,14 +65,21 @@ class EModelWorkflow:
     def get_related_nexus_ids(self):
         generates = [{"id": id_, "type": "EModel"} for id_ in self.emodels]
 
-        ids = {
-            "generates": generates,
-            "hasPart": [
-                {"id": self.targets_configuration_id, "type": "TargetsConfiguration"},
-                {"id": self.pipeline_settings_id, "type": "EModelPipelineSettings"},
-                {"id": self.emodel_configuration_id, "type": "NeuronModelConfiguration"},
-            ],
-        }
+        has_part = []
+        if self.targets_configuration_id:
+            has_part.append(
+                {"id": self.targets_configuration_id, "type": "ExtractionTargetsConfiguration"}
+            )
+        if self.pipeline_settings_id:
+            has_part.append({"id": self.pipeline_settings_id, "type": "EModelPipelineSettings"})
+        if self.emodel_configuration_id:
+            has_part.append({"id": self.emodel_configuration_id, "type": "EModelConfiguration"})
+
+        ids = {}
+        if generates:
+            ids["generates"] = generates
+        if has_part:
+            ids["hasPart"] = has_part
 
         return ids
 
