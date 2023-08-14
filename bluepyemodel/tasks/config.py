@@ -33,6 +33,7 @@ class EmodelAPIConfig(luigi.Config):
 
     # nexus parameters
     forge_path = luigi.Parameter(default=None)
+    forge_ontology_path = luigi.Parameter(default=None)
     nexus_poject = luigi.Parameter(default="emodel_pipeline")
     nexus_organisation = luigi.Parameter(default="demo")
     nexus_endpoint = luigi.Parameter(default="https://bbp.epfl.ch/nexus/v1")
@@ -53,6 +54,7 @@ class EmodelAPIConfig(luigi.Config):
         if self.api == "nexus":
             self.api_args = {
                 "forge_path": self.forge_path,
+                "forge_ontology_path": self.forge_ontology_path,
                 "project": self.nexus_poject,
                 "organisation": self.nexus_organisation,
                 "endpoint": self.nexus_endpoint,
