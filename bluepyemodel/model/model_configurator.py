@@ -151,4 +151,6 @@ class ModelConfigurator:
                 locations=m["location"],
                 stochastic=m.get("stochastic", None),
                 version=version,
+                temperature=m.get("temperature", None),
+                ljp_corrected=m.get("ljp_corrected", None),
             )
