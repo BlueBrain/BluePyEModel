@@ -202,7 +202,10 @@ def replace_axon_with_taper(sim=None, icell=None):
     icell.all.append(sec=icell.myelin[0])
     icell.myelin[0].nseg = 5
     icell.myelin[0].L = 1000
-    icell.myelin[0].diam = diams[count - 1]
+    if len(diams) > 0:
+        icell.myelin[0].diam = diams[count - 1]
+    else:
+        icell.myelin[0].diam = 0.33
     icell.myelin[0].connect(icell.axon[1], 1.0, 0.0)
 
     logger.debug(
