@@ -129,7 +129,7 @@ class IPyParallelTask(IPyParallelExclusive):
     def prepare_args_for_remote_script(self, attrs):
         """Prepare self.args, which is used to pass arguments to remote_script."""
         # start with '--' to separate ipython arguments from parsing arguments
-        self.args = "--"
+        self.args = "--" # pylint:disable=W0201
 
         for attr in attrs:
             if hasattr(self, attr):
@@ -145,14 +145,14 @@ class IPyParallelTask(IPyParallelExclusive):
                     setattr(self, attr, json.dumps(dict(getattr(self, attr))))
 
                 if getattr(self, attr) is True:
-                    self.args = " ".join([self.args, "--" + attr])
+                    self.args = " ".join([self.args, "--" + attr]) # pylint:disable=W0201
                 elif getattr(self, attr) is not False and getattr(self, attr) is not None:
                     # be sure that lists and dicts are inside ' '
                     # so that argparse detect them as one argument
                     # have to change ' to '\\'' because args would already be
                     # inside quotes (') in command from bbp-workflow
                     # single quotes would mess that up
-                    self.args = " ".join(
+                    self.args = " ".join( # pylint:disable=W0201
                         [self.args, "--" + attr, "'\\''" + str(getattr(self, attr)) + "'\\''"]
                     )
 
