@@ -34,7 +34,8 @@ with open("README.md", encoding="utf-8") as f:
 EXTRA_LUIGI = [
     "luigi>=3.0",
     "luigi-tools>=0.0.12",
-    "bbp-workflow>=2.1.19",
+    #"bbp-workflow>=2.1.19",
+    #"bbp-workflow-cli",
 ]
 
 EXTRA_TEST = [
