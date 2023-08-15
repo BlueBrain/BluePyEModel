@@ -51,7 +51,7 @@ When you wish to contribute to the code base, please consider the following guid
 * Make your changes in your fork, in a new git branch:
 
      ```shell
-     git checkout -b my-fix-branch master
+     git checkout -b my-fix-branch main
      ```
 * Create your patch, **including appropriate Python test cases**.
   Please check the coding [conventions](#coding-conventions) for more information.
@@ -66,14 +66,14 @@ When you wish to contribute to the code base, please consider the following guid
     ```shell
     git push origin my-fix-branch
     ```
-* In GitHub, send a Pull Request to the `master` branch of the upstream repository of the relevant component.
+* In GitHub, send a Pull Request to the `main` branch of the upstream repository of the relevant component.
 * If we suggest changes then:
   * Make the required updates.
   * Re-run the test suites to ensure tests are still passing.
   * Rebase your branch and force push to your GitHub repository (this will update your Pull Request):
 
        ```shell
-        git rebase master -i
+        git rebase main -i
         git push -f
        ```
 
@@ -89,20 +89,20 @@ the main (upstream) repository:
     ```shell
     git push origin --delete my-fix-branch
     ```
-* Check out the master branch:
+* Check out the main branch:
 
     ```shell
-    git checkout master -f
+    git checkout main -f
     ```
 * Delete the local branch:
 
     ```shell
     git branch -D my-fix-branch
     ```
-* Update your master with the latest upstream version:
+* Update your main with the latest upstream version:
 
     ```shell
-    git pull --ff upstream master
+    git pull --ff upstream main
     ```
 
 [github]: https://github.com/BlueBrain/BluePyEModel
