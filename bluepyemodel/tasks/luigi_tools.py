@@ -21,7 +21,12 @@ import logging
 from abc import ABC
 
 import luigi
-from bbp_workflow.task import IPyParallelExclusive
+try:
+    from bbp_workflow.task import IPyParallelExclusive
+except ImportError as exc:
+    raise ImportError(
+        "The internal bbp-workflow package is required to use Luigi."
+    ) from exc
 from luigi.parameter import MissingParameterException
 from luigi.parameter import _no_value
 from luigi_tools.task import _no_default_value
