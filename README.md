@@ -9,6 +9,12 @@ For a general overview and example of electrical model building, please refer to
 
 Note that this package only covers e-model building based on patch-clamp data and that it relies solely on the [NEURON](https://www.neuron.yale.edu/neuron/) simulator.
 
+## Citation
+
+When you use the BluePyEModel software or method for your research, we ask you to cite the following publication (this includes poster presentations):
+
+
+
 ## Installation
 
 To use BluePyEModel you will first need to install NEURON with Python support on your machine.
@@ -154,3 +160,9 @@ In the more complex case where githash versioning and slurm are used, refer to t
 ### Acknowledgment
 
 This work has been partially funded by the European Union Seventh Framework Program (FP7/2007­2013) under grant agreement no. 604102 (HBP), and by the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreements No. 720270 (Human Brain Project SGA1) and No. 785907 (Human Brain Project SGA2) and by the EBRAINS research infrastructure, funded from the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreement No. 945539 (Human Brain Project SGA3).
+
+### Copyright
+
+Copyright (c) 2023 Blue Brain Project/EPFL
+
+This work is licensed under `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0.html>`_
