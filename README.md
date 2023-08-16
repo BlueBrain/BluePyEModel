@@ -81,7 +81,7 @@ Let's go over the content of this file:
 
 #### Building the models
 
-To run the modeling pipeline, you will need to create a python script used to instantiate the pipeline and execute its different steps. The pipeline is a python object of the class [`EModel_pipeline`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/blob/main/bluepyemodel/emodel_pipeline/emodel_pipeline.py#L23). Here is a minimal example of how to instantiate it:
+To run the modeling pipeline, you will need to create a python script used to instantiate the pipeline and execute its different steps. The pipeline is a python object of the class [`EModel_pipeline`](./bluepyemodel/emodel_pipeline/emodel_pipeline.py). Here is a minimal example of how to instantiate it:
 ```
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 
@@ -145,7 +145,7 @@ The final structure of the local directory for this simpler case should be as fo
 │    └── L5TPC.asc
 ```
 
-In the more complex case where githash versioning and slurm are used, refer to the structure of the example of [`./examples/emodel_pipeline_local_python`](https://bbpgitlab.epfl.ch/cells/bluepyemodel/-/tree/main/examples/emodel_pipeline_local_python).
+In the more complex case where githash versioning and slurm are used, refer to the structure of the example of [`./examples/emodel_pipeline_local_python`](./examples/emodel_pipeline_local_python).
 
 ### Schematics of BluePyEModel classes
 
