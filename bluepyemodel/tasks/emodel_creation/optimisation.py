@@ -115,18 +115,6 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
 class ExtractEFeatures(WorkflowTask):
     """Luigi wrapper for extract_efeatures in emodel_pipeline.EModel_pipeline."""
 
-    def requires(self):
-        """ """
-        return CreateTargetsConfiguration(
-            emodel=self.emodel,
-            etype=self.etype,
-            ttype=self.ttype,
-            mtype=self.mtype,
-            species=self.species,
-            brain_region=self.brain_region,
-            iteration_tag=self.iteration_tag,
-        )
-
     @WorkflowTask.check_mettypes
     def run(self):
         """ """
