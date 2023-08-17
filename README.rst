@@ -94,7 +94,9 @@ Configuration
 
 The main configuration file is referred to as "recipes" since it contains the recipe of how models should be built.
 Therefore, in an empty directory, usually named `config`, you will need to create a file `recipes.json`. Here is an example of a recipe for a fictitious L5PC model:
+
 .. code-block:: python
+
     {
         "L5PC": {
             "morph_path": "morphologies/",
@@ -125,6 +127,7 @@ Building the models
 To run the modeling pipeline, you will need to create a python script used to instantiate the pipeline and execute its different steps. The pipeline is a python object of the class `EModel_pipeline <./bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_. Here is a minimal example of how to instantiate it:
 
 .. code-block:: python
+
     from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 
     emodel = "L5PC"
@@ -140,6 +143,7 @@ To run the modeling pipeline, you will need to create a python script used to in
 Finally, the different steps of the pipeline can be run with the commands:
 
 .. code-block:: python
+
     pipeline.extract_efeatures()
     pipeline.optimise(seed=1)
     pipeline.store_optimisation_results()
@@ -150,6 +154,7 @@ This snippet will likely not be used as such as the different steps of the pipel
 Note that for the pipeline to work, the NEURON mechanisms used by the models need to be present in a local directory named "mechanisms" and compiled using the command:
 
 .. code-block:: python
+
     nrnivmodl mechanisms
 
 The final models generated using the local access point are stored in the file `final.json` and the traces of the models can be seen in `./figures/`.
@@ -161,6 +166,7 @@ If you wish to use the models generated with BluePyEModel outside of Python, you
 Following the example above, it can be done with the command:
 
 .. code-block:: python
+
     from bluepyemodel.export_emodel.export_emodel import export_emodels_hoc
     access_point = pipeline.access_point
     export_emodels_hoc(access_point, only_validated=False, map_function=map)
@@ -176,6 +182,7 @@ Summary of the local directory structure
 The final structure of the local directory for this simpler case should be as follows:
 
 .. code-block::
+
     .
     ├── pipeline.py
     ├── mechanisms
