@@ -62,7 +62,8 @@ If you do not wish to install all dependencies, specific dependencies can be sel
 To get started with the E-Model building pipeline
 -------------------------------------------------
 
-`E-Model building pipeline <./images/pipeline.png>`_
+.. image:: ./images/pipeline.png
+   :alt: E-Model building pipeline
 
 This section will talk about the E-Model building pipeline which for now contains e-features extraction, optimisation and model analysis. If you only wish to export a model that was built using the pipeline to hoc, you can jump to the subsection "Exporting the models".
 
@@ -94,22 +95,22 @@ Configuration
 The main configuration file is referred to as "recipes" since it contains the recipe of how models should be built.
 Therefore, in an empty directory, usually named `config`, you will need to create a file `recipes.json`. Here is an example of a recipe for a fictitious L5PC model:
 .. code-block:: python
-{
-    "L5PC": {
-        "morph_path": "morphologies/",
-        "morphology": [["L5TPC","L5TPC.asc"]],
-        "params": "./params_pyr.json",
-        "features": "./features_L5PC.json",
-        "pipeline_settings": {
-            "path_extract_config": "config/extraction_config.json",
-            "optimisation_timeout": 300,
-            "optimiser": "MO-CMA",
-            "optimisation_params": {
-                "offspring_size": 20
+    {
+        "L5PC": {
+            "morph_path": "morphologies/",
+            "morphology": [["L5TPC","L5TPC.asc"]],
+            "params": "./params_pyr.json",
+            "features": "./features_L5PC.json",
+            "pipeline_settings": {
+                "path_extract_config": "config/extraction_config.json",
+                "optimisation_timeout": 300,
+                "optimiser": "MO-CMA",
+                "optimisation_params": {
+                    "offspring_size": 20
+                }
             }
         }
     }
-}
 
 Let's go over the content of this file:
 - The keys of the dictionary are the names of the models that will be built. Here, we only have one model named "L5PC". This name is important as it will be used in every following step to specify which model is to be acted upon.
@@ -122,33 +123,34 @@ Building the models
 ###################
 
 To run the modeling pipeline, you will need to create a python script used to instantiate the pipeline and execute its different steps. The pipeline is a python object of the class `EModel_pipeline <./bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_. Here is a minimal example of how to instantiate it:
+
 .. code-block:: python
-from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
+    from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 
-emodel = "L5PC"
-recipes_path = "./recipes.json"
-data_access_point = "local"
+    emodel = "L5PC"
+    recipes_path = "./recipes.json"
+    data_access_point = "local"
 
-pipeline = EModel_pipeline(
-    emodel=emodel,
-    data_access_point=data_access_point,
-    recipes_path=recipes_path,
-)
+    pipeline = EModel_pipeline(
+        emodel=emodel,
+        data_access_point=data_access_point,
+        recipes_path=recipes_path,
+    )
 
 Finally, the different steps of the pipeline can be run with the commands:
 
 .. code-block:: python
-pipeline.extract_efeatures()
-pipeline.optimise(seed=1)
-pipeline.store_optimisation_results()
-pipeline.plot(only_validated=False)
+    pipeline.extract_efeatures()
+    pipeline.optimise(seed=1)
+    pipeline.store_optimisation_results()
+    pipeline.plot(only_validated=False)
 
 This snippet will likely not be used as such as the different steps of the pipeline are computationally intensive and will be run separately.
 
 Note that for the pipeline to work, the NEURON mechanisms used by the models need to be present in a local directory named "mechanisms" and compiled using the command:
 
 .. code-block:: python
-nrnivmodl mechanisms
+    nrnivmodl mechanisms
 
 The final models generated using the local access point are stored in the file `final.json` and the traces of the models can be seen in `./figures/`.
 
@@ -159,9 +161,9 @@ If you wish to use the models generated with BluePyEModel outside of Python, you
 Following the example above, it can be done with the command:
 
 .. code-block:: python
-from bluepyemodel.export_emodel.export_emodel import export_emodels_hoc
-access_point = pipeline.access_point
-export_emodels_hoc(access_point, only_validated=False, map_function=map)
+    from bluepyemodel.export_emodel.export_emodel import export_emodels_hoc
+    access_point = pipeline.access_point
+    export_emodels_hoc(access_point, only_validated=False, map_function=map)
 
 This will create a local directory containing the hoc files of the models.
 
@@ -174,19 +176,19 @@ Summary of the local directory structure
 The final structure of the local directory for this simpler case should be as follows:
 
 .. code-block::
-
-├── pipeline.py
-├── mechanisms
-│   ├── mode_file1.mod
-│   ├── mode_file1.mod
-│   ├── mode_file3.mod
-├── config
-│    ├── features_L5PC.json
-│    ├── params_pyr.json
-│    ├── extraction_config.json
-│    └── recipes.json
-├── morphologies
-│    └── L5TPC.asc
+    .
+    ├── pipeline.py
+    ├── mechanisms
+    │   ├── mode_file1.mod
+    │   ├── mode_file1.mod
+    │   ├── mode_file3.mod
+    ├── config
+    │    ├── features_L5PC.json
+    │    ├── params_pyr.json
+    │    ├── extraction_config.json
+    │    └── recipes.json
+    ├── morphologies
+    │    └── L5TPC.asc
 
 In the more complex case where githash versioning and slurm are used, refer to the structure of the example of `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_.
 
