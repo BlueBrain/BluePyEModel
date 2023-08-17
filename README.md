@@ -1,5 +1,19 @@
 # BluePyEModel: Blue Brain Python E-Model Building Library
 
++----------------+------------+
+| Latest Release | |pypi|     |
++----------------+------------+
+| Documentation  | |docs|     |
++----------------+------------+
+| License        | |license|  |
++----------------+------------+
+| Build Status 	 | |tests|    |
++----------------+------------+
+| Coverage       | |coverage| |
++----------------+------------+
+| Citation       | |zenodo|   |
++----------------+------------+
+
 
 ## Introduction
 
@@ -13,7 +27,17 @@ Note that this package only covers e-model building based on patch-clamp data an
 
 When you use the BluePyEModel software or method for your research, we ask you to cite the following publication (this includes poster presentations):
 
+.. code-block::
 
+    @software{bluepyemodel_zenodo,
+      author       = {Damart, Tanguy and Jaquier, Aurélien and Arnaudon, Alexis and Van Geit, Werner},
+      title        = {BluePyEModel},
+      month        = aug,
+      year         = 2023,
+      publisher    = {Zenodo},
+      doi          = {},
+      url          = {}
+    }
 
 ## Installation
 
@@ -166,3 +190,36 @@ This work has been partially funded by the European Union Seventh Framework Prog
 Copyright (c) 2023 Blue Brain Project/EPFL
 
 This work is licensed under `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0.html>`_
+
+
+.. |license| image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+                :target: https://github.com/BlueBrain/BluePyEModel/blob/main/LICENSE.txt
+
+.. |tests| image:: https://github.com/BlueBrain/BluepyEModel/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/BlueBrain/BluepyEModel/actions/workflows/test.yml
+   :alt: CI
+
+.. |pypi| image:: https://img.shields.io/pypi/v/bluepyemodel.svg
+               :target: https://pypi.org/project/bluepyemodel/
+               :alt: latest release
+
+.. |docs| image:: https://readthedocs.org/projects/bluepyemodel/badge/?version=latest
+               :target: https://bluepyemodel.readthedocs.io/
+               :alt: latest documentation
+
+.. |coverage| image:: https://codecov.io/github/BlueBrain/BluePyEModel/coverage.svg?branch=main
+                   :target: https://codecov.io/gh/BlueBrain/bluepyemodel
+                   :alt: coverage
+
+.. |zenodo| image:: https://zenodo.org/badge/<TODO>.svg
+                 :target: https://zenodo.org/badge/latestdoi/<TODO>
+
+..
+    The following image is also defined in the index.rst file, as the relative path is
+    different, depending from where it is sourced.
+    The following location is used for the github README
+    The index.rst location is used for the docs README; index.rst also defined an end-marker,
+    to skip content after the marker 'substitutions'.
+
+.. substitutions
+.. |banner| image:: docs/source/logo/BluePyEModelBanner.jpg
