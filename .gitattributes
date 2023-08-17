@@ -1,2 +1,4 @@
 *.asc linguist-detectable=false
 *.mod linguist-detectable=false
+*.jinja linguist-detectable=false
+*.jinja2 linguist-detectable=false
