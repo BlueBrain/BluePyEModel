@@ -79,6 +79,7 @@ This section presents a general picture of how to create an e-model using python
 For a detailed picture, please refer to the example directory `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_ and its `README <./examples/emodel_pipeline_local_python/README.md>`_ which shows how to setup an optimisation directory and how to run it on BB5 using slurm.
 
 The pipeline is divided in 6 steps:
+
 * extraction: extracts e-features from ephys recordings and averages the results e-feature values along the requested targets.
 * optimisation: builds a NEURON cell model and optimises its parameters using as targets the efeatures computed during e-feature extraction.
 * storage of the model: reads the results of the extraction and stores the models (best set of parameters) in a local json file.
@@ -115,6 +116,7 @@ Therefore, in an empty directory, usually named ``config``, you will need to cre
     }
 
 Let's go over the content of this file:
+
 * The keys of the dictionary are the names of the models that will be built. Here, we only have one model named "L5PC". This name is important as it will be used in every following step to specify which model is to be acted upon.
 * ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
