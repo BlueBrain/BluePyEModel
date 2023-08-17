@@ -55,9 +55,9 @@ And then bluepyemodel itself
 
 If you do not wish to install all dependencies, specific dependencies can be selected by indicating which ones to install between brackets in place of 'all' (If you want multiple dependencies, they have to be separated by commas). The available dependencies are:
 
-- luigi
-- all
-- currentscape
+* luigi
+* all
+* currentscape
 
 To get started with the E-Model building pipeline
 -------------------------------------------------
@@ -79,12 +79,12 @@ This section presents a general picture of how to create an e-model using python
 For a detailed picture, please refer to the example directory `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_ and its `README <./examples/emodel_pipeline_local_python/README.md>`_ which shows how to setup an optimisation directory and how to run it on BB5 using slurm.
 
 The pipeline is divided in 6 steps:
-- extraction: extracts e-features from ephys recordings and averages the results e-feature values along the requested targets.
-- optimisation: builds a NEURON cell model and optimises its parameters using as targets the efeatures computed during e-feature extraction.
-- storage of the model: reads the results of the extraction and stores the models (best set of parameters) in a local json file.
-- validation: reads the models and runs the optimisation protocols and/or validation protocols on them. The e-feature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
-- plotting: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the e-feature scores and parameter distributions.
-- exporting: read the parameter of the best models and export them in files that can be used either in NEURON or for circuit building.
+* extraction: extracts e-features from ephys recordings and averages the results e-feature values along the requested targets.
+* optimisation: builds a NEURON cell model and optimises its parameters using as targets the efeatures computed during e-feature extraction.
+* storage of the model: reads the results of the extraction and stores the models (best set of parameters) in a local json file.
+* validation: reads the models and runs the optimisation protocols and/or validation protocols on them. The e-feature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
+* plotting: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the e-feature scores and parameter distributions.
+* exporting: read the parameter of the best models and export them in files that can be used either in NEURON or for circuit building.
 
 These six steps are to be run in order as for example validation cannot be run if no models have been stored. Steps "validation", "plotting" and "exporting" are optional. Step "extraction" can also be optional in the case where the file containing the protocols and optimisation targets is created by hand or if it is obtained from an older project.
 
@@ -93,7 +93,7 @@ Configuration
 
 
 The main configuration file is referred to as "recipes" since it contains the recipe of how models should be built.
-Therefore, in an empty directory, usually named `config`, you will need to create a file `recipes.json`. Here is an example of a recipe for a fictitious L5PC model:
+Therefore, in an empty directory, usually named ``config``, you will need to create a file ``recipes.json``. Here is an example of a recipe for a fictitious L5PC model:
 
 .. code-block:: python
 
@@ -115,11 +115,11 @@ Therefore, in an empty directory, usually named `config`, you will need to creat
     }
 
 Let's go over the content of this file:
-- The keys of the dictionary are the names of the models that will be built. Here, we only have one model named "L5PC". This name is important as it will be used in every following step to specify which model is to be acted upon.
-- `morph_path` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
-- `morphology` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by `morph_path`.
-- `params` and `features` contains the path to the file containing the configuration of the parameters of the model and optimisation targets of the model respectively. As for the morphology, this file has to be in a local subdirectory. By convention, these files are put in the directory `./config/` or in a subdirectory of it.  To see the specific format of these configuration files, please refer to the example `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_. If the step "extraction" is done through the pipeline, the file containing the optimisation targets will be created programmatically by the pipeline.
-- `pipeline_settings` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings`. An important settings if you wish to run e-feature extraction through the pipeline is `path_extract_config` which points to the path of the json file containing the targets of the extraction process. Once again, for the format of this file, please refer to the example `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_.
+* The keys of the dictionary are the names of the models that will be built. Here, we only have one model named "L5PC". This name is important as it will be used in every following step to specify which model is to be acted upon.
+* ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
+* ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
+* ``params`` and ``features`` contains the path to the file containing the configuration of the parameters of the model and optimisation targets of the model respectively. As for the morphology, this file has to be in a local subdirectory. By convention, these files are put in the directory ``./config/`` or in a subdirectory of it.  To see the specific format of these configuration files, please refer to the example `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_. If the step "extraction" is done through the pipeline, the file containing the optimisation targets will be created programmatically by the pipeline.
+* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class ``EModelPipelineSettings``. An important settings if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process. Once again, for the format of this file, please refer to the example ``./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_.
 
 Building the models
 ###################
@@ -157,7 +157,7 @@ Note that for the pipeline to work, the NEURON mechanisms used by the models nee
 
     nrnivmodl mechanisms
 
-The final models generated using the local access point are stored in the file `final.json` and the traces of the models can be seen in `./figures/`.
+The final models generated using the local access point are stored in the file ``final.json`` and the traces of the models can be seen in ``./figures/``.
 
 Exporting the models
 ####################
