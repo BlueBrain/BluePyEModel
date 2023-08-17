@@ -65,7 +65,7 @@ To get started with the E-Model building pipeline
 .. image:: ./images/pipeline.png
    :alt: E-Model building pipeline
 
-This section will talk about the E-Model building pipeline which for now contains e-features extraction, optimisation and model analysis. If you only wish to export a model that was built using the pipeline to hoc, you can jump to the subsection "Exporting the models".
+This section will talk about the E-Model building pipeline which for now contains e-features extraction, optimisation and model analysis. If you only wish to export a model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact the Cells team for help to get you set up.
 
