@@ -33,7 +33,7 @@ When you use the BluePyEModel software or method for your research, we ask you t
 .. code-block::
 
     @software{bluepyemodel_zenodo,
-      author       = {Damart, Tanguy and Jaquier, Aurélien and Arnaudon, Alexis and Van Geit, Werner},
+      author       = {Damart, Tanguy and Jaquier, Aurélien and Arnaudon, Alexis and Mandge, Darshan and Van Geit, Werner and Kilic, Ilkan},
       title        = {BluePyEModel},
       month        = aug,
       year         = 2023,
