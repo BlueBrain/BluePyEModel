@@ -19,6 +19,7 @@ limitations under the License.
 import glob
 import multiprocessing
 from pathlib import Path
+import logging
 
 import luigi
 
@@ -37,6 +38,7 @@ from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
 from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 
 # pylint: disable=W0235,W0621,W0404,W0611,W0703,E1128
+logger = logging.getLogger(__name__)
 
 
 def _reformat_ttype(ttype):
