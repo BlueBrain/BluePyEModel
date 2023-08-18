@@ -57,7 +57,6 @@ If you do not wish to install all dependencies, specific dependencies can be sel
 
 * luigi
 * all
-* currentscape
 
 To get started with the E-Model building pipeline
 -------------------------------------------------
