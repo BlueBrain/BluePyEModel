@@ -61,7 +61,7 @@ If you do not wish to install all dependencies, specific dependencies can be sel
 To get started with the E-Model building pipeline
 -------------------------------------------------
 
-.. image:: ./images/pipeline.png
+.. image:: https://raw.githubusercontent.com/BlueBrain/BluePyEModel/main/doc/images/pipeline.png
    :alt: E-Model building pipeline
 
 This section will talk about the E-Model building pipeline which for now contains e-features extraction, optimisation and model analysis. If you only wish to export a model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
@@ -203,7 +203,7 @@ In the more complex case where githash versioning and slurm are used, refer to t
 Schematics of BluePyEModel classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: ./images/classes_schema.png
+.. image:: https://raw.githubusercontent.com/BlueBrain/BluePyEModel/main/doc/images/classes_schema.png
    :alt: Schematics of BluePyEModel classes
 
 Acknowledgment
@@ -249,4 +249,4 @@ This work is licensed under `Apache 2.0 <https://www.apache.org/licenses/LICENSE
     to skip content after the marker 'substitutions'.
 
 .. substitutions
-.. |banner| image:: docs/source/logo/BluePyEModelBanner.jpg
+.. |banner| image:: doc/source/logo/BluePyEModelBanner.jpg
