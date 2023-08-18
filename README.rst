@@ -66,14 +66,14 @@ To get started with the E-Model building pipeline
 
 This section will talk about the E-Model building pipeline which for now contains e-features extraction, optimisation and model analysis. If you only wish to export a model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
 
-Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact the Cells team for help to get you set up.
+Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
 
 The E-Model building pipeline can be executed either step by step using Python or all at once as a Luigi workflow.
 
 Running using python with local storage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This section presents a general picture of how to create an e-model using python and local storage, it relies on the use of the class EModel_pipeline.
+This section presents a general picture of how to create an e-model using python and local storage, it relies on the use of the class ``EModel_pipeline``.
 
 For a detailed picture, please refer to the example directory `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_ and its `README <./examples/emodel_pipeline_local_python/README.md>`_ which shows how to setup an optimisation directory and how to run it on BB5 using slurm.
 
@@ -116,11 +116,11 @@ Therefore, in an empty directory, usually named ``config``, you will need to cre
 
 Let's go over the content of this file:
 
-* The keys of the dictionary are the names of the models that will be built. Here, we only have one model named "L5PC". This name is important as it will be used in every following step to specify which model is to be acted upon.
+* The keys of the dictionary are the names of the models that will be built. Here, we only have one model named ``L5PC``. This name is important as it will be used in every following step to specify which model is to be acted upon.
 * ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
 * ``params`` and ``features`` contains the path to the file containing the configuration of the parameters of the model and optimisation targets of the model respectively. As for the morphology, this file has to be in a local subdirectory. By convention, these files are put in the directory ``./config/`` or in a subdirectory of it.  To see the specific format of these configuration files, please refer to the example `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_. If the step "extraction" is done through the pipeline, the file containing the optimisation targets will be created programmatically by the pipeline.
-* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class ``EModelPipelineSettings``. An important settings if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process. Once again, for the format of this file, please refer to the example `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_.
+* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <./bluepyemodel/emodel_pipeline/EModelPipelineSettings>`. An important settings if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process. Once again, for the format of this file, please refer to the example `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_.
 
 Building the models
 ###################
