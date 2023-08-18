@@ -527,7 +527,7 @@ class LocalAccessPoint(DataAccessPoint):
 
     def get_emodel_workflow(self):
         """Emodel workflow is not used in local, so return None here"""
-        return None
+        return None, None
 
     def check_emodel_workflow_configurations(self, emodel_workflow):
         """Emodel workflow is not used in local, so always return True to let the workflow run"""
