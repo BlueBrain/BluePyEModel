@@ -17,9 +17,9 @@ limitations under the License.
 """
 
 import glob
+import logging
 import multiprocessing
 from pathlib import Path
-import logging
 
 import luigi
 
