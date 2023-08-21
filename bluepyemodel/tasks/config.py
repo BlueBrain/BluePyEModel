@@ -26,14 +26,14 @@ class EmodelAPIConfig(luigi.Config):
 
     # local parameters
     emodel_dir = luigi.Parameter(default="./")
-    recipes_path = luigi.Parameter(default=None)
+    recipes_path = luigi.OptionalParameter(default=None)
     final_path = luigi.Parameter(default="./final.json")
     legacy_dir_structure = luigi.BoolParameter(default=False)
-    extract_config = luigi.Parameter(default=None)
+    extract_config = luigi.OptionalParameter(default=None)
 
     # nexus parameters
-    forge_path = luigi.Parameter(default=None)
-    forge_ontology_path = luigi.Parameter(default=None)
+    forge_path = luigi.OptionalParameter(default=None)
+    forge_ontology_path = luigi.OptionalParameter(default=None)
     nexus_poject = luigi.Parameter(default="emodel_pipeline")
     nexus_organisation = luigi.Parameter(default="demo")
     nexus_endpoint = luigi.Parameter(default="https://bbp.epfl.ch/nexus/v1")
@@ -43,6 +43,12 @@ class EmodelAPIConfig(luigi.Config):
         super().__init__(*args, **kwargs)
 
         if self.api == "local":
+
+            if self.recipes_path is None:
+                raise ValueError("recipes_path cannot be None when api is set to 'local'")
+            if self.extract_config is None:
+                raise ValueError("extract_config cannot be None when api is set to 'local'")
+
             self.api_args = {
                 "emodel_dir": self.emodel_dir,
                 "recipes_path": self.recipes_path,
@@ -52,6 +58,12 @@ class EmodelAPIConfig(luigi.Config):
             }
 
         if self.api == "nexus":
+
+            if self.forge_path is None:
+                raise ValueError("forge_path cannot be None when api is set to 'nexus'")
+            if self.forge_ontology_path is None:
+                raise ValueError("forge_ontology_path cannot be None when api is set to 'nexus'")
+
             self.api_args = {
                 "forge_path": self.forge_path,
                 "forge_ontology_path": self.forge_ontology_path,
