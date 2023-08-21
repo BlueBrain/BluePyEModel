@@ -25,18 +25,18 @@ class EmodelAPIConfig(luigi.Config):
     api = luigi.Parameter(default="local")
 
     # local parameters
-    emodel_dir = luigi.Parameter(default="./")
+    emodel_dir = luigi.OptionalParameter(default="./")
     recipes_path = luigi.OptionalParameter(default=None)
-    final_path = luigi.Parameter(default="./final.json")
+    final_path = luigi.OptionalParameter(default="./final.json")
     legacy_dir_structure = luigi.BoolParameter(default=False)
     extract_config = luigi.OptionalParameter(default=None)
 
     # nexus parameters
     forge_path = luigi.OptionalParameter(default=None)
     forge_ontology_path = luigi.OptionalParameter(default=None)
-    nexus_poject = luigi.Parameter(default="emodel_pipeline")
-    nexus_organisation = luigi.Parameter(default="demo")
-    nexus_endpoint = luigi.Parameter(default="https://bbp.epfl.ch/nexus/v1")
+    nexus_poject = luigi.OptionalParameter(default="emodel_pipeline")
+    nexus_organisation = luigi.OptionalParameter(default="demo")
+    nexus_endpoint = luigi.OptionalParameter(default="https://bbp.epfl.ch/nexus/v1")
 
     def __init__(self, *args, **kwargs):
         """Init."""
