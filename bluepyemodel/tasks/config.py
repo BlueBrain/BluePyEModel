@@ -43,7 +43,6 @@ class EmodelAPIConfig(luigi.Config):
         super().__init__(*args, **kwargs)
 
         if self.api == "local":
-
             if self.recipes_path is None:
                 raise ValueError("recipes_path cannot be None when api is set to 'local'")
             if self.extract_config is None:
@@ -58,7 +57,6 @@ class EmodelAPIConfig(luigi.Config):
             }
 
         if self.api == "nexus":
-
             if self.forge_path is None:
                 raise ValueError("forge_path cannot be None when api is set to 'nexus'")
             if self.forge_ontology_path is None:
