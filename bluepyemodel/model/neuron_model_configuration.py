@@ -558,12 +558,14 @@ class NeuronModelConfiguration:
 
     def get_related_nexus_ids(self):
         uses = []
+        mechs_ids = set()
         if self.morphology.id:
             uses.append({"id": self.morphology.id, "type": "NeuronMorphology"})
 
         for m in self.mechanisms:
-            if m.id:
+            if m.id and m.id not in mechs_ids:
                 uses.append({"id": m.id, "type": "SubCellularModelScript"})
+                mechs_ids.add(m.id)
 
         return {"uses": uses}
 
