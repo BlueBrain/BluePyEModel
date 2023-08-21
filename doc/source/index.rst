@@ -1,17 +1,12 @@
-.. include:: ../../README.md
-   :parser: myst_parser.sphinx_
-
-.. _API Reference:
-
-API Reference
--------------
-
-The :doc:`./api_ref` page contains detailed documentation of the API.
+.. include:: ../../README.rst
+   :end-before: .. substitutions
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
+   :maxdepth: 3
 
    Home <self>
+   api_ref.rst
    changelog
-   api_ref
+
+.. |banner| image:: /logo/BluePyEModelBanner.jpg
