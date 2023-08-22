@@ -157,11 +157,12 @@ Configuring your models
 
 The present directory contains template mechanisms, morphologies, recipes and parameters files.
 In order to configure the models that you want, you will have to:
-- Copy the morphology you wish to use in the ``morphologies`` folder
-- Copy the mechanisms (mod files) you wish to use in the ``mechanisms`` folder
-- Create a json file containing the parameters of your model and put it in ``./config/parameters/``.
-- Create a json files containing the files_metadata, targets and protocols_rheobase used as targets for the extraction process in ``./config/features/EMODEL_NAME_config.json`` (for the format of this file section Extraction below).
-- Create a new recipe in ``./config/recipes.json`` which should contain the paths to all the files mentioned above as well as the settings you wish to use when running the pipeline. You can have a look at the docstring of the class EModelPipelineSettings for a complete overview of all the settings available.
+
+* Copy the morphology you wish to use in the ``morphologies`` folder
+* Copy the mechanisms (mod files) you wish to use in the ``mechanisms`` folder
+* Create a json file containing the parameters of your model and put it in ``./config/parameters/``.
+* Create a json files containing the files_metadata, targets and protocols_rheobase used as targets for the extraction process in ``./config/features/EMODEL_NAME_config.json`` (for the format of this file section Extraction below).
+* Create a new recipe in ``./config/recipes.json`` which should contain the paths to all the files mentioned above as well as the settings you wish to use when running the pipeline. You can have a look at the docstring of the class EModelPipelineSettings for a complete overview of all the settings available.
 
 Running the different steps
 ---------------------------
@@ -225,8 +226,9 @@ If you wish to perform validation of your model (testing the model on protocols 
 Then, to run the validation, inform the emodel name and githash in ``./script/analysis.sh`` and execute it.
 Once the validation is done, the models in your final.json will have a field ``passedValidation``.
 This field can have 3 values:
-- If it is None, that means the model did not go yet through validation.
-- If it is False, it means the models did not pass validation successfully.
-- If it is True, the model passed validation successfully.
+
+* If it is None, that means the model did not go yet through validation.
+* If it is False, it means the models did not pass validation successfully.
+* If it is True, the model passed validation successfully.
 
 As for the other steps, please have a look at the `docstring of the settings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_ to configure the validation step.
