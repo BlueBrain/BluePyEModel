@@ -213,7 +213,7 @@ class EModelPipelineSettings:
             plot_parameter_evolution (bool): during the plotting, should the evolution of the
                 parameters be plotted.
             currentscape_config (dict): currentscape configuration according to the currentscape
-                documentation (https://bbpgitlab.epfl.ch/cells/currentscape#about-the-config).
+                documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
                 do not need to be set, since they are automatically overwritten by BluePyEModel.
                 If current.names is set nonetheless, it will be used as the subset of available

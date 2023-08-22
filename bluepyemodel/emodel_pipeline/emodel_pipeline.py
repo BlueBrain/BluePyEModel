@@ -43,7 +43,7 @@ class EModel_pipeline:
     of the e-model building pipeline using python (as opposed to the Luigi workflow).
 
     For an example of how to use to present class, see the example emodel_pipeline_local_python or
-    the README.md file."""
+    the README.rst file."""
 
     def __init__(
         self,
