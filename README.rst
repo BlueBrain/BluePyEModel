@@ -51,7 +51,7 @@ And then bluepyemodel itself
 
 .. code-block:: python
 
-    pip install -i https://bbpteam.epfl.ch/repository/devpi/simple/ bluepyemodel[all]
+    pip install bluepyemodel[all]
 
 If you do not wish to install all dependencies, specific dependencies can be selected by indicating which ones to install between brackets in place of 'all' (If you want multiple dependencies, they have to be separated by commas). The available dependencies are:
 
