@@ -8,7 +8,7 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
 
 or in this tarball in the seperate file LICENSE_CC-BY-CA-SA-4.0
 
-The HOC code, Python code, synapse MOD code and cell morphology are licensed with the above mentioned CC-BY-NC-SA license.
+The Python code and cell morphology are licensed with the above mentioned CC-BY-NC-SA license.
 
 For models for which the original source is available on ModelDB, any
 specific licenses on mentioned on ModelDB, or the generic License of ModelDB

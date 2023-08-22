@@ -1,6 +1,6 @@
 BluePyEModel is licensed under the Apache License, unless noted otherwise, e.g., for external
 dependencies. See file COPYING for the full license.
-The example are under the CC-BY-NC-SA license, as specified by the
+The examples are under the CC-BY-NC-SA license, as specified by the
 LICENSE.txt file.
 
 
