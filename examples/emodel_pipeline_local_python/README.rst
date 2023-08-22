@@ -161,7 +161,7 @@ In order to configure the models that you want, you will have to:
 * Copy the morphology you wish to use in the ``morphologies`` folder
 * Copy the mechanisms (mod files) you wish to use in the ``mechanisms`` folder
 * Create a json file containing the parameters of your model and put it in ``./config/parameters/``.
-* Create a json files containing the files_metadata, targets and protocols_rheobase used as targets for the extraction process in ``./config/features/EMODEL_NAME_config.json`` (for the format of this file section Extraction below).
+* Create a json files containing the files_metadata, targets and protocols_rheobase used as targets for the extraction process in ``./config/features/EMODEL_NAME_config.json`` (for the format of this file section `Extraction`_ below).
 * Create a new recipe in ``./config/recipes.json`` which should contain the paths to all the files mentioned above as well as the settings you wish to use when running the pipeline. You can have a look at the docstring of the class EModelPipelineSettings for a complete overview of all the settings available.
 
 Running the different steps
