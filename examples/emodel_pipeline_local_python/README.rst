@@ -13,7 +13,7 @@ Running using python with local storage
 This section presents a general picture of how to create an e-model using python and local storage, it relies on the use of the class ``EModel_pipeline``.
 
 Configuration
-#############
+~~~~~~~~~~~~~
 
 The main configuration file is referred to as "recipes" since it contains the recipe of how models should be built.
 Therefore, in an empty directory, usually named ``config``, you will need to create a file ``recipes.json``. Here is an example of a recipe for a fictitious L5PC model:
@@ -42,13 +42,13 @@ Let's go over the content of this file:
 * The keys of the dictionary are the names of the models that will be built. Here, we only have one model named ``L5PC``. This name is important as it will be used in every following step to specify which model is to be acted upon.
 * ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
-* ``params`` and ``features`` contains the path to the file containing the configuration of the parameters of the model and optimisation targets of the model respectively. As for the morphology, this file has to be in a local subdirectory. By convention, these files are put in the directory ``./config/`` or in a subdirectory of it.  To see the specific format of these configuration files, please refer to the example `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_. If the step "extraction" is done through the pipeline, the file containing the optimisation targets will be created programmatically by the pipeline.
-* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <./bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important settings if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process. Once again, for the format of this file, please refer to the example `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_.
+* ``params`` and ``features`` contains the path to the file containing the configuration of the parameters of the model and optimisation targets of the model respectively. As for the morphology, this file has to be in a local subdirectory. By convention, these files are put in the directory ``./config/`` or in a subdirectory of it. If the step "extraction" is done through the pipeline, the file containing the optimisation targets will be created programmatically by the pipeline.
+* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important settings if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process.
 
 Building the models
-###################
+~~~~~~~~~~~~~~~~~~~
 
-To run the modeling pipeline, you will need to create a python script used to instantiate the pipeline and execute its different steps. The pipeline is a python object of the class `EModel_pipeline <./bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_. Here is a minimal example of how to instantiate it:
+To run the modeling pipeline, you will need to create a python script used to instantiate the pipeline and execute its different steps. The pipeline is a python object of the class `EModel_pipeline <../../bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_. Here is a minimal example of how to instantiate it:
 
 .. code-block:: python
 
@@ -84,7 +84,7 @@ Note that for the pipeline to work, the NEURON mechanisms used by the models nee
 The final models generated using the local access point are stored in the file ``final.json`` and the traces of the models can be seen in ``./figures/``.
 
 Exporting the models
-####################
+~~~~~~~~~~~~~~~~~~~~
 
 If you wish to use the models generated with BluePyEModel outside of Python, you will need to export them as hoc files.
 Following the example above, it can be done with the command:
@@ -97,11 +97,11 @@ Following the example above, it can be done with the command:
 
 This will create a local directory containing the hoc files of the models.
 
-Note that if you wish to use the models in a circuit, you will have to use `export_emodels_sonata <bluepyemodel/export_emodel/export_emodel.py#L130>`_ instead.
+Note that if you wish to use the models in a circuit, you will have to use `export_emodels_sonata <../../bluepyemodel/export_emodel/export_emodel.py#L130>`_ instead.
 However, most of the time, for circuit building, you will want to generalize the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see `https://github.com/BlueBrain/BluePyMM <https://github.com/BlueBrain/BluePyMM>`_)
 
 Summary of the local directory structure
-########################################
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The final structure of the local directory for this simpler case should be as follows:
 
@@ -181,7 +181,7 @@ The name of the emodel must match an entry of the file ``recipes.json``.
 The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``efeatures`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``.
 If you asked for the extraction to be plotted in the settings, the plots will be in ``./figures/EMODEL_NAME/extraction/``.
 
-For a complete description of the extraction process, its inner working and settings please refer the [README and examples of the branch BPE2 of BluePyEfe on GitHub](https://github.com/BlueBrain/BluePyEfe/).
+For a complete description of the extraction process, its inner working and settings please refer the `README and examples of BluePyEfe on GitHub <https://github.com/BlueBrain/BluePyEfe/>`_.
 
 Optimisation
 ~~~~~~~~~~~~
@@ -191,15 +191,19 @@ To perform optimisation, you will need to provide a morphology, mechanisms and a
 As optimisation is a costly operation, we will show here how to execute it in parallel using slurm.
 
 First, you will need to compile the mechanisms, which can be done with the command:
-``nrnivmodl mechanisms``
+
+.. code-block:: python
+
+    nrnivmodl mechanisms
+
 Then, inform your emodel name in ``./scripts/optimisation.sh`` and execute it.
 This will create several slurm jobs for different optimisation seeds and the githash associated to the run (keep it preciously!).
 
 The optimisation usually takes between 2 and 72 hours depending on the complexity of the model.
 If the model is not finished after 24 hours, you will need to resume it manually by informing the githash of the run in ``./scripts/optimisation.sh`` and executing it again.
-To monitor the state of the optimisation, please have a look at the notebook `./monitor_optimisations.ipynb <./monitor_optimisations.ipynb>`.
+To monitor the state of the optimisation, please have a look at the notebook `./monitor_optimisations.ipynb <./monitor_optimisations.ipynb>`_.
 
-For a more in depth overview of the optimisation process please have a look at the [documentation and examples of the package BluePyOpt on GitHub](https://github.com/BlueBrain/BluePyOpt).
+For a more in depth overview of the optimisation process please have a look at the `documentation and examples of the package BluePyOpt on GitHub <https://github.com/BlueBrain/BluePyOpt>`_.
 
 Analysis
 ~~~~~~~~
