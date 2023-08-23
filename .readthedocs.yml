@@ -17,5 +17,7 @@ build:
 python:
   install:
     - method: pip
-      path: .[docs]
+      path: .
+      extra_requirements:
+        - docs
     - requirements: doc/requirements_docs.txt
