@@ -1,6 +1,6 @@
 include:
    - project: cells/ci
-     file: /ci/lib/common.yml
+     file: /ci/lib/tox-bb5.yml
 
 workflow:
   # run for the default branch and all types of merge request pipelines, but not for tags
