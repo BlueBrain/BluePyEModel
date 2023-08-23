@@ -6,7 +6,7 @@
 version: 2
 
 sphinx:
-  configuration: docs/source/conf.py
+  configuration: doc/source/conf.py
   fail_on_warning: true
 
 build:
@@ -18,4 +18,4 @@ python:
   install:
     - method: pip
       path: .
-    - requirements: docs/requirements_docs.txt
+    - requirements: doc/requirements_docs.txt
