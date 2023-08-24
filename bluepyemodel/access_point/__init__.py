@@ -26,30 +26,32 @@ def get_access_point(access_point, emodel, **kwargs):
         kwargs (dict): extra arguments to pass to access_point constructors, see below.
 
     Optional:
-        etype (str): name of the electric type.
-        ttype (str): name of the transcriptomic type.
-        mtype (str): name of the morphology type.
-        species (str): name of the species.
-        brain_region (str): name of the brain location.
-        iteration (str): tag associated to the current run.
-        synapse_class (str): synapse class (neurotransmitter).
+        - etype (str): name of the electric type.
+        - ttype (str): name of the transcriptomic type.
+        - mtype (str): name of the morphology type.
+        - species (str): name of the species.
+        - brain_region (str): name of the brain location.
+        - iteration (str): tag associated to the current run.
+        - synapse_class (str): synapse class (neurotransmitter).
 
     For local:
-        emodel_dir (str): path of the directory containing the parameters,
-        features and parameters config files.
-        recipe_path (str, optional): path to the file containing the recipes.
-        final_path (str, optional): path to the final.json, if different from the one in emodel_dir
-        legacy_dir_structure (bool, optional): uses legacy folder structure
-        with_seed (bool): allows for emodel_seed type of emodel names in final.json (not in recipes)
+        - emodel_dir (str): path of the directory containing the parameters,
+                            features and parameters config files.
+        - recipe_path (str, optional): path to the file containing the recipes.
+        - final_path (str, optional): path to the final.json,
+                                      if different from the one in emodel_dir
+        - legacy_dir_structure (bool, optional): uses legacy folder structure
+        - with_seed (bool): allows for emodel_seed type of emodel names in final.json
+                            (not in recipes)
 
     For nexus:
-        project (str): name of the Nexus project.
-        organisation (str): name of the Nexus organization to which the project belong.
-        endpoint (str): Nexus endpoint.
-        forge_path (str): path to a .yml used as configuration by nexus-forge.
-        forge_ontology_path (str): path to the .yml used to access the ontology in Nexus Forge.
-        If not provided, forge_path will be used.
-        access_token (str, optional): Nexus connection token.
+        - project (str): name of the Nexus project.
+        - organisation (str): name of the Nexus organization to which the project belong.
+        - endpoint (str): Nexus endpoint.
+        - forge_path (str): path to a .yml used as configuration by nexus-forge.
+        - forge_ontology_path (str): path to the .yml used to access the ontology in Nexus Forge.
+                                     If not provided, forge_path will be used.
+        - access_token (str, optional): Nexus connection token.
 
     Returns:
         DataAccessPoint
