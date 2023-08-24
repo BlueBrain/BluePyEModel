@@ -774,17 +774,18 @@ def get_ordered_currentscape_keys(keys):
 
     Returns:
         dict: containing voltage key, ion current and ionic concentration keys,
+                and ion current and ionic concentration names. Should have the shape:
 
-        and ion current and ionic concentration names. Should have the shape:
+            .. code-block::
 
-        {
-            "protocol_name": {
-                "loc_name": {
-                    "voltage_key": str, "current_keys": [], "current_names": [],
-                    "ion_conc_keys": [], "ion_conc_names": [],
+                {
+                    "protocol_name": {
+                        "loc_name": {
+                            "voltage_key": str, "current_keys": [], "current_names": [],
+                            "ion_conc_keys": [], "ion_conc_names": [],
+                        }
+                    }
                 }
-            }
-        }
     """
     # RMP and Rin only have voltage data, no currents, so they are skipped
     to_skip = [
