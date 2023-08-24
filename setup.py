@@ -24,8 +24,6 @@ from setuptools import setup, find_packages
 if sys.version_info < (3, 7):
     sys.exit("Sorry, Python < 3.7 is not supported")
 
-VERSION = imp.load_source("", "bluepyemodel/version.py").__version__
-
 # Read the contents of the README file
 with open("README.md", encoding="utf-8") as f:
     README = f.read()
@@ -54,7 +52,10 @@ setup(
     name="bluepyemodel",
     author="Blue Brain Project, EPFL",
     author_email="",
-    version=VERSION,
+    use_scm_version={
+        'version_scheme': 'python-simplified-semver',
+        'local_scheme': 'no-local-version'
+    },
     description="Blue Brain Python E-Model Building Library",
     long_description=README,
     long_description_content_type="text/x-rst",
