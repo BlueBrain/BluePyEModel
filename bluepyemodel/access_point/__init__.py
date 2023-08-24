@@ -36,7 +36,7 @@ def get_access_point(access_point, emodel, **kwargs):
 
     For local:
         emodel_dir (str): path of the directory containing the parameters,
-            features and parameters config files.
+        features and parameters config files.
         recipe_path (str, optional): path to the file containing the recipes.
         final_path (str, optional): path to the final.json, if different from the one in emodel_dir
         legacy_dir_structure (bool, optional): uses legacy folder structure
@@ -47,8 +47,8 @@ def get_access_point(access_point, emodel, **kwargs):
         organisation (str): name of the Nexus organization to which the project belong.
         endpoint (str): Nexus endpoint.
         forge_path (str): path to a .yml used as configuration by nexus-forge.
-        forge_ontology_path (str): path to the .yml used to access the ontology in Nexus Forge
-            if not provided, forge_path will be used.
+        forge_ontology_path (str): path to the .yml used to access the ontology in Nexus Forge.
+        If not provided, forge_path will be used.
         access_token (str, optional): Nexus connection token.
 
     Returns:

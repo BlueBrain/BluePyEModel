@@ -109,6 +109,7 @@ intersphinx_mapping = {
     "luigi": ("https://luigi.readthedocs.io/en/stable", None),
 }
 
+autodoc_mock_imports = ['bluepyemodel.tasks.luigi_tools']
 
 import importlib
 import luigi

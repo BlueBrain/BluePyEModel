@@ -101,7 +101,7 @@ def define_recording(recording_conf, use_fixed_dt_recordings=False):
     Args:
         recording_conf (dict): configuration of the recording. Must contain the type of the
             recording as well as information about the location of the recording (see function
-             define_location).
+            define_location).
         use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
 
     Returns:
