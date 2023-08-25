@@ -38,8 +38,8 @@ When you use the BluePyEModel software or method for your research, we ask you t
       month        = aug,
       year         = 2023,
       publisher    = {Zenodo},
-      doi          = {},
-      url          = {}
+      doi          = {8283490},
+      url          = {https://doi.org/10.5281/zenodo.8283490}
     }
 
 Installation
@@ -113,8 +113,8 @@ This work is licensed under `Apache 2.0 <https://www.apache.org/licenses/LICENSE
                    :target: https://codecov.io/gh/BlueBrain/bluepyemodel
                    :alt: coverage
 
-.. |zenodo| image:: https://zenodo.org/badge/<TODO>.svg
-                 :target: https://zenodo.org/badge/latestdoi/<TODO>
+.. |zenodo| image:: https://zenodo.org/badge/651152332.svg
+                 :target: https://zenodo.org/badge/latestdoi/651152332
 
 ..
     The following image is also defined in the index.rst file, as the relative path is
