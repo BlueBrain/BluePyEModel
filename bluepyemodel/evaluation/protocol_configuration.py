@@ -50,8 +50,8 @@ class ProtocolConfiguration:
                 .. code-block::
 
                     [{
-                        'amp': float, 'thresh_perc': float, 'holding_current': float, 'delay': float,
-                        'duration': float, 'totduration': float
+                        'amp': float, 'thresh_perc': float, 'holding_current': float,
+                        'delay': float, 'duration': float, 'totduration': float
                     }]
             recordings_from_config (list of dict): contains the description of the recordings.
                 For a recording at a given compartment, the format is for example:

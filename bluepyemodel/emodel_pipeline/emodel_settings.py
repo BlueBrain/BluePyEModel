@@ -207,8 +207,8 @@ class EModelPipelineSettings:
                 This setting has to be set before efeature extraction if you wish to run
                 a threshold based evaluator.
             name_rmp_protocol (list or str): name and amplitude of the protocol from which the
-                resting membrane potential should be selected from, e.g: ``["IV", 0]`` or ``IV_0``. The
-                matching protocol should have "voltage_base" in its feature targets.
+                resting membrane potential should be selected from, e.g: ``["IV", 0]`` or ``IV_0``.
+                The matching protocol should have "voltage_base" in its feature targets.
                 This setting has to be set before efeature extraction if you wish to run
                 a threshold based evaluator.
             validation_protocols (list of str): name of the protocols to be used for validation
