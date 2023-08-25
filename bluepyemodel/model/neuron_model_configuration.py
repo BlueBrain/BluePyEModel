@@ -60,9 +60,12 @@ class NeuronModelConfiguration:
         mechanisms, distributions and morphology here at instantiation. Instead, create an empty
         configuration and then use the class method: add_distribution, add_parameter, etc.
         Example::
-            config = NeuronModelConfiguration()
-            config.add_parameter(parameter_name, locations, value, mechanism)
-            config.morphology = MorphologyConfiguration(morph_name, format=".swc")
+
+            .. code-block::
+
+                config = NeuronModelConfiguration()
+                config.add_parameter(parameter_name, locations, value, mechanism)
+                config.morphology = MorphologyConfiguration(morph_name, format=".swc")
 
         Args:
             parameters (list of dict): contains the description of the parameters of the model
@@ -74,14 +77,18 @@ class NeuronModelConfiguration:
             morphology (dict):  contains the description of the morphology of the model in the
                 format returned by the method as_dict of the morphology class.
             available_mechanisms (list of MechanismConfiguration): list of the names (
-                and optionally versions) of the available mechanisms in the "./mechanisms"
+                and optionally versions) of the available mechanisms in the ``./mechanisms``
                 directory for the local access point or on Nexus for the Nexus access point.
             available_morphologies (list of str): list of the names of the available morphology in
-                the "./morphology" directory for the local access point or on Nexus for the
+                the ``./morphology`` directory for the local access point or on Nexus for the
                 Nexus access point.
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
-                function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
+                function. E.g:
+
+                    .. code-block::
+
+                        morph_modifiers = [["path_to_module", "name_of_function"], ...].
         """
 
         if isinstance(parameters, dict):

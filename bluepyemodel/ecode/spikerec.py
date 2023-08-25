@@ -53,10 +53,10 @@ class SpikeRecMultiSpikes(BPEM_stimulus):
         """Constructor
 
         Attention! This is the class for the new SpikeRec containing multispikes.
-        In order to use it, you should use 'SpikeRecMultiSpikes' as key in your protocol file.
-        If you use 'SpikeRec', it will use the old SpikeRec containing one spike,
+        In order to use it, you should use ``SpikeRecMultiSpikes`` as key in your protocol file.
+        If you use ``SpikeRec``, it will use the old SpikeRec containing one spike,
         which is using the IDRest class.
-        Beware that the **kwargs for the two types (multispikes/1spike) of SpikeRec are different.
+        Beware that the `**kwargs` for the two types (multispikes/1spike) of SpikeRec are different.
 
         Args:
             location(Location): location of stimulus

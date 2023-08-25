@@ -47,32 +47,38 @@ class TargetsConfiguration:
 
         Args:
             files (list of dict): File names with their metadata in the format:
-                [file1_metadata, file2_metadata, ...]
-                file1_metadata = {
-                    cell_name=XXX,
-                    filename=XXX,
-                    resource_id=XXX,
-                    etype=XXX,
-                    species=XXX,
-                    brain_region=XXX,
-                    ecodes={},
-                    other_metadata={},
-                }
+
+                .. code-block::
+
+                    [file1_metadata, file2_metadata, ...]
+                    file1_metadata = {
+                        cell_name=XXX,
+                        filename=XXX,
+                        resource_id=XXX,
+                        etype=XXX,
+                        species=XXX,
+                        brain_region=XXX,
+                        ecodes={},
+                        other_metadata={},
+                    }
             targets (list): define the efeatures to extract as well as which
                 protocols and current amplitude they should be extracted for. Of
                 the form:
-                [{
-                    "efeature_name": "AP_amplitude_1",
-                    "efeature": "AP_amplitude",
-                    "protocol": "IDRest",
-                    "amplitude": 150.,
-                    "tolerance": 10.,
-                    "efel_settings": {
-                        'stim_start': 200.,
-                        'stim_end': 500.,
-                        'Threshold': -10.
-                    }
-                }]
+
+                .. code-block::
+
+                    [{
+                        "efeature_name": "AP_amplitude_1",
+                        "efeature": "AP_amplitude",
+                        "protocol": "IDRest",
+                        "amplitude": 150.,
+                        "tolerance": 10.,
+                        "efel_settings": {
+                            'stim_start': 200.,
+                            'stim_end': 500.,
+                            'Threshold': -10.
+                        }
+                    }]
             protocols_rheobase (list): names of the protocols that will be
                 used to compute the rheobase of the cells. E.g: ['IDthresh'].
             available_traces (list of TraceFile)
@@ -84,14 +90,17 @@ class TargetsConfiguration:
                 min_recordings_per_amplitude, preferred_number_protocols and
                 tolerance are optional.
                 Of the form:
-                [{
-                    "protocols": ["IDRest", "IV"],
-                    "amplitudes": [150, 250],
-                    "efeatures": ["AP_amplitude", "mean_frequency"],
-                    "min_recordings_per_amplitude": 10,
-                    "preferred_number_protocols": 1,
-                    "tolerance": 10.,
-                }]
+
+                .. code-block::
+
+                    [{
+                        "protocols": ["IDRest", "IV"],
+                        "amplitudes": [150, 250],
+                        "efeatures": ["AP_amplitude", "mean_frequency"],
+                        "min_recordings_per_amplitude": 10,
+                        "preferred_number_protocols": 1,
+                        "tolerance": 10.,
+                    }]
         """
 
         self.available_traces = available_traces

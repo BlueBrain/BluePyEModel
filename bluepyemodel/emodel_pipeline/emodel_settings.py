@@ -91,8 +91,8 @@ class EModelPipelineSettings:
         Args:
             extraction_reader (function or list): function used to read the ephys data during
                 efeature extraction. If it is a list, it must contain the path to the file
-                containing the function and name of the function. E.g: ["path_to_module",
-                "name_of_function"]. If None, BluePyEfe will try to automatically use the correct
+                containing the function and name of the function. E.g: ``["path_to_module",
+                "name_of_function"]``. If None, BluePyEfe will try to automatically use the correct
                 default reader.
             extraction_threshold_value_save (int): during extraction, define the minimum number of
                 values (data points) needed for an e-feature to be considered valid and be returned
@@ -127,45 +127,52 @@ class EModelPipelineSettings:
                 names is provided, the mechanisms will be stochastic only for these protocols.
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
                 informed by the path the file containing the modifier and the name of the
-                function. E.g: morph_modifiers = [["path_to_module", "name_of_function"], ...].
-                If None, the default modifier will replace the axon with a tappered axon initial
-                segment. If you do not wish to use any modifier, set the present argument to "[]".
+                function. E.g: morph_modifiers = ``[["path_to_module", "name_of_function"], ...]``.
+                If ``None``, the default modifier will replace the axon with a tappered axon initial
+                segment. If you do not wish to use any modifier, set the present argument to ``[]``.
             threshold_based_evaluator (bool): not used. To be deprecated.
             start_from_emodel (dict): If informed, the optimisation for the present e-model will
                 be instantiated using as values for the model parameters the ones from the
                 e-model specified in the present dict. That option can be used for example
                 to perform a two-steps optimisations. Example:
-                    {
-                        "emodel": "bNAC",
-                        "etype": "bNAC",
-                        "iteration_tag": "mytest"
-                    }.
+
+                .. code-block::
+
+                        {
+                            "emodel": "bNAC",
+                            "etype": "bNAC",
+                            "iteration_tag": "mytest"
+                        }.
             optimiser (str): name of the algorithm used for optimisation, can be "IBEA", "SO-CMA"
                 or "MO-CMA".
             optimizer (str): here for backward compatibility. Use optimiser instead.
             optimisation_params (dict): parameter for the optimisation process. Keys have to match
                 the call of the optimiser. Here are the possible options and default values for the
                 different optimisers:
-                - IBEA: {
-                    "offspring_size": 100 # number of individuals in the population
-                }
-                - SO-CMA: {
-                    "offspring_size": 20, # number of individuals in the population
-                    sigma=0.4 # initial standard deviation of the gaussian distribution
-                }
-                - MO-CMA: {
-                    "offspring_size": 20, # number of individuals in the population
-                    sigma=0.4, # initial standard deviation of the gaussian distribution
-                    weight_hv=0.5 # weight of the hypervolume score in the selection process
-                }
+
+                .. code-block::
+
+                    - IBEA: {
+                        "offspring_size": 100 # number of individuals in the population
+                    }
+                    - SO-CMA: {
+                        "offspring_size": 20, # number of individuals in the population
+                        sigma=0.4 # initial standard deviation of the gaussian distribution
+                    }
+                    - MO-CMA: {
+                        "offspring_size": 20, # number of individuals in the population
+                        sigma=0.4, # initial standard deviation of the gaussian distribution
+                        weight_hv=0.5 # weight of the hypervolume score in the selection process
+                    }
+
                 For more details, see the documentation of the bluepyopt.deapext package.
             optimisation_timeout (float): duration (in second) after which the evaluation
                 of a protocol will be interrupted. When a protocol is interrupted, its response
                 will be considered as invalid and the score of all the related e-features will
                 be set to the maximum value (250 per default).
             threshold_efeature_std (float): if informed, the standard deviations of the
-                efeatures will be thresholded at a minimum of abs(threshold_efeature_std
-                * efeature_mean). Note that this will not overwrite the original standard
+                efeatures will be thresholded at a minimum of ``abs(threshold_efeature_std
+                * efeature_mean)``. Note that this will not overwrite the original standard
                 deviations, but only modify them for the optimisation process.
             max_ngen (int): maximum number of generations of the evolutionary process of the
                 optimisation.
@@ -173,10 +180,10 @@ class EModelPipelineSettings:
                 None to save checkpoint independently of the time between them
             use_stagnation_criterion (bool): whether to use the stagnation stopping criterion on
                 top of the maximum generation criterion during optimisation.
-            validation_function (str or list): if str, can be "max_score" or "mean_score".
+            validation_function (str or list): if str, can be ``max_score`` or ``mean_score``.
                 If list, must contain the path to the file containing the function and name
-                of the function. E.g: ["path_to_module", "name_of_function"]
-            validation_threshold (float): if "max_score" or "mean_score" were specified as the
+                of the function. E.g: ``["path_to_module", "name_of_function"]``
+            validation_threshold (float): if ``max_score`` or ``mean_score`` were specified as the
                 validation_function, this parameter will set the threshold under which the e-models
                 will be considered to pass validation successfully.
             optimisation_batch_size (int): number of optimisation seeds to run in parallel. Only
@@ -196,17 +203,17 @@ class EModelPipelineSettings:
                 See example emodel_pipeline_local_python for more details.
             name_Rin_protocol (list or str): name and amplitude of the protocol from which the
                 input resistance should be selected from. The matching protocol should have
-                "ohmic_input_resistance_vb_ssse" in its feature targets .E.g: ["IV", -20] or
-                "IV_-20".
+                "ohmic_input_resistance_vb_ssse" in its feature targets .E.g: ``["IV", -20]`` or
+                ``IV_-20``.
                 This setting has to be set before efeature extraction if you wish to run
                 a threshold based evaluator.
             name_rmp_protocol (list or str): name and amplitude of the protocol from which the
-                resting membrane potential should be selected from, e.g: ["IV", 0] or "IV_0". The
-                matching protocol should have "voltage_base" in its feature targets.
+                resting membrane potential should be selected from, e.g: ``["IV", 0]`` or ``IV_0``.
+                The matching protocol should have "voltage_base" in its feature targets.
                 This setting has to be set before efeature extraction if you wish to run
                 a threshold based evaluator.
             validation_protocols (list of str): name of the protocols to be used for validation
-                only. E.g. ["APWaveform_300"]. These protocols will not be used during
+                only. E.g. ``["APWaveform_300"]``. These protocols will not be used during
                 optimisation.
             plot_currentscape (bool): during the plotting, should the currentscapes be
                 plotted for the recordings.
@@ -220,7 +227,7 @@ class EModelPipelineSettings:
                 currents to be selected for the plot.
             save_recordings (bool): Whether to save the responses data under a folder
                 named `recordings`.
-            neuron_dt (float): time step of the NEURON simulator. If None, cvode will be used.
+            neuron_dt (float): time step of the NEURON simulator. If ``None``, cvode will be used.
             cvode_minstep (float): minimum time step allowed when using cvode.
             max_threshold_voltage (float): upper bound for the voltage during the
                 search for the threshold or rheobase current (see SearchThresholdProtocol).
