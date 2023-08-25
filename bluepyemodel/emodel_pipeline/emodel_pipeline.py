@@ -81,8 +81,10 @@ class EModel_pipeline:
                 to contain a copy of the configuration files, mechanisms, morphologies needed for
                 model building. This subdirectory can be created, for example using the following
                 shell script (see also the example emodel_pipeline_local_python):
-            .. code-block:: shell
-                git add -A && git commit --allow-empty -a -m "Running optimization"
+
+                .. code-block:: shell
+
+                    git add -A && git commit --allow-empty -a -m "Running optimization"
                 export iteration_tag=$(git rev-parse --short HEAD)
                 git archive --format=tar --prefix=${iteration_tag}/ HEAD | (cd ./run/ && tar xf -)
                 In this case, the current, the iteration_tag can then be passed during the
