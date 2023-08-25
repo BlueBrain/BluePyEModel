@@ -38,8 +38,8 @@ When you use the BluePyEModel software or method for your research, we ask you t
       month        = aug,
       year         = 2023,
       publisher    = {Zenodo},
-      doi          = {8283491},
-      url          = {https://doi.org/10.5281/zenodo.8283491}
+      doi          = {8283490},
+      url          = {https://doi.org/10.5281/zenodo.8283490}
     }
 
 Installation
