@@ -164,6 +164,7 @@ class EModelPipelineSettings:
                         sigma=0.4, # initial standard deviation of the gaussian distribution
                         weight_hv=0.5 # weight of the hypervolume score in the selection process
                     }
+
                 For more details, see the documentation of the bluepyopt.deapext package.
             optimisation_timeout (float): duration (in second) after which the evaluation
                 of a protocol will be interrupted. When a protocol is interrupted, its response
@@ -212,7 +213,7 @@ class EModelPipelineSettings:
                 This setting has to be set before efeature extraction if you wish to run
                 a threshold based evaluator.
             validation_protocols (list of str): name of the protocols to be used for validation
-                only. E.g. ["APWaveform_300"]. These protocols will not be used during
+                only. E.g. ``["APWaveform_300"]``. These protocols will not be used during
                 optimisation.
             plot_currentscape (bool): during the plotting, should the currentscapes be
                 plotted for the recordings.

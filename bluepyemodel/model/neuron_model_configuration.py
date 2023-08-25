@@ -60,9 +60,12 @@ class NeuronModelConfiguration:
         mechanisms, distributions and morphology here at instantiation. Instead, create an empty
         configuration and then use the class method: add_distribution, add_parameter, etc.
         Example::
-            config = NeuronModelConfiguration()
-            config.add_parameter(parameter_name, locations, value, mechanism)
-            config.morphology = MorphologyConfiguration(morph_name, format=".swc")
+
+            .. code-block::
+
+                config = NeuronModelConfiguration()
+                config.add_parameter(parameter_name, locations, value, mechanism)
+                config.morphology = MorphologyConfiguration(morph_name, format=".swc")
 
         Args:
             parameters (list of dict): contains the description of the parameters of the model

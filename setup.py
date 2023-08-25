@@ -44,9 +44,7 @@ EXTRA_TEST = [
 EXTRA_DOC = [
     "graphviz",
     "sphinx",
-    "sphinx-autoapi",
     "sphinx-bluebrain-theme",
-    "myst_parser",
 ]
 
 
