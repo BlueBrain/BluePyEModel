@@ -29,6 +29,7 @@ from bluepyemodel.emodel_pipeline.plotting import optimisation
 from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.optimisation import get_checkpoint_path
 from bluepyemodel.optimisation import store_best_model
+from bluepyemodel.tasks.config import EmodelAPIConfig
 from bluepyemodel.tasks.luigi_tools import IPyParallelTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
@@ -719,6 +720,20 @@ class EModelCreation(WorkflowTask):
     seed = luigi.IntParameter(default=1)
     graceful_killer = multiprocessing.Event()
 
+    @staticmethod
+    def check_mettypes(func):
+        """Decorator to check mtype, etype and ttype presence on nexus"""
+
+        def inner(self):
+            """Inner decorator function"""
+            if EmodelAPIConfig().api == "nexus":
+                self.access_point.check_mettypes()
+            # do this instead of just func(self) because of the yield in EModelCreation
+            for x in func(self):
+                yield x
+
+        return inner
+
     def check_and_update_emodel_workflow(self, state="running"):
         """Get or create emodel workflow, check its configuration, and update its state on nexus"""
         # get / create
@@ -741,7 +756,7 @@ class EModelCreation(WorkflowTask):
         emodel_workflow.state = state
         self.access_point.store_or_update_emodel_workflow(emodel_workflow)
 
-    @WorkflowTask.check_mettypes
+    @check_mettypes
     def run(self):
         """Optimise e-models by batches of batch_size until one is validated."""
 

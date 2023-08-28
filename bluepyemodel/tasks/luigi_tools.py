@@ -78,9 +78,7 @@ class WorkflowTask(luigi.Task):
             """Inner decorator function"""
             if EmodelAPIConfig().api == "nexus":
                 self.access_point.check_mettypes()
-            # do this instead of just func(self) because of the yield in EModelCreation
-            for x in func(self):
-                yield x
+            func(self)
 
         return inner
 
