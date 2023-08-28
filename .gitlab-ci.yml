@@ -1,6 +1,6 @@
 include:
    - project: cells/ci
-     file: /ci/lib/tox-bb5.yml
+     file: /ci/lib/common.yml
 
 workflow:
   # run for the default branch and all types of merge request pipelines, but not for tags
@@ -12,6 +12,8 @@ tests:
   stage: test
   tags:
     - bb5_map
+  variables:
+    PIP_PACKAGES: tox
   before_script:
   - !reference [.define-functions]
   - !reference [.bb5, clean-env]
@@ -22,7 +24,8 @@ tests:
   - !reference [.setup-venv]
   - !reference [.gitlab-access]
   script:
+  - pip install $PIP_PACKAGES
   - pip install .  # Install the package itself
   - git clone git@bbpgitlab.epfl.ch:cells/bluepyemodelnexus.git
   - cd bluepyemodelnexus
-  - python -mtox
+  - tox
