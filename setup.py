@@ -54,6 +54,7 @@ setup(
         'version_scheme': 'python-simplified-semver',
         'local_scheme': 'no-local-version'
     },
+    setup_requires=['setuptools_scm'],
     author="Blue Brain Project, EPFL",
     author_email="",
     version=VERSION,
