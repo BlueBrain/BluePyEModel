@@ -50,13 +50,17 @@ EXTRA_DOC = [
 
 setup(
     name="bluepyemodel",
+    use_scm_version={
+        'version_scheme': 'python-simplified-semver',
+        'local_scheme': 'no-local-version'
+    },
     author="Blue Brain Project, EPFL",
     author_email="",
     version=VERSION,
     description="Blue Brain Python E-Model Building Library",
     long_description=README,
     long_description_content_type="text/x-rst",
-    license="Apache 2.0",
+    license="Apache-2.0",
     install_requires=[
         "numpy",
         "scipy",
@@ -85,4 +89,20 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={"": ["data/*.npy"]},
+    keywords=[
+        'computational neuroscience',
+        'simulation',
+        'analysis',
+        'parameters',
+        'Blue Brain Project'],
+    url="https://github.com/BlueBrain/BluePyEModel",
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Console',
+        'License :: OSI Approved :: Apache Software License',
+        'Operating System :: POSIX',
+        'Topic :: Scientific/Engineering',
+        'Programming Language :: Python :: 3',
+        'Topic :: Utilities',
+    ],
 )
