@@ -28,4 +28,4 @@ tests:
   - pip install .  # Install the package itself
   - git clone git@bbpgitlab.epfl.ch:cells/bluepyemodelnexus.git
   - cd bluepyemodelnexus
-  - tox
+  - tox -e lint
