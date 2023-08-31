@@ -92,6 +92,7 @@ setup(
         'simulation',
         'analysis',
         'parameters',
+        'cell',
         'Blue Brain Project'],
     url="https://github.com/BlueBrain/BluePyEModel",
     classifiers=[
