@@ -98,22 +98,28 @@ class FitnessCalculatorConfiguration:
         Args:
             efeatures (list of dict): contains the description of the efeatures of the model
                 in the format returned by the method as_dict of the EFeatureConfiguration class:
-                [
-                    {"efel_feature_name": str, "protocol_name": str, "recording_name": str,
-                    "mean": float, "std": float, "efel_settings": dict}
-                ]
+
+                .. code-block::
+
+                    [
+                        {"efel_feature_name": str, "protocol_name": str, "recording_name": str,
+                        "mean": float, "std": float, "efel_settings": dict}
+                    ]
             protocols (list of dict): contains the description of the protocols of the model
                 in the format returned by the method as_dict of the ProtocolConfiguration class:
-                [
-                    {"name": str, "stimuli": list of dict, "recordings": list of dict,
-                    "validation": bool}
-                ]
+
+                .. code-block::
+
+                    [
+                        {"name": str, "stimuli": list of dict, "recordings": list of dict,
+                        "validation": bool}
+                    ]
             name_rmp_protocol (str or list): name and amplitude of protocol
                 whose features are to be used as targets for the search of the RMP.
-                e.g: ["IV", 0] or "IV_0"
+                e.g: ``["IV", 0]`` or ``"IV_0"``
             name_rin_protocol (str or list): name and amplitude of protocol
                 whose features are to be used as targets for the search of the Rin.
-                e.g: ["IV", -20] or "IV_-20"
+                e.g: ``["IV", -20]`` or ``"IV_-20"``
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of
                 the mean of the features value (optional). Legacy.
              default_std_value (float): during and after extraction, this value will be used

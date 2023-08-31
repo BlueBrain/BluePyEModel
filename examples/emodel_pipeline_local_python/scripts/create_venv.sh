@@ -13,7 +13,7 @@ cd software
 ../$VENV/bin/pip install --upgrade setuptools pip
 ../$VENV/bin/pip install wheel
 
-git clone https://bbpgitlab.epfl.ch/cells/bluepyemodel.git
+git clone https://github.com/BlueBrain/BluePyEModel.git
 ../$VENV/bin/pip install -e ./bluepyemodel
 
 cd ..

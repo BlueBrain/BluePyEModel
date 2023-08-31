@@ -110,9 +110,7 @@ the main (upstream) repository:
 # Development Environment
 
 Please make sure to install the project requirements,
-see the [dependencies](./README.md#dependencies) section in top README.
-
-This section applies to both Python versions 2 and 3.
+see the [dependencies](./setup.py#dependencies)
 
 ## Setup
 
@@ -121,7 +119,6 @@ It is recommended to use `virtualenv` to develop in a sandbox environment:
 ```
 virtualenv venv
 . venv/bin/activate
-pip install -r tests/requirement_tests.txt
 ```
 
 ## Build
@@ -130,7 +127,7 @@ Run the following command to build incrementally the project: `pip install -e .`
 
 ## Test
 
-Run the following command to run the Python unit-tests: `pytest tests`
+Run the following command to run the Python unit-tests: `tox`
 
 ## Coding conventions
 

@@ -46,18 +46,24 @@ class ProtocolConfiguration:
                 to match what is expected by the related eCode class (see the classes defined
                 in bluepyemodel.ecodes for more information). For example, for a Step protocol,
                 the format will be:
-                [{
-                    'amp': float, 'thresh_perc': float, 'holding_current': float, 'delay': float,
-                    'duration': float, 'totduration': float
-                }]
+
+                .. code-block::
+
+                    [{
+                        'amp': float, 'thresh_perc': float, 'holding_current': float,
+                        'delay': float, 'duration': float, 'totduration': float
+                    }]
             recordings_from_config (list of dict): contains the description of the recordings.
                 For a recording at a given compartment, the format is for example:
-                [{
-                    "type": "CompRecording",
-                    "name": f"{protocol_name}.soma.v",
-                    "location": "soma",
-                    "variable": "v",
-                }]
+
+                .. code-block::
+
+                    [{
+                        "type": "CompRecording",
+                        "name": f"{protocol_name}.soma.v",
+                        "location": "soma",
+                        "variable": "v",
+                    }]
             recordings (list of dict): same as recordings_from_config. Is here for backward
                 compatibility only.
             ion_variables (list of str): ion current names and ionic concentration names

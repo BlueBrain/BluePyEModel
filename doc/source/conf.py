@@ -34,31 +34,11 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "autoapi.extension",
+    'sphinx.ext.autodoc',
     "sphinx.ext.graphviz",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "myst_parser",
     "sphinx.ext.autosummary"
-]
-
-autoapi_dirs = [
-    "../../bluepyemodel",
-]
-autoapi_ignore = [
-    "*version.py",
-]
-autoapi_python_use_implicit_namespaces = True
-autoapi_keep_files = False
-autoapi_add_toctree_entry = False
-autoapi_options = [
-    "imported-members",
-    "members",
-    "private-members",
-    "show-inheritance",
-    "show-module-summary",
-    "special-members",
-    "undoc-members",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -109,64 +89,4 @@ intersphinx_mapping = {
     "luigi": ("https://luigi.readthedocs.io/en/stable", None),
 }
 
-
-import importlib
-import luigi
-import re
-
-import bluepyemodel
-import bluepyemodel.tasks
-
-
-SKIP = [
-    r".*\.L",
-    r".*tasks\..*\.requires$",
-    r".*tasks\..*\.run",
-    r".*tasks\..*\.output",
-]
-
-IMPORT_MAPPING = {
-    "bluepyemodel": bluepyemodel,
-    "tasks": bluepyemodel.tasks,
-}
-
-
-def maybe_skip_member(app, what, name, obj, skip, options):
-    skip = None
-    for pattern in SKIP:
-        if re.match(pattern, name) is not None:
-            skip = True
-            break
-    """
-    if not skip:
-        try:
-            package, module, *path = name.split(".")
-            root_package = IMPORT_MAPPING[package]
-            actual_module = importlib.import_module(root_package.__name__ + "." + module)
-            task = getattr(actual_module, path[-2])
-            actual_obj = getattr(task, path[-1])
-            if isinstance(actual_obj, luigi.Parameter):
-                if hasattr(actual_obj, "description") and actual_obj.description:
-                    help_str, param_type, choices, interval, optional = _process_param(actual_obj)
-                    if optional:
-                        help_str = "(optional) " + help_str
-                    if param_type is not None:
-                        help_str += f"\n\n:type: {param_type}"
-                    if choices is not None:
-                        help_str += f"\n\n:choices: {choices}"
-                    if interval is not None:
-                        help_str += f"\n\n:permitted values: {interval}"
-                    if (
-                        hasattr(actual_obj, "_default")
-                        and actual_obj._default not in _PARAM_NO_VALUE
-                    ):
-                        help_str += f"\n\n:default value: {actual_obj._default}"
-                    obj.docstring = help_str
-        except:
-            pass
-    """
-    return skip
-
-
-def setup(app):
-    app.connect("autoapi-skip-member", maybe_skip_member)
+autodoc_mock_imports = ['bluepyemodel.tasks.luigi_tools']

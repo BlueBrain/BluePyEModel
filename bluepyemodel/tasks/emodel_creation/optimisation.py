@@ -17,6 +17,7 @@ limitations under the License.
 """
 
 import glob
+import logging
 import multiprocessing
 from pathlib import Path
 
@@ -28,6 +29,7 @@ from bluepyemodel.emodel_pipeline.plotting import optimisation
 from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.optimisation import get_checkpoint_path
 from bluepyemodel.optimisation import store_best_model
+from bluepyemodel.tasks.config import EmodelAPIConfig
 from bluepyemodel.tasks.luigi_tools import IPyParallelTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTarget
 from bluepyemodel.tasks.luigi_tools import WorkflowTask
@@ -37,6 +39,7 @@ from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
 from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 
 # pylint: disable=W0235,W0621,W0404,W0611,W0703,E1128
+logger = logging.getLogger(__name__)
 
 
 def _reformat_ttype(ttype):
@@ -114,18 +117,6 @@ class EfeaturesProtocolsTarget(WorkflowTarget):
 
 class ExtractEFeatures(WorkflowTask):
     """Luigi wrapper for extract_efeatures in emodel_pipeline.EModel_pipeline."""
-
-    def requires(self):
-        """ """
-        return CreateTargetsConfiguration(
-            emodel=self.emodel,
-            etype=self.etype,
-            ttype=self.ttype,
-            mtype=self.mtype,
-            species=self.species,
-            brain_region=self.brain_region,
-            iteration_tag=self.iteration_tag,
-        )
 
     @WorkflowTask.check_mettypes
     def run(self):
@@ -729,10 +720,24 @@ class EModelCreation(WorkflowTask):
     seed = luigi.IntParameter(default=1)
     graceful_killer = multiprocessing.Event()
 
+    @staticmethod
+    def check_mettypes(func):
+        """Decorator to check mtype, etype and ttype presence on nexus"""
+
+        def inner(self):
+            """Inner decorator function"""
+            if EmodelAPIConfig().api == "nexus":
+                self.access_point.check_mettypes()
+            # do this instead of just func(self) because of the yield in EModelCreation
+            for x in func(self):
+                yield x
+
+        return inner
+
     def check_and_update_emodel_workflow(self, state="running"):
         """Get or create emodel workflow, check its configuration, and update its state on nexus"""
         # get / create
-        emodel_workflow = self.access_point.get_emodel_workflow()
+        emodel_workflow, _ = self.access_point.get_emodel_workflow()
         if emodel_workflow is None:
             emodel_workflow = self.access_point.create_emodel_workflow()
 
@@ -751,7 +756,7 @@ class EModelCreation(WorkflowTask):
         emodel_workflow.state = state
         self.access_point.store_or_update_emodel_workflow(emodel_workflow)
 
-    @WorkflowTask.check_mettypes
+    @check_mettypes
     def run(self):
         """Optimise e-models by batches of batch_size until one is validated."""
 

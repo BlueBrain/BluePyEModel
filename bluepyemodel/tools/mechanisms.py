@@ -148,7 +148,10 @@ def get_mechanism_suffix(mech_file):
 
 def discriminate_by_temp(resources, temperatures):
     """Select sublist of resources with given temperature."""
-    temp = temperatures.pop(0)
+    if not temperatures:
+        return resources
+    new_temperatures = temperatures.copy()
+    temp = new_temperatures.pop(0)
     tmp_resources = [r for r in resources if r.temperature.value == temp]
     if len(tmp_resources) > 0 and len(tmp_resources) < len(resources):
         logger.warning(
@@ -157,6 +160,6 @@ def discriminate_by_temp(resources, temperatures):
             temp,
         )
         return tmp_resources
-    if len(temperatures) > 0:
-        return discriminate_by_temp(resources, temperatures)
+    if len(new_temperatures) > 0:
+        return discriminate_by_temp(resources, new_temperatures)
     return resources

@@ -80,15 +80,18 @@ class LocalAccessPoint(DataAccessPoint):
             recipes_path (str): path to the json file which should contain the path to the
                 configuration files used for each etype. The content of this file should follow the
                 format:
-                {
-                    "emodelname": {
-                        "morph_path": "./morphologies/",
-                        "morphology": [[morphologyname", "morphfile.asc"]],
-                        "params": "config/params/pyr.json",
-                        "protocol": "config/protocols/emodelname.json",
-                        "features": "config/features/emodelname.json"
+
+                .. code-block::
+
+                    {
+                        "emodelname": {
+                            "morph_path": "./morphologies/",
+                            "morphology": [[morphologyname", "morphfile.asc"]],
+                            "params": "config/params/pyr.json",
+                            "protocol": "config/protocols/emodelname.json",
+                            "features": "config/features/emodelname.json"
+                        }
                     }
-                }
             legacy_dir_structure (bool): if true, the path coming from the recipes will be replaced
                 by "self.emodel_dir / emodel / json_path_from_recipes". To be deprecated.
             with_seed (bool): allows for emodel_seed type of emodel names in final.json
@@ -527,7 +530,7 @@ class LocalAccessPoint(DataAccessPoint):
 
     def get_emodel_workflow(self):
         """Emodel workflow is not used in local, so return None here"""
-        return None
+        return None, None
 
     def check_emodel_workflow_configurations(self, emodel_workflow):
         """Emodel workflow is not used in local, so always return True to let the workflow run"""
