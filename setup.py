@@ -55,10 +55,6 @@ setup(
     setup_requires=['setuptools_scm'],
     author="Blue Brain Project, EPFL",
     author_email="",
-    use_scm_version={
-        'version_scheme': 'python-simplified-semver',
-        'local_scheme': 'no-local-version'
-    },
     description="Blue Brain Python E-Model Building Library",
     long_description=README,
     long_description_content_type="text/x-rst",
