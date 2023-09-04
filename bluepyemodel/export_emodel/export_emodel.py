@@ -68,7 +68,7 @@ def _write_node_file(emodel, model_template_path, node_file_path, morphology_pat
 
 
 def _write_hoc_file(
-        cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2"
+    cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2"
 ):
     """Creates a hoc file containing the emodel and its morphology.
     WARNING: this assumes that any morphology modifier has been informed as both
