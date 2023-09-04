@@ -67,7 +67,9 @@ def _write_node_file(emodel, model_template_path, node_file_path, morphology_pat
             dynamics_params["threshold_current"] = emodel.responses["bpo_threshold_current"]
 
 
-def _write_hoc_file(cell_model, emodel, hoc_file_path, template="cell_template_neurodamus.jinja2"):
+def _write_hoc_file(
+    cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2"
+):
     """Creates a hoc file containing the emodel and its morphology.
     WARNING: this assumes that any morphology modifier has been informed as both
     a python method and a hoc method"""
@@ -105,7 +107,9 @@ def _export_model_sonata(cell_model, emodel, output_dir=None):
     shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)
 
     # Exports the BluePyOpt cell model as a hoc file
-    _write_hoc_file(cell_model, emodel, hoc_file_path, template="cell_template_neurodamus.jinja2")
+    _write_hoc_file(
+        cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2"
+    )
 
     # Create the SONATA node file
     _write_node_file(
