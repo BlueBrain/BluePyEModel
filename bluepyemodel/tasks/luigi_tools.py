@@ -44,8 +44,8 @@ class WorkflowTask(luigi.Task):
 
     emodel = luigi.Parameter()
     etype = luigi.Parameter(default=None)
-    ttype = luigi.Parameter(default=None)
-    mtype = luigi.Parameter(default=None)
+    ttype = luigi.OptionalParameter(default=None)
+    mtype = luigi.OptionalParameter(default=None)
     species = luigi.Parameter(default=None)
     brain_region = luigi.Parameter(default=None)
     iteration_tag = luigi.Parameter(default=None)
