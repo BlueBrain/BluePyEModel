@@ -682,7 +682,7 @@ class EModelCreationTarget(WorkflowTarget):
     def update_emodel_workflow(self, state="done"):
         """Update emodel workflow state on nexus"""
         # get / create
-        emodel_workflow = self.access_point.get_emodel_workflow()
+        emodel_workflow, _ = self.access_point.get_emodel_workflow()
         if emodel_workflow is None:
             emodel_workflow = self.access_point.create_emodel_workflow()
 
