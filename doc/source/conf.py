@@ -20,6 +20,7 @@ from pkg_resources import get_distribution
 # -- Project information -----------------------------------------------------
 
 project = "BluePyEModel"
+author = 'Blue Brain Project/EPFL'
 
 # The short X.Y version
 version = get_distribution("bluepyemodel").version
