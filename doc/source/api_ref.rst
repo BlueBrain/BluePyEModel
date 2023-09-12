@@ -1,4 +1,4 @@
-bluepyemodel
+BluePyEModel
 ============
 
 .. automodule:: bluepyemodel
