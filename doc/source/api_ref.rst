@@ -1,10 +1,25 @@
-API Reference
-=============
+BluePyEModel
+============
 
-This page contains auto-generated API reference documentation.
+.. automodule:: bluepyemodel
+   :members:
+   :show-inheritance:
+
+
+.. rubric:: Modules
 
 .. autosummary::
    :toctree: _autosummary
    :recursive:
 
-   bluepyemodel
+   access_point
+   ecode
+   efeatures_extraction
+   emodel_pipeline
+   evaluation
+   export_emodel
+   model
+   optimisation
+   tasks
+   tools
+   validation

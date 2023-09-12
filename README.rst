@@ -62,7 +62,7 @@ To get started with the E-Model building pipeline
 .. image:: https://raw.githubusercontent.com/BlueBrain/BluePyEModel/main/doc/images/pipeline.png
    :alt: E-Model building pipeline
 
-This section presents a general picture of the pipeline. For a detailed picture and how to use it, please refer to the example directory `./examples/emodel_pipeline_local_python <./examples/emodel_pipeline_local_python>`_ and its `README <./examples/emodel_pipeline_local_python/README.rst>`_.
+This section presents a general picture of the pipeline. For a detailed picture and how to use it, please refer to the `example directory <https://github.com/BlueBrain/BluePyEModel/tree/main/examples/emodel_pipeline_local_python/>`_ and its `README <https://github.com/BlueBrain/BluePyEModel/tree/main/examples/emodel_pipeline_local_python>`_.
 
 The pipeline is divided in 6 steps:
 
