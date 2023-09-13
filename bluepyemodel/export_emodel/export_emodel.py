@@ -68,7 +68,11 @@ def _write_node_file(emodel, model_template_path, node_file_path, morphology_pat
 
 
 def _write_hoc_file(
-    cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2", new_emodel_name=None,
+    cell_model,
+    emodel,
+    hoc_file_path,
+    template="cell_template_neurodamus_sbo.jinja2",
+    new_emodel_name=None,
 ):
     """Creates a hoc file containing the emodel and its morphology.
     WARNING: this assumes that any morphology modifier has been informed as both
@@ -114,7 +118,11 @@ def _export_model_sonata(cell_model, emodel, output_dir=None, new_emodel_name=No
 
     # Exports the BluePyOpt cell model as a hoc file
     _write_hoc_file(
-        cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2", new_emodel_name=new_emodel_name,
+        cell_model,
+        emodel,
+        hoc_file_path,
+        template="cell_template_neurodamus_sbo.jinja2",
+        new_emodel_name=new_emodel_name,
     )
 
     # Create the SONATA node file
@@ -154,7 +162,12 @@ def select_emodels(emodel_name, emodels, only_validated=False, only_best=True, s
 
 
 def export_emodels_sonata(
-    access_point, only_validated=False, only_best=True, seeds=None, map_function=map, new_emodel_name=None
+    access_point,
+    only_validated=False,
+    only_best=True,
+    seeds=None,
+    map_function=map,
+    new_emodel_name=None,
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will
     contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model.
@@ -211,11 +224,22 @@ def _export_emodel_hoc(cell_model, mo, output_dir=None, new_emodel_name=None):
     shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)
 
     # Exports the BluePyOpt cell model as a hoc file
-    _write_hoc_file(cell_model, mo, hoc_file_path, template="cell_template.jinja2", new_emodel_name=new_emodel_name)
+    _write_hoc_file(
+        cell_model,
+        mo,
+        hoc_file_path,
+        template="cell_template.jinja2",
+        new_emodel_name=new_emodel_name,
+    )
 
 
 def export_emodels_hoc(
-    access_point, only_validated=False, only_best=True, seeds=None, map_function=map, new_emodel_name=None
+    access_point,
+    only_validated=False,
+    only_best=True,
+    seeds=None,
+    map_function=map,
+    new_emodel_name=None,
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will contain a hoc
     version of the model.
