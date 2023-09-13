@@ -68,13 +68,16 @@ def _write_node_file(emodel, model_template_path, node_file_path, morphology_pat
 
 
 def _write_hoc_file(
-    cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2"
+    cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2", new_emodel_name=None,
 ):
     """Creates a hoc file containing the emodel and its morphology.
     WARNING: this assumes that any morphology modifier has been informed as both
     a python method and a hoc method"""
 
     template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
+
+    if new_emodel_name is not None:
+        cell_model.name = new_emodel_name
 
     hoc_content = cell_model.create_hoc(
         param_values=emodel.parameters,
@@ -86,11 +89,14 @@ def _write_hoc_file(
         f.writelines(hoc_content)
 
 
-def _export_model_sonata(cell_model, emodel, output_dir=None):
+def _export_model_sonata(cell_model, emodel, output_dir=None, new_emodel_name=None):
     """Creates the directory and files required for an emodel to be used in circuit building"""
 
     if not emodel.passed_validation:
         logger.warning("Exporting a model that did not pass validation.")
+
+    if new_emodel_name is not None:
+        emodel.emodel_metadata.emodel = new_emodel_name
 
     if output_dir is None:
         output_dir = (
@@ -108,7 +114,7 @@ def _export_model_sonata(cell_model, emodel, output_dir=None):
 
     # Exports the BluePyOpt cell model as a hoc file
     _write_hoc_file(
-        cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2"
+        cell_model, emodel, hoc_file_path, template="cell_template_neurodamus_sbo.jinja2", new_emodel_name=new_emodel_name,
     )
 
     # Create the SONATA node file
@@ -148,7 +154,7 @@ def select_emodels(emodel_name, emodels, only_validated=False, only_best=True, s
 
 
 def export_emodels_sonata(
-    access_point, only_validated=False, only_best=True, seeds=None, map_function=map
+    access_point, only_validated=False, only_best=True, seeds=None, map_function=map, new_emodel_name=None
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will
     contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model.
@@ -183,12 +189,15 @@ def export_emodels_sonata(
     for mo in emodels:
         if not cell_model.morphology.morph_modifiers:  # Turn [] into None
             cell_model.morphology.morph_modifiers = None
-        _export_model_sonata(cell_model, mo, output_dir=None)
+        _export_model_sonata(cell_model, mo, output_dir=None, new_emodel_name=new_emodel_name)
 
 
-def _export_emodel_hoc(cell_model, mo, output_dir=None):
+def _export_emodel_hoc(cell_model, mo, output_dir=None, new_emodel_name=None):
     if not mo.passed_validation:
         logger.warning("Exporting a model that did not pass validation.")
+
+    if new_emodel_name is not None:
+        mo.emodel_metadata.emodel = new_emodel_name
 
     if output_dir is None:
         output_dir = f"./export_emodels_hoc/{mo.emodel_metadata.as_string(seed=mo.seed)}/"
@@ -202,11 +211,11 @@ def _export_emodel_hoc(cell_model, mo, output_dir=None):
     shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)
 
     # Exports the BluePyOpt cell model as a hoc file
-    _write_hoc_file(cell_model, mo, hoc_file_path, template="cell_template.jinja2")
+    _write_hoc_file(cell_model, mo, hoc_file_path, template="cell_template.jinja2", new_emodel_name=new_emodel_name)
 
 
 def export_emodels_hoc(
-    access_point, only_validated=False, only_best=True, seeds=None, map_function=map
+    access_point, only_validated=False, only_best=True, seeds=None, map_function=map, new_emodel_name=None
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will contain a hoc
     version of the model.
@@ -241,4 +250,4 @@ def export_emodels_hoc(
     for mo in emodels:
         if not cell_model.morphology.morph_modifiers:  # Turn [] into None
             cell_model.morphology.morph_modifiers = None
-        _export_emodel_hoc(cell_model, mo, output_dir=None)
+        _export_emodel_hoc(cell_model, mo, output_dir=None, new_emodel_name=new_emodel_name)
