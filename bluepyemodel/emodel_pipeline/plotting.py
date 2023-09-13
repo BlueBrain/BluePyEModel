@@ -154,7 +154,7 @@ def optimisation(
     make_dir(figures_dir)
     run, _ = read_checkpoint(checkpoint_path)
 
-    ngen = numpy.cumsum(run["logbook"].select("gen"))
+    ngen = run["logbook"].select("gen")
     is_finished_msg = ""
     if "CMA" in optimiser:
         is_finished_msg = f"is finished: {not run['CMA_es'].active}"
