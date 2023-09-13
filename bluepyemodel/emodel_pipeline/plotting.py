@@ -154,7 +154,7 @@ def optimisation(
     make_dir(figures_dir)
     run, _ = read_checkpoint(checkpoint_path)
 
-    nevals = numpy.cumsum(run["logbook"].select("nevals"))
+    ngen = run["logbook"].select("gen")
     is_finished_msg = ""
     if "CMA" in optimiser:
         is_finished_msg = f"is finished: {not run['CMA_es'].active}"
@@ -163,7 +163,6 @@ def optimisation(
         (
             f"min score = {min(run['logbook'].select('min')):.3f}",
             f"# of generations = {run['generation']}",
-            f"# of evaluations = {nevals[-1]}",
             f"evolution algorithm: {optimiser}",
             is_finished_msg,
         )
@@ -174,12 +173,12 @@ def optimisation(
     title = get_title(emodel, iteration, seed)
     axs[0, 0].set_title(title)
 
-    axs[0, 0].plot(nevals, run["logbook"].select("min"), label="Minimum", ls="--", c="gray")
+    axs[0, 0].plot(ngen, run["logbook"].select("min"), label="Minimum", c="red")
 
-    axs[0, 0].plot(nevals, run["logbook"].select("avg"), label="Average", c="gray")
+    axs[0, 0].plot(ngen, run["logbook"].select("avg"), label="Average", c="black")
 
     axs[0, 0].set_yscale("log")
-    axs[0, 0].set_xlabel("Number of evaluations")
+    axs[0, 0].set_xlabel("Number of generations")
     axs[0, 0].set_ylabel("Fitness")
     axs[0, 0].legend(title=legend_text, loc="upper right", frameon=False)
 
