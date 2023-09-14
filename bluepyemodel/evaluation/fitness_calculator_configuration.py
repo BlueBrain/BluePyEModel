@@ -29,45 +29,45 @@ from bluepyemodel.tools.utils import are_same_protocol
 logger = logging.getLogger(__name__)
 
 
-def _set_morphology_dependent_locations(stimulus, cell):
+def _set_morphology_dependent_locations(recording, cell):
     """Here we deal with morphology dependent locations"""
 
-    def _get_stim(stimulus, sec_id):
-        new_stim = deepcopy(stimulus)
-        stim_split = stimulus["name"].split(".")
-        new_stim["type"] = "nrnseclistcomp"
-        new_stim["name"] = f"{'.'.join(stim_split[:-1])}_{sec_id}.{stim_split[-1]}"
-        new_stim["sec_index"] = sec_id
-        return new_stim
+    def _get_rec(recording, sec_id):
+        new_rec = deepcopy(recording)
+        rec_split = recording["name"].split(".")
+        new_rec["type"] = "nrnseclistcomp"
+        new_rec["name"] = f"{'.'.join(rec_split[:-1])}_{sec_id}.{rec_split[-1]}"
+        new_rec["sec_index"] = sec_id
+        return new_rec
 
-    new_stims = []
-    if stimulus["type"] == "somadistanceapic":
-        new_stims = [deepcopy(stimulus)]
-        new_stims[0]["sec_name"] = seclist_to_sec.get(
-            stimulus["seclist_name"], stimulus["seclist_name"]
+    new_recs = []
+    if recording["type"] == "somadistanceapic":
+        new_recs = [deepcopy(recording)]
+        new_recs[0]["sec_name"] = seclist_to_sec.get(
+            recording["seclist_name"], recording["seclist_name"]
         )
 
-    elif stimulus["type"] == "terminal_sections":
+    elif recording["type"] == "terminal_sections":
         # all terminal sections
-        for sec_id, section in enumerate(getattr(cell.icell, stimulus["seclist_name"])):
+        for sec_id, section in enumerate(getattr(cell.icell, recording["seclist_name"])):
             if len(section.subtree()) == 1:
-                new_stims.append(_get_stim(stimulus, sec_id))
+                new_recs.append(_get_rec(recording, sec_id))
 
-    elif stimulus["type"] == "all_sections":
+    elif recording["type"] == "all_sections":
         # all section of given type
-        for sec_id, section in enumerate(getattr(cell.icell, stimulus["seclist_name"])):
-            new_stims.append(_get_stim(stimulus, sec_id))
+        for sec_id, section in enumerate(getattr(cell.icell, recording["seclist_name"])):
+            new_recs.append(_get_rec(recording, sec_id))
 
     else:
-        new_stims = [deepcopy(stimulus)]
+        new_recs = [deepcopy(recording)]
 
-    if len(new_stims) == 0 and stimulus["type"] in [
+    if len(new_recs) == 0 and recording["type"] in [
         "somadistanceapic",
         "terminal_sections",
         "all_sections",
     ]:
-        logger.warning("We could not add a location for %s", stimulus)
-    return new_stims
+        logger.warning("We could not add a location for %s", recording)
+    return new_recs
 
 
 class FitnessCalculatorConfiguration:
@@ -506,6 +506,8 @@ class FitnessCalculatorConfiguration:
             for j, rec in enumerate(protocol.recordings):
                 if rec["type"] != "CompRecording":
                     for _rec in _set_morphology_dependent_locations(rec, cell):
+                        try:
+                            tmp_stim = 
                         recordings.append(_rec)
                 else:
                     recordings.append(self.protocols[i].recordings[j])
