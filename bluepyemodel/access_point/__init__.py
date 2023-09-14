@@ -86,7 +86,7 @@ def get_access_point(access_point, emodel, **kwargs):
             brain_region=brain_region,
             iteration_tag=kwargs.get("iteration_tag", None),
             synapse_class=kwargs.get("synapse_class", None),
-            project=kwargs.get("project", "ncmv3"),
+            project=kwargs.get("project", None),
             organisation=kwargs.get("organisation", "bbp"),
             endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
             forge_path=kwargs.get("forge_path", None),
