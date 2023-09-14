@@ -25,6 +25,7 @@ from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import seclist_to_sec
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.tools.utils import are_same_protocol
+from bluepyopt.ephys.locations import EPhysLocInstantiateException
 
 logger = logging.getLogger(__name__)
 
@@ -501,24 +502,37 @@ class FitnessCalculatorConfiguration:
 
         # TODO: THE SAME FOR STIMULI
 
+        skipped_recordings = []
         for i, protocol in enumerate(self.protocols):
             recordings = []
             for j, rec in enumerate(protocol.recordings):
                 if rec["type"] != "CompRecording":
                     for _rec in _set_morphology_dependent_locations(rec, cell):
                         try:
-                            tmp_stim = 
-                        recordings.append(_rec)
+                            tmp_rec = deepcopy(_rec)
+                            tmp_rec.location.instantiate()
+                            recordings.append(_rec)
+                        except EPhysLocInstantiateException:
+                            logger.warning(
+                                f"Could not find {_rec.location.name}, "
+                                "ignoring recording at this location"
+                            )
+                            skipped_recordings.append((protocol.name, _rec.name))
                 else:
                     recordings.append(self.protocols[i].recordings[j])
             self.protocols[i].recordings = recordings
 
-        # if the loc of the recording is of the form axon*.v, we replace * by
-        # all the corresponding int from the created recordings
         to_remove = []
         efeatures = []
         for i, efeature in enumerate(self.efeatures):
             if isinstance(efeature.recording_name, str):
+                # remove efeature associated to skipped recording
+                for skiprec in skipped_recordings:
+                    if efeature.protocol_name == skiprec[0] and efeature.recording_name == skiprec[1]:
+                        to_remove.append(i)
+                        continue
+                # if the loc of the recording is of the form axon*.v, we replace * by
+                # all the corresponding int from the created recordings
                 loc_name, rec_name = efeature.recording_name.split(".")
                 if loc_name[-1] == "*":
                     to_remove.append(i)
