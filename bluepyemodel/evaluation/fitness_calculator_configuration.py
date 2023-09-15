@@ -519,7 +519,7 @@ class FitnessCalculatorConfiguration:
                                 f"Could not find {location.name}, "
                                 "ignoring recording at this location"
                             )
-                            skipped_recordings.append((protocol.name, _rec.name))
+                            skipped_recordings.append(_rec["name"])
                 else:
                     recordings.append(self.protocols[i].recordings[j])
             self.protocols[i].recordings = recordings
@@ -530,8 +530,9 @@ class FitnessCalculatorConfiguration:
             if isinstance(efeature.recording_name, str):
                 # remove efeature associated to skipped recording
                 for skiprec in skipped_recordings:
-                    if efeature.protocol_name == skiprec[0] and efeature.recording_name == skiprec[1]:
+                    if f"{efeature.protocol_name}.{efeature.recording_name}" == skiprec:
                         to_remove.append(i)
+                        logger.warning(f"removing {efeature.name}")
                         continue
                 # if the loc of the recording is of the form axon*.v, we replace * by
                 # all the corresponding int from the created recordings
