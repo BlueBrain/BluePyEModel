@@ -353,6 +353,11 @@ def scores(model, figures_dir="./figures", write_fig=True):
     axs[0, 0].set_yticks(pos)
     axs[0, 0].set_yticklabels(scores_names, size="small")
 
+    # Update y-tick labels' color based on the condition
+    for idx, (label, s) in zip(axs[0, 0].get_yticklabels(), score):
+        if s > 5:
+            label.set_color("red")
+
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
 
