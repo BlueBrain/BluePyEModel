@@ -109,7 +109,7 @@ class EModel_pipeline:
                 of the e-model building pipeline be based on multiprocessing.
         """
 
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments, unused-argument
 
         if use_ipyparallel and use_multiprocessing:
             raise ValueError(

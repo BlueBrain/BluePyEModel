@@ -19,6 +19,8 @@ limitations under the License.
 import logging
 from copy import deepcopy
 
+from bluepyopt.ephys.locations import EPhysLocInstantiateException
+
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
@@ -26,7 +28,6 @@ from bluepyemodel.evaluation.evaluator import define_location
 from bluepyemodel.evaluation.evaluator import seclist_to_sec
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.tools.utils import are_same_protocol
-from bluepyopt.ephys.locations import EPhysLocInstantiateException
 
 logger = logging.getLogger(__name__)
 
@@ -516,8 +517,8 @@ class FitnessCalculatorConfiguration:
                             recordings.append(_rec)
                         except EPhysLocInstantiateException:
                             logger.warning(
-                                f"Could not find {location.name}, "
-                                "ignoring recording at this location"
+                                "Could not find %s, ignoring recording at this location",
+                                location.name
                             )
                             skipped_recordings.append(_rec["name"])
                 else:
@@ -532,7 +533,7 @@ class FitnessCalculatorConfiguration:
                 for skiprec in skipped_recordings:
                     if f"{efeature.protocol_name}.{efeature.recording_name}" == skiprec:
                         to_remove.append(i)
-                        logger.warning(f"removing {efeature.name}")
+                        logger.warning("Removing %s", efeature.name)
                         continue
                 # if the loc of the recording is of the form axon*.v, we replace * by
                 # all the corresponding int from the created recordings
