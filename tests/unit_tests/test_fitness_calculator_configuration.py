@@ -16,7 +16,14 @@ limitations under the License.
 
 import pytest
 
+from bluepyemodel.model import model
+
+from bluepyemodel.evaluation.evaluator import get_simulator
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
+
+from tests.unit_tests.test_local_access_point import api_config
+from tests.unit_tests.test_local_access_point import db
+from tests.unit_tests.test_local_access_point import DATA
 
 
 @pytest.fixture
@@ -93,6 +100,86 @@ def config_dict():
 
     return config_dict
 
+
+@pytest.fixture
+def config_dict_bad_recordings():
+
+    efeatures = [
+        {
+            "efel_feature_name": "maximum_voltage_from_voltagebase",
+            "protocol_name": "Step_150",
+            "recording_name": "soma.v",
+            "efel_settings": {"stim_start": 700, "stim_end": 2700},
+            "mean": -83.1596,
+            "std": 1.0102,
+            "threshold_efeature_std": 0.05
+        },
+        {
+            "efel_feature_name": "maximum_voltage_from_voltagebase",
+            "protocol_name": "Step_150",
+            "recording_name": "dend100.v",
+            "efel_settings": {"stim_start": 700, "stim_end": 2700},
+            "mean": -83.1596,
+            "std": 1.0102,
+            "threshold_efeature_std": 0.05
+        },
+        {
+            "efel_feature_name": "maximum_voltage_from_voltagebase",
+            "protocol_name": "Step_150",
+            "recording_name": "dend10000.v",
+            "efel_settings": {"stim_start": 700, "stim_end": 2700},
+            "mean": -83.1596,
+            "std": 1.0102,
+            "threshold_efeature_std": 0.05
+        },
+    ]
+
+    protocols = [
+        {
+            "name": "Step_150",
+            "stimuli": [{
+                "location": "soma",
+                "delay": 700.0,
+                "amp": None,
+                "thresh_perc": 148.7434,
+                "duration": 2000.0,
+                "totduration": 3000.0,
+                "holding_current": None
+            }],
+            "recordings": [
+                {
+                "type": "CompRecording",
+                "name": "Step_150.soma.v",
+                "location": "soma",
+                "variable": "v"
+                },
+                {
+                "type": "somadistanceapic",
+                "somadistance": 100,
+                "name": "Step_150.dend100.v",
+                "seclist_name": "apical",
+                "variable": "v"
+                },
+                {
+                "type": "somadistanceapic",
+                "somadistance": 10000,
+                "name": "Step_150.dend10000.v",
+                "seclist_name": "apical",
+                "variable": "v"
+                }
+            ],
+            "validation": False
+        }
+    ]
+
+    config_dict = {
+        "efeatures": efeatures,
+        "protocols": protocols,
+        "name_rmp_protocol": "IV_-40",
+        "name_rin_protocol": "IV_0",
+    }
+
+    return config_dict
 
 @pytest.fixture
 def config_dict_from_bpe2():
@@ -198,3 +285,38 @@ def test_init_from_bpe2(config_dict, config_dict_from_bpe2):
         "ohmic_input_resistance_vb_ssse"
     ]:
         assert next((f for f in config.efeatures if f.efel_feature_name == fn), False)
+
+
+def test_configure_morphology_dependent_locations(config_dict_bad_recordings, db):
+    """Test configure_morphology_dependent_locations with recordings outside of cell."""
+    config = FitnessCalculatorConfiguration(**config_dict_bad_recordings)
+
+    model_configuration = db.get_model_configuration()
+    cell_model = model.create_cell_model(
+        name=db.emodel_metadata.emodel,
+        model_configuration=model_configuration,
+        morph_modifiers=None,
+    )
+
+    # don't know if I have to specify the mechanism directory here
+    simulator = get_simulator(
+        stochasticity=False,
+        cell_model=cell_model,
+    )
+
+    config.configure_morphology_dependent_locations(cell_model, simulator)
+
+    assert len(config.protocols) == 1
+    # one recording should have been removed
+    assert len(config.protocols[0].recordings) == 2
+    for rec in config.protocols[0].recordings:
+        if rec["type"] == "somadistanceapic":
+            # check _set_morphology_dependent_locations section name replacement
+            assert rec["sec_name"] == "apic"
+            # check that this recording has been removed
+            assert rec["somadistance"] != 10000
+    # one efeature should have been removed
+    assert len(config.efeatures) == 2
+    for feat in config.efeatures:
+        # this efeature should have been removed
+        assert feat.recording_name != "dend10000.v"
