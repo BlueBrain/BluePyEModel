@@ -518,7 +518,7 @@ class FitnessCalculatorConfiguration:
                         except EPhysLocInstantiateException:
                             logger.warning(
                                 "Could not find %s, ignoring recording at this location",
-                                location.name
+                                location.name,
                             )
                             skipped_recordings.append(_rec["name"])
                 else:
