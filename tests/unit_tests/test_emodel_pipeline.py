@@ -50,3 +50,16 @@ def pipeline():
 
 def test_init(pipeline):
     assert isinstance(pipeline.access_point, LocalAccessPoint)
+    with pytest.raises(
+        ValueError,
+        match="Attempted to set a legacy variable. "
+        "This variable should not be modified in new code."
+    ):
+        _ = EModel_pipeline(
+            emodel="cADpyr_L5TPC",
+            recipes_path=DATA / "config/recipes.json",
+            ttype="test",
+            species='mouse',
+            brain_region='SSCX',
+            data_access_point="nexus"
+        )
