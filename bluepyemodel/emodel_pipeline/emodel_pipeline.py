@@ -60,7 +60,6 @@ class EModel_pipeline:
         recipes_path=None,
         use_ipyparallel=None,
         use_multiprocessing=None,
-        data_access_point=None,
     ):
         """Initializes the EModel_pipeline.
 
@@ -109,7 +108,7 @@ class EModel_pipeline:
                 of the e-model building pipeline be based on multiprocessing.
         """
 
-        # pylint: disable=too-many-arguments, unused-argument
+        # pylint: disable=too-many-arguments
 
         if use_ipyparallel and use_multiprocessing:
             raise ValueError(
