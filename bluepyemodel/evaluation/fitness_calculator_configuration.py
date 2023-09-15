@@ -22,6 +22,7 @@ from copy import deepcopy
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
+from bluepyemodel.evaluation.evaluator import define_location
 from bluepyemodel.evaluation.evaluator import seclist_to_sec
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.tools.utils import are_same_protocol
@@ -510,11 +511,12 @@ class FitnessCalculatorConfiguration:
                     for _rec in _set_morphology_dependent_locations(rec, cell):
                         try:
                             tmp_rec = deepcopy(_rec)
-                            tmp_rec.location.instantiate()
+                            location = define_location(tmp_rec)
+                            location.instantiate(sim=simulator, icell=cell.icell)
                             recordings.append(_rec)
                         except EPhysLocInstantiateException:
                             logger.warning(
-                                f"Could not find {_rec.location.name}, "
+                                f"Could not find {location.name}, "
                                 "ignoring recording at this location"
                             )
                             skipped_recordings.append((protocol.name, _rec.name))

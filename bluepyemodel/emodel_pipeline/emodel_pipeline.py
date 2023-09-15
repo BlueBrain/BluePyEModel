@@ -60,6 +60,7 @@ class EModel_pipeline:
         recipes_path=None,
         use_ipyparallel=None,
         use_multiprocessing=None,
+        data_access_point=None,
     ):
         """Initializes the EModel_pipeline.
 
