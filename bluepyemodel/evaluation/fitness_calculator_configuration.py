@@ -511,8 +511,7 @@ class FitnessCalculatorConfiguration:
                 if rec["type"] != "CompRecording":
                     for _rec in _set_morphology_dependent_locations(rec, cell):
                         try:
-                            tmp_rec = deepcopy(_rec)
-                            location = define_location(tmp_rec)
+                            location = define_location(_rec)
                             location.instantiate(sim=simulator, icell=cell.icell)
                             recordings.append(_rec)
                         except EPhysLocInstantiateException:
