@@ -22,17 +22,32 @@ Therefore, in an empty directory, usually named ``config``, you will need to cre
 
     {
         "L5PC": {
-            "morph_path": "morphologies/",
-            "morphology": [["L5TPC","L5TPC.asc"]],
-            "params": "./params_pyr.json",
-            "features": "./features_L5PC.json",
+            "morph_path": "./morphologies/",
+            "morphology": [
+                [
+                    "L5TPCa",
+                    "C060114A5.asc"
+                ]
+            ],
+            "params": "config/params/pyr.json",
+            "features": "config/features/L5PC.json",
             "pipeline_settings": {
-                "path_extract_config": "config/extraction_config.json",
+                "path_extract_config": "config/extract_config/L5PC_config.json",
+                "plot_extraction": true,
                 "optimisation_timeout": 300,
                 "optimiser": "MO-CMA",
+                "max_ngen": 100,
                 "optimisation_params": {
                     "offspring_size": 20
-                }
+                },
+                "validation_threshold": 5,
+                "plot_currentscape": true,
+                "currentscape_config": {
+                    "title": "L5PC"
+                },
+                "validation_protocols": [
+                    "APWaveform_300"
+                ]
             }
         }
     }
@@ -42,8 +57,9 @@ Let's go over the content of this file:
 * The keys of the dictionary are the names of the models that will be built. Here, we only have one model named ``L5PC``. This name is important as it will be used in every following step to specify which model is to be acted upon.
 * ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
-* ``params`` and ``features`` contain the path to the file containing the configuration of the parameters of the model and optimisation targets of the model respectively. As for the morphology, this file has to be in a local subdirectory. By convention, these files are put in the directory ``./config/`` or in a subdirectory of it. If the step "extraction" is done through the pipeline, the file containing the optimisation targets will be created programmatically by the pipeline.
-* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important settings if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process.
+* ``params`` contains the essential mechanisms specifying their locations (e.g., axonal, somatic) as well as their distributions and parameters, which can be either frozen or free.
+* ``features`` contains the path to the file that includes the output of the extraction, which are the ``efeatures`` and ``protocols``. The ``efeatures`` is a list of dictionaries, where each entry contains a feature associated with a specific protocol. ``protocols`` is also a list of dictionaries; each entry in this list contains the protocol's name, amplitude, among other details.
+* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important settings if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets, features names, protocols and files (ephys traces) of the extraction process.
 
 Building the models
 ~~~~~~~~~~~~~~~~~~~
@@ -55,12 +71,10 @@ To run the modeling pipeline, you will need to create a python script used to in
     from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 
     emodel = "L5PC"
-    recipes_path = "./recipes.json"
-    data_access_point = "local"
+    recipes_path = "./config/recipes.json"
 
     pipeline = EModel_pipeline(
         emodel=emodel,
-        data_access_point=data_access_point,
         recipes_path=recipes_path,
     )
 
@@ -114,9 +128,12 @@ The final structure of the local directory for this simpler case should be as fo
     │   ├── mode_file1.mod
     │   ├── mode_file3.mod
     ├── config
-    │    ├── features_L5PC.json
-    │    ├── params_pyr.json
-    │    ├── extraction_config.json
+    │    ├── extract_config
+    │    │   ├── L5PC_config.json
+    │    ├── features
+    │    │   ├── L5PC.json
+    │    ├── params
+    │    │   ├── pyr.json
     │    └── recipes.json
     ├── morphologies
     │    └── L5TPC.asc
@@ -160,8 +177,8 @@ In order to configure the models that you want, you will have to:
 
 * Copy the morphology you wish to use in the ``morphologies`` folder
 * Copy the mechanisms (mod files) you wish to use in the ``mechanisms`` folder
-* Create a json file containing the parameters of your model and put it in ``./config/parameters/``.
-* Create a json files containing the files_metadata, targets and protocols_rheobase used as targets for the extraction process in ``./config/features/EMODEL_NAME_config.json`` (for the format of this file section `Extraction`_ below).
+* Create a json file containing the parameters of your model and put it in ``./config/params/``.
+* Create a json files containing the files_metadata, targets and protocols_rheobase used as targets for the extraction process in ``./config/extract_config/EMODEL_NAME_config.json`` (for the format of this file section `Extraction`_ below).
 * Create a new recipe in ``./config/recipes.json`` which should contain the paths to all the files mentioned above as well as the settings you wish to use when running the pipeline. You can have a look at the docstring of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_ for a complete overview of all the settings available.
 
 Running the different steps
@@ -175,10 +192,10 @@ Extraction
 To perform extraction, you will need an extraction config file as mentioned above. This file should contain the metadata of the ephys files that should be considered as well as the targets (protocols and efeatures) that should be extracted from the recordings present in these files.
 It is recommended that you generate this file programmatically. The notebook `./extraction_configuration.ipynb <./extraction_configuration.ipynb>`_ gives an example of how to do so.
 
-Then, to run the extraction, inform the name of the emodel in ``scripts/extract.sh`` and execute the file.
+Then, to run the extraction, inform the name of the emodel in ``scripts/extract.sh`` and execute the file. Please navigate to the scripts directory in your terminal and then execute the following command: ``./extract.sh``
 The name of the emodel must match an entry of the file ``recipes.json``.
 
-The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``efeatures`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``.
+The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``features`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``.
 If you asked for the extraction to be plotted in the settings, the plots will be in ``./figures/EMODEL_NAME/extraction/``.
 
 For a complete description of the extraction process, its inner working and settings please refer the `README and examples of BluePyEfe on GitHub <https://github.com/BlueBrain/BluePyEfe/>`_.
@@ -196,7 +213,7 @@ First, you will need to compile the mechanisms, which can be done with the comma
 
     nrnivmodl mechanisms
 
-Then, inform your emodel name in ``./scripts/optimisation.sh`` and execute it.
+Configure the #SBATCH directives at the beginning of your SLURM sbatch file according to your job requirements. Then, inform your emodel name in ``./scripts/optimisation.sh`` and execute it. Please navigate to the scripts directory in your terminal and then execute the following command: ``./optimisation.sh``
 This will create several slurm jobs for different optimisation seeds and the githash associated to the run (keep it preciously!).
 
 The optimisation usually takes between 2 and 72 hours depending on the complexity of the model.

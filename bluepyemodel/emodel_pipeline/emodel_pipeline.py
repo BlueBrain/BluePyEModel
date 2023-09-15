@@ -60,6 +60,7 @@ class EModel_pipeline:
         recipes_path=None,
         use_ipyparallel=None,
         use_multiprocessing=None,
+        data_access_point=None,
     ):
         """Initializes the EModel_pipeline.
 
@@ -106,6 +107,7 @@ class EModel_pipeline:
                 the e-model building pipeline be based on ipyparallel.
             use_multiprocessing (bool): should the parallelization map used for the different steps
                 of the e-model building pipeline be based on multiprocessing.
+            data_access_point (str): Used for legacy purposes only
         """
 
         # pylint: disable=too-many-arguments
@@ -123,6 +125,12 @@ class EModel_pipeline:
             self.mapper = map
 
         endpoint = None
+
+        if data_access_point is not None and data_access_point != "local":
+            raise ValueError(
+                "Attempted to set a legacy variable. "
+                "This variable should not be modified in new code."
+            )
 
         self.access_point = get_access_point(
             emodel=emodel,

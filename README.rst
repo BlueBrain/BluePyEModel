@@ -66,12 +66,12 @@ This section presents a general picture of the pipeline. For a detailed picture 
 
 The pipeline is divided in 6 steps:
 
-* extraction: extracts e-features from ephys recordings and averages the results e-feature values along the requested targets.
-* optimisation: builds a NEURON cell model and optimises its parameters using as targets the efeatures computed during e-feature extraction.
-* storage of the model: reads the results of the extraction and stores the models (best set of parameters) in a local json file.
-* validation: reads the models and runs the optimisation protocols and/or validation protocols on them. The e-feature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
-* plotting: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the e-feature scores and parameter distributions.
-* exporting: read the parameter of the best models and export them in files that can be used either in NEURON or for circuit building.
+* ``extraction``: extracts e-features from ephys recordings and averages the results e-feature values along the requested targets.
+* ``optimisation``: builds a NEURON cell model and optimises its parameters using as targets the efeatures computed during e-feature extraction.
+* ``storage of the model``: reads the results of the extraction and stores the models (best set of parameters) in a local json file.
+* ``validation``: reads the models and runs the optimisation protocols and/or validation protocols on them. The e-feature scores obtained on these protocols are then passed to a validation function that decides if the model is good enough.
+* ``plotting``: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the e-feature scores and parameter distributions.
+* ``exporting``: read the parameter of the best models and export them in files that can be used either in NEURON or for circuit building.
 
 These six steps are to be run in order as for example validation cannot be run if no models have been stored. Steps "validation", "plotting" and "exporting" are optional. Step "extraction" can also be optional in the case where the file containing the protocols and optimisation targets is created by hand or if it is obtained from an older project.
 
