@@ -241,11 +241,11 @@ class EModelPipelineSettings:
             spikecount_timeout (float): during the search of the threshold current, if the present
                 timeout is reached, we set spikecount=2 as if many spikes were present, to speed
                 up bisection search.
-            files_for_extraction (list): temporary, will come from SBO
-            targets (list): temporary, will come from SBO
-            protocols_rheobase (list): temporary, will come from SBO
-            auto_targets (list): temporary, will come from SBO
-            auto_targets_presets (list): temporary, will come from SBO
+            files_for_extraction (list): temporary
+            targets (list): temporary
+            protocols_rheobase (list): temporary
+            auto_targets (list): temporary
+            auto_targets_presets (list): temporary
         """
 
         # Settings related to E-features extraction

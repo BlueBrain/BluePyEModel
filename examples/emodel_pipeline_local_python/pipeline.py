@@ -44,7 +44,6 @@ def main():
 
     args = get_parser().parse_args()
 
-    data_access_point = "local"
     recipes_path = './config/recipes.json'
 
     logging.basicConfig(
@@ -55,7 +54,6 @@ def main():
 
     pipeline = EModel_pipeline(
         emodel=args.emodel,
-        data_access_point=data_access_point,
         recipes_path=recipes_path,
         iteration_tag=args.githash,
         use_ipyparallel=args.use_ipyparallel,

@@ -12,6 +12,7 @@ sonata_currents.h5
 stuck_df/
 stuck_figures/
 exemplar_evaluations.csv
+software/
 
 SOURCES.txt
 *.svg
@@ -135,6 +136,7 @@ celerybeat-schedule
 .venv
 venv/
 ENV/
+myvenv/
 
 # Spyder project settings
 .spyderproject

@@ -14,7 +14,7 @@ cd software
 ../$VENV/bin/pip install wheel
 
 git clone https://github.com/BlueBrain/BluePyEModel.git
-../$VENV/bin/pip install -e ./bluepyemodel
+../$VENV/bin/pip install -e ./BluePyEModel
 
 cd ..
 source $VENV/bin/activate

@@ -7,11 +7,10 @@
                 "C060114A5.asc"
             ]
         ],
-        "params": "config/parameters/pyr.json",
-        "protocol": "config/features/L5PC.json",
+        "params": "config/params/pyr.json",
         "features": "config/features/L5PC.json",
         "pipeline_settings": {
-            "path_extract_config": "config/features/L5PC_config.json",
+            "path_extract_config": "config/extract_config/L5PC_config.json",
             "plot_extraction": true,
             "optimisation_timeout": 300,
             "optimiser": "MO-CMA",
