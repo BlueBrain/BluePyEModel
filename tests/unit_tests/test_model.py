@@ -73,6 +73,6 @@ def test_define_parameters():
     for param in parameters:
         assert isinstance(param, ephys.parameters.NrnParameter)
 
-        if param.name == "distribution_decay":
+        if param.name == "constant.distribution_decay":
             assert param.bounds[0] == -0.1
             assert param.bounds[1] == -0.0

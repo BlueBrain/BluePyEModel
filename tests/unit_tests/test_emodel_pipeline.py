@@ -25,14 +25,6 @@ DATA = TEST_ROOT / "test_data"
 
 
 @pytest.fixture
-def api_config():
-    return {
-        "emodel": "cADpyr_L5TPC",
-        "emodel_dir": DATA,
-    }
-
-
-@pytest.fixture
 def pipeline():
 
     pipe = EModel_pipeline(
