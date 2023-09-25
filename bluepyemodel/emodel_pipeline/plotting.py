@@ -333,6 +333,8 @@ def evolution_parameters_density(
 
 def scores(model, figures_dir="./figures", write_fig=True):
     """Plot the scores of a model"""
+    SCORE_THRESHOLD = 5.0
+
     make_dir(figures_dir)
 
     score = list(model.scores.values()) + list(model.scores_validation.values())
@@ -345,7 +347,7 @@ def scores(model, figures_dir="./figures", write_fig=True):
     axs[0, 0].barh(pos, score, height=0.7, align="center", color="gray")
 
     for p, s in zip(pos, score):
-        if s > 5.0:
+        if s > SCORE_THRESHOLD:
             axs[0, 0].text(5.15, p - 0.25, s="{:.1f}".format(s), color="red", fontsize=8)
 
     axs[0, 0].set_xlabel("z-score")

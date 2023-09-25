@@ -243,9 +243,13 @@ class EModel_pipeline:
             record_ions_and_currents=self.access_point.pipeline_settings.plot_currentscape,
         )
 
+        chkp_paths = glob.glob("./checkpoints/**/*.pkl", recursive=True)
+        if not chkp_paths:
+            raise ValueError("The checkpoints directory is empty, or there are no .pkl files.")
+
         # Filter the checkpoints to plot
         checkpoint_paths = []
-        for chkp_path in glob.glob("./checkpoints/**/*.pkl", recursive=True):
+        for chkp_path in chkp_paths:
             if self.access_point.emodel_metadata.emodel not in chkp_path:
                 continue
             if (

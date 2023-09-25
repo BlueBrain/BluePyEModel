@@ -85,6 +85,7 @@ Finally, the different steps of the pipeline can be run with the commands:
     pipeline.extract_efeatures()
     pipeline.optimise(seed=1)
     pipeline.store_optimisation_results()
+    pipeline.validation()
     pipeline.plot(only_validated=False)
 
 This snippet will likely not be used as such as the different steps of the pipeline are computationally intensive and will be run separately.
