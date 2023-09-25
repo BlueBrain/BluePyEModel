@@ -55,7 +55,6 @@
             {"name":"gK_Tstbar_K_Tst",        "val":[0, 0.2]},
             {"name":"gSKv3_1bar_SKv3_1",      "val":[0, 1]},
             {"name":"gCa_HVAbar_Ca_HVA2",      "val":[0, 0.001]},
-            {"name":"gCa_HVAbar_Ca_HVA2",      "val":[0, 0.001]},
             {"name":"gCa_LVAstbar_Ca_LVAst",  "val":[0, 0.01]},
             {"name":"gSK_E2bar_SK_E2",        "val":[0, 0.1]},
             {"name":"decay_CaDynamics_DC0",   "val":[20, 300]},
