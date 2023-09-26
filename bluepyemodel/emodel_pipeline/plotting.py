@@ -173,7 +173,7 @@ def optimisation(
     title = get_title(emodel, iteration, seed)
     axs[0, 0].set_title(title)
 
-    axs[0, 0].plot(ngen, run["logbook"].select("min"), label="Minimum", c="red")
+    axs[0, 0].plot(ngen, run["logbook"].select("min"), label="Minimum", c="grey")
 
     axs[0, 0].plot(ngen, run["logbook"].select("avg"), label="Average", c="black")
 
