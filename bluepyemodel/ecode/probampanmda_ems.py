@@ -60,7 +60,9 @@ class ProbAMPANMDA_EMS(BPEM_stimulus):
         self.netcon = None
 
         if self.syn_weight is None or self.syn_delay is None:
-            raise TypeError(f"syn_weight and syn_delay should be specified for stimulus {self.name}")
+            raise TypeError(
+                f"syn_weight and syn_delay should be specified for stimulus {self.name}"
+            )
 
         super().__init__(
             location=location,
@@ -71,8 +73,10 @@ class ProbAMPANMDA_EMS(BPEM_stimulus):
 
         icomp = self.location.instantiate(sim=sim, icell=icell)
         logger.debug(
-            "Adding synaptic excitatory stimulus to %s with delay %f, "
-            "and weight %f" % (str(self.location), self.syn_delay, self.syn_weight)
+            "Adding synaptic excitatory stimulus to %s with delay %f, " "and weight %f",
+            str(self.location),
+            self.syn_delay,
+            self.syn_weight,
         )
 
         self.synapse = sim.neuron.h.ProbAMPANMDA_EMS(icomp.x, sec=icomp.sec)
@@ -89,7 +93,7 @@ class ProbAMPANMDA_EMS(BPEM_stimulus):
             self.netcon_thres,
             self.netcon_delay,
             self.netcon_weight,
-            sec=icomp.sec
+            sec=icomp.sec,
         )
         self.netcon.weight[0] = self.syn_weight
 

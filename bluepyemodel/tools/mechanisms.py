@@ -143,7 +143,7 @@ def get_mechanism_name(mech_file):
         if "SUFFIX " in line:
             suffix = line.split("SUFFIX ")[1].rstrip("\n").split(" ")[0]
             return suffix
-        elif "POINT_PROCESS" in line:
+        if "POINT_PROCESS" in line:
             point_process = line.split("POINT_PROCESS ")[1].rstrip("\n").split(" ")[0]
             return point_process
     raise RuntimeError(f"Could not find SUFFIX nor POINT_PROCESS in {mech_file}")
