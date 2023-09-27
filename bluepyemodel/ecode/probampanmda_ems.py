@@ -73,7 +73,7 @@ class ProbAMPANMDA_EMS(BPEM_stimulus):
 
         icomp = self.location.instantiate(sim=sim, icell=icell)
         logger.debug(
-            "Adding synaptic excitatory stimulus to %s with delay %f, " "and weight %f",
+            "Adding synaptic excitatory stimulus to %s with delay %f and weight %f",
             str(self.location),
             self.syn_delay,
             self.syn_weight,
