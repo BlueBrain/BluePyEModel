@@ -29,6 +29,7 @@ from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.simulators import NrnSimulator
 
 from ..ecode import eCodes
+from ..ecode import fixed_timestep_eCodes
 from ..tools.utils import are_same_protocol
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEMProtocol
@@ -44,7 +45,7 @@ from .recordings import LooseDtRecordingCustom
 logger = logging.getLogger(__name__)
 
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
-ais_loc = NrnSeclistCompLocation(name="soma", seclist_name="axonal", sec_index=0, comp_x=0.5)
+ais_loc = NrnSeclistCompLocation(name="ais", seclist_name="axonal", sec_index=0, comp_x=0.5)
 
 PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
 LEGACY_PRE_PROTOCOLS = ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]
@@ -63,6 +64,10 @@ protocol_type_to_class = {
 
 
 def define_location(definition):
+    # default case
+    if definition is None or definition == "soma":
+        return soma_loc
+
     if definition["type"] == "CompRecording":
         if definition["location"] == "soma":
             return soma_loc
@@ -82,6 +87,7 @@ def define_location(definition):
             name=definition["name"],
             soma_distance=definition["somadistance"],
             seclist_name=definition["seclist_name"],
+            direction="radial",
         )
 
     if definition["type"] == "nrnseclistcomp":
@@ -92,7 +98,7 @@ def define_location(definition):
             seclist_name=definition["seclist_name"],
         )
 
-    raise ValueError(f"Unknown recording type {definition['type']}")
+    raise ValueError(f"Unknown location type {definition['type']}")
 
 
 def define_recording(recording_conf, use_fixed_dt_recordings=False):
@@ -131,6 +137,7 @@ def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_re
     Returns:
         Protocol
     """
+    cvode_active = True
 
     recordings = []
     for rec_conf in protocol_configuration.recordings:
@@ -139,9 +146,16 @@ def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_re
     if len(protocol_configuration.stimuli) != 1:
         raise ValueError("Only protocols with a single stimulus implemented")
 
+    stim = protocol_configuration.stimuli[0]
+    location_dict = stim.get("location", "soma")
+    location = define_location(location_dict)
+    # cannot use pop here because stim["location"] is used later
+    filtered_stim = {k: v for k, v in stim.items() if k != "location"}
     for k, ecode in eCodes.items():
         if k in protocol_configuration.name.lower():
-            stimulus = ecode(location=soma_loc, **protocol_configuration.stimuli[0])
+            stimulus = ecode(location=location, **filtered_stim)
+            if k in fixed_timestep_eCodes:
+                cvode_active = False
             break
     else:
         raise KeyError(
@@ -151,13 +165,15 @@ def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_re
         )
 
     stoch = stochasticity and protocol_configuration.stochasticity
+    if stoch:
+        cvode_active = False
 
     if protocol_configuration.protocol_type in protocol_type_to_class:
         return protocol_type_to_class[protocol_configuration.protocol_type](
             name=protocol_configuration.name,
             stimulus=stimulus,
             recordings=recordings,
-            cvode_active=not stoch,
+            cvode_active=cvode_active,
             stochasticity=stoch,
         )
 

@@ -372,6 +372,36 @@ def scores(model, figures_dir="./figures", write_fig=True):
     return fig, axs
 
 
+def plot_traces_current(ax, time, current):
+    """Plot the current trace on top of the voltage trace"""
+    ax.plot(time, current, color="gray", alpha=0.6)
+
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel("Stim Current (nA)")
+
+    min_lim = numpy.min(current) - 0.2
+    max_lim = numpy.max(current) + 0.2
+    if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
+        ax.set_ylim(min_lim, max_lim)
+
+
+def traces_title(model, threshold=None, holding=None, rmp=None, rin=None):
+    """Return the title for the traces figure"""
+    title = str(model.emodel_metadata.emodel)
+    title += f"\n iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
+
+    if threshold:
+        title += "\n Threshold current = {:.4f} nA".format(threshold)
+    if holding:
+        title += " ; Holding current = {:.4f} nA".format(holding)
+    if rmp:
+        title += "\n Resting membrane potential = {:.2f} mV".format(rmp)
+    if rin:
+        title += " ; Input Resistance = {:.2f} MOhm".format(rin)
+
+    return title
+
+
 def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures", write_fig=True):
     """Plot the traces of a model"""
     make_dir(figures_dir)
@@ -415,32 +445,14 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
                         stimuli[basename].stimulus.holding_current = holding
                         stimuli[basename].stimulus.threshold_current = threshold
 
-                    axs_c.append(axs[idx, 0].twinx())
-                    axs_c[-1].set_xlabel("Time (ms)")
-                    axs_c[-1].set_ylabel("Stim Current (nA)")
-
                     time, current = stimuli[basename].stimulus.generate()
-                    axs_c[-1].plot(time, current, color="gray", alpha=0.6)
-
-                    min_lim = numpy.min(current) - 0.2
-                    max_lim = numpy.max(current) + 0.2
-                    if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
-                        axs_c[-1].set_ylim(min_lim, max_lim)
+                    if len(time) > 0 and len(current) > 0:
+                        axs_c.append(axs[idx, 0].twinx())
+                        plot_traces_current(axs_c[-1], time, current)
 
         idx += 1
 
-    title = str(model.emodel_metadata.emodel)
-    title += f"\n iteration = {model.emodel_metadata.iteration} ; seed = {model.seed}"
-
-    if threshold:
-        title += "\n Threshold current = {:.4f} nA".format(threshold)
-    if holding:
-        title += " ; Holding current = {:.4f} nA".format(holding)
-    if rmp:
-        title += "\n Resting membrane potential = {:.2f} mV".format(rmp)
-    if rin:
-        title += " ; Input Resistance = {:.2f} MOhm".format(rin)
-
+    title = traces_title(model, threshold, holding, rmp, rin)
     fig.suptitle(title)
 
     fname = model.emodel_metadata.as_string(model.seed) + "__traces.pdf"

@@ -30,7 +30,7 @@ def get_parser():
     )
 
     parser.add_argument("--step", type=str, required=True, choices=[
-        "extract", "optimize", "analyze", "validate", "currentscape"])
+        "extract", "optimize", "analyze", "validate"])
     parser.add_argument('--emodel', type=str, required=True)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--githash', type=str, required=False, default=None)
@@ -65,12 +65,12 @@ def main():
     elif args.step == "optimize":
         pipeline.optimise(seed=args.seed)
 
-    elif args.step == "analyze":
+    elif args.step == "validate":
         pipeline.store_optimisation_results()
+        pipeline.validation()
         pipeline.plot(only_validated=False)
 
-    elif args.step == "validate":
-        pipeline.validation()
+    elif args.step == "analyze":
         pipeline.plot(only_validated=False)
 
 
