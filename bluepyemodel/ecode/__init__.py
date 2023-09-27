@@ -30,6 +30,7 @@ from .iv import IV
 from .negcheops import NegCheops
 from .noiseou3 import NoiseOU3
 from .poscheops import PosCheops
+from .probampanmda_ems import ProbAMPANMDA_EMS
 from .ramp import Ramp
 from .random_square_inputs import MultipleRandomStepInputs
 from .sahp import sAHP
@@ -78,4 +79,7 @@ eCodes = {
     "randomsteps": MultipleRandomStepInputs,
     "custom": CustomFromFile,
     "startnohold": IDrest,
+    "probampanmda_ems": ProbAMPANMDA_EMS,
 }
+
+fixed_timestep_eCodes = ["probampanmda_ems"]

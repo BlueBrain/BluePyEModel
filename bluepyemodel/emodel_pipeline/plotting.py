@@ -415,17 +415,19 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
                         stimuli[basename].stimulus.holding_current = holding
                         stimuli[basename].stimulus.threshold_current = threshold
 
-                    axs_c.append(axs[idx, 0].twinx())
-                    axs_c[-1].set_xlabel("Time (ms)")
-                    axs_c[-1].set_ylabel("Stim Current (nA)")
-
                     time, current = stimuli[basename].stimulus.generate()
-                    axs_c[-1].plot(time, current, color="gray", alpha=0.6)
+                    if len(time) > 0 and len(current) > 0:
 
-                    min_lim = numpy.min(current) - 0.2
-                    max_lim = numpy.max(current) + 0.2
-                    if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
-                        axs_c[-1].set_ylim(min_lim, max_lim)
+                        axs_c.append(axs[idx, 0].twinx())
+                        axs_c[-1].set_xlabel("Time (ms)")
+                        axs_c[-1].set_ylabel("Stim Current (nA)")
+
+                        axs_c[-1].plot(time, current, color="gray", alpha=0.6)
+
+                        min_lim = numpy.min(current) - 0.2
+                        max_lim = numpy.max(current) + 0.2
+                        if numpy.isfinite(min_lim) and numpy.isfinite(max_lim):
+                            axs_c[-1].set_ylim(min_lim, max_lim)
 
         idx += 1
 
