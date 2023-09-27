@@ -1,4 +1,4 @@
-"""BPEM_stimulus class"""
+"""ProbAMPANMDA_EMS class"""
 
 """
 Copyright 2023, EPFL/Blue Brain Project
