@@ -55,7 +55,7 @@ setup(
     setup_requires=['setuptools_scm'],
     author="Blue Brain Project, EPFL",
     author_email="",
-    description="Blue Brain Python E-Model Building Library",
+    description="Blue Brain Python Electrical Modeling Pipeline",
     long_description=README,
     long_description_content_type="text/x-rst",
     license="Apache-2.0",
