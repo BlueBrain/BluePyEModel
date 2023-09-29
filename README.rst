@@ -1,3 +1,5 @@
+|banner|
+
 BluePyEModel: Blue Brain Python E-Model Building Library
 ========================================================
 
