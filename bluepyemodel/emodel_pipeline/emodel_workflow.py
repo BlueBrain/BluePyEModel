@@ -30,6 +30,7 @@ class EModelWorkflow:
         pipeline_settings_id,
         emodel_configuration_id,
         emodels=None,
+        emodel_scripts_id=None,
         state="not launched",
     ):
         """Init
@@ -45,11 +46,16 @@ class EModelWorkflow:
         self.pipeline_settings_id = pipeline_settings_id
         self.emodel_configuration_id = emodel_configuration_id
         self.emodels = emodels if emodels else []
+        self.emodel_scripts_id = emodel_scripts_id if emodel_scripts_id else []
         self.state = state
 
     def add_emodel_id(self, emodel_id):
         """Add an emodel id to the list of emodels"""
         self.emodels.append(emodel_id)
+
+    def add_emodel_script_id(self, emodel_script_id):
+        """Add an emodel id to the list of emodels"""
+        self.emodel_scripts_id.append(emodel_script_id)
 
     def get_configuration_ids(self):
         """Return all configuration id parameters"""
@@ -63,7 +69,9 @@ class EModelWorkflow:
         return ids
 
     def get_related_nexus_ids(self):
-        generates = [{"id": id_, "type": "EModel"} for id_ in self.emodels]
+        emodels_ids = [{"id": id_, "type": "EModel"} for id_ in self.emodels]
+        emodel_scripts_ids = [{"id": id_, "type": "EModelScript"} for id_ in self.emodel_scripts_id]
+        generates = emodels_ids + emodel_scripts_ids
 
         has_part = []
         if self.targets_configuration_id:
