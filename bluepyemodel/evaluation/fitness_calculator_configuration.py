@@ -120,7 +120,7 @@ class FitnessCalculatorConfiguration:
                         {"name": str, "stimuli": list of dict, "recordings": list of dict,
                         "validation": bool}
                     ]
-                
+
                 here, recording_name should have the format ``f"{location}.v"``, e.g. ``"soma.v"``
             name_rmp_protocol (str or list): name and amplitude of protocol
                 whose features are to be used as targets for the search of the RMP.
