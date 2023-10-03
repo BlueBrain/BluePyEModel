@@ -108,6 +108,9 @@ class FitnessCalculatorConfiguration:
                         {"efel_feature_name": str, "protocol_name": str, "recording_name": str,
                         "mean": float, "std": float, "efel_settings": dict}
                     ]
+
+                here, recording_name should have the format ``f"{protocol_name}.{location}.v"``,
+                e.g. ``"IV_0.soma.v"``
             protocols (list of dict): contains the description of the protocols of the model
                 in the format returned by the method as_dict of the ProtocolConfiguration class:
 
@@ -117,6 +120,8 @@ class FitnessCalculatorConfiguration:
                         {"name": str, "stimuli": list of dict, "recordings": list of dict,
                         "validation": bool}
                     ]
+                
+                here, recording_name should have the format ``f"{location}.v"``, e.g. ``"soma.v"``
             name_rmp_protocol (str or list): name and amplitude of protocol
                 whose features are to be used as targets for the search of the RMP.
                 e.g: ``["IV", 0]`` or ``"IV_0"``
