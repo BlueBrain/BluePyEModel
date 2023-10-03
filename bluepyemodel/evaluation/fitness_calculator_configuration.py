@@ -105,24 +105,55 @@ class FitnessCalculatorConfiguration:
                 .. code-block::
 
                     [
-                        {"efel_feature_name": str, "protocol_name": str, "recording_name": str,
-                        "mean": float, "std": float, "efel_settings": dict}
+                        {
+                            "efel_feature_name": "Spikecount",
+                            "protocol_name": "IDrest_130",
+                            "recording_name": "soma.v",
+                            "mean": 6.026,
+                            "original_std": 4.016,
+                            "efeature_name": "Spikecount",
+                            "efel_settings": {
+                                "strict_stiminterval": true,
+                                "Threshold": -30.0,
+                                "interp_step": 0.025,
+                                "stim_start": 700.0,
+                                "stim_end": 2700.0
+                            }
+                        }
                     ]
 
-                here, recording_name should have the format ``f"{protocol_name}.{location}.v"``,
-                e.g. ``"IV_0.soma.v"``
             protocols (list of dict): contains the description of the protocols of the model
                 in the format returned by the method as_dict of the ProtocolConfiguration class:
 
                 .. code-block::
 
                     [
-                        {"name": str, "stimuli": list of dict, "recordings": list of dict,
-                        "validation": bool}
+                        {
+                            "name": "IDrest_130",
+                            "stimuli": [
+                                {
+                                "delay": 663.3473451327434,
+                                "amp": 0.3491827776582547,
+                                "thresh_perc": 130.56103157894464,
+                                "duration": 2053.050884955752,
+                                "totduration": 3000.0,
+                                "holding_current": -0.13307330411636328
+                                }
+                            ],
+                            "recordings_from_config": [
+                                {
+                                "type": "CompRecording",
+                                "name": "IDrest_130.soma.v",
+                                "location": "soma",
+                                "variable": "v"
+                                }
+                            ],
+                            "validation": false,
+                            "protocol_type": "ThresholdBasedProtocol",
+                            "stochasticity": false
+                        }
                     ]
 
-                here, in each recordings' dict, the ``"name"`` value should have the format
-                ``f"{location}.v"``, e.g. ``"soma.v"``
             name_rmp_protocol (str or list): name and amplitude of protocol
                 whose features are to be used as targets for the search of the RMP.
                 e.g: ``["IV", 0]`` or ``"IV_0"``
