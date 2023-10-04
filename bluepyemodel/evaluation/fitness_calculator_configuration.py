@@ -100,7 +100,8 @@ class FitnessCalculatorConfiguration:
 
         Args:
             efeatures (list of dict): contains the description of the efeatures of the model
-                in the format returned by the method as_dict of the EFeatureConfiguration class:
+                in the format returned by the method as_dict of the EFeatureConfiguration class.
+                Each unpacked dict will also act as the input to the EFeatureConfiguration class:
 
                 .. code-block::
 
@@ -123,7 +124,8 @@ class FitnessCalculatorConfiguration:
                     ]
 
             protocols (list of dict): contains the description of the protocols of the model
-                in the format returned by the method as_dict of the ProtocolConfiguration class:
+                in the format returned by the method as_dict of the ProtocolConfiguration class.
+                Each unpacked dict will also act as the input to the ProtocolConfiguration class:
 
                 .. code-block::
 
