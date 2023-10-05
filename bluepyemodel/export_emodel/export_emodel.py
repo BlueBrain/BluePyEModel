@@ -29,6 +29,29 @@ from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 logger = logging.getLogger(__name__)
 
 
+def get_hoc_file_path(output_path):
+    """Get the hoc file path."""
+    output_path = pathlib.Path(output_path)
+    return str(output_path / "model.hoc")
+
+
+def get_output_path(emodel, output_dir=None, output_base_dir="export_emodels_hoc"):
+    """Get the output path.
+    
+    Args:
+        emodel (EModel): emodel
+        output_dir (str): output directory
+        output_base_dir (str): if output_dir is None, export to this directory instead,
+            using also emodel metadata in the path
+    """
+    if output_dir is None:
+        output_dir = f"./{output_base_dir}/{emodel.emodel_metadata.as_string(seed=emodel.seed)}/"
+    output_path = pathlib.Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    return output_path
+
+
 def _write_node_file(emodel, model_template_path, node_file_path, morphology_path=None):
     """Creates a nodes.h5 file in the SONATA format. It contains the information
     needed to run the model. See https://bbpteam.epfl.ch/documentation/projects/
@@ -102,14 +125,8 @@ def _export_model_sonata(cell_model, emodel, output_dir=None, new_emodel_name=No
     if new_emodel_name is not None:
         emodel.emodel_metadata.emodel = new_emodel_name
 
-    if output_dir is None:
-        output_dir = (
-            f"./export_emodels_sonata/{emodel.emodel_metadata.as_string(seed=emodel.seed)}/"
-        )
-    output_path = pathlib.Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    hoc_file_path = str(output_path / "model.hoc")
+    output_path = get_output_path(emodel, output_dir, output_base_dir="export_emodels_sonata")
+    hoc_file_path = get_hoc_file_path(output_path)
     node_file_path = str(output_path / "nodes.h5")
     morphology_path = str(output_path / pathlib.Path(cell_model.morphology.morphology_path).name)
 
@@ -212,12 +229,8 @@ def _export_emodel_hoc(cell_model, mo, output_dir=None, new_emodel_name=None):
     if new_emodel_name is not None:
         mo.emodel_metadata.emodel = new_emodel_name
 
-    if output_dir is None:
-        output_dir = f"./export_emodels_hoc/{mo.emodel_metadata.as_string(seed=mo.seed)}/"
-    output_path = pathlib.Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    hoc_file_path = str(output_path / "model.hoc")
+    output_path = get_output_path(mo, output_dir, output_base_dir="export_emodels_hoc")
+    hoc_file_path = get_hoc_file_path(output_path)
     morphology_path = str(output_path / pathlib.Path(cell_model.morphology.morphology_path).name)
 
     # Copy the morphology
