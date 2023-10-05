@@ -238,7 +238,6 @@ def export_emodels_hoc(
     only_validated=False,
     only_best=True,
     seeds=None,
-    map_function=map,
     new_emodel_name=None,
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will contain a hoc
@@ -250,14 +249,13 @@ def export_emodels_hoc(
         access_point, include_validation_protocols=True
     )
 
-    emodels = compute_responses(
-        access_point,
-        cell_evaluator,
-        map_function,
-        seeds=seeds,
-        preselect_for_validation=False,
-        store_responses=False,
-    )
+    emodels = access_point.get_emodels()
+    if access_point.emodel_metadata.iteration:
+        emodels = [
+            model
+            for model in emodels
+            if model.emodel_metadata.iteration == access_point.emodel_metadata.iteration
+        ]
 
     emodels = select_emodels(
         access_point.emodel_metadata.emodel,
