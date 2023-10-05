@@ -31,6 +31,8 @@ from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
+from bluepyemodel.export_emodel.export_emodel import export_emodels_hoc
+from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
@@ -789,3 +791,20 @@ class LocalAccessPoint(DataAccessPoint):
 
         with recipes_path.open("w") as f:
             json.dump(recipes, f, indent=2)
+
+    def store_emodels_hoc(
+        self, only_validated=False, only_best=True, seeds=None, new_emodel_name=None
+    ):
+        export_emodels_hoc(self, only_validated, only_best, seeds, new_emodel_name)
+
+    def store_emodels_sonata(
+        self,
+        only_validated=False,
+        only_best=True,
+        seeds=None,
+        map_function=map,
+        new_emodel_name=None,
+    ):
+        export_emodels_sonata(
+            self, only_validated, only_best, seeds, map_function, new_emodel_name
+        )
