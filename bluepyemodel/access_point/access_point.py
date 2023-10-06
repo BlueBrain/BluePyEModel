@@ -167,7 +167,7 @@ class DataAccessPoint:
         Returns:
             dict: keys are emodel names with seed, values are names without seed.
         """
-    
+
     def store_hocs(
         self,
         only_validated=False,

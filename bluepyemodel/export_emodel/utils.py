@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def get_output_path(emodel, output_dir=None, output_base_dir="export_emodels_hoc"):
     """Get the output path.
-    
+
     Args:
         emodel (EModel): emodel
         output_dir (str): output directory
@@ -49,7 +49,7 @@ def select_emodels(emodel_name, emodels, only_validated=False, only_best=True, s
     if not emodels:
         logger.warning("In export_emodels_nexus, no emodel for %s", emodel_name)
         return []
-    
+
     if iteration:
         emodels = [
             model
