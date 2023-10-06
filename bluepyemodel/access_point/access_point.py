@@ -181,7 +181,13 @@ class DataAccessPoint:
         """Store the hoc files"""
 
     def store_emodels_hoc(
-        self, only_validated=False, only_best=True, seeds=None, new_emodel_name=None
+        self,
+        only_validated=False,
+        only_best=True,
+        seeds=None,
+        map_function=map,
+        new_emodel_name=None,
+        description=None,
     ):
         """Store hoc file produced by export_hoc"""
 
@@ -192,6 +198,7 @@ class DataAccessPoint:
         seeds=None,
         map_function=map,
         new_emodel_name=None,
+        description=None,
     ):
         """Store hoc file produced by export_sonata"""
 
