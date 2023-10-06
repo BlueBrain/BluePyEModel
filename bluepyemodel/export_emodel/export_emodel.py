@@ -166,7 +166,7 @@ def export_emodels_sonata(
     )
     if not emodels:
         logger.warning(
-            "No emodels were selected in export_emodels_sonata. " "Stopping sonata export here."
+            "No emodels were selected in export_emodels_sonata. Stopping sonata export here."
         )
         return
 
