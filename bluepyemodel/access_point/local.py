@@ -800,12 +800,12 @@ class LocalAccessPoint(DataAccessPoint):
         description=None,
         output_base_dir="export_emodels_hoc",
     ):
-        pass
+        raise NotImplementedError
 
     def store_emodels_hoc(
         self, only_validated=False, only_best=True, seeds=None, new_emodel_name=None
     ):
-        pass
+        raise NotImplementedError
 
     def store_emodels_sonata(
         self,
@@ -815,4 +815,4 @@ class LocalAccessPoint(DataAccessPoint):
         map_function=map,
         new_emodel_name=None,
     ):
-        pass
+        raise NotImplementedError
