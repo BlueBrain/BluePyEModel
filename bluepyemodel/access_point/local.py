@@ -789,3 +789,30 @@ class LocalAccessPoint(DataAccessPoint):
 
         with recipes_path.open("w") as f:
             json.dump(recipes, f, indent=2)
+
+    def store_hocs(
+        self,
+        only_validated=False,
+        only_best=True,
+        seeds=None,
+        map_function=map,
+        new_emodel_name=None,
+        description=None,
+        output_base_dir="export_emodels_hoc",
+    ):
+        raise NotImplementedError
+
+    def store_emodels_hoc(
+        self, only_validated=False, only_best=True, seeds=None, new_emodel_name=None
+    ):
+        raise NotImplementedError
+
+    def store_emodels_sonata(
+        self,
+        only_validated=False,
+        only_best=True,
+        seeds=None,
+        map_function=map,
+        new_emodel_name=None,
+    ):
+        raise NotImplementedError

@@ -168,6 +168,33 @@ class DataAccessPoint:
             dict: keys are emodel names with seed, values are names without seed.
         """
 
+    def store_hocs(
+        self,
+        only_validated=False,
+        only_best=True,
+        seeds=None,
+        map_function=map,
+        new_emodel_name=None,
+        description=None,
+        output_base_dir="export_emodels_hoc",
+    ):
+        """Store the hoc files"""
+
+    def store_emodels_hoc(
+        self, only_validated=False, only_best=True, seeds=None, new_emodel_name=None
+    ):
+        """Store hoc file produced by export_hoc"""
+
+    def store_emodels_sonata(
+        self,
+        only_validated=False,
+        only_best=True,
+        seeds=None,
+        map_function=map,
+        new_emodel_name=None,
+    ):
+        """Store hoc file produced by export_sonata"""
+
     def optimisation_state(self, seed=None, continue_opt=False):
         """Return the state of the optimisation.
 
