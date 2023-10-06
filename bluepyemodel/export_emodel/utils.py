@@ -45,7 +45,9 @@ def get_hoc_file_path(output_path):
     return str(output_path / "model.hoc")
 
 
-def select_emodels(emodel_name, emodels, only_validated=False, only_best=True, seeds=None, iteration=None):
+def select_emodels(
+    emodel_name, emodels, only_validated=False, only_best=True, seeds=None, iteration=None
+):
     if not emodels:
         logger.warning("In export_emodels_nexus, no emodel for %s", emodel_name)
         return []

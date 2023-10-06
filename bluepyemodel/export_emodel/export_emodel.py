@@ -206,7 +206,6 @@ def export_emodels_hoc(
     only_validated=False,
     only_best=True,
     seeds=None,
-    map_function=map,
     new_emodel_name=None,
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will contain a hoc
