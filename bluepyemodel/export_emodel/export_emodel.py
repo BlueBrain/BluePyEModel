@@ -165,8 +165,9 @@ def export_emodels_sonata(
         seeds=seeds,
     )
     if not emodels:
-        logger.warning("No emodels were selected in export_emodels_sonata. "
-                       "Stopping sonata export here.")
+        logger.warning(
+            "No emodels were selected in export_emodels_sonata. " "Stopping sonata export here."
+        )
         return
 
     cell_model = cell_evaluator.cell_model

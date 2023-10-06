@@ -176,7 +176,7 @@ class DataAccessPoint:
         map_function=map,
         new_emodel_name=None,
         description=None,
-        output_base_dir="export_emodels_hoc"
+        output_base_dir="export_emodels_hoc",
     ):
         """Store the hoc files"""
 
