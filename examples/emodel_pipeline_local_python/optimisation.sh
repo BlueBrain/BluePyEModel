@@ -2,7 +2,7 @@
 
 source ./myvenv/bin/activate
 
-export OPT_EMODEL="L5PC"
+export OPT_EMODEL="L5PC" # Your e-model name
 export RESUME="0" # Put 0 to start a new run or "githash" too resume an optimisation
 
 if [[ ${RESUME} == "0" ]]

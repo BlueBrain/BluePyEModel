@@ -1,7 +1,6 @@
 To get started with the E-Model building pipeline
 =================================================
-
-This section will talk about the E-Model building pipeline which for now contains e-features extraction, optimisation and e-model analysis. If you only wish to export a e-model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
+This section is divided into two parts: the first offers a concise guide on using the E-Model building pipeline with local storage `Running using python with local storage`_, while the second provides an in-depth tutorial on running it via Slurm `Running the example using Slurm (e.g. on BB5)`_. If you only wish to export a e-model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
 
@@ -143,7 +142,7 @@ The final structure of the local directory for this simpler case should be as fo
 
 
 Running the example using Slurm (e.g. on BB5)
-==========================================
+=============================================
 
 This section will talk about the E-Model building pipeline using githash versioning and Slurm.
 
@@ -191,6 +190,8 @@ The main script used to execute the different steps of model building is the fil
 
 Extraction
 ~~~~~~~~~~
+
+Before the extraction process, the ephys files are automatically fetched from here <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>_ using the download_trac.sh script. This script is subsequently invoked by the extract.sh script. If you're utilizing your own data, ensure you update the targets.py accordingly.
 
 To perform extraction, you will need an extraction config file `./config/extract_config/L5PC_config.json <./config/extract_config/L5PC_config.json>`. This file is created by the ``configure_targets`` function in ``./pipeline.py`` which is called by ``./extract.sh``.
 

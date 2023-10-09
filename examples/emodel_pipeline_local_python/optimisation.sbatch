@@ -3,8 +3,8 @@
 #SBATCH --account=proj000
 #SBATCH --error=./logs/opt_%j.log
 #SBATCH --output=./logs/opt_%j.log
-#SBATCH --ntasks=72
-#SBATCH --time=00:20:00
+#SBATCH --ntasks=20
+#SBATCH --time=12:00:00
 #SBATCH --constraint=cpu
 #SBATCH --partition=prod
 

@@ -22,14 +22,6 @@ from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from targets import filenames, ecodes_metadata, targets, protocols_rheobase
 
-# https://github.com/BlueBrain/BluePyEfe/blob/b4aaba072926463c031ce2b7e5cefa6c3cba7a45/bluepyefe/extract.py#L163
-# files_metadata (dict): define for which cell and protocol each file
-#             has to be used. Of the form:
-#             {
-#                 cell_id: {
-#                     protocol_name: [{file_metadata1}, {file_metadata1}]
-#                 }
-#             }
 logger = logging.getLogger()
 
 def configure_targets(access_point, isIgor=False):
