@@ -1,6 +1,6 @@
 To get started with the E-Model building pipeline
 =================================================
-This section is divided into two parts: the first offers a concise guide on using the E-Model building pipeline with local storage `Running using python with local storage`_, while the second provides an in-depth tutorial on running it via Slurm `Running the example using Slurm (e.g. on BB5)`_. If you only wish to export a e-model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
+This section is divided into two parts: the first `Running using python with local storage`_ offers a quick guide on using the E-Model building pipeline with local storage, while the second `Running the example using Slurm (e.g. on BB5)`_ provides an in-depth tutorial on running it via Slurm. If you only wish to export a e-model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
 
@@ -180,7 +180,7 @@ In order to configure the models that you want, you will have to:
 * Copy the morphology you wish to use in the ``morphologies`` folder
 * Copy the mechanisms (mod files) you wish to use in the ``mechanisms`` folder
 * Create a json file containing the parameters of your model and put it in ``./config/params/``.
-* Edit the `_targets.py <_targets.py>` containing the files_metadata, ecodes_metadata, protocols_rheobase and targets used as targets for the extraction process in ``./config/extract_config/EMODEL_NAME_config.json`` (for the format of this file section `Extraction`_ below).
+* Edit the `targets.py <targets.py>`_ containing the files_metadata, ecodes_metadata, protocols_rheobase and targets used as targets for the extraction process in ``./config/extract_config/EMODEL_NAME_config.json`` (for the format of this file section `Extraction`_ below).
 * Create a new recipe in ``./config/recipes.json`` which should contain the paths to all the files mentioned above as well as the settings you wish to use when running the pipeline. You can have a look at the docstring of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_ for a complete overview of all the settings available.
 
 Running the different steps
@@ -191,7 +191,7 @@ The main script used to execute the different steps of model building is the fil
 Extraction
 ~~~~~~~~~~
 
-Before the extraction process, the ephys files are automatically fetched from here <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>_ using the download_trac.sh script. This script is subsequently invoked by the extract.sh script. If you're utilizing your own data, ensure you update the targets.py accordingly.
+Before the extraction process, the ephys files are automatically fetched from `here <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_ using the ``download_trace.sh`` script. This script is subsequently invoked by the ``extract.sh`` script. If you're utilizing your own data, ensure you update the ``targets.py`` accordingly.
 
 To perform extraction, you will need an extraction config file `./config/extract_config/L5PC_config.json <./config/extract_config/L5PC_config.json>`. This file is created by the ``configure_targets`` function in ``./pipeline.py`` which is called by ``./extract.sh``.
 
@@ -204,18 +204,16 @@ For a complete description of the extraction process, its inner working and sett
 Optimisation
 ~~~~~~~~~~~~
 
-To perform optimisation, you will need to provide a morphology, mechanisms and a parameter configuration file in your recipe.
+To perform optimisation, you will need to provide a morphology, mechanisms and a parameter configuration file in your recipe. The mechanisms are compiled automatically by ``./optimisation.sh``.
 
 As optimisation is a costly operation, we will show here how to execute it in parallel using slurm.
-
-The mechanisms are compiled automatically by ``optimsiation.sh``.
 
 Configure the #SBATCH directives at the beginning of your SLURM sbatch file according to your job requirements. Then, inform your emodel name in ``./optimisation.sh`` and execute it.
 This will create several slurm jobs for different optimisation seeds and the githash associated to the run (keep it preciously!).
 
 The optimisation usually takes between 2 and 72 hours depending on the complexity of the model.
 If the model is not finished after 24 hours, you will need to resume it manually by informing the githash of the run in ``./optimisation.sh`` and executing it again.
-To monitor the state of the optimisation, use the monitor_optimisations.py:
+To monitor the state of the optimisation, use the ``./monitor_optimisations.py``:
 
 .. code-block:: python
 
@@ -244,7 +242,7 @@ If you don't want to have mechanism-specific currents in the currentscape plots,
 
 This step also validates the e-models (testing the model on protocols unseen during optimisation). This is done by ``pipeline.validation()`` called via ``analysis.sh``. The validation protocols are specified in the ``pipeline_settings`` dict of ``./config/recipes.json`` under the key ``validation_protocols``.
 
-Once the validation is done, the models in your final.json will have a field ``passedValidation``.
+Once the validation is done, the models in your final.json will have a field ``validated``.
 This field can have 3 values:
 
 * If it is None, that means the model did not go yet through validation.
