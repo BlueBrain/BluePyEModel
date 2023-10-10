@@ -1,6 +1,9 @@
+# Specify the file type being used; valid values are "ibw" or "nwb"
+file_type = "ibw"  # Change this to "nwb" if using NWB files
+
 filenames = [
-    #"./ephys_data/ABC.nwb"
-    "./ephys_data/C060109A1-SR-C1/" # if using igor files, please provide the path to the folder containing the .ibw files
+    #"./ephys_data/YOUR_NWB_FILE.nwb"
+    "./ephys_data/C060109A1-SR-C1/" # if using ibw files, please provide the path to the folder containing the .ibw files
 ]
 
 ecodes_metadata = {

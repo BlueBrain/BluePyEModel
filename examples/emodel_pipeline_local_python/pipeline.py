@@ -4,14 +4,14 @@ import glob
 
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
-from targets import filenames, ecodes_metadata, targets, protocols_rheobase
+from targets import file_type, filenames, ecodes_metadata, targets, protocols_rheobase
 
 logger = logging.getLogger()
 
-def configure_targets(access_point, isIgor=False):
+def configure_targets(access_point):
     files_metadata = []
 
-    if isIgor: # for IBW files
+    if file_type == "ibw":
         fs = glob.glob(f"{filenames[0]}/*ch0*.ibw")
         for filename in fs:
             fn = filename.split("/")[-1]
@@ -31,7 +31,7 @@ def configure_targets(access_point, isIgor=False):
                                 }
                             }
                         )
-    else: # for NWB files
+    elif file_type == "nwb":
         files_metadata = []
         for filename in filenames:
             files_metadata.append(
@@ -41,6 +41,8 @@ def configure_targets(access_point, isIgor=False):
                     "ecodes": ecodes_metadata
                 }
             )
+    else:
+        raise ValueError(f"Invalid file type: {file_type}. Expected 'ibw' or 'nwb'.")
 
     targets_formated = []
     for ecode in targets:
@@ -111,7 +113,7 @@ def main():
     )
 
     if args.step == "extract":
-        configure_targets(pipeline.access_point, isIgor=True)
+        configure_targets(pipeline.access_point)
         pipeline.extract_efeatures()
 
     elif args.step == "optimise":

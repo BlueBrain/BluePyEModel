@@ -200,7 +200,7 @@ Please ensure to check these logs if you encounter issues during the pipeline ex
 Extraction
 ~~~~~~~~~~
 
-Before the extraction process, the ephys files are automatically fetched from `here <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_ using the ``download_trace.sh`` script. This script is subsequently invoked by the ``extract.sh`` script. If you're utilizing your own data, ensure you update the ``targets.py`` accordingly.
+Before the extraction process, the ephys files are automatically fetched from `here <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_ using the ``download_trace.sh`` script. This script is subsequently invoked by the ``extract.sh`` script. If you're utilizing your own data, ensure you update the ``targets.py`` accordingly. When using your own ephys data, please ensure to make the necessary adjustments in the ``targets.py`` configuration file, specifically updating the filenames list to reflect your dataset. Additionally, when setting up the pipeline, it's imperative to correctly set the boolean argument indicating the file format of your data — either 'igor' or 'nwb' — to ensure proper processing.
 
 To perform extraction, you will need an extraction config file `./config/extract_config/L5PC_config.json <./config/extract_config/L5PC_config.json>`_. This file is created by the ``configure_targets`` function in ``./pipeline.py`` which is called by ``./extract.sh``.
 
