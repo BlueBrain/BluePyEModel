@@ -21,7 +21,7 @@ export RUNDIR="./run/${GITHASH}"
 echo "Githash: $GITHASH"
 echo "E-model: $OPT_EMODEL"
 
-export RUNLISTPATH="`pwd`/logs/run_list.txt"
+export RUNLISTPATH="`pwd`/logs/opt_list.log"
 export SUBMITTIME=`date +%Y.%m.%d.%H.%M.%S`
 
 if [ ! -f "${RUNDIR}/x86_64/special" ]; then

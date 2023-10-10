@@ -3,7 +3,7 @@
 source ./myvenv/bin/activate
 
 export OPT_EMODEL="L5PC"
-export RUNLISTPATH="`pwd`/logs/extract_list.txt"
+export RUNLISTPATH="`pwd`/logs/extract_list.log"
 
 source ./download_ephys_data.sh
 
