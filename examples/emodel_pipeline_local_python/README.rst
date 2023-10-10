@@ -230,7 +230,7 @@ To monitor the state of the optimisation, use the ``./monitor_optimisations.py``
 
         python monitor_optimisations.py
 
-Or have a look at the notebook `./notebooks/monitor_optimisations.ipynb <./notebooks/monitor_optimisations.ipynb>`_ and provide the ``githash`` and the ``emodel``.
+Or have a look at the notebook `./monitor_optimisations.ipynb <./monitor_optimisations.ipynb>`_ and provide the ``githash`` and the ``emodel``.
 
 For a more in depth overview of the optimisation process please have a look at the `documentation and examples of the package BluePyOpt on GitHub <https://github.com/BlueBrain/BluePyOpt>`_.
 
@@ -243,7 +243,7 @@ To do so, inform your e-model name and githash in ``./analysis.sh`` and execute 
 
 It will create a slurm job that will store the results in a local file called ``final.json`` as well as plot figures for these e-models that you will find in ``./figures/EMODEL_NAME/``.
 
-If you wish to interact with the e-models, please have a look at the notebook `./notebooks/exploit_models.ipynb <./notebooks/exploit_models.ipynb>`_.
+If you wish to interact with the e-models, please have a look at the notebook `./exploit_models.ipynb <./exploit_models.ipynb>`_.
 
 Note that you may observe disproportionately large scores for some features. This phenomenon often originates from the relatively small standard deviations associated with the extraction of these particular features, which in turn, is frequently a consequence of utilizing a smaller sample size. Smaller sample sizes tend to yield less diverse data, thereby restricting the variability and potentially skewing feature scores post-optimization.
 
