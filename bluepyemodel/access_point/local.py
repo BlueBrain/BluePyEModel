@@ -34,6 +34,8 @@ from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
+from bluepyemodel.export_emodel.utils import get_output_path_from_metadata
+from bluepyemodel.export_emodel.utils import get_hoc_file_path
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools.mechanisms import get_mechanism_currents
@@ -826,3 +828,11 @@ class LocalAccessPoint(DataAccessPoint):
     ):
         """Not Implemented"""
         raise NotImplementedError
+
+    def sonata_exists(self, seed):
+        """Returns True if the sonata hoc file has been exported"""
+        output_path = get_output_path_from_metadata(
+            "export_emodels_sonata", self.emodel_metadata, seed
+        )
+        hoc_file_path = get_hoc_file_path(output_path)
+        return Path(hoc_file_path).is_file()

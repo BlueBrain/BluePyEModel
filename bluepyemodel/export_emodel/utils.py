@@ -22,6 +22,17 @@ import pathlib
 logger = logging.getLogger(__name__)
 
 
+def get_output_path_from_metadata(output_base_dir, emodel_metadata, seed):
+    """Get the output path from the emodel_metadata.
+    
+    Args:
+        output_base_dir (str): output base directory
+        emodel_metadata (EModelMetadata): emodel metadata
+        seed (int): seed
+    """
+    return f"./{output_base_dir}/{emodel_metadata.as_string(seed=seed)}/"
+
+
 def get_output_path(emodel, output_dir=None, output_base_dir="export_emodels_hoc"):
     """Get the output path.
 
@@ -32,7 +43,9 @@ def get_output_path(emodel, output_dir=None, output_base_dir="export_emodels_hoc
             using also emodel metadata in the path
     """
     if output_dir is None:
-        output_dir = f"./{output_base_dir}/{emodel.emodel_metadata.as_string(seed=emodel.seed)}/"
+        output_dir = get_output_path_from_metadata(
+            output_base_dir, emodel.emodel_metadata, emodel.seed
+        )
     output_path = pathlib.Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 

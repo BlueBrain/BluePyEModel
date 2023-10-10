@@ -658,6 +658,191 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         )
 
 
+class StoreHocTarget(WorkflowTarget):
+    """Check if the hoc files have been stored."""
+
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed):
+        """Constructor.
+
+        Args:
+            emodel (str): name of the emodel. Has to match the name of the emodel
+                under which the configuration data are stored.
+            ttype (str): name of the ttype.
+            seed (int): seed used in the optimisation.
+        """
+        super().__init__(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+        )
+
+        self.seed = seed
+
+    def exists(self):
+        """Check if the hoc is stored for all given seeds."""
+        batch_size = self.access_point.pipeline_settings.optimisation_batch_size
+        checked_for_all_seeds = [
+            self.access_point.sonata_exists(seed=seed)
+            for seed in range(self.seed, self.seed + batch_size)
+        ]
+        return all(checked_for_all_seeds)
+
+
+class ExportHoc(WorkflowTaskRequiringMechanisms, IPyParallelTask):
+    """Luigi wrapper for export_emodels_sonata.
+
+    Parameters:
+        seed (int): seed used in the optimisation.
+        graceful_killer (multiprocessing.Event): event triggered when USR1 signal is received.
+            Has to use multiprocessing event for communicating between processes
+            when there is more than 1 luigi worker. Skip task if set.
+    """
+
+    seed = luigi.IntParameter(default=1)
+    graceful_killer = multiprocessing.Event()
+
+    def requires(self):
+        """ """
+
+        compile_mechanisms = self.access_point.pipeline_settings.compile_mechanisms
+
+        to_run = [
+            StoreBestModels(
+                emodel=self.emodel,
+                etype=self.etype,
+                ttype=self.ttype,
+                mtype=self.mtype,
+                species=self.species,
+                brain_region=self.brain_region,
+                iteration_tag=self.iteration_tag,
+                seed=self.seed,
+            )
+        ]
+        if compile_mechanisms:
+            to_run.append(
+                CompileMechanisms(
+                    emodel=self.emodel,
+                    etype=self.etype,
+                    ttype=self.ttype,
+                    mtype=self.mtype,
+                    species=self.species,
+                    brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
+                )
+            )
+
+        return to_run
+
+    @WorkflowTask.check_mettypes
+    def run(self):
+        """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
+        # set self.batch_size here to easily handle it in the argparse argument passing
+        self.batch_size = self.access_point.pipeline_settings.optimisation_batch_size
+        attrs = [
+            "backend",
+            "emodel",
+            "etype",
+            "ttype",
+            "mtype",
+            "species",
+            "brain_region",
+            "iteration_tag",
+            "seed",
+            "batch_size",
+        ]
+
+        self.prepare_args_for_remote_script(attrs)
+
+        super().run()
+
+    def remote_script(self):
+        """Catch arguments from parsing, and run validation."""
+        # -- imports -- #
+        import argparse
+        import json
+
+        from bluepyemodel import access_point
+        from bluepyemodel.tools.multiprocessing import get_mapper
+        from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
+
+        # -- parsing -- #
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--backend", default=None, type=str)
+        parser.add_argument("--api_from_config", default="local", type=str)
+        parser.add_argument(
+            "--api_args_from_config",
+            default=", ".join(
+                (
+                    '{"emodel_dir": None',
+                    '"recipes_path": None',
+                    '"final_path": None',
+                    '"legacy_dir_structure": None',
+                    '"extract_config": None}',
+                )
+            ),
+            type=json.loads,
+        )
+        parser.add_argument("--emodel", default=None, type=str)
+        parser.add_argument("--etype", default=None, type=str)
+        parser.add_argument("--ttype", default=None, type=str)
+        parser.add_argument("--mtype", default=None, type=str)
+        parser.add_argument("--species", default=None, type=str)
+        parser.add_argument("--brain_region", default=None, type=str)
+        parser.add_argument("--iteration_tag", default=None, type=str)
+        parser.add_argument("--ipyparallel_profile", default=None, type=str)
+        parser.add_argument("--seed", default=None, type=int)
+        parser.add_argument("--batch_size", default=None, type=int)
+
+        args = parser.parse_args()
+
+        # -- run validation -- #
+        mapper = get_mapper(args.backend, ipyparallel_profile=args.ipyparallel_profile)
+        access_pt = access_point.get_access_point(
+            access_point=args.api_from_config,
+            emodel=args.emodel,
+            etype=args.etype,
+            ttype=args.ttype,
+            mtype=args.mtype,
+            species=args.species,
+            brain_region=args.brain_region,
+            iteration_tag=args.iteration_tag,
+            **args.api_args_from_config,
+        )
+
+        export_emodels_sonata(
+            access_pt,
+            only_validated=False,
+            only_best=False,
+            seeds=list(range(args.seed, args.seed + args.batch_size)),
+            map_fucntion=mapper,
+        )
+        if args.api_from_config == "nexus":
+            access_pt.store_emodels_sonata(
+                only_validated=False,
+                only_best=False,
+                seeds=list(range(args.seed, args.seed + args.batch_size)),
+                map_function=mapper,
+            )
+
+
+    def output(self):
+        """ """
+        return StoreHocTarget(
+            emodel=self.emodel,
+            etype=self.etype,
+            ttype=self.ttype,
+            mtype=self.mtype,
+            species=self.species,
+            brain_region=self.brain_region,
+            iteration_tag=self.iteration_tag,
+            seed=self.seed,
+        )
+
+
 class EModelCreationTarget(WorkflowTarget):
     """Check if the the model is validated for any seed."""
 
@@ -720,7 +905,6 @@ class EModelCreation(WorkflowTask):
     seed = luigi.IntParameter(default=1)
     graceful_killer = multiprocessing.Event()
 
-    @staticmethod
     def check_mettypes(func):
         """Decorator to check mtype, etype and ttype presence on nexus"""
 
