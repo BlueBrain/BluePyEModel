@@ -188,14 +188,7 @@ Running the different steps
 
 The main script used to execute the different steps of model building is the file `pipeline.py <pipeline.py>`_. It contains the commands calling BluePyEModel to perform the operations related to extraction, optimisation, analysis and validation.
 
-Logging
-~~~~~~~
-
-Each step within the pipeline generates a log file to track its progress and capture any issues that may arise during execution. These log files are stored in the ``./logs`` directory with a naming convention reflective of the operation and its corresponding job identifier (e.g., opt_jobid.log).
-
-In addition to individual log files, each step maintains its own historical record (e.g., ``opt_list.txt``). These files are also situated within the ./logs directory, serving as cumulative logs that document the series of runs pertinent to that particular step.
-
-Please ensure to check these logs if you encounter issues during the pipeline execution, or wish to audit or review past operations.
+Each step within the pipeline generates a log file to track its progress and capture any issues that may arise during execution. These log files are stored in the ``./logs`` directory with a naming convention reflective of the operation and its corresponding job identifier (e.g., opt_jobid.log). In addition to individual log files, each step maintains its own historical record (e.g., ``opt_list.txt``). These files are also situated within the ./logs directory, serving as cumulative logs that document the series of runs pertinent to that particular step. Please ensure to check these logs if you encounter issues during the pipeline execution, or wish to audit or review past operations.
 
 Extraction
 ~~~~~~~~~~
@@ -208,7 +201,7 @@ Then, to run the extraction, inform the name of the e-model in ``./extract.sh`` 
 
 The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``features`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``. If you asked for the extraction to be plotted in the settings, the plots will be in ``./figures/EMODEL_NAME/extraction/``.
 
-Note that our extraction process utilizes traces from just one cell in the example, leading to limited sample sizes and occasionally, small or zero standard deviations (std) for certain features. This can inflate feature scores post-optimization. To counteract this, any calculated std of zero during extraction is replaced by a default value specified in the default_std_deviation parameter of our pipeline settings, ensuring consistency in the optimization outcomes.
+Note that our extraction process utilizes traces from just one cell in the example, leading to limited sample sizes and occasionally, small or zero standard deviations (std) for certain features. This can inflate feature scores post-optimization. To counteract this, any calculated std of zero during extraction is replaced by a default value specified in the ``default_std_deviation`` of the ``pipeline_settings`` as mentioned in the ``recipes.json``, please refer to the `Configuration`_ section.
 
 For a complete description of the extraction process, its inner working and settings please refer the `README and examples of BluePyEfe on GitHub <https://github.com/BlueBrain/BluePyEfe/>`_.
 
@@ -220,7 +213,7 @@ To perform optimisation, you will need to provide a morphology, mechanisms and a
 As optimisation is a costly operation, we will show here how to execute it in parallel using slurm.
 
 Configure the #SBATCH directives at the beginning of your SLURM sbatch file according to your job requirements. Then, inform your e-model name in ``./optimisation.sh`` and execute it.
-This will create several slurm jobs for different optimisation seeds and the githash associated to the run (keep it preciously!).
+This will create several slurm jobs for different optimisation seeds and the githash associated to the run (keep it preciously!), In case it goes missing, however, you can retrieve the githash from the opt_list file associated with each run.
 
 The optimisation usually takes between 2 and 72 hours depending on the complexity of the model.
 If the model is not finished after 24 hours, you will need to resume it manually by informing the githash of the run in ``./optimisation.sh`` and executing it again.
