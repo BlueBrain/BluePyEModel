@@ -703,6 +703,13 @@ class ExportHoc(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     seed = luigi.IntParameter(default=1)
     graceful_killer = multiprocessing.Event()
 
+    def __init__(self, *args, **kwargs):
+        """ """
+        super().__init__(*args, **kwargs)
+
+        # set self.batch_size here to easily handle it in the argparse argument passing
+        self.batch_size = self.access_point.pipeline_settings.optimisation_batch_size
+
     def requires(self):
         """ """
 
@@ -738,8 +745,6 @@ class ExportHoc(WorkflowTaskRequiringMechanisms, IPyParallelTask):
     @WorkflowTask.check_mettypes
     def run(self):
         """Prepare self.args, then call bbp-workflow's IPyParallelTask's run()."""
-        # set self.batch_size here to easily handle it in the argparse argument passing
-        self.batch_size = self.access_point.pipeline_settings.optimisation_batch_size
         attrs = [
             "backend",
             "emodel",
@@ -764,8 +769,8 @@ class ExportHoc(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         import json
 
         from bluepyemodel import access_point
-        from bluepyemodel.tools.multiprocessing import get_mapper
         from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
+        from bluepyemodel.tools.multiprocessing import get_mapper
 
         # -- parsing -- #
         parser = argparse.ArgumentParser()
@@ -897,6 +902,8 @@ class EModelCreation(WorkflowTask):
             Has to use multiprocessing event for communicating between processes
             when there is more than 1 luigi worker. Exit loop if set.
     """
+
+    # pylint: disable=no-self-argument, not-callable
 
     seed = luigi.IntParameter(default=1)
     graceful_killer = multiprocessing.Event()

@@ -88,7 +88,7 @@ def compile_mechs_in_emodel_dir(mechanisms_directory):
         mechanisms_dir (Path): path to the directory containing the
             mod files to compile.
     """
-    # pylint: disable=broad-exception-caught
+    # pylint: disable=broad-except
     cwd = os.getcwd()
 
     try:

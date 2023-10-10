@@ -34,8 +34,8 @@ from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
-from bluepyemodel.export_emodel.utils import get_output_path_from_metadata
 from bluepyemodel.export_emodel.utils import get_hoc_file_path
+from bluepyemodel.export_emodel.utils import get_output_path_from_metadata
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools.mechanisms import get_mechanism_currents
