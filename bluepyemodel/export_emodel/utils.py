@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def get_output_path_from_metadata(output_base_dir, emodel_metadata, seed):
     """Get the output path from the emodel_metadata.
-    
+
     Args:
         output_base_dir (str): output base directory
         emodel_metadata (EModelMetadata): emodel metadata

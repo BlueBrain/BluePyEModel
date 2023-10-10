@@ -269,7 +269,10 @@ def get_evaluator_from_access_point(
 
     mechanisms_directory = access_point.get_mechanisms_directory()
     if isinstance(access_point, LocalAccessPoint):
-        if Path.cwd() != access_point.emodel_dir and access_point.emodel_metadata.iteration:
+        if (
+            Path.cwd() != access_point.emodel_dir.resolve()
+            and access_point.emodel_metadata.iteration
+        ):
             delete_compiled_mechanisms()
             if not (access_point.emodel_dir / "x86_64" / "special").is_file():
                 compile_mechs_in_emodel_dir(mechanisms_directory)

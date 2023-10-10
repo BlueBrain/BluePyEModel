@@ -815,7 +815,7 @@ class ExportHoc(WorkflowTaskRequiringMechanisms, IPyParallelTask):
             only_validated=False,
             only_best=False,
             seeds=list(range(args.seed, args.seed + args.batch_size)),
-            map_fucntion=mapper,
+            map_function=mapper,
         )
         if args.api_from_config == "nexus":
             access_pt.store_emodels_sonata(
@@ -824,7 +824,6 @@ class ExportHoc(WorkflowTaskRequiringMechanisms, IPyParallelTask):
                 seeds=list(range(args.seed, args.seed + args.batch_size)),
                 map_function=mapper,
             )
-
 
     def output(self):
         """ """
