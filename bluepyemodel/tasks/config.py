@@ -29,7 +29,6 @@ class EmodelAPIConfig(luigi.Config):
     recipes_path = luigi.OptionalParameter(default=None)
     final_path = luigi.OptionalParameter(default="./final.json")
     legacy_dir_structure = luigi.BoolParameter(default=False)
-    extract_config = luigi.OptionalParameter(default=None)
 
     # nexus parameters
     forge_path = luigi.OptionalParameter(default=None)
@@ -45,15 +44,12 @@ class EmodelAPIConfig(luigi.Config):
         if self.api == "local":
             if self.recipes_path is None:
                 raise ValueError("recipes_path cannot be None when api is set to 'local'")
-            if self.extract_config is None:
-                raise ValueError("extract_config cannot be None when api is set to 'local'")
 
             self.api_args = {
                 "emodel_dir": self.emodel_dir,
                 "recipes_path": self.recipes_path,
                 "final_path": self.final_path,
                 "legacy_dir_structure": self.legacy_dir_structure,
-                "extract_config": self.extract_config,
             }
 
         if self.api == "nexus":

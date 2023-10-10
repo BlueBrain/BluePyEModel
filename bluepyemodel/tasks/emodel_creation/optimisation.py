@@ -295,8 +295,7 @@ class Optimise(WorkflowTaskRequiringMechanisms, IPyParallelTask):
                     '{"emodel_dir": None',
                     '"recipes_path": None',
                     '"final_path": None',
-                    '"legacy_dir_structure": None',
-                    '"extract_config": None}',
+                    '"legacy_dir_structure": None}',
                 )
             ),
             type=json.loads,
@@ -611,8 +610,7 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
                     '{"emodel_dir": None',
                     '"recipes_path": None',
                     '"final_path": None',
-                    '"legacy_dir_structure": None',
-                    '"extract_config": None}',
+                    '"legacy_dir_structure": None}',
                 )
             ),
             type=json.loads,
@@ -780,8 +778,7 @@ class ExportHoc(WorkflowTaskRequiringMechanisms, IPyParallelTask):
                     '{"emodel_dir": None',
                     '"recipes_path": None',
                     '"final_path": None',
-                    '"legacy_dir_structure": None',
-                    '"extract_config": None}',
+                    '"legacy_dir_structure": None}',
                 )
             ),
             type=json.loads,
