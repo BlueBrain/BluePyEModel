@@ -970,6 +970,16 @@ class EModelCreation(WorkflowTask):
                     brain_region=self.brain_region,
                     iteration_tag=self.iteration_tag,
                     seed=seed,
+                ),
+                ExportHoc(
+                    emodel=self.emodel,
+                    etype=self.etype,
+                    ttype=self.ttype,
+                    mtype=self.mtype,
+                    species=self.species,
+                    brain_region=self.brain_region,
+                    iteration_tag=self.iteration_tag,
+                    seed=seed,
                 )
             )
             seed += batch_size
