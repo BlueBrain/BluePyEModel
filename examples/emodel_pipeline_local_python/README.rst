@@ -1,6 +1,6 @@
 To get started with the E-Model building pipeline
 =================================================
-This section is divided into two parts: the first `Running using python with local storage`_ offers a quick guide on using the E-Model building pipeline with local storage, while the second `Running the example using Slurm (e.g. on BB5)`_ provides an in-depth tutorial on running it via Slurm. If you only wish to export a e-model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
+This section is divided into two parts: the first `Running using python with local storage`_ offers a quick guide on using the E-Model building pipeline with local storage, while the second `Running the example using Slurm`_ provides an in-depth tutorial on running it via Slurm. If you only wish to export an e-model that was built using the pipeline to hoc, you can jump to the subsection `Exporting the models`_.
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
 
@@ -64,7 +64,7 @@ Let's go over the content of this file:
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
 * ``params`` contains the essential mechanisms specifying their locations (e.g., axonal, somatic) as well as their distributions and parameters, which can be either frozen or free.
 * ``features`` contains the path to the file that includes the output of the extraction, which are the ``efeatures`` and ``protocols``. The ``efeatures`` is a list of dictionaries, where each entry contains a feature associated with a specific protocol. ``protocols`` is also a list of dictionaries; each entry in this list contains the protocol's name, amplitude, among other details.
-* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important setting if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets (e.g. ``L5PC_config``), features names, protocols and files (ephys traces) of the extraction process. This file can be auto-generated using the ``configure_targets`` function in ``./pipeline.py``. This function parses the ``./targets.py`` configuration file, which needs to be set up appropriately.
+* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important setting if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets (e.g. ``L5PC_config.json``), features names, protocols and files (ephys traces) of the extraction process. This file can be auto-generated using the ``configure_targets`` function in ``./pipeline.py``. This function parses the ``./targets.py`` configuration file, which needs to be set up appropriately.
 
 Building the models
 ~~~~~~~~~~~~~~~~~~~
@@ -97,7 +97,20 @@ This snippet will likely not be used as such as the different steps of the pipel
 
 Note that for the pipeline to work, the NEURON mechanisms used by the models need to be present in a local directory named "mechanisms".
 
-The final models generated using the local access point are stored in the file ``final.json`` and the traces of the models can be seen in ``./figures/``.
+The final models generated using the local access point are stored in the file ``final.json``.
+
+The figures folder ``./figures/`` should contain the following folders:
+
+* efeatures_extraction: Contains separate figures for each e-feature, each drawn based on the specific protocol used for extraction.
+* distributions: Displays optimisation parameter distributions between the low and high optimisation bounds as specified in params.json. The figure depicts parameter variations of only the best individuals of each seed.
+* optimisation: Depicts the optimisation curve, highlighting optimisation progress over generations.
+    - It plots the minimum and average optimisation fitness scores versus the number of optimisation generations.
+    - It also provides the minimum score, the number of generations completed, the evolutionary algorithm used, and the finish status of optimisation.
+* parameter_evolution: Illustrates the evolution of the parameters within the optimisation bounds over generations.
+* scores: Presents the feature scores of each optimised e-feature in terms of z-scores from the experimental e-feature mean value.
+* traces: Exhibits the traces derived from the resulting optimised e-model for each optimised and validated protocol.
+* currentscape: Currentscape plots for each optimisation protocol.
+The above folders will contain figures within the ``all`` subfolder. If ``pipeline.plot(only_validated=True)``, only the validated models are plotted within the ``validated`` subfolder.
 
 Exporting the models
 ~~~~~~~~~~~~~~~~~~~~
@@ -141,8 +154,8 @@ The final structure of the local directory for this simpler case should be as fo
     │    └── L5TPC.asc
 
 
-Running the example using Slurm (e.g. on BB5)
-=============================================
+Running the example using Slurm
+===============================
 
 This section will talk about the E-Model building pipeline using githash versioning and Slurm.
 
@@ -199,7 +212,10 @@ To perform extraction, you will need an extraction config file `./config/extract
 
 Then, to run the extraction, inform the name of the e-model in ``./extract.sh`` and execute the file. Please make sure that the name of the e-model matches an entry of the file ``recipes.json``.
 
-The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``features`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``. If you asked for the extraction to be plotted in the settings, the plots will be in ``./figures/EMODEL_NAME/extraction/``.
+The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``features`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``. If you asked for the extraction to be plotted in the settings, the plots will be in ``./figures/EMODEL_NAME/extraction/``. The folder contains figures for each cell that has been extracted. Each cell folder should have plots for:
+
+* Individual features vs relative/absolute stimulus amplitude.
+* Recordings plot for each protocol specified during extraction.
 
 Note that our extraction process utilizes traces from just one cell in the example, leading to limited sample sizes and occasionally, small or zero standard deviations (std) for certain features. This can inflate feature scores post-optimization. To counteract this, any calculated std of zero during extraction is replaced by a default value specified in the ``default_std_deviation`` of the ``pipeline_settings`` as mentioned in the ``recipes.json``, please refer to the `Configuration`_ section.
 

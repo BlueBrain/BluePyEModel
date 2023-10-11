@@ -1,3 +1,19 @@
+"""
+Copyright 2023, EPFL/Blue Brain Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 # Specify the file type being used; valid values are "ibw" or "nwb"
 file_type = "ibw"  # Change this to "nwb" if using NWB files
 
@@ -6,6 +22,19 @@ filenames = [
     "./ephys_data/C060109A1-SR-C1/" # if using ibw files, please provide the path to the folder containing the .ibw files
 ]
 
+# FEATURE TIMINGS IN FEATURE EXTRACTION
+# ----------------------------------
+# Note regarding feature timings (ton, tmid, tmid2, toff):
+# While these timings are not mandatory parameters, they significantly enhance the reliability of feature extraction.
+# Bluepyefe includes an algorithm for their automatic detection; however, this can occasionally fail, especially with noisy data.
+# Therefore, if known, providing these timings is recommended for increased accuracy and reliability of the results.
+
+# LIQUID JUNCTION POTENTIAL (LJP) CORRECTION
+# ----------------------------------
+# Liquid Junction Potential (ljp) is a correction factor that's applied to the voltage measurements in experimental data.
+# It accounts for the potential difference caused by the liquid junction in electrophysiological recordings.
+# It's crucial to provide this correction value if you're aware that your data requires an LJP adjustment.
+# Failure to apply a known LJP correction can result in misinterpretation of the data due to inaccurate voltage readings.
 ecodes_metadata = {
     'IDthresh': {"ljp": 14.0,"ton": 700, "toff": 2700},
     'IDrest': {"ljp": 14.0, "ton": 700, "toff": 2700},
