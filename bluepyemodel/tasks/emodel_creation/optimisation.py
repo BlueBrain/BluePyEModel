@@ -200,14 +200,10 @@ class OptimisationTarget(WorkflowTarget):
     def exists(self):
         """Check if the model is completed."""
         state = self.access_point.optimisation_state(seed=self.seed, continue_opt=self.continue_opt)
-        if (state == OptimisationState.COMPLETED):
+        if state == OptimisationState.COMPLETED:
             return True
-        elif (state == OptimisationState.EMPTY):
-            return False
-        elif (state == OptimisationState.IN_PROGRESS):
-            return False
-        else:
-            return False
+
+        return False
 
 
 class Optimise(WorkflowTaskRequiringMechanisms, IPyParallelTask):

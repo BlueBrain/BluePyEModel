@@ -20,6 +20,7 @@ import glob
 import logging
 import pathlib
 import pickle
+from enum import Enum
 from itertools import chain
 
 import efel
@@ -32,16 +33,26 @@ from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
-from enum import Enum
 
 # pylint: disable=no-member,unused-argument,assignment-from-no-return,no-value-for-parameter
 
 logger = logging.getLogger(__name__)
 
+
 class OptimisationState(Enum):
+    """
+    the possible states of an optimisation process.
+
+    Attributes:
+        COMPLETED (str): The optimisation process has completed successfully.
+        IN_PROGRESS (str): The optimisation process is currently in progress.
+        EMPTY (str): The optimisation process has not yet been started.
+    """
+
     COMPLETED = "completed"
     IN_PROGRESS = "in_progress"
     EMPTY = "empty"
+
 
 class DataAccessPoint:
 
