@@ -60,13 +60,13 @@ def monitor_optimisation():
     for path in paths:
         with open(path, "rb") as file:
             data = pickle.load(file)
-            seed = path.split("_seed=")[1].split(".pkl")[0]
-            generation = data["logbook"].select("gen")[-1]
-            best_score = sum(data["halloffame"][0].fitness.values)
-            finished = access_point.optimisation_state(seed)
-            status = "finished" if finished else "in progress"
-            print(f"Seed: {seed}, Generation: {generation}, status: {status}, Score: {best_score}")
-            best_fitness.append(best_score)
+        seed = path.split("_seed=")[1].split(".pkl")[0]
+        generation = data["logbook"].select("gen")[-1]
+        best_score = sum(data["halloffame"][0].fitness.values)
+        finished = access_point.optimisation_state(seed)
+        status = "finished" if finished else "in progress"
+        print(f"Seed: {seed}, Generation: {generation}, status: {status}, Score: {best_score}")
+        best_fitness.append(best_score)
 
     if best_fitness:
         print(f"Best fitness: {min(best_fitness)} from checkpoint {paths[numpy.argmin(best_fitness)]}")

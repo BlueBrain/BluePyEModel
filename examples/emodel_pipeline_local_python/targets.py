@@ -31,9 +31,9 @@ filenames = [
 
 # LIQUID JUNCTION POTENTIAL (LJP) CORRECTION
 # ----------------------------------
-# Liquid Junction Potential (ljp) is a correction factor that's applied to the voltage measurements in experimental data.
+# Liquid Junction Potential (ljp) is a correction factor that is applied to the voltage measurements in experimental data.
 # It accounts for the potential difference caused by the liquid junction in electrophysiological recordings.
-# It's crucial to provide this correction value if you're aware that your data requires an LJP adjustment.
+# It is crucial to provide this correction value if you are aware that your data requires an LJP adjustment.
 # Failure to apply a known LJP correction can result in misinterpretation of the data due to inaccurate voltage readings.
 ecodes_metadata = {
     'IDthresh': {"ljp": 14.0,"ton": 700, "toff": 2700},
