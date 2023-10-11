@@ -69,6 +69,10 @@ class ProbAMPANMDA_EMS(BPEM_stimulus):
         )
 
     @property
+    def stim_start(self):
+        return self.syn_delay
+
+    @property
     def stim_end(self):
         return self.total_duration
 
