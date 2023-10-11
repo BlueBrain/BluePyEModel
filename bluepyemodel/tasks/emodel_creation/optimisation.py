@@ -23,6 +23,7 @@ from pathlib import Path
 
 import luigi
 
+from bluepyemodel.access_point.access_point import OptimisationState
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from bluepyemodel.emodel_pipeline.plotting import optimisation
@@ -198,7 +199,15 @@ class OptimisationTarget(WorkflowTarget):
 
     def exists(self):
         """Check if the model is completed."""
-        return self.access_point.optimisation_state(seed=self.seed, continue_opt=self.continue_opt)
+        state = self.access_point.optimisation_state(seed=self.seed, continue_opt=self.continue_opt)
+        if (state == OptimisationState.COMPLETED):
+            return True
+        elif (state == OptimisationState.EMPTY):
+            return False
+        elif (state == OptimisationState.IN_PROGRESS):
+            return False
+        else:
+            return False
 
 
 class Optimise(WorkflowTaskRequiringMechanisms, IPyParallelTask):

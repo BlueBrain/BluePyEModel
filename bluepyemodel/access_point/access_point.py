@@ -32,11 +32,16 @@ from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
+from enum import Enum
 
 # pylint: disable=no-member,unused-argument,assignment-from-no-return,no-value-for-parameter
 
 logger = logging.getLogger(__name__)
 
+class OptimisationState(Enum):
+    COMPLETED = "completed"
+    IN_PROGRESS = "in_progress"
+    EMPTY = "empty"
 
 class DataAccessPoint:
 
@@ -205,9 +210,6 @@ class DataAccessPoint:
     def optimisation_state(self, seed=None, continue_opt=False):
         """Return the state of the optimisation.
 
-        TODO: - should return three states: completed, in progress, empty
-              - better management of checkpoints
-
         Args:
             seed (int): seed used in the optimisation.
             continue_opt (bool): whether to continue optimisation or not
@@ -227,11 +229,11 @@ class DataAccessPoint:
         if not pathlib.Path(checkpoint_path).is_file():
             checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
             if not pathlib.Path(checkpoint_path).is_file():
-                return False
+                return OptimisationState.EMPTY
 
         # there is a file & continue opt is False -> target considered complete
         if not continue_opt:
-            return True
+            return OptimisationState.COMPLETED
 
         # there is a file & we want to continue optimisation -> check if optimisation if finished
         optimiser = self.pipeline_settings.optimiser
@@ -247,8 +249,8 @@ class DataAccessPoint:
             CMA_es.check_termination(gen)
             # no termination met -> still active -> target not complete
             if CMA_es.active:
-                return False
-            return True
+                return OptimisationState.IN_PROGRESS
+            return OptimisationState.COMPLETED
 
         # IBEA
         if optimiser == "IBEA":
@@ -258,8 +260,8 @@ class DataAccessPoint:
             stopping_params = {"gen": gen + 1}
             run_complete = _check_stopping_criteria(stopping_criteria, stopping_params)
             if run_complete:
-                return True
-            return False
+                return OptimisationState.COMPLETED
+            return OptimisationState.IN_PROGRESS
 
         raise ValueError(f"Unknown optimiser: {optimiser}")
 

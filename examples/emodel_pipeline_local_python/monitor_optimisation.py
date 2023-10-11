@@ -17,6 +17,7 @@ limitations under the License.
 import pickle
 import glob
 import numpy
+from bluepyemodel.access_point.access_point import OptimisationState
 from bluepyemodel.access_point.local import LocalAccessPoint
 
 def monitor_optimisation():
@@ -63,8 +64,16 @@ def monitor_optimisation():
         seed = path.split("_seed=")[1].split(".pkl")[0]
         generation = data["logbook"].select("gen")[-1]
         best_score = sum(data["halloffame"][0].fitness.values)
-        finished = access_point.optimisation_state(seed)
-        status = "finished" if finished else "in progress"
+        opt_state = access_point.optimisation_state(seed)
+        if opt_state == OptimisationState.COMPLETED:
+            status = "completed"
+        elif opt_state == OptimisationState.IN_PROGRESS:
+            status = "in progress"
+        elif opt_state == OptimisationState.EMPTY:
+            print(f"No checkpoint found for species: {species}, brain_region: {brain_region}")
+            continue
+        else:
+            status = "unknown"
         print(f"Seed: {seed}, Generation: {generation}, status: {status}, Score: {best_score}")
         best_fitness.append(best_score)
 
