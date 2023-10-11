@@ -68,6 +68,10 @@ class ProbAMPANMDA_EMS(BPEM_stimulus):
             location=location,
         )
 
+    @property
+    def stim_end(self):
+        return self.total_duration
+
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
 
