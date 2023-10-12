@@ -18,6 +18,7 @@ import logging
 import argparse
 import glob
 
+from bluepyemodel.export_emodel.export_emodel import export_emodels_hoc
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from targets import file_type, filenames, ecodes_metadata, targets, protocols_rheobase
@@ -87,7 +88,7 @@ def get_parser():
     )
 
     parser.add_argument("--step", type=str, required=True, choices=[
-        "extract", "optimise", "analyse", "validate"])
+        "extract", "optimise", "analyse", "export"])
     parser.add_argument('--emodel', type=str, required=True)
     parser.add_argument('--etype', type=str, required=False, default=None)
     parser.add_argument('--mtype', type=str, required=False, default=None)
@@ -141,6 +142,12 @@ def main():
         pipeline.validation()
         pipeline.plot(only_validated=False)
 
+    elif args.step == "export":
+        access_point = pipeline.access_point
+        export_emodels_hoc(access_point,
+                           only_validated=False,
+                           only_best=False,
+                           seeds=[args.seed])
 
 if __name__ == "__main__":
     main()
