@@ -1,3 +1,6 @@
+#!/bin/bash
+
+#####################################################################
 # Copyright 2023, EPFL/Blue Brain Project
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#####################################################################
 
 # Download the input traces from the repository https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1
 USER="BlueBrain"

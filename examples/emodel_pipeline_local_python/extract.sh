@@ -19,7 +19,7 @@
 
 source ./myvenv/bin/activate
 
-export OPT_EMODEL="L5PC"
+export OPT_EMODEL="L5PC" # Your e-model name
 export RUNLISTPATH="`pwd`/logs/extract_list.log"
 
 source ./download_ephys_data.sh
