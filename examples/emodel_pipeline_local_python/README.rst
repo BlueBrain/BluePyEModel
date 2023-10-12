@@ -57,6 +57,7 @@ Therefore, in an empty directory, usually named ``config``, you will need to cre
 To provide a comprehensive understanding, let's delve into the specifics of this JSON configuration:
 
 The keys of the dictionary are the names of the models that will be built. Here, we only have one model named ``L5PC``. This name is important as it will be used in every following step to specify which model is to be acted upon.
+
 * ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
 * ``params`` contains the essential mechanisms specifying their locations (e.g., axonal, somatic) as well as their distributions and parameters, which can be either frozen or free.
