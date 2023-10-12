@@ -2,7 +2,8 @@ To get started with the E-Model building pipeline
 =================================================
 This guide will walk you through the process of setting up the E-Model building pipeline and running it on your local machine or on a cluster using Slurm. If you only wish to export an e-model that was built using the pipeline to hoc, you can jump to the section `Exporting the models`_.
 
-Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up. The present folder have been designed to be used with Slurm `Running the example using Slurm`_. If you want to understand the code better we encourage you to read on how to run the example locally.
+Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up. The present folder has been designed to be used with Slurm (see `Running the example using Slurm`_).
+To understand the code better, we encourage you to read `Running the example locally`_.
 
 Running the example locally
 ---------------------------
@@ -265,6 +266,10 @@ Make sure to configure the necessary variables within these scripts, including s
 
 These scripts will also generates logs of the different steps for each run to track its progress and capture any issues that may arise during execution. These log files are stored in the ``./logs`` with a naming convention reflective of the operation and its corresponding job identifier (e.g., ``opt_jobid.log``). In addition to individual log files, each step maintains its own historical record (e.g., ``extract_list.log``, ``opt_list.log`` ``analyse_list.log``) . These files are also situated within the ``./logs`` directory, serving as cumulative logs that document the series of runs pertinent to that particular step. Please ensure to check these logs if you encounter issues during the pipeline execution.
 
+When running the optimisation, the script will create several slurm jobs for different optimisation seeds and a githash associated with the run (keep it preciously!), However, if you lose it, you can retrieve the githash from the opt_list.log file associated with each run. The optimisation script also compiles the mod files, assuming they are in the ``./mechanisms`` directory. Note that BluePyEmodel will delete any existing compiled files folder in the home directory before initiating a new optimisation. This is done to ensure that the mechanisms are compiled again if there are any changes.
+
+that BluePyEmodel will delete any existing compiled files folder in the home directory.
+
 When running the Optimisation, the script will create several slurm jobs for different optimisation seeds and a githash associated to the run (keep it preciously!), In case it goes missing, however, you can retrieve the githash from the ``opt_list.log`` file associated with each run. Note that the optimisation script  handles the compilation of mechanisms, assuming they are located within the ``./mechanisms`` directory. This is done to ensure that the mechanisms are compiled again if there are any changes.
 
 The optimisation usually takes between 2 and 72 hours depending on the complexity of the model. If the model is not finished after 24 hours, you will need to set the githash of the run in the ``RESUME`` variable within ``./optimisation.sh`` and run the script again.
@@ -273,15 +278,14 @@ Exporting the models
 --------------------
 
 If you wish to use the models generated with BluePyEModel outside of Python, you will need to export them as hoc files.
-Following the example above, it can be done with the command:
 
-.. code-block:: python
+To export the models generated with BluePyEModel, you can use the following command:
 
-    from bluepyemodel.export_emodel.export_emodel import export_emodels_hoc
-    access_point = pipeline.access_point
-    export_emodels_hoc(access_point, only_validated=False, map_function=map)
+.. code-block:: shell
 
-This will create a local directory containing the hoc files of the models.
+    python pipeline.py --step='export' --emodel='L5PC'
+
+This will create a local directory containing the hoc files of the models. If you wish to export multiple models, you can use the script `./export_models.sh <./export_models.sh>`_.
 
 Note that if you wish to use the models in a circuit, you will have to use `export_emodels_sonata <../../bluepyemodel/export_emodel/export_emodel.py#L130>`_ instead.
 However, most of the time, for circuit building, you will want to generalise the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see `https://github.com/BlueBrain/BluePyMM <https://github.com/BlueBrain/BluePyMM>`_)
