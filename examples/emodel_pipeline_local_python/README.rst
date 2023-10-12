@@ -239,14 +239,15 @@ The ``githash`` provided by this operation will uniquely characterize the run, a
 Running the different steps
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We provide Auxiliary scripts specifically designed to facilitate the execution of various pipeline stages on Slurm. These scripts are ``./extract.sh``, ``./optimisation.sh`` and ``./analysis.sh``. Each of these scripts can be run by the command line:
+Refer to the local counteract for the configuration of the recipes and targets files.
+
+To facilitate the execution of the different steps of the pipeline on Slurm, we provide the following auxiliary scripts that can be executed in the following order:
 
 .. code-block:: shell
 
     ./extract.sh
     ./optimisation.sh
     ./analysis.sh
-
 
 Make sure to configure the necessary variables within these scripts, including setting the ``OPT_EMODEL`` value as well as configuring their sbatch counterpart by setting the #SBATCH directives according to your job requirements.
 
