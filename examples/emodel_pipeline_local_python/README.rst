@@ -2,11 +2,11 @@ To get started with the E-Model building pipeline
 =================================================
 This guide will walk you through the process of setting up the E-Model building pipeline and running it on your local machine or on a cluster using Slurm. If you only wish to export an e-model that was built using the pipeline to hoc, you can jump to the section `Exporting the models`_.
 
-Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
+Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up. The present folder have been designed to be used with Slurm `Running the example using Slurm`_. If you want to understand the code better we encourage you to read on how to run the example locally.
 
 Running the example locally
 ---------------------------
-This guide illustrates how to execute the example locally, focusing on the utilization of the EModel_pipeline class. Herein, we will navigate through the various stages of the pipeline, demonstrated using the L5PC model as a practical example.
+This guide illustrates how to execute the example locally, focusing on the utilisation of the EModel_pipeline class. Herein, we will navigate through the various stages of the pipeline, demonstrated using the L5PC model as a practical example.
 
 Configuration
 ~~~~~~~~~~~~~
@@ -61,16 +61,8 @@ The keys of the dictionary are the names of the models that will be built. Here,
 * ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
 * ``params`` contains the essential mechanisms specifying their locations (e.g., axonal, somatic) as well as their distributions and parameters, which can be either frozen or free.
-* ``features`` contains the path to the file that includes the output of the extraction, which are the ``efeatures`` and ``protocols``. The ``efeatures`` is a list of dictionaries, where each entry contains a feature associated with a specific protocol. ``protocols`` is also a list of dictionaries; each entry in this list contains the protocol's name, amplitude, among other details.
-* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important setting if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process (e.g. ``L5PC_config.json``), features names, protocols and files (ephys data). More details on how to generate thie file can be found in the section `Extraction`_.
-
-Note that for the pipeline to work, the NEURON mechanisms needs to be compiled using the command:
-
-.. code-block:: shell
-
-   nrnivmodl <path_to_mod_files>
-
-This command should generate a folder containing compiled mechanisms, and the name of this folder will vary depending on your machine's architecture.
+* ``features`` contains the path to the file that includes the output of the extraction step, see `Extraction`_ for more details.
+* ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important setting if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process (e.g. ``L5PC_config.json``), features names, protocols and files (ephys data). More details on how to generate this file can be found in the section `Extraction`_.
 
 In this example, the expected final structure of the local directory should be as follows:
 
@@ -92,27 +84,26 @@ In this example, the expected final structure of the local directory should be a
     │    └── recipes.json
     ├── morphologies
     │    └── L5TPC.asc
-    ├── x86_64 (compiled mechanisms)
 
 
 Getting the ephys data
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Prior to initiating the extraction process, the electrphysiological data needs to be placed in ephys_data folder. In this example, the data used is from continuous adapting pyramidal cells (cADpyr) e-type model of rat somatosensory cortex. The data is accessible for download from this `repo <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_. You can conveniently retrieve it using the ``download_ephys_data.sh`` script. When using your own ephys data, it's crucial to specify the type of files you're working with. Please set the ``file_type`` variable to either "ibw" or "nwb" in the configuration file ``targets.py``, depending on your data format. Additionally, ensure you provide the correct path to your ephys data files in the ``filenames`` list within the same configuration file.
+Prior to initiating the extraction process, the electrphysiological data needs to be placed in ephys_data folder. In this example, the data used is for continuous adapting pyramidal cells (cADpyr) e-type model of rat somatosensory cortex. The data is accessible for download from this `repo <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_. You can conveniently retrieve it using the ``download_ephys_data.sh`` script. When using your own ephys data, it is crucial to specify the type of files you are working with. Please set the ``file_type`` variable to either "ibw" or "nwb" in the configuration file ``targets.py``, depending on your data format. Additionally, ensure you provide the correct path to your ephys data files in the ``filenames`` list within the same configuration file.
 
 Extraction
 ~~~~~~~~~~
 
 To perform the extraction, you will need an extraction config file `./config/extract_config/L5PC_config.json <./config/extract_config/L5PC_config.json>`_. This file will be automatically created before the extraction by the ``configure_targets`` function in ``./pipeline.py``, if you are using your own data, the function might need to be modified for your needs. This function relies on the parameters set in the ``./targets.py`` configuration file which contains:
 
-* files_metadata: path to the ephys data files. please ensure to set your file type (ibw or nwb) in the ``file_type`` variable.
+* files_metadata: Path to the ephys data files. Please ensure to set your file type (ibw or nwb) in the ``file_type`` variable.
 * ecodes_metadata: List of ecodes protocols (e.g. IDthresh) for which you want features to be extracted.
-* protocols_rheobase: the protocol to use to find the rheobase of the cell.
-* targets: is a list of dictionaries, where each entry contains the protocol within which the features are extracted at a specific amplitude.
+* protocols_rheobase: The protocol to use to find the rheobase of the cell.
+* targets: List of dictionaries, where each entry contains the protocol within which the features are extracted at a specific amplitude.
 
-Therefore, before proceeding, it's essential to edit ``./targets.py`` to accurately reflect your specific settings. Once ``./targets.py`` has been configured to your requirements, the ``configure_targets`` function will parse these settings and subsequently create the appropriate ``L5PC_config.json`` configuration file.
+Therefore, before proceeding, it is essential to edit ``./targets.py`` to accurately reflect your specific settings. Once ``./targets.py`` has been configured to your requirements, the ``configure_targets`` function will parse these settings and subsequently create the appropriate ``L5PC_config.json`` configuration file.
 
-We provide a Python script, pipeline.py, designed to initialize and orchestrate the various stages of the pipeline. This pipeline operates as a Python object, specifically an instance of the EModel_pipeline class, which you can find more about here: `EModel_pipeline <../../bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_.
+We provide a Python script, pipeline.py, designed to initialise and orchestrate the various stages of the pipeline. This pipeline operates as a Python object, specifically an instance of the EModel_pipeline class, which you can find more about here: `EModel_pipeline <../../bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_.
 
 Then, to create the extraction configuration file and run the extraction process execute the following command:
 
@@ -122,12 +113,14 @@ Then, to create the extraction configuration file and run the extraction process
 
 Please make sure that the name of the e-model matches an entry of the file ``recipes.json``.
 
-The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``features`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``. If you asked for the extraction to be plotted in the settings, the plots will be in ``./figures/EMODEL_NAME/extraction/``. The folder contains figures for each cell that has been extracted. Each cell folder should have plots for:
+The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``features`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``. The features file contains the ``efeatures`` and ``protocols``. The ``efeatures`` is a list of dictionaries, where each entry contains a feature associated with a specific protocol. ``protocols`` is also a list of dictionaries; each entry in this list contains the protocol's name, amplitude, among other details.
+
+If you asked for the extraction to be plotted in the settings, the plots will be in ``./figures/EMODEL_NAME/extraction/``. The folder contains figures for each cell that has been extracted. Each cell folder should have plots for:
 
 * Individual features vs relative/absolute stimulus amplitude.
 * Recordings plot for each protocol specified during extraction.
 
-Note that our extraction process utilizes traces from just one cell in this example, leading to limited sample sizes and occasionally, small or zero standard deviations (std) for certain features. This can inflate feature scores post-optimization. To counteract this, any calculated std of zero during extraction is replaced by a default value specified in the ``default_std_deviation`` of the ``pipeline_settings`` as mentioned in the ``recipes.json``, please refer to the `Configuration`_ section.
+Note that our extraction process utilises traces from just one cell in this example, leading to limited sample sizes and occasionally, small or zero standard deviations (std) for certain features. This can inflate feature scores post-optimisation. To counteract this, any calculated std of zero during extraction is replaced by a default value specified in the ``default_std_deviation`` of the ``pipeline_settings`` as mentioned in the ``recipes.json``, please refer to the `Configuration`_ section.
 
 For a complete description of the extraction process, its inner working and settings please refer the `README and examples of BluePyEfe on GitHub <https://github.com/BlueBrain/BluePyEfe/>`_.
 
@@ -136,21 +129,29 @@ Optimisation
 
 To perform optimisation, you will need to provide a morphology, mechanisms and a parameter configuration file in your recipe.
 
-Then, to initiate the optimization process on your local machine, just enter the command below:
+Note that for the optimisation to work, it is necessary to compile the NEURON mechanisms (.mod files) located  within the ``./mechanisms`` for this present example. This can be achieved using the following command:
+
+.. code-block:: shell
+
+   nrnivmodl ./mechanisms
+
+This command should generate a folder containing compiled mechanisms, and the name of this folder will vary depending on your machine's architecture.
+
+Then, to initiate the optimisation process on your local machine, just enter the command below:
 
 .. code-block:: shell
 
     python pipeline.py --step='optimise' --emodel='L5PC'
 
-However, since optimization requires significant resources, see the `Running the example using Slurm`_ section for a more efficient approach, which explains how to carry out the task in parallel using Slurm.
+However, since optimisation requires significant resources, see the `Running the example using Slurm`_ section for a more efficient approach, which explains how to carry out the task in parallel using Slurm.
 
 To monitor the state of the optimisation, use the ``./monitor_optimisation.py``:
 
 .. code-block:: shell
 
-        python monitor_optimisation.py
+    python monitor_optimisation.py
 
-Alternatvely, you can use the notebook `./monitor_optimisation.ipynb <./monitor_optimisation.ipynb>`_ for better visualization of the optimisation process.
+Alternatvely, you can use the notebook `./monitor_optimisation.ipynb <./monitor_optimisation.ipynb>`_ for better visualisation of the optimisation process.
 
 Analysis
 ~~~~~~~~
@@ -171,7 +172,7 @@ This particular command triggers a sequence of operations within the Python scri
     pipeline.validation()
     pipeline.plot(only_validated=False)
 
-These methods, called in succession, are responsible for storing the results of the optimisation, validates the e-models (testing the model on protocols unseen during optimisation), and then plotting the data.
+These methods, called in succession, are responsible for storing the results of the optimisation, validating the e-models (testing the model on protocols unseen during optimisation), and then plotting the data.
 
 The validation protocols are specified in the ``pipeline_settings`` dict of ``./config/recipes.json`` under the key ``validation_protocols``. Once the validation is done, the e-models in your ``final.json`` will have a field ``validated``.
 This field can have 3 values:
@@ -193,7 +194,7 @@ The folders, currentscape, distributions, scores and traces will contain figures
 
 If you wish to interact with the e-models, please have a look at the notebook `./exploit_models.ipynb <./exploit_models.ipynb>`_.
 
-Note that you may observe disproportionately large scores for some features. This phenomenon often originates from the relatively small standard deviations associated with the extraction of these particular features, which in turn, is frequently a consequence of utilizing a smaller sample size. Smaller sample sizes tend to yield less diverse data, thereby restricting the variability and potentially skewing feature scores post-optimization.
+Note that you may observe disproportionately large scores for some features. This phenomenon often originates from the relatively small standard deviations associated with the extraction of these particular features, which in turn, is frequently a consequence of utilising a smaller sample size. Smaller sample sizes tend to yield less diverse data, thereby restricting the variability and potentially skewing feature scores post-optimisation.
 
 
 Currentscape
@@ -222,7 +223,7 @@ Once that is done you can create the virtual environment in which BluePyEModel w
 Then rename the file gitignore_template to .gitignore. This will avoid versioning unwanted files in the future.
 ``mv gitignore_template .gitignore``
 
-Finally, initialize a git repository in the present directory:
+Finally, initialise a git repository in the present directory:
 ``git init .``
 
 Versioning the runs
@@ -234,7 +235,7 @@ At the beginning of each optimisation run, an archive of the present directory w
 
 This process will ensure that a copy of the code as used at the moment of the launch exists, and that it remains unchanged even if you change the current directory to perform different optimisations.
 
-The ``githash`` provided by this operation will uniquely characterize the run, and we recommend that you keep a list of the githashes generated and the circumstances in which they were generated.
+The ``githash`` provided by this operation will uniquely characterise the run, and we recommend that you keep a list of the githashes generated and the circumstances in which they were generated.
 
 Running the different steps
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -249,11 +250,11 @@ To facilitate the execution of the different steps of the pipeline on Slurm, we 
     ./optimisation.sh
     ./analysis.sh
 
-Make sure to configure the necessary variables within these scripts, including setting the ``OPT_EMODEL`` value as well as configuring their sbatch counterpart by setting the #SBATCH directives according to your job requirements.
+Make sure to configure the necessary variables within these scripts, including setting the ``OPT_EMODEL`` value as well as configuring their sbatch counterpart by setting the ``#SBATCH`` directives according to your job requirements.
 
 These scripts will also generates logs of the different steps for each run to track its progress and capture any issues that may arise during execution. These log files are stored in the ``./logs`` with a naming convention reflective of the operation and its corresponding job identifier (e.g., ``opt_jobid.log``). In addition to individual log files, each step maintains its own historical record (e.g., ``extract_list.log``, ``opt_list.log`` ``analyse_list.log``) . These files are also situated within the ``./logs`` directory, serving as cumulative logs that document the series of runs pertinent to that particular step. Please ensure to check these logs if you encounter issues during the pipeline execution.
 
-When running the Optimisation, the script will create several slurm jobs for different optimisation seeds and a githash associated to the run (keep it preciously!), In case it goes missing, however, you can retrieve the githash from the ``opt_list.log`` file associated with each run.
+When running the Optimisation, the script will create several slurm jobs for different optimisation seeds and a githash associated to the run (keep it preciously!), In case it goes missing, however, you can retrieve the githash from the ``opt_list.log`` file associated with each run. Note that the optimisation script  handles the compilation of mechanisms, assuming they are located within the ``./mechanisms`` directory. This is done to ensure that the mechanisms are compiled again if there are any changes.
 
 The optimisation usually takes between 2 and 72 hours depending on the complexity of the model. If the model is not finished after 24 hours, you will need to resume it manually by informing the githash of the run in ``./optimisation.sh`` and executing it again.
 
@@ -272,4 +273,4 @@ Following the example above, it can be done with the command:
 This will create a local directory containing the hoc files of the models.
 
 Note that if you wish to use the models in a circuit, you will have to use `export_emodels_sonata <../../bluepyemodel/export_emodel/export_emodel.py#L130>`_ instead.
-However, most of the time, for circuit building, you will want to generalize the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see `https://github.com/BlueBrain/BluePyMM <https://github.com/BlueBrain/BluePyMM>`_)
+However, most of the time, for circuit building, you will want to generalise the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see `https://github.com/BlueBrain/BluePyMM <https://github.com/BlueBrain/BluePyMM>`_)
