@@ -8,9 +8,7 @@ Note that despite the present explanation, building an e-model is not a trivial 
 Running the example locally
 ---------------------------
 
-This guide part illustrates how to execute the example locally (on your PC), focusing on utilising the `EModel_pipeline <../../bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_ class. To ease the execution of the pipeline, we provide a Python script, ``pipeline.py``, designed to initialise and orchestrate various stages of the pipeline. This pipeline operates as a Python object, specifically an instance of the ``EModel_pipeline`` class. Herein, we will navigate through the various stages of the pipeline: extract, optimise, analyse and export, demonstrated using the L5PC model as a practical example.
-
-Configuration
+This part illustrates how to execute the example locally (on your PC), focusing on utilising the `EModel_pipeline <../../bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_ class. To ease the execution of the pipeline, we provide a Python script, ``pipeline.py``, designed to initialise and orchestrate various stages of the pipeline. This pipeline operates as a Python object, specifically an instance of the ``EModel_pipeline`` class. Herein, we will navigate through the various stages of the pipeline: extract, optimise, analyse and export, demonstrated using the L5PC model as a practical example.
 
 Configuration
 ~~~~~~~~~~~~~
@@ -132,6 +130,7 @@ If ``plot_extraction": true``, in ``pipeline_settings``, the plots will be in ``
 * Recordings plot for each protocol specified during extraction.
 
 .. _default_std_deviation:
+
 Note that our extraction process utilises traces from just one cell in this example, leading to limited sample sizes and occasionally, small or zero standard deviations (``original_std``) for certain features. This can inflate feature scores post-optimisation. To counteract this, a zero standard deviation during extraction is replaced by a default value specified in the ``default_std_deviation`` of the pipeline_settings as mentioned in the ``recipes.json``. Please refer to the `Configuration`_ section and ``pipeline_settings`` `pipeline_settings <https://github.com/BlueBrain/BluePyEModel/blob/977f206e1d0e17f4694890c03857beeb7df705d2/bluepyemodel/emodel_pipeline/emodel_settings.py#L117>`_ in BluePyEModel.
 
 Each feature dictionary in extracted features json file have another entry called threshold_efeature_std. This comes from the `threshold_efeature_std <https://github.com/BlueBrain/BluePyEModel/blob/977f206e1d0e17f4694890c03857beeb7df705d2/bluepyemodel/emodel_pipeline/emodel_settings.py#L173C13-L173C35>`_ in ``pipeline_settings`` (if not provided, it is ``null``). It can also be useful for small original_std .
@@ -220,7 +219,7 @@ The folders: currentscape, distributions, scores and traces will contain figures
 
 If you wish to interact with the e-models, please have a look at the notebook `./exploit_models.ipynb <./exploit_models.ipynb>`_.
 
-Note that you may observe disproportionately large scores for some features. This phenomenon often originates from the relatively small standard deviations associated with the extraction of these particular features, which in turn, is frequently a consequence of utilising a smaller sample size. Smaller sample sizes tend to yield less diverse data, thereby restricting the variability and potentially skewing feature scores post-optimisation (refer to `_default_std_deviation`_).
+Note that you may observe disproportionately large scores for some features. This phenomenon often originates from the relatively small standard deviations associated with the extraction of these particular features, which in turn, is frequently a consequence of utilising a smaller sample size. Smaller sample sizes tend to yield less diverse data, thereby restricting the variability and potentially skewing feature scores post-optimisation (refer to this `section <default_std_deviation_>`_).
 
 Currentscape
 ************
@@ -301,6 +300,8 @@ To facilitate the execution of the different steps of the pipeline on Slurm, we 
     ./export_sonata.sh
 
 Don't forget to configure the necessary variables within these scripts, including setting the ``OPT_EMODEL`` value and configuring the ``#SBATCH`` directives in the corresponding .sbatch script according to your job requirements.
+
+For more details about the different steps, please refer to the `Running the example locally`_ section.
 
 These scripts will also generates logs of the different steps for each run to track its progress and capture any issues that may arise during execution. These log files are stored in the ``./logs`` with a naming convention reflective of the operation and its corresponding job identifier (e.g., ``opt_jobid.log``). In addition to individual log files, each step maintains its own historical record (e.g., ``extract_list.log``, ``opt_list.log`` ``analyse_list.log``) . These files are also situated within the ``./logs`` directory, serving as cumulative logs that document the series of runs pertinent to that particular step. Please ensure to check these logs if you encounter issues during the pipeline execution.
 
