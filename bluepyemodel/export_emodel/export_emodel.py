@@ -140,9 +140,7 @@ def export_emodels_sonata(
     new_emodel_name=None,
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will
-    contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model.
-
-    WARNING: this function is not compatible with multiprocessing."""
+    contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model."""
 
     cell_evaluator = get_evaluator_from_access_point(
         access_point, include_validation_protocols=True

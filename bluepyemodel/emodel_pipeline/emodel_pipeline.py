@@ -29,7 +29,6 @@ from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tools.multiprocessing import get_mapper
-from bluepyemodel.tools.multiprocessing import ipyparallel_map_function
 from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.validation.validation import validate
@@ -118,7 +117,7 @@ class EModel_pipeline:
                 "Please choose one."
             )
         if use_ipyparallel:
-            self.mapper = ipyparallel_map_function()
+            self.mapper = get_mapper(backend="ipyparallel")
         elif use_multiprocessing:
             self.mapper = get_mapper(backend="multiprocessing")
         else:

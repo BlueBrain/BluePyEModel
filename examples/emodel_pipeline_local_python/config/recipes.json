@@ -12,6 +12,12 @@
         "pipeline_settings": {
             "path_extract_config": "config/extract_config/L5PC_config.json",
             "plot_extraction": true,
+            "default_std_value": 0.01,
+            "efel_settings":{
+                "strict_stiminterval": true,
+                "Threshold": -20.0,
+                "interp_step": 0.025
+            },
             "optimisation_timeout": 300,
             "optimiser": "MO-CMA",
             "max_ngen": 100,
@@ -23,9 +29,9 @@
             "currentscape_config": {
                 "title": "L5PC"
             },
-            "validation_protocols": [
-                "APWaveform_300"
-            ]
+            "validation_protocols": ["sAHP_220"],
+            "name_Rin_protocol":"IV_-20",
+            "name_rmp_protocol":"IV_0"
         }
     }
 }

@@ -23,7 +23,7 @@ Introduction
 
 The Blue Brain Python Electrical Modeling Pipeline (BluePyEModel) is a Python package facilitating the configuration and execution of electrical neuron model (e-model) building tasks. It covers tasks such as extraction of electrical features from electrophysiology data, e-model parameters optimisation and model validation. As such, it builds on top of `eFEL <https://github.com/BlueBrain/eFEL>`_, `BluePyEfe <https://github.com/BlueBrain/BluePyEfe>`_ and `BluePyOpt <https://github.com/BlueBrain/BluePyOpt>`_.
 
-For a general overview and example of electrical model building, please refer to the preprint: `A universal workflow for creation, validation and generalization of detailed neuronal models <https://www.biorxiv.org/content/10.1101/2022.12.13.520234v1.full.pdf>`_.
+For a general overview and example of electrical model building, please refer to the paper: `A universal workflow for creation, validation and generalization of detailed neuronal models <https://doi.org/10.1016/j.patter.2023.100855>`_.
 
 Note that this package only covers e-model building based on patch-clamp data and that it relies solely on the `NEURON <https://www.neuron.yale.edu/neuron/>`_ simulator.
 

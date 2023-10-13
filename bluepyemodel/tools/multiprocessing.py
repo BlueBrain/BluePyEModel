@@ -28,9 +28,10 @@ def ipyparallel_map_function(os_env_profile="IPYTHON_PROFILE", profile=None):
     """Get the map function linked to the ipython profile
 
     Args:
-        os_env_profile (str): name fo the environement variable containing
-           the name of the name of the ipython profile
-           Will be used is name of the ipython profile is not given
+        os_env_profile (str): The name of the environment variable
+            that holds the profile name for ipyparallel.
+            If this environment variable exists and contains a valid profile name,
+            it will be used to create an ipyparallel Client. Defaults to "IPYTHON_PROFILE"
         profile (str): name of the ipython profile
 
     Returns:
@@ -51,6 +52,10 @@ def ipyparallel_map_function(os_env_profile="IPYTHON_PROFILE", profile=None):
             return ret
 
     else:
+        logger.warning(
+            "Environment variable 'os_env_profile' not set or invalid;"
+            "falling back to the default map function."
+        )
         mapper = map
 
     return mapper
@@ -89,4 +94,6 @@ def get_mapper(backend, ipyparallel_profile=None):
     if backend == "multiprocessing":
         nested_pool = NestedPool()
         return nested_pool.map
+
+    # For any other backend, default to the built-in map function
     return map
