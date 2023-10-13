@@ -126,4 +126,4 @@ This work is licensed under `Apache 2.0 <https://www.apache.org/licenses/LICENSE
     to skip content after the marker 'substitutions'.
 
 .. substitutions
-.. |banner| image:: doc/source/logo/BluePyEModelBanner.jpg
+.. |banner| image:: https://raw.githubusercontent.com/BlueBrain/BluePyEModel/main/doc/source/logo/BluePyEModelBanner.jpg
