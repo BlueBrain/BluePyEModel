@@ -61,7 +61,10 @@ def configure_targets(access_point):
                 }
             )
     else:
-        raise ValueError(f"Invalid file type: {file_type}. Expected 'ibw' or 'nwb'.")
+        raise ValueError(f"file type {file_type} is not supported in this current pipeline: "
+                          "Expected 'ibw' or 'nwb'. "
+                          "For other types of format please modify configure_targets "
+                          "in pipeline.py.")
 
     targets_formated = []
     for ecode in targets:

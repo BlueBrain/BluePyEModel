@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-# Specify the file type being used; valid values are "ibw" or "nwb"
+# Specify the file type being used;
+# the current pipeline.py only supports "ibw" or "nwb" files.
+# modify the pipeline.py file if you want to use other file types
 file_type = "ibw"  # Change this to "nwb" if using NWB files
 
 filenames = [
