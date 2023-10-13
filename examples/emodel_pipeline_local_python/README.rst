@@ -1,18 +1,21 @@
 Getting started with E-Model building pipeline
 ==============================================
+
 This guide will walk you through the process of setting up the E-Model building pipeline and running it on your local machine or on a cluster using Slurm. The present folder has been designed to be used with Slurm (see `Running the example using Slurm`_). To understand the code better, we encourage you to read `Running the example locally`_.
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
 
 Running the example locally
 ---------------------------
-This guide illustrates how to execute the example locally, focusing on the utilisation of the `EModel_pipeline <../../bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_ class. To ease the execution of the pipeline, we provide a Python script, ``pipeline.py``, designed to initialise and orchestrate various stages of the pipeline. This pipeline operates as a Python object, specifically an instance of the ``EModel_pipeline`` class. Herein, we will navigate through the various stages of the pipeline: extract, optimise, analyse and export, demonstrated using the L5PC model as a practical example.
+
+This guide part illustrates how to execute the example locally (on your PC), focusing on utilising the `EModel_pipeline <../../bluepyemodel/emodel_pipeline/emodel_pipeline.py>`_ class. To ease the execution of the pipeline, we provide a Python script, ``pipeline.py``, designed to initialise and orchestrate various stages of the pipeline. This pipeline operates as a Python object, specifically an instance of the ``EModel_pipeline`` class. Herein, we will navigate through the various stages of the pipeline: extract, optimise, analyse and export, demonstrated using the L5PC model as a practical example.
+
+Configuration
 
 Configuration
 ~~~~~~~~~~~~~
 
-The main configuration file is referred to as "recipes" since it contains the recipe of how models should be built.
-Therefore, in an empty directory, usually named ``config``, you will need to create a file ``recipes.json``. Here is an example of a recipe for a L5PC model:
+The main configuration file is named “recipes” as it contains the ingredients to build the model. Therefore, in an empty directory, named ``config``, you need to create a file ``recipes.json``. Here is an example of a recipe for a L5PC model:
 
 .. code-block:: python
 
@@ -58,7 +61,7 @@ To provide a comprehensive understanding, let's delve into the specifics of this
 
 The keys of the dictionary are the names of the models that will be built. Here, we only have one model named ``L5PC``. This name is important as it will be used in every following step to specify which model is to be acted upon.
 
-* ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned.
+* ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned (see `Versioning the runs`_).
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
 * ``params`` contains the essential mechanisms specifying their locations (e.g., axonal, somatic) as well as their distributions and parameters, which can be either frozen or free.
 * ``features`` contains the path to the file that includes the output of the extraction step, see `Extraction`_ for more details.
@@ -89,9 +92,9 @@ In this example, the expected final structure of the local directory should be a
 Getting the ephys data
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Prior to initiating the extraction process, the electrphysiological data needs to be placed in ephys_data folder. In this example, the data used is for continuous adapting pyramidal cells (cADpyr) e-type model of rat somatosensory cortex. The data is accessible for download from this `repo <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_. You can conveniently retrieve it using the ``download_ephys_data.sh`` script. When using your own ephys data, it is crucial to specify the type of files you are working with.
+Prior to initiating the extraction process, the electrphysiological data needs to be placed in ephys_data folder. In this example, the data used is for continuous adapting pyramidal cells (cADpyr) e-type model of rat somatosensory cortex. The data is accessible for download from this `repository <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_. You can conveniently retrieve it using the ``download_ephys_data.sh`` script. When using your own ephys data, it is crucial to specify the type of files you are working with.
 
-The example works with Igor Binary Wave (ibw) files. You can also use Neurodata Without Borders (nwb) files. Please update the ``file_type`` variable to “ibw” or “nwb” in the configuration file ``targets.py``. Make the necessary changes in the file depending on your data. You can also use other file types, such as the Axon Binary File format (abf) and MATLAB binary (mat) files, which use BluePyEfe's reader functions. It will require modifying the ``configure_targets`` function accordingly. If your ephys data format is of any other type, don’t hesitate to contact the package authors to implement its reader in BluePyEfe.
+The example works with Igor Binary Wave (ibw) files. You can also use Neurodata Without Borders (nwb) files. Please update the ``file_type`` variable to “ibw” or “nwb” in the configuration file ``targets.py``. Make the necessary changes in the file depending on your data. You can also use other file types, such as the Axon Binary File format (abf) and MATLAB binary (mat) files, which use BluePyEfe's `reader <https://github.com/BlueBrain/BluePyEfe/blob/master/bluepyefe/reader.py>`_ functions. It will require modifying the ``configure_targets`` function accordingly. If your ephys data format is of any other type, don't hesitate to contact the package authors to implement its reader in BluePyEfe.
 
 Extraction
 ~~~~~~~~~~
