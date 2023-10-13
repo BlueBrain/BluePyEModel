@@ -93,8 +93,6 @@ Prior to initiating the extraction process, the electrphysiological data needs t
 
 The example works with Igor Binary Wave (ibw) files. You can also use Neurodata Without Borders (nwb) files. Please update the ``file_type`` variable to “ibw” or “nwb” in the configuration file ``targets.py``. Make the necessary changes in the file depending on your data. You can also use other file types, such as the Axon Binary File format (abf) and MATLAB binary (mat) files, which use BluePyEfe's reader functions. It will require modifying the ``configure_targets`` function accordingly. If your ephys data format is of any other type, don’t hesitate to contact the package authors to implement its reader in BluePyEfe.
 
- Please set the ``file_type`` variable to either "ibw" or "nwb" in the configuration file ``targets.py``, depending on your data format. Additionally, ensure you provide the correct path to your ephys data files in the ``filenames`` list within the same configuration file.
-
 Extraction
 ~~~~~~~~~~
 
