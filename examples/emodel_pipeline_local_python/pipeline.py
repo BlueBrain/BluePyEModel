@@ -19,6 +19,7 @@ import argparse
 import glob
 
 from bluepyemodel.export_emodel.export_emodel import export_emodels_hoc
+from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from targets import file_type, filenames, ecodes_metadata, targets, protocols_rheobase
@@ -88,7 +89,7 @@ def get_parser():
     )
 
     parser.add_argument("--step", type=str, required=True, choices=[
-        "extract", "optimise", "analyse", "export"])
+        "extract", "optimise", "analyse", "export", "export_sonata"])
     parser.add_argument('--emodel', type=str, required=True)
     parser.add_argument('--etype', type=str, required=False, default=None)
     parser.add_argument('--mtype', type=str, required=False, default=None)
@@ -143,11 +144,17 @@ def main():
         pipeline.plot(only_validated=False)
 
     elif args.step == "export":
-        access_point = pipeline.access_point
-        export_emodels_hoc(access_point,
+        export_emodels_hoc(pipeline.access_point,
                            only_validated=False,
                            only_best=False,
                            seeds=[args.seed])
+
+    elif args.step == "export_sonata":
+        export_emodels_sonata(pipeline.access_point,
+                           only_validated=False,
+                           only_best=False,
+                           seeds=[args.seed],
+                           map_function=pipeline.mapper)
 
 if __name__ == "__main__":
     main()

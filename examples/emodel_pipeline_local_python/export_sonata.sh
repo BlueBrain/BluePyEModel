@@ -1,5 +1,3 @@
-#!/bin/bash
-
 #####################################################################
 # Copyright 2023, EPFL/Blue Brain Project
 
@@ -16,24 +14,8 @@
 # limitations under the License.
 #####################################################################
 
-#SBATCH --account=proj000
-#SBATCH --error=./logs/export_%j.log
-#SBATCH --output=./logs/export_%j.log
-#SBATCH --ntasks=10
-#SBATCH --time=03:00:00
-#SBATCH --constraint=cpu
-#SBATCH --partition=prod
+source ./myvenv/bin/activate
 
-set -e
-set -x
+export OPT_EMODEL="L5PC"
 
-export IPYTHON_PROFILE=export_${SLURM_JOB_ID}_$(hostname)
-export USEIPYP=1
-export IPYTHONDIR="`pwd`/.ipython"
-
-ipcontroller --init --ip='*' --profile=${IPYTHON_PROFILE} &
-sleep 20
-srun ipengine --profile=${IPYTHON_PROFILE} --location=$(hostname) &
-sleep 20
-
-python pipeline.py --use_ipyparallel --step='export' --emodel=${OPT_EMODEL}
+sbatch -J "export_sonata_${OPT_EMODEL}"  ./export_sonata.sbatch
