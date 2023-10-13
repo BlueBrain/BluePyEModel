@@ -1,5 +1,5 @@
-To get started with the E-Model building pipeline
-=================================================
+Getting started with E-Model building pipeline
+==============================================
 This guide will walk you through the process of setting up the E-Model building pipeline and running it on your local machine or on a cluster using Slurm. The present folder has been designed to be used with Slurm (see `Running the example using Slurm`_). To understand the code better, we encourage you to read `Running the example locally`_.
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
@@ -245,7 +245,7 @@ or
 
 The first command creates the hoc files to run with NEURON locally. The second step creates hoc files to be used in bbp circuit building pipeline. Ensure that the mechanisms are compiled before running the commands.
 
-Once the exportation is done, The hoc files as well as the morphology of the model will be stored in local directory ``./export_emodels_hoc`` and ``./export_emodels_sonata`` respectively. Additionally the sonata folder will contain a sonata nodes.h5 file. However, most of the time, for circuit building, you will want to generalise the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see `https://github.com/BlueBrain/BluePyMM <https://github.com/BlueBrain/BluePyMM>`_ or `https://github.com/BlueBrain/emodel-generalisation <https://github.com/BlueBrain/emodel-generalisation>`_ )
+Once the exportation is done, the hoc files as well as the morphology of the model will be stored in local directory ``./export_emodels_hoc`` and ``./export_emodels_sonata`` respectively. Additionally the sonata folder will contain a sonata nodes.h5 file. However, most of the time, for circuit building, you will want to generalise the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see `https://github.com/BlueBrain/BluePyMM <https://github.com/BlueBrain/BluePyMM>`_ or `https://github.com/BlueBrain/emodel-generalisation <https://github.com/BlueBrain/emodel-generalisation>`_ )
 
 
 Running the example using Slurm
