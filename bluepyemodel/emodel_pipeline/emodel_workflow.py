@@ -69,14 +69,17 @@ class EModelWorkflow:
         )
         if self.fitness_configuration_id:
             ids += tuple([self.fitness_configuration_id])
-        if self.emodels:
-            ids += tuple(self.emodels)
+
         return ids
 
     def get_related_nexus_ids(self):
         emodels_ids = [{"id": id_, "type": "EModel"} for id_ in self.emodels]
         emodel_scripts_ids = [{"id": id_, "type": "EModelScript"} for id_ in self.emodel_scripts_id]
         generates = emodels_ids + emodel_scripts_ids
+        if self.fitness_configuration_id:
+            generates.append(
+                {"id": self.fitness_configuration_id, "type": "FitnessCalculatorConfiguration"}
+            )
 
         has_part = []
         if self.targets_configuration_id:
@@ -87,10 +90,6 @@ class EModelWorkflow:
             has_part.append({"id": self.pipeline_settings_id, "type": "EModelPipelineSettings"})
         if self.emodel_configuration_id:
             has_part.append({"id": self.emodel_configuration_id, "type": "EModelConfiguration"})
-        if self.fitness_configuration_id:
-            has_part.append(
-                {"id": self.fitness_configuration_id, "type": "FitnessCalculatorConfiguration"}
-            )
 
         ids = {}
         if generates:

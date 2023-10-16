@@ -220,6 +220,8 @@ class FitnessCalculatorConfiguration:
         self.name_rmp_protocol = name_rmp_protocol
         self.name_rin_protocol = name_rin_protocol
 
+        self.workflow_id = None
+
     def protocol_exist(self, protocol_name):
         return bool(p for p in self.protocols if p.name == protocol_name)
 
@@ -588,6 +590,17 @@ class FitnessCalculatorConfiguration:
                             efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
 
         self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove] + efeatures
+
+    def get_related_nexus_ids(self):
+        return {
+            "generation": {
+                "type": "Generation",
+                "activity": {
+                    "type": "Activity",
+                    "followedWorkflow": {"type": "EModelWorkflow", "id": self.workflow_id},
+                },
+            }
+        }
 
     def as_dict(self):
         """Used for the storage of the configuration"""
