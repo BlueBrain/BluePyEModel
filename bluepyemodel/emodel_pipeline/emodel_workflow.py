@@ -29,6 +29,7 @@ class EModelWorkflow:
         targets_configuration_id,
         pipeline_settings_id,
         emodel_configuration_id,
+        fitness_configuration_id=None,
         emodels=None,
         emodel_scripts_id=None,
         state="not launched",
@@ -39,12 +40,14 @@ class EModelWorkflow:
             targets_configuration (str): TargetsConfiguration nexus id
             pipeline_settings (str): EModelPipelineSettings nexus id
             emodel_configuration (str): NeuronModelConfiguration id
+            fitness_configuration_id (str): FitnessCalculatorConfiguration id
             emodels (list): list of EModel ids
             state (str): can be "not launched", "running" or "done"
         """
         self.targets_configuration_id = targets_configuration_id
         self.pipeline_settings_id = pipeline_settings_id
         self.emodel_configuration_id = emodel_configuration_id
+        self.fitness_configuration_id = fitness_configuration_id
         self.emodels = emodels if emodels else []
         self.emodel_scripts_id = emodel_scripts_id if emodel_scripts_id else []
         self.state = state
@@ -64,14 +67,19 @@ class EModelWorkflow:
             self.pipeline_settings_id,
             self.emodel_configuration_id,
         )
-        if self.emodels:
-            ids += tuple(self.emodels)
+        if self.fitness_configuration_id:
+            ids += tuple([self.fitness_configuration_id])
+
         return ids
 
     def get_related_nexus_ids(self):
         emodels_ids = [{"id": id_, "type": "EModel"} for id_ in self.emodels]
         emodel_scripts_ids = [{"id": id_, "type": "EModelScript"} for id_ in self.emodel_scripts_id]
         generates = emodels_ids + emodel_scripts_ids
+        if self.fitness_configuration_id:
+            generates.append(
+                {"id": self.fitness_configuration_id, "type": "FitnessCalculatorConfiguration"}
+            )
 
         has_part = []
         if self.targets_configuration_id:
