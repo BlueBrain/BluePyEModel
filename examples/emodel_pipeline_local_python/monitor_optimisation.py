@@ -27,7 +27,6 @@ def monitor_optimisation():
     emodel = "L5PC"
     species = "rat"
     brain_region = "SSCX"
-    continue_opt = True # if set to False, will show the optimisation status of the last checkpoint
 
     print("emodel: ", emodel)
     print("Githash: ", githash)
@@ -64,7 +63,7 @@ def monitor_optimisation():
         seed = path.split("_seed=")[1].split(".pkl")[0]
         generation = data["logbook"].select("gen")[-1]
         best_score = sum(data["halloffame"][0].fitness.values)
-        opt_state = access_point.optimisation_state(seed, continue_opt)
+        opt_state = access_point.optimisation_state(seed, continue_opt=True)
         if opt_state == OptimisationState.COMPLETED:
             status = "completed"
         elif opt_state == OptimisationState.IN_PROGRESS:
