@@ -61,7 +61,7 @@ The keys of the dictionary are the names of the models that will be built. Here,
 
 * ``morph_path`` contains the path of the directory containing the morphologies. This directory has to be a subdirectory of the directory from which the pipeline will be run. Otherwise, the morphologies cannot be versioned (see `Versioning the runs`_).
 * ``morphology`` contains the name of the morphology file. The first element of the list is an arbitrary name for the morphology and the second is the name of the file containing the morphology. The file containing the morphology has to be in the directory specified by ``morph_path``.
-* ``params`` contains the essential mechanisms specifying their locations (e.g., axonal, somatic) as well as their distributions and parameters, which can be either frozen or free.
+* ``params`` contain the essential mechanisms specifying their locations (e.g., axonal, somatic) as well as their distributions and parameters, which can be either frozen or free.
 * ``features`` contains the path to the file that includes the output of the extraction step, see `Extraction`_ for more details.
 * ``pipeline_settings`` contains settings used to configure the pipeline. There are many settings, that can each be important for the success of the model building procedure. The complete list of the settings available can be seen in the API documentation of the class `EModelPipelineSettings <../../bluepyemodel/emodel_pipeline/emodel_settings.py>`_. An important setting if you wish to run e-feature extraction through the pipeline is ``path_extract_config`` which points to the path of the json file containing the targets of the extraction process (e.g. ``L5PC_config.json``), features names, protocols and files (ephys data). More details on how to generate this file can be found in the section `Extraction`_.
 
@@ -90,7 +90,7 @@ In this example, the expected final structure of the local directory should be a
 Getting the ephys data
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Prior to initiating the extraction process, the electrphysiological data needs to be placed in ephys_data folder. In this example, the data used is for continuous adapting pyramidal cells (cADpyr) e-type model of rat somatosensory cortex. The data is accessible for download from this `repository <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_. You can conveniently retrieve it using the ``download_ephys_data.sh`` script. When using your own ephys data, it is crucial to specify the type of files you are working with.
+Prior to initiating the extraction process, the electrophysiological data needs to be placed in ephys_data folder. In this example, the data used is for continuous adapting pyramidal cells (cADpyr) e-type model of rat somatosensory cortex. The data is accessible for download from this `repository <https://github.com/BlueBrain/SSCxEModelExamples/tree/main/feature_extraction/input-traces/C060109A1-SR-C1>`_. You can conveniently retrieve it using the ``download_ephys_data.sh`` script. When using your own ephys data, it is crucial to specify the type of files you are working with.
 
 The example works with Igor Binary Wave (ibw) files. You can also use Neurodata Without Borders (nwb) files. Please update the ``file_type`` variable to “ibw” or “nwb” in the configuration file ``targets.py``. Make the necessary changes in the file depending on your data. You can also use other file types, such as the Axon Binary File format (abf) and MATLAB binary (mat) files, which use BluePyEfe's `reader <https://github.com/BlueBrain/BluePyEfe/blob/master/bluepyefe/reader.py>`_ functions. It will require modifying the ``configure_targets`` function accordingly. If your ephys data format is of any other type, don't hesitate to contact the package authors to implement its reader in BluePyEfe.
 
@@ -122,7 +122,7 @@ Then, to create the extraction configuration file and run the extraction process
 
 Please make sure that the name of the e-model matches an entry of the file ``recipes.json``.
 
-The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``features`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``. The features file contains the ``efeatures`` and ``protocols``. The ``efeatures`` is a list of dictionaries, where each entry contains a feature associated with a specific protocol. ``protocols`` is also a list of dictionaries; each entry in this list contains the protocol's name, amplitude, among other details.
+The results of the extraction (if all goes well), should appear at the path mentioned in the entry ``features`` of the recipe. By convention, this path is usually set to ``./config/features/EMODEL_NAME.json``. The features file contains the ``efeatures`` and ``protocols``. The ``efeatures`` is a list of dictionaries, where each entry contains a feature associated with a specific protocol. ``protocols`` is also a list of dictionaries; each entry in this list contains the protocol's name, and amplitude, among other details.
 
 If ``plot_extraction": true``, in ``pipeline_settings``, the plots will be in ``./figures/EMODEL_NAME/extraction/``. The folder contains figures for each cell that has been extracted. Each cell folder should have plots for:
 
@@ -133,8 +133,8 @@ If ``plot_extraction": true``, in ``pipeline_settings``, the plots will be in ``
 
 Note that our extraction process utilises traces from just one cell in this example, leading to limited sample sizes and occasionally, small or zero standard deviations (``original_std``) for certain features. This can inflate feature scores post-optimisation. To counteract this, a zero standard deviation during extraction is replaced by a default value specified in the ``default_std_deviation`` of the pipeline_settings as mentioned in the ``recipes.json``. Please refer to the `Configuration`_ section and ``pipeline_settings`` `pipeline_settings <https://github.com/BlueBrain/BluePyEModel/blob/977f206e1d0e17f4694890c03857beeb7df705d2/bluepyemodel/emodel_pipeline/emodel_settings.py#L117>`_ in BluePyEModel.
 
-Each feature dictionary in extracted features json file have another entry called threshold_efeature_std. This comes from the `threshold_efeature_std <https://github.com/BlueBrain/BluePyEModel/blob/977f206e1d0e17f4694890c03857beeb7df705d2/bluepyemodel/emodel_pipeline/emodel_settings.py#L173C13-L173C35>`_ in ``pipeline_settings`` (if not provided, it is ``null``). It can also be useful for small original_std .
-For a complete description of the extraction process, its inner working and settings please refer `README and examples of BluePyEfe on GitHub <https://github.com/BlueBrain/BluePyEfe/>`_.
+Each feature dictionary in the extracted features json file has another entry called threshold_efeature_std. This comes from the `threshold_efeature_std <https://github.com/BlueBrain/BluePyEModel/blob/977f206e1d0e17f4694890c03857beeb7df705d2/bluepyemodel/emodel_pipeline/emodel_settings.py#L173C13-L173C35>`_ in ``pipeline_settings`` (if not provided, it is ``null``). It can also be useful for small original_std .
+For a complete description of the extraction process, its inner workings and settings please refer `README and examples of BluePyEfe on GitHub <https://github.com/BlueBrain/BluePyEfe/>`_.
 
 Optimisation
 ~~~~~~~~~~~~
@@ -163,7 +163,7 @@ To monitor the state of the optimisation, use the ``./monitor_optimisation.py``:
 
     python monitor_optimisation.py
 
-Alternatvely, you can use the notebook `./monitor_optimisation.ipynb <./monitor_optimisation.ipynb>`_ for better visualisation of the optimisation process.
+Alternatively, you can use the notebook `./monitor_optimisation.ipynb <./monitor_optimisation.ipynb>`_ for better visualisation of the optimisation process.
 
 Analysis
 ~~~~~~~~
@@ -193,14 +193,14 @@ The validation protocols are specified in the ``pipeline_settings`` dictionary o
 
 The analysis of each optimised model is stored in the file ``./final.json``. Here's a description of some of the entries of the ``final.json`` file:
 
-* ``score``: global z-score of the optimised e-model. It is sum of z-scores of all e-features used during optimisation. Validation e-feature scores are not added to this score.
+* ``score``: global z-score of the optimised e-model. It is the sum of z-scores of all e-features used during optimisation. Validation e-feature scores are not added to this score.
 * ``parameters``: best hall of fame parameters of the optimised e-model
 * ``fitness``: z-score of each optimised e-feature
-* ``features``: numerical value of each e-feature
+* ``features``: the numerical value of each e-feature
 * ``validation_fitness``: z-scores of each validation e-feature
 * ``validated``: whether the model has been validated, This field can have 3 values:
 
-    - ``None``, the model did not go yet through validation.
+    - ``None``, the model has not yet been through validation
     - ``False``, the model did not pass validation successfully.
     - ``True``, the model passed validation successfully.
 
@@ -224,9 +224,9 @@ Note that you may observe disproportionately large scores for some features. Thi
 Currentscape
 ************
 
-Currentscape plots can also be plotted by BluePyEModel, along with the other analysis figures. To do so, you simply have to add ``"plot_currentscape": true,`` to the ``pipeline_settings`` dictionary of ``./config/recipes.json``. All currents are recorded in [pA]. The currentscape figures are created using the same recordings, and are saved under ``./figures/EMODEL_NAME/currentscape``. If you want to customise your currentscape plots, you can pass a currentscape config to the ``pipeline_settings`` dictionary of ``./config/recipes.json`` under the key ``currentscape_config``. You can find more information about currentscape and its config `here <https://github.com/BlueBrain/Currentscape>`_.
+Currentscape plots can also be plotted by BluePyEModel, along with the other analysis figures. To do so, you simply have to add ``"plot_currentscape": true,`` to the ``pipeline_settings`` dictionary of ``./config/recipes.json``. All currents are recorded in [pA]. The currentscape figures are created using the same recordings and are saved under ``./figures/EMODEL_NAME/currentscape``. If you want to customise your currentscape plots, you can pass a currentscape config to the ``pipeline_settings`` dictionary of ``./config/recipes.json`` under the key ``currentscape_config``. You can find more information about currentscape and its config `here <https://github.com/BlueBrain/Currentscape>`_.
 
-The recordings of the voltage, as well as every available ionic currents and ionic concentration can be saved locally to ``./recordings`` when setting ``save_recordings`` to ``true`` in the ``pipeline_settings``.
+The recordings of the voltage, as well as every available ionic current and ionic concentration can be saved locally to ``./recordings`` when setting ``save_recordings`` to ``true`` in the ``pipeline_settings``.
 
 If you do not want to have mechanism-specific currents in the currentscape plots, but have e.g. whole ionic currents plotted, it is possible by putting the names of the variables you want to plot under ``["current"]["names"]`` in the currentscape_config.
 
@@ -247,7 +247,7 @@ or
 
 The first command creates the hoc files to run with NEURON locally. The second step creates hoc files to be used in bbp circuit building pipeline. Ensure that the mechanisms are compiled before running the commands.
 
-Once the exportation is done, the hoc files as well as the morphology of the model will be stored in local directory ``./export_emodels_hoc`` and ``./export_emodels_sonata`` respectively. Additionally the sonata folder will contain a sonata nodes.h5 file. However, most of the time, for circuit building, you will want to generalise the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see `https://github.com/BlueBrain/BluePyMM <https://github.com/BlueBrain/BluePyMM>`_ or `https://github.com/BlueBrain/emodel-generalisation <https://github.com/BlueBrain/emodel-generalisation>`_ )
+Once the exportation is done, the hoc files as well as the morphology of the model will be stored in local directory ``./export_emodels_hoc`` and ``./export_emodels_sonata`` respectively. Additionally, the sonata folder will contain a sonata nodes.h5 file. However, most of the time, for circuit building, you will want to generalise the models to the morphologies of the circuit. For that, you will need to perform model management (MM), which is out of the scope of the present package (see `https://github.com/BlueBrain/BluePyMM <https://github.com/BlueBrain/BluePyMM>`_ or `https://github.com/BlueBrain/emodel-generalisation <https://github.com/BlueBrain/emodel-generalisation>`_ )
 
 
 Running the example using Slurm
@@ -281,14 +281,14 @@ As you are likely to perform several rounds of extraction, optimisation and anal
 
 At the beginning of each optimisation run, an archive of the present directory will be created and stored in ``./run/GITHASH/``. You can have a look at `./optimisation.sh <./optimisation.sh>`_ to see how this operation is performed.
 
-This process will ensure that a copy of the code as used at the moment of the launch exists, and that it remains unchanged even if you change the current directory to perform different optimisations.
+This process will ensure that a copy of the code as used at the moment of the launch exists and that it remains unchanged even if you change the current directory to perform different optimisations.
 
-The ``githash`` provided by this operation will uniquely characterise the run, and it will be logged in the ``./logs/opt_list.log`` file. This file contains the list of all the runs that have been performed, and their corresponding ``githash``.
+The ``githash`` provided by this operation will uniquely characterise the run, and it will be logged in the ``./logs/opt_list.log`` file. This file contains the list of all the runs that have been performed and their corresponding ``githash``.
 
 Running the different steps
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Refer to `Running the example locally`_ for the configuration of the recipes and targets files.
+Refer to `Running the example locally`_ for the configuration of the recipes and target files.
 
 To facilitate the execution of the different steps of the pipeline on Slurm, we provide the following auxiliary scripts that can be executed in the following order:
 
@@ -303,7 +303,7 @@ Don't forget to configure the necessary variables within these scripts, includin
 
 For more details about the different steps, please refer to the `Running the example locally`_ section.
 
-These scripts will also generates logs of the different steps for each run to track its progress and capture any issues that may arise during execution. These log files are stored in the ``./logs`` with a naming convention reflective of the operation and its corresponding job identifier (e.g., ``opt_jobid.log``). In addition to individual log files, each step maintains its own historical record (e.g., ``extract_list.log``, ``opt_list.log`` ``analyse_list.log``) . These files are also situated within the ``./logs`` directory, serving as cumulative logs that document the series of runs pertinent to that particular step. Please ensure to check these logs if you encounter issues during the pipeline execution.
+These scripts will also generate logs of the different steps for each run to track its progress and capture any issues that may arise during execution. These log files are stored in the ``./logs`` with a naming convention reflective of the operation and its corresponding job identifier (e.g., ``opt_jobid.log``). In addition to individual log files, each step maintains its own historical record (e.g., ``extract_list.log``, ``opt_list.log`` ``analyse_list.log``) . These files are also situated within the ``./logs`` directory, serving as cumulative logs that document the series of runs pertinent to that particular step. Please ensure to check these logs if you encounter issues during the pipeline execution.
 
 When running the optimisation, the script will create several slurm jobs for different optimisation seeds and a githash associated with the run (keep it preciously!), However, if you lose it, you can retrieve the githash from the ``opt_list.log`` file associated with each run. The optimisation script also compiles the mod files, assuming they are in the ``./mechanisms`` directory. Note that BluePyEmodel will delete any existing compiled files folder in the home directory before initiating a new optimisation. This is done to ensure that the mechanisms are compiled again if there are any changes.
 

@@ -28,7 +28,6 @@ def monitor_optimisation():
     species = "rat"
     brain_region = "SSCX"
 
-
     print("emodel: ", emodel)
     print("Githash: ", githash)
     print("species: ", species)
@@ -64,7 +63,7 @@ def monitor_optimisation():
         seed = path.split("_seed=")[1].split(".pkl")[0]
         generation = data["logbook"].select("gen")[-1]
         best_score = sum(data["halloffame"][0].fitness.values)
-        opt_state = access_point.optimisation_state(seed)
+        opt_state = access_point.optimisation_state(seed, continue_opt=True)
         if opt_state == OptimisationState.COMPLETED:
             status = "completed"
         elif opt_state == OptimisationState.IN_PROGRESS:
@@ -74,7 +73,7 @@ def monitor_optimisation():
             continue
         else:
             status = "unknown"
-        print(f"Seed: {seed}, Generation: {generation}, status: {status}, Score: {best_score}")
+        print(f"Seed: {seed}, Generation: {generation}, Status: {status}, Score: {best_score}")
         best_fitness.append(best_score)
 
     if best_fitness:
