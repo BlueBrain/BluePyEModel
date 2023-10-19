@@ -443,7 +443,6 @@ class LocalAccessPoint(DataAccessPoint):
     def get_targets_configuration(self):
         """Get the configuration of the targets (targets and ephys files used)"""
 
-
         if self.emodel_dir:
             path_extract_config = self.emodel_dir / self.pipeline_settings.path_extract_config
         else:
