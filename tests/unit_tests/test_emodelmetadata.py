@@ -196,6 +196,18 @@ def test_as_string(metadata):
         "species=mouse__brain_region=SSCX__iteration=v0__seed=42"
     )
 
+    metadata.allen_notation = "SS"
+    assert metadata.as_string() == (
+        "emodel=L5_TPC:B_cAC__etype=cAC__ttype=245_L5 PT CTX__mtype=L5_TPC:B__"
+        "species=mouse__brain_region=SS__iteration=v0"
+    )
+
+    assert metadata.as_string(use_allen_notation=False) == (
+        "emodel=L5_TPC:B_cAC__etype=cAC__ttype=245_L5 PT CTX__mtype=L5_TPC:B__"
+        "species=mouse__brain_region=SSCX__iteration=v0"
+    )
+
     # with None values and slashes
     metadata = EModelMetadata(emodel="w/it/h_sla/she/s")
     assert metadata.as_string(seed="None") == "emodel=with_slashes"
+
