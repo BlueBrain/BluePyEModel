@@ -75,7 +75,9 @@ class LocalAccessPoint(DataAccessPoint):
 
         Args:
             emodel (str): name of the emodel.
-            emodel_dir (str): path to the working directory. Default to ./run/iteration_tag if None
+            emodel_dir (str): path to the working directory.
+                Default to current working directory.
+                If iteration_tag is not None, it will be ./run/iteration_tag
             ttype (str): name of the t-type
             iteration_tag (str): iteration tag
             final_path (str): path to final.json which will contain the optimised models.
@@ -345,10 +347,7 @@ class LocalAccessPoint(DataAccessPoint):
     def get_mechanisms_directory(self):
         """Return the path to the directory containing the mechanisms for the current emodel"""
 
-        if self.emodel_dir:
-            mechanisms_directory = self.emodel_dir / "mechanisms"
-        else:
-            mechanisms_directory = Path("./") / "mechanisms"
+        mechanisms_directory = self.emodel_dir / "mechanisms"
 
         if mechanisms_directory.is_dir():
             return mechanisms_directory.resolve()
@@ -383,10 +382,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         names = []
 
-        if self.emodel_dir:
-            morph_dir = self.emodel_dir / "morphology"
-        else:
-            morph_dir = Path("./") / "morphology"
+        morph_dir = self.emodel_dir / "morphology"
 
         if not morph_dir.is_dir():
             return None
@@ -443,7 +439,7 @@ class LocalAccessPoint(DataAccessPoint):
     def get_targets_configuration(self):
         """Get the configuration of the targets (targets and ephys files used)"""
 
-        path_extract_config = self.pipeline_settings.path_extract_config
+        path_extract_config = self.emodel_dir / self.pipeline_settings.path_extract_config
 
         with open(path_extract_config, "r") as f:
             config_dict = json.load(f)
