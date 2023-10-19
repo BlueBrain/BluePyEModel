@@ -28,7 +28,7 @@ logger = logging.getLogger("__main__")
 def get_checkpoint_path(metadata, seed=None):
     """"""
 
-    filename = metadata.as_string(seed=seed)
+    filename = metadata.as_string(seed=seed, use_allen_notation=False)
 
     return f"./checkpoints/{metadata.emodel}/{metadata.iteration}/{filename}.pkl"
 

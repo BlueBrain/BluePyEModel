@@ -34,6 +34,7 @@ class EModelMetadata:
         brain_region=None,
         iteration_tag=None,
         synapse_class=None,
+        allen_notation=None,
     ):
         """Constructor
 
@@ -46,6 +47,8 @@ class EModelMetadata:
             brain_region (str): name of the brain location of the e-model.
             iteration_tag (str): tag associated to the current run.
             synapse_class (str): synapse class (neurotransmitter)  of the e-model.
+            allen_notation (str): Allen acronym for the brain region (Optional).
+                Can be used to replace brain region in as_string().
         """
 
         if emodel is None and etype is None:
@@ -59,6 +62,7 @@ class EModelMetadata:
         self.brain_region = None if brain_region == "None" else brain_region
         self.iteration = None if iteration_tag == "None" else iteration_tag
         self.synapse_class = None if synapse_class == "None" else synapse_class
+        self.allen_notation = allen_notation
 
     def etype_annotation_dict(self):
         """Returns an etype annotation dict to be added to annotations list."""
@@ -159,11 +163,13 @@ class EModelMetadata:
 
         return metadata
 
-    def as_string(self, seed=None):
+    def as_string(self, seed=None, use_allen_notation=True):
         s = ""
 
         for k in ["emodel", "etype", "ttype", "mtype", "species", "brain_region", "iteration"]:
             v = getattr(self, k)
+            if use_allen_notation and k == "brain_region" and self.allen_notation:
+                v = self.allen_notation
             if v:
                 if isinstance(v, int):
                     v = str(v)
