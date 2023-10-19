@@ -199,7 +199,9 @@ class EModelPipelineSettings:
             compile_mechanisms (bool): should the mod files be copied in the local
                 mechanisms_dir directory. Only used by the Luigi workflow.
             path_extract_config (str): specify the path to the .json file containing the targets
-                for the extraction process. Only used with local access point.
+                for the extraction process. Defaults to the current directory.
+                If an 'iteration_tag' is provided, the file will be located in
+                './run/iteration_tag'. This is only applicable with a local access point.
                 See example emodel_pipeline_local_python for more details.
             name_Rin_protocol (list or str): name and amplitude of the protocol from which the
                 input resistance should be selected from. The matching protocol should have
