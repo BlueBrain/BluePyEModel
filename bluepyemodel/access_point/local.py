@@ -350,7 +350,7 @@ class LocalAccessPoint(DataAccessPoint):
         mechanisms_directory = self.emodel_dir / "mechanisms"
 
         if mechanisms_directory.is_dir():
-            return mechanisms_directory
+            return mechanisms_directory.resolve()
 
         return None
 
