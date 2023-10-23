@@ -80,6 +80,10 @@ def configure_targets(access_point):
                         "tolerance": 20
                     })
 
+    if not files_metadata:
+        raise Exception("Cannot find electrophysiological experimental data. "
+                        "Please provide them, with the correct path to them in targets.py.")
+
     configurator = TargetsConfigurator(access_point)
     configurator.new_configuration(files_metadata, targets_formated, protocols_rheobase)
     configurator.save_configuration()
