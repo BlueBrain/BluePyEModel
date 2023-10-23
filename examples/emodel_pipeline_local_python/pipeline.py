@@ -81,7 +81,7 @@ def configure_targets(access_point):
                     })
 
     if not files_metadata:
-        raise Exception("Cannot find electrophysiological experimental data. "
+        raise FileNotFoundError("Cannot find electrophysiological experimental data. "
                         "Please provide them, with the correct path to them in targets.py.")
 
     configurator = TargetsConfigurator(access_point)
