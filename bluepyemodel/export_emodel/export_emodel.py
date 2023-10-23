@@ -64,7 +64,8 @@ def _write_node_file(emodel, model_template_path, node_file_path, morphology_pat
         if emodel.emodel_metadata.brain_region is not None:
             population["region"] = emodel.emodel_metadata.brain_region
 
-        if "bpo_holding_current" in emodel.responses:
+        threshold_keys = ("bpo_holding_current", "bpo_threshold_current")
+        if all(key in emodel.responses for key in threshold_keys):
             dynamics_params = population.create_group("dynamics_params")
             dynamics_params["holding_current"] = emodel.responses["bpo_holding_current"]
             dynamics_params["threshold_current"] = emodel.responses["bpo_threshold_current"]
