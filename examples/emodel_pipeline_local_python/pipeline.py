@@ -96,7 +96,7 @@ def get_parser():
     )
 
     parser.add_argument("--step", type=str, required=True, choices=[
-        "extract", "optimise", "analyse", "export", "export_sonata"])
+        "extract", "optimise", "analyse", "export_hoc", "export_sonata"])
     parser.add_argument('--emodel', type=str, required=True)
     parser.add_argument('--etype', type=str, required=False, default=None)
     parser.add_argument('--mtype', type=str, required=False, default=None)
@@ -150,7 +150,7 @@ def main():
         pipeline.validation()
         pipeline.plot(only_validated=False)
 
-    elif args.step == "export":
+    elif args.step == "export_hoc":
         export_emodels_hoc(pipeline.access_point,
                            only_validated=False,
                            only_best=False,
