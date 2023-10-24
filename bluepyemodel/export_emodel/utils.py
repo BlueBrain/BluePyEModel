@@ -30,10 +30,15 @@ def get_output_path_from_metadata(output_base_dir, emodel_metadata, seed, use_al
         emodel_metadata (EModelMetadata): emodel metadata
         seed (int): seed
     """
-    return f"./{output_base_dir}/{emodel_metadata.as_string(seed=seed, use_allen_notation=use_allen_notation)}/"
+    return (
+        f"./{output_base_dir}/"
+        f"{emodel_metadata.as_string(seed=seed, use_allen_notation=use_allen_notation)}/"
+    )
 
 
-def get_output_path(emodel, output_dir=None, output_base_dir="export_emodels_hoc", use_allen_notation=True):
+def get_output_path(
+    emodel, output_dir=None, output_base_dir="export_emodels_hoc", use_allen_notation=True
+):
     """Get the output path.
 
     Args:
