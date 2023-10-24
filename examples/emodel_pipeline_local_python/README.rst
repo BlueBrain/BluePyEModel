@@ -72,9 +72,9 @@ In this example, the expected final structure of the local directory should be a
     .
     ├── pipeline.py
     ├── mechanisms
-    │   ├── mode_file1.mod
-    │   ├── mode_file1.mod
-    │   ├── mode_file3.mod
+    │   ├── mod_file1.mod
+    │   ├── mod_file1.mod
+    │   ├── mod_file3.mod
     ├── config
     │    ├── extract_config
     │    │   ├── L5PC_config.json
@@ -112,7 +112,7 @@ If you wish to use non-threshold based optimisation that instead uses the absolu
 
     "extract_absolute_amplitudes": true,
 
-and remove the name_Rin_protocol and name_rmp_protocol entries.
+and remove the ``name_Rin_protocol`` and ``name_rmp_protocol`` entries.
 
 Then, to create the extraction configuration file and run the extraction process execute the following command:
 
@@ -259,9 +259,6 @@ Setting up the directory and git repo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First, we recommend that you copy the present directory and all of its content to the folder in which you will want to work.
-
-Once that is done, rename the file gitignore_template to .gitignore. This will avoid versioning unwanted files in the future.
-``mv gitignore_template .gitignore``
 
 Then, initialise a git repository in the present directory:
 ``git init .``
