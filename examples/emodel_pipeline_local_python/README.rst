@@ -237,7 +237,7 @@ If you wish to use the models generated with BluePyEModel outside of Python, you
 
 .. code-block:: shell
 
-    python pipeline.py --step='export' --emodel='L5PC'
+    python pipeline.py --step='export_hoc' --emodel='L5PC'
 
 or
 
@@ -297,7 +297,7 @@ To facilitate the execution of the different steps of the pipeline on Slurm, we 
     ./extract.sh
     ./optimisation.sh
     ./analysis.sh
-    ./export_sonata.sh
+    ./export_hoc.sh
 
 Don't forget to configure the necessary variables within these scripts, including setting the ``OPT_EMODEL`` value and configuring the ``#SBATCH`` directives in the corresponding .sbatch script according to your job requirements.
 
