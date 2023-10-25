@@ -17,5 +17,6 @@
 source ./myvenv/bin/activate
 
 export OPT_EMODEL="L5PC"
+export OPT_SEED=1
 
-sbatch -J "export_hoc_${OPT_EMODEL}"  ./export_hoc.sbatch
+sbatch -J "export_hoc_${OPT_EMODEL}_${OPT_SEED}"  ./export_hoc.sbatch
