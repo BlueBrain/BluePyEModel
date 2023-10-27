@@ -33,6 +33,7 @@ echo "${OPT_EMODEL},${GITHASH},${SLURM_JOB_ID},${SLURM_NTASKS},${RUNTIME}" >> ${
 export IPYTHON_PROFILE=opt_${SLURM_JOB_ID}_$(hostname)
 export USEIPYP=1
 export IPYTHONDIR="`pwd`/.ipython"
+export NEURON_MODULE_OPTIONS="-nogui"
 
 ipcontroller --init --ip='*' --profile=${IPYTHON_PROFILE} &
 sleep 20

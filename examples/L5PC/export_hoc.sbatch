@@ -30,6 +30,7 @@ set -x
 export IPYTHON_PROFILE=export_hoc_${SLURM_JOB_ID}_$(hostname)
 export USEIPYP=1
 export IPYTHONDIR="`pwd`/.ipython"
+export NEURON_MODULE_OPTIONS="-nogui"
 
 ipcontroller --init --ip='*' --profile=${IPYTHON_PROFILE} &
 sleep 20
