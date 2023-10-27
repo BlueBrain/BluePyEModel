@@ -338,4 +338,11 @@ If you suspect that the path length is causing the problem, you can try the foll
 
 X11 forwarding
 ~~~~~~~~~~~~~~
-When running on a remote computer, please note that X11 forwarding may cause issues during optimisation, as multiple NEURON instances are launched during the optimisation of an E-model. If the X11 (GUI) is present, it can prevent the successful launch of NEURON instances. If you encounter errors during optimisation, you may want to try the optimisation process again after disabling X11 forwarding in your SSH session.
+When running on a remote computer, please note that X11 forwarding may cause issues during optimisation, as multiple NEURON instances are launched during the optimisation of an E-model. If the X11 (GUI) is present, it can prevent the successful launch of NEURON instances.
+To address this, you can include the following line in your sbatch files to set the NEURON_MODULE_OPTIONS environment variable:
+
+.. code-block:: shell
+
+    export NEURON_MODULE_OPTIONS="-nogui"
+
+This line is intended to prevent NEURON from sending any GUI info. An alternative solution would be to disable X11 forwarding altogether in your SSH session.
