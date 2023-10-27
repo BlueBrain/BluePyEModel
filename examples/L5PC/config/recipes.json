@@ -13,6 +13,7 @@
             "path_extract_config": "config/extract_config/L5PC_config.json",
             "plot_extraction": true,
             "default_std_value": 0.01,
+            "extract_absolute_amplitudes": false,
             "efel_settings":{
                 "strict_stiminterval": true,
                 "Threshold": -20.0,

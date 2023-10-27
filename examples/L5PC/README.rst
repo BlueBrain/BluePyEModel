@@ -5,6 +5,8 @@ This guide will walk you through the process of setting up the E-Model building 
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
 
+If you encounter any issues during the execution of the pipeline, please refer to `Troubleshooting`_) for potential solutions.
+
 Running the example locally
 ---------------------------
 
@@ -32,6 +34,7 @@ The main configuration file is named “recipes” as it contains the ingredient
                 "path_extract_config": "config/extract_config/L5PC_config.json",
                 "plot_extraction": true,
                 "default_std_value": 0.01,
+                "extract_absolute_amplitudes": false,
                 "efel_settings":{
                     "strict_stiminterval": true,
                     "Threshold": -20.0,
@@ -306,3 +309,32 @@ When running the optimisation, the script will create several slurm jobs for dif
 
 The optimisation usually takes between 2 and 72 hours depending on the complexity of the model. If the model is not finished after 24 hours, you will need to set the githash of the run in the ``RESUME`` variable within ``./optimisation.sh`` and run the script again.
 
+Troubleshooting
+---------------
+Here are some of the issues that you may encounter during the execution of the pipeline and their potential solutions.
+
+nrnivmodl: bad interpreter
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you encounter the following error:
+.. code-block:: shell
+
+    bash: /myvenv/bin/nrnivmodl: bad interpreter: No such file or directory
+
+Ensure that you have activated your virtual environment before running the script. You can do this using the source or . command, depending on your shell:
+
+.. code-block:: shell
+
+    source /path/to/myvenv/bin/activate
+
+In some cases, particularly on certain operating systems or file systems, the error message you encountered can also occur if the path to the script or the virtual environment directory is too long.
+
+Long file paths can lead to issues with file system limitations, and the operating system may not be able to locate the necessary files correctly.
+If you suspect that the path length is causing the problem, you can try the following:
+
+* Shorten the Path: If possible, shorten the directory structure or move the script and the virtual environment to a location with a shorter path.
+* Use Symbolic Links: Consider using symbolic links to create shorter aliases for directories or files. This can help reduce the effective path length.
+
+X11 forwarding
+~~~~~~~~~~~~~~
+When running on a remote computer, please note that X11 forwarding may cause issues during optimisation, as multiple NEURON instances are launched during the optimisation of an E-model. If the X11 (GUI) is present, it can prevent the successful launch of NEURON instances. If you encounter errors during optimisation, you may want to try the optimisation process again after disabling X11 forwarding in your SSH session.
