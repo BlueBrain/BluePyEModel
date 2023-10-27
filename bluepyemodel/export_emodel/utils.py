@@ -18,6 +18,7 @@ limitations under the License.
 
 import logging
 import pathlib
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,11 @@ def get_output_path_from_metadata(output_base_dir, emodel_metadata, seed, use_al
 
 
 def get_output_path(
-    emodel, output_dir=None, output_base_dir="export_emodels_hoc", use_allen_notation=True
+    emodel,
+    output_dir=None,
+    output_base_dir="export_emodels_hoc",
+    use_allen_notation=True,
+    create_dir=True,
 ):
     """Get the output path.
 
@@ -46,13 +51,16 @@ def get_output_path(
         output_dir (str): output directory
         output_base_dir (str): if output_dir is None, export to this directory instead,
             using also emodel metadata in the path
+        use_allen_notation (bool): whether to replace brain region by its Allen notation
+        create_dir (bool): whether to create the output folder if not existent
     """
     if output_dir is None:
         output_dir = get_output_path_from_metadata(
             output_base_dir, emodel.emodel_metadata, emodel.seed, use_allen_notation
         )
     output_path = pathlib.Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
+    if create_dir:
+        output_path.mkdir(parents=True, exist_ok=True)
 
     return output_path
 
@@ -61,6 +69,30 @@ def get_hoc_file_path(output_path):
     """Get the hoc file path."""
     output_path = pathlib.Path(output_path)
     return str(output_path / "model.hoc")
+
+
+def copy_hocs_to_new_output_path(emodel, output_base_dir):
+    """Copy the hocs from the local output path to the new nexus output path."""
+    old_output_path = get_output_path(
+        emodel,
+        output_dir=None,
+        output_base_dir=output_base_dir,
+        use_allen_notation=False,
+        create_dir=False
+    )
+    output_path_allen = get_output_path(
+        emodel,
+        output_dir=None,
+        output_base_dir=output_base_dir,
+        use_allen_notation=True,
+        create_dir=False
+    )
+
+    if (
+        not pathlib.Path(get_hoc_file_path(output_path_allen)).is_file()
+        and pathlib.Path(get_hoc_file_path(old_output_path)).is_file()
+    ):
+        shutil.copytree(old_output_path, output_path_allen)
 
 
 def select_emodels(
