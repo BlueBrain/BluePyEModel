@@ -107,6 +107,10 @@ class EModel:
         self.responses = {}
         self.evaluator = None
 
+    def copy_pdf_dependencies_to_new_path(self, seed):
+        """Copy pdf dependencies to new path using allen notation"""
+        search_pdfs.copy_emodel_pdf_dependencies_to_new_path(self.emodel_metadata, seed)
+
     def build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
 
