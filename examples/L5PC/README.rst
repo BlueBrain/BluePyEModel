@@ -5,7 +5,7 @@ This guide will walk you through the process of setting up the E-Model building 
 
 Note that despite the present explanation, building an e-model is not a trivial process, therefore, do not hesitate to contact this package authors for help to get you set up.
 
-If you encounter any issues during the execution of the pipeline, please refer to `Troubleshooting`_) for potential solutions.
+If you encounter any issues during the execution of the pipeline, please refer to `Troubleshooting`_ for potential solutions.
 
 Running the example locally
 ---------------------------
@@ -317,6 +317,7 @@ nrnivmodl: bad interpreter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you encounter the following error:
+
 .. code-block:: shell
 
     bash: /myvenv/bin/nrnivmodl: bad interpreter: No such file or directory
