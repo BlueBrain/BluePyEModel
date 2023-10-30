@@ -152,14 +152,17 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
     new_opt_path = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True)
     copy_emodel_pdf_dependency_to_new_path(old_opt_path, new_opt_path)
 
-    old_traces_path = figure_emodel_traces(emodel_metadata, seed, use_allen_notation=False)
-    new_traces_path = figure_emodel_traces(emodel_metadata, seed, use_allen_notation=True)
+    old_traces_path, old_traces_path_val = figure_emodel_traces(emodel_metadata, seed, use_allen_notation=False)
+    new_traces_path, new_traces_path_val = figure_emodel_traces(emodel_metadata, seed, use_allen_notation=True)
     copy_emodel_pdf_dependency_to_new_path(old_traces_path, new_traces_path)
+    copy_emodel_pdf_dependency_to_new_path(old_traces_path_val, new_traces_path_val)
 
-    old_score_path = figure_emodel_score(emodel_metadata, seed, use_allen_notation=False)
-    new_score_path = figure_emodel_score(emodel_metadata, seed, use_allen_notation=True)
+    old_score_path, old_score_path_val = figure_emodel_score(emodel_metadata, seed, use_allen_notation=False)
+    new_score_path, new_score_path_val = figure_emodel_score(emodel_metadata, seed, use_allen_notation=True)
     copy_emodel_pdf_dependency_to_new_path(old_score_path, new_score_path)
+    copy_emodel_pdf_dependency_to_new_path(old_score_path_val, new_score_path_val)
 
-    old_params_path = figure_emodel_parameters(emodel_metadata, use_allen_notation=False)
-    new_params_path = figure_emodel_parameters(emodel_metadata, use_allen_notation=True)
+    old_params_path, old_params_path_val = figure_emodel_parameters(emodel_metadata, use_allen_notation=False)
+    new_params_path, new_params_path_val = figure_emodel_parameters(emodel_metadata, use_allen_notation=True)
     copy_emodel_pdf_dependency_to_new_path(old_params_path, new_params_path)
+    copy_emodel_pdf_dependency_to_new_path(old_params_path_val, new_params_path_val)
