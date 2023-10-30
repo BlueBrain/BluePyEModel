@@ -298,7 +298,7 @@ class TargetsConfiguration:
             if f.id:
                 f_dict = {"id": f.id, "type": "Trace"}
                 if f_dict not in uses:
-                    uses.append({"id": f.id, "type": "Trace"})
+                    uses.append(f_dict)
 
         return {"uses": uses}
 
