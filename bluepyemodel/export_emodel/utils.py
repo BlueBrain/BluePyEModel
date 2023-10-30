@@ -78,14 +78,14 @@ def copy_hocs_to_new_output_path(emodel, output_base_dir):
         output_dir=None,
         output_base_dir=output_base_dir,
         use_allen_notation=False,
-        create_dir=False
+        create_dir=False,
     )
     output_path_allen = get_output_path(
         emodel,
         output_dir=None,
         output_base_dir=output_base_dir,
         use_allen_notation=True,
-        create_dir=False
+        create_dir=False,
     )
 
     if (

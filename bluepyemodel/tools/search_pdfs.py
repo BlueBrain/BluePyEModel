@@ -19,8 +19,8 @@ limitations under the License.
 
 import glob
 import logging
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,7 @@ def figure_efeatures(emodel, protocol_name, efeature):
 
     return pdf_amp, pdf_amp_rel
 
+
 def search_figure_efeatures(emodel, protocol_name, efeature):
     """Search for the pdf representing the efeature extracted from ephys recordings"""
 
@@ -72,7 +73,9 @@ def figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True):
 def search_figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True):
     """Search for the pdf representing the convergence of the optimisation"""
 
-    pathname = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True)
+    pathname = figure_emodel_optimisation(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
 
     return search_figure_path(str(pathname))
 
@@ -92,7 +95,9 @@ def figure_emodel_traces(emodel_metadata, seed, use_allen_notation=True):
 def search_figure_emodel_traces(emodel_metadata, seed, use_allen_notation=True):
     """Search for the pdf representing the traces of an emodel"""
 
-    pathname, pathname_val = figure_emodel_traces(emodel_metadata, seed, use_allen_notation=True)
+    pathname, pathname_val = figure_emodel_traces(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
 
     return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
 
@@ -112,7 +117,9 @@ def figure_emodel_score(emodel_metadata, seed, use_allen_notation=True):
 def search_figure_emodel_score(emodel_metadata, seed, use_allen_notation=True):
     """Search for the pdf representing the scores of an emodel"""
 
-    pathname, pathname_val = figure_emodel_score(emodel_metadata, seed, use_allen_notation=True)
+    pathname, pathname_val = figure_emodel_score(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
 
     return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
 
@@ -134,7 +141,9 @@ def search_figure_emodel_parameters(emodel_metadata, use_allen_notation=True):
     """Search for the pdf representing the distribution of the parameters
     of an emodel"""
 
-    pathname, pathname_val = figure_emodel_parameters(emodel_metadata, use_allen_notation=True)
+    pathname, pathname_val = figure_emodel_parameters(
+        emodel_metadata, use_allen_notation=use_allen_notation
+    )
 
     return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
 
@@ -152,17 +161,29 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
     new_opt_path = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True)
     copy_emodel_pdf_dependency_to_new_path(old_opt_path, new_opt_path)
 
-    old_traces_path, old_traces_path_val = figure_emodel_traces(emodel_metadata, seed, use_allen_notation=False)
-    new_traces_path, new_traces_path_val = figure_emodel_traces(emodel_metadata, seed, use_allen_notation=True)
+    old_traces_path, old_traces_path_val = figure_emodel_traces(
+        emodel_metadata, seed, use_allen_notation=False
+    )
+    new_traces_path, new_traces_path_val = figure_emodel_traces(
+        emodel_metadata, seed, use_allen_notation=True
+    )
     copy_emodel_pdf_dependency_to_new_path(old_traces_path, new_traces_path)
     copy_emodel_pdf_dependency_to_new_path(old_traces_path_val, new_traces_path_val)
 
-    old_score_path, old_score_path_val = figure_emodel_score(emodel_metadata, seed, use_allen_notation=False)
-    new_score_path, new_score_path_val = figure_emodel_score(emodel_metadata, seed, use_allen_notation=True)
+    old_score_path, old_score_path_val = figure_emodel_score(
+        emodel_metadata, seed, use_allen_notation=False
+    )
+    new_score_path, new_score_path_val = figure_emodel_score(
+        emodel_metadata, seed, use_allen_notation=True
+    )
     copy_emodel_pdf_dependency_to_new_path(old_score_path, new_score_path)
     copy_emodel_pdf_dependency_to_new_path(old_score_path_val, new_score_path_val)
 
-    old_params_path, old_params_path_val = figure_emodel_parameters(emodel_metadata, use_allen_notation=False)
-    new_params_path, new_params_path_val = figure_emodel_parameters(emodel_metadata, use_allen_notation=True)
+    old_params_path, old_params_path_val = figure_emodel_parameters(
+        emodel_metadata, use_allen_notation=False
+    )
+    new_params_path, new_params_path_val = figure_emodel_parameters(
+        emodel_metadata, use_allen_notation=True
+    )
     copy_emodel_pdf_dependency_to_new_path(old_params_path, new_params_path)
     copy_emodel_pdf_dependency_to_new_path(old_params_path_val, new_params_path_val)
