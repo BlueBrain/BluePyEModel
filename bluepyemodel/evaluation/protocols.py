@@ -190,8 +190,9 @@ class ProtocolWithDependencies(BPEMProtocol, ResponseDependencies):
 class ThresholdBasedProtocol(ProtocolWithDependencies):
 
     """Protocol having rheobase-rescaling capabilities. When using ThresholdBasedProtocol,
-    the current amplitude and step amplitude of the stimulus will be ignored and replaced by
-    values obtained from the holding current and rheobase of the cell model respectively."""
+    the holding current amplitude and step amplitude of the stimulus will be ignored and
+    replaced by values obtained from the holding current and rheobase of the cell model
+    respectively."""
 
     def __init__(
         self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False

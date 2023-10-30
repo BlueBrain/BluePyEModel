@@ -296,7 +296,9 @@ class TargetsConfiguration:
         uses = []
         for f in self.files:
             if f.id:
-                uses.append({"id": f.id, "type": "Trace"})
+                f_dict = {"id": f.id, "type": "Trace"}
+                if f_dict not in uses:
+                    uses.append(f_dict)
 
         return {"uses": uses}
 
