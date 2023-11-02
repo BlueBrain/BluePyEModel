@@ -158,7 +158,7 @@ class CompileMechanisms(WorkflowTaskRequiringMechanisms):
         architectures = ["x86_64", "i686", "powerpc", "umac"]
 
         # Detect the first existing architecture
-        arch_dir = "x86_64" # default
+        arch_dir = "x86_64"  # default
         for arch in architectures:
             dir_to_check = mechanisms_directory.parents[0] / arch
             if dir_to_check.exists() and dir_to_check.is_dir():
