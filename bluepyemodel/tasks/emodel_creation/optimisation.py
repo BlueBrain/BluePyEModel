@@ -158,15 +158,12 @@ class CompileMechanisms(WorkflowTaskRequiringMechanisms):
         architectures = ["x86_64", "i686", "powerpc", "umac"]
 
         # Detect the first existing architecture
-        arch_dir = None
+        arch_dir = "x86_64" # default
         for arch in architectures:
             dir_to_check = mechanisms_directory.parents[0] / arch
             if dir_to_check.exists() and dir_to_check.is_dir():
                 arch_dir = dir_to_check
                 break
-
-        if arch_dir is None:
-            raise ValueError("No valid architecture directory found")
 
         for filepath in glob.glob(f"{str(mechanisms_directory)}/*.mod"):
             compile_path = mechanisms_directory.parents[0] / arch_dir / f"{Path(filepath).stem}.o"
