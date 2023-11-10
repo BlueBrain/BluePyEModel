@@ -18,8 +18,9 @@ limitations under the License.
 
 import logging
 import pathlib
-from morphio.mut import Morphology
+
 from morphio import PointLevel, SectionType
+from morphio.mut import Morphology
 
 logger = logging.getLogger(__name__)
 
