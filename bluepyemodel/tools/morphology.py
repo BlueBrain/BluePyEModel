@@ -18,6 +18,8 @@ limitations under the License.
 
 import logging
 import pathlib
+from morphio.mut import Morphology
+from morphio import PointLevel, SectionType
 
 logger = logging.getLogger(__name__)
 
@@ -30,21 +32,18 @@ def cylindrical_morphology_generator(
     radius=5.0, radius_axon=0.0, length_axon=0.0, output_dir="morphologies"
 ):
     """Creates a cylindrical morphology and save it as a .swc"""
-
     name = name_morphology(radius, type_="cylindrical")
     morphology_path = pathlib.Path(output_dir) / f"{name}.swc"
     morphology_path.parent.mkdir(parents=True, exist_ok=True)
 
-    content = f"# Cylindrical morphology of radius {radius}\n"
-    content += f"1 1 -{radius} 0.0 0.0 {radius} -1\n"
-    content += f"2 1 0.0 0.0 0.0 {radius} 1\n"
-    content += f"3 1 {radius} 0.0 0.0 {radius} 2\n"
+    morph = Morphology()
+    morph.soma.points = [[-radius, 0, 0], [0, 0, 0], [radius, 0, 0]]
+    morph.soma.diameters = 3 * [2 * radius]
 
     if radius_axon and length_axon:
-        content += f"4 2 -{radius} 0.0 0.0 {radius_axon} 1\n"
-        content += f"5 2 -{radius + length_axon} 0.0 0.0 {radius_axon} 4\n"
+        morph.append_root_section(
+            PointLevel([[-radius, 0, 0], [-radius - length_axon, 0, 0]], 2 * [2 * radius_axon]),
+            SectionType.axon,
+        )
 
-    with open(str(morphology_path), "w+") as fp:
-        fp.write(content)
-
-    return morphology_path.resolve()
+    morph.write(morphology_path)
