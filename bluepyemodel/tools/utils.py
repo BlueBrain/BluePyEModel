@@ -28,9 +28,16 @@ logger = logging.getLogger("__main__")
 def get_checkpoint_path(metadata, seed=None):
     """"""
 
+    base_path = f"./checkpoints/{metadata.emodel}/{metadata.iteration}/"
     filename = metadata.as_string(seed=seed, use_allen_notation=False)
+    full_path = f"{base_path}{filename}.pkl"
 
-    return f"./checkpoints/{metadata.emodel}/{metadata.iteration}/{filename}.pkl"
+    # Switch to Allen notation if no previous legacy checkpoint is found
+    if not Path(full_path).is_file():
+        filename = metadata.as_string(seed=seed, use_allen_notation=True)
+        full_path = f"{base_path}{filename}.pkl"
+
+    return full_path
 
 
 def get_legacy_checkpoint_path(checkpoint_path):
