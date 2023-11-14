@@ -17,10 +17,15 @@ limitations under the License.
 from pathlib import Path
 
 import pytest
+from numpy.testing import assert_array_almost_equal
+
+from morphio import Morphology
 
 from bluepyemodel.tools.mechanisms import get_mechanism_currents
 from bluepyemodel.tools.utils import are_same_protocol
 from bluepyemodel.tools.utils import format_protocol_name_to_list
+from bluepyemodel.tools.morphology import cylindrical_morphology_generator
+from bluepyemodel.tools.morphology import name_morphology
 
 TEST_ROOT = Path(__file__).parents[1]
 DATA = TEST_ROOT / "test_data"
@@ -97,3 +102,18 @@ def test_are_same_protocol():
     assert are_same_protocol("APWaveform_140", ["APWaveform", 140])
     assert are_same_protocol("APWaveform_140", ["APWaveform", 140.0])
     assert are_same_protocol("APWaveform_140.0", ["APWaveform", 140])
+
+
+def test_cylindrical_morphology_generator(tmpdir):
+    radius = 5.0
+    cylindrical_morphology_generator(
+        radius=radius, radius_axon=1, length_axon=20, output_dir=tmpdir
+    )
+
+    morph = Morphology(f"{tmpdir}/{name_morphology(radius)}.swc")
+
+    assert len(morph.root_sections) == 1
+    assert_array_almost_equal(
+        morph.soma.points, [[-5.0, 0.0, 0.0], [0.0, 0.0, 0.0], [5.0, 0.0, 0.0]]
+    )
+    assert_array_almost_equal(morph.root_sections[0].points, [[-5.0, 0.0, 0.0], [-25.0, 0.0, 0.0]])
