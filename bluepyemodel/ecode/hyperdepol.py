@@ -106,6 +106,8 @@ class HyperDepol(BPEM_stimulus):
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
 
+        holding_current = self.holding_current if self.holding_current is not None else 0
+
         icomp = self.location.instantiate(sim=sim, icell=icell)
 
         self.iclamp = sim.neuron.h.IClamp(icomp.x, sec=icomp.sec)
@@ -115,28 +117,28 @@ class HyperDepol(BPEM_stimulus):
         self.time_vec = sim.neuron.h.Vector()
 
         self.time_vec.append(0.0)
-        self.current_vec.append(self.holding_current)
+        self.current_vec.append(holding_current)
 
         self.time_vec.append(self.delay)
-        self.current_vec.append(self.holding_current)
+        self.current_vec.append(holding_current)
 
         self.time_vec.append(self.delay)
-        self.current_vec.append(self.holding_current + self.amplitude)
+        self.current_vec.append(holding_current + self.amplitude)
 
         self.time_vec.append(self.tmid)
-        self.current_vec.append(self.holding_current + self.amplitude)
+        self.current_vec.append(holding_current + self.amplitude)
 
         self.time_vec.append(self.tmid)
-        self.current_vec.append(self.holding_current + self.depol_amplitude)
+        self.current_vec.append(holding_current + self.depol_amplitude)
 
         self.time_vec.append(self.toff)
-        self.current_vec.append(self.holding_current + self.depol_amplitude)
+        self.current_vec.append(holding_current + self.depol_amplitude)
 
         self.time_vec.append(self.toff)
-        self.current_vec.append(self.holding_current)
+        self.current_vec.append(holding_current)
 
         self.time_vec.append(self.total_duration)
-        self.current_vec.append(self.holding_current)
+        self.current_vec.append(holding_current)
 
         self.iclamp.delay = 0
         self.current_vec.play(
@@ -150,8 +152,9 @@ class HyperDepol(BPEM_stimulus):
         """Return current time series
 
         WARNING: do not offset ! This is on-top of a holding stimulus."""
+        holding_current = self.holding_current if self.holding_current is not None else 0
         t = numpy.arange(0.0, self.total_duration, dt)
-        current = numpy.full(t.shape, self.holding_current, dtype="float64")
+        current = numpy.full(t.shape, holding_current, dtype="float64")
 
         ton = int(self.delay / dt)
         tmid = int(self.tmid / dt)

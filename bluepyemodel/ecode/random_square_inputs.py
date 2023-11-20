@@ -97,6 +97,8 @@ class MultipleRandomStepInputs(BPEM_stimulus):
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
 
+        holding_current = self.holding_current if self.holding_current is not None else 0
+
         # Holding current
         icomp = self.location.instantiate(sim=sim, icell=icell)
 
@@ -107,10 +109,10 @@ class MultipleRandomStepInputs(BPEM_stimulus):
         self.time_vec = sim.neuron.h.Vector()
 
         self.time_vec.append(0.0)
-        self.current_vec.append(self.holding_current)
+        self.current_vec.append(holding_current)
 
         self.time_vec.append(self.total_duration)
-        self.current_vec.append(self.holding_current)
+        self.current_vec.append(holding_current)
 
         self.iclamp.delay = 0
         self.current_vec.play(
