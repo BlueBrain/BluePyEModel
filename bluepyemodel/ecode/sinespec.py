@@ -73,9 +73,10 @@ class SineSpec(BPEM_stimulus):
 
     def generate(self, dt=0.1):
         """Return current time series"""
+        holding_current = self.holding_current if self.holding_current is not None else 0
 
         t = numpy.arange(0.0, self.total_duration, dt)
-        current = numpy.full(t.shape, self.holding_current, dtype="float64")
+        current = numpy.full(t.shape, holding_current, dtype="float64")
 
         ton_idx = int(self.stim_start / dt)
         toff_idx = int(self.stim_end / dt)
