@@ -221,6 +221,7 @@ class FitnessCalculatorConfiguration:
         self.name_rin_protocol = name_rin_protocol
 
         self.workflow_id = None
+        self.default_std_value = default_std_value
 
     def protocol_exist(self, protocol_name):
         return bool(p for p in self.protocols if p.name == protocol_name)
@@ -350,6 +351,7 @@ class FitnessCalculatorConfiguration:
                     mean=currents["holding_current"][0],
                     std=currents["holding_current"][1],
                     threshold_efeature_std=threshold_efeature_std,
+                    default_std_value=self.default_std_value,
                 )
             )
 
@@ -361,6 +363,7 @@ class FitnessCalculatorConfiguration:
                     mean=currents["threshold_current"][0],
                     std=currents["threshold_current"][1],
                     threshold_efeature_std=threshold_efeature_std,
+                    default_std_value=self.default_std_value,
                 )
             )
 
