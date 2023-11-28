@@ -41,6 +41,7 @@ from .protocols import SearchThresholdCurrent
 from .protocols import ThresholdBasedProtocol
 from .recordings import FixedDtRecordingCustom
 from .recordings import LooseDtRecordingCustom
+from ..emodel_pipeline.emodel_settings import EModelPipelineSettings
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +138,7 @@ def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_re
     Returns:
         Protocol
     """
-    cvode_active = True
+    cvode_active = False if EModelPipelineSettings.neuron_dt is None else True
 
     recordings = []
     for rec_conf in protocol_configuration.recordings:
