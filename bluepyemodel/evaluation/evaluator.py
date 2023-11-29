@@ -41,7 +41,6 @@ from .protocols import SearchThresholdCurrent
 from .protocols import ThresholdBasedProtocol
 from .recordings import FixedDtRecordingCustom
 from .recordings import LooseDtRecordingCustom
-from ..emodel_pipeline.emodel_settings import EModelPipelineSettings
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +108,8 @@ def define_recording(recording_conf, use_fixed_dt_recordings=False):
         recording_conf (dict): configuration of the recording. Must contain the type of the
             recording as well as information about the location of the recording (see function
             define_location).
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+        use_fixed_dt_recordings (bool): used for legacy currentscape 
+            to record at a fixed dt of 0.1 ms.
 
     Returns:
         FixedDtRecordingCustom or LooseDtRecordingCustom
@@ -126,19 +126,23 @@ def define_recording(recording_conf, use_fixed_dt_recordings=False):
     return rec_class(name=recording_conf["name"], location=location, variable=variable)
 
 
-def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_recordings=False):
+def define_protocol(protocol_configuration, stochasticity=False, dt=None, use_fixed_dt_recordings=False):
     """Create a protocol.
 
     Args:
         protocol_configuration (ProtocolConfiguration): configuration of the protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
-
+        dt (float): NEURON dt for fixed time step simulation. If None, variable 
+            dt will be used.
+        use_fixed_dt_recordings (bool): used for legacy currentscape 
+            to record at a fixed dt of 0.1 ms. 
+            However, Simulations will be run based on pipeline_settings.neuron_dt.
+        
     Returns:
         Protocol
     """
-    cvode_active = False if EModelPipelineSettings.neuron_dt is None else True
+    cvode_active = False if dt is None else True
 
     recordings = []
     for rec_conf in protocol_configuration.recordings:
@@ -394,6 +398,7 @@ def define_protocols(
     include_validation_protocols,
     stochasticity,
     use_fixed_dt_recordings,
+    dt=None,
 ):
     """Instantiate several efeatures"""
 
@@ -402,7 +407,7 @@ def define_protocols(
         if not include_validation_protocols and protocols_def.validation:
             continue
         protocols[protocols_def.name] = define_protocol(
-            protocols_def, stochasticity, use_fixed_dt_recordings
+            protocols_def, stochasticity, use_fixed_dt_recordings, dt=dt
         )
 
     return protocols
@@ -452,7 +457,8 @@ def define_optimisation_protocol(
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
         efel_settings (dict): eFEl settings.
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+        use_fixed_dt_recordings (bool): used for legacy currentscape 
+            to record at a fixed dt of 0.1 ms.
     """
 
     protocols = define_protocols(
@@ -479,10 +485,12 @@ def define_threshold_based_optimisation_protocol(
     efel_settings=None,
     max_threshold_voltage=-30,
     strict_holding_bounds=True,
+    dt=None,
     use_fixed_dt_recordings=False,
     max_depth_holding_search=7,
     max_depth_threshold_search=10,
     spikecount_timeout=50,
+    
 ):
     """Create a meta protocol in charge of running the other protocols.
 
@@ -502,13 +510,16 @@ def define_threshold_based_optimisation_protocol(
             will search for the rheobase.
         strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
             when set to False
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+        dt (float): NEURON dt for fixed time step simulation. If None, variable dt will be used.
+        use_fixed_dt_recordings (bool): used for legacy currentscape 
+            to record at a fixed dt of 0.1 ms.
         max_depth_holding_search (int): maximum depth for the binary search for the
             holding current
         max_depth_threshold_search (int): maximum depth for the binary search for the
             threshold current
         spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
             we set spikecount=2 as if many spikes were present, to speed up bisection search.
+        
     """
 
     protocols = define_protocols(
@@ -516,6 +527,7 @@ def define_threshold_based_optimisation_protocol(
         include_validation_protocols,
         stochasticity,
         use_fixed_dt_recordings,
+        dt=dt,
     )
 
     efeatures = define_efeatures(
@@ -582,7 +594,7 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None,
     Args:
         stochasticity (bool): allow the use of simulator for stochastic channels
         cell_model (CellModel): used to check if any stochastic channels are present
-        dt (float): if not None, cvode will be disabled and fixed timesteps used.
+        dt (float): NEURON dt for fixed time step simulation. If None, variable dt will be used.
         mechanisms_directory (str or Path): path to the directory containing the mechanisms
         cvode_minstep (float): minimum time step allowed for a CVODE step.
     """
@@ -640,7 +652,8 @@ def create_evaluator(
         include_validation_protocols (bool): should the validation protocols
             and validation efeatures be added to the evaluator.
         mechanisms_directory (str or Path): path to the directory containing the mechanisms.
-        use_fixed_dt_recordings (bool): whether to record at a fixed dt of 0.1 ms.
+        use_fixed_dt_recordings (bool): used for legacy currentscape 
+            to record at a fixed dt of 0.1 ms.
 
     Returns:
         CellEvaluator
@@ -670,6 +683,7 @@ def create_evaluator(
             efel_settings=pipeline_settings.efel_settings,
             max_threshold_voltage=pipeline_settings.max_threshold_voltage,
             strict_holding_bounds=pipeline_settings.strict_holding_bounds,
+            dt=pipeline_settings.neuron_dt,
             use_fixed_dt_recordings=use_fixed_dt_recordings,
             max_depth_holding_search=pipeline_settings.max_depth_holding_search,
             max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
@@ -681,6 +695,7 @@ def create_evaluator(
             include_validation_protocols,
             stochasticity=stochasticity,
             efel_settings=pipeline_settings.efel_settings,
+            dt=pipeline_settings.neuron_dt,
             use_fixed_dt_recordings=use_fixed_dt_recordings,
         )
 
