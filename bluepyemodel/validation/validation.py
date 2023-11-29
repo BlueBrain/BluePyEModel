@@ -106,8 +106,9 @@ def validate(
 
         scores = model.evaluator.fitness_calculator.calculate_scores(model.responses)
         for feature_name in scores:
+            protocol_name = feature_name.split(".")[0]
             if any(
-                are_same_protocol(p, feature_name)
+                are_same_protocol(p, protocol_name)
                 for p in access_point.pipeline_settings.validation_protocols
             ):
                 model.scores_validation[feature_name] = scores[feature_name]
