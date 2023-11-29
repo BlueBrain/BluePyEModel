@@ -126,7 +126,8 @@ def define_recording(recording_conf, use_fixed_dt_recordings=False):
     return rec_class(name=recording_conf["name"], location=location, variable=variable)
 
 
-def define_protocol(protocol_configuration, stochasticity=False, dt=None, use_fixed_dt_recordings=False):
+def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_recordings=False,
+                    dt=None):
     """Create a protocol.
 
     Args:
@@ -142,7 +143,8 @@ def define_protocol(protocol_configuration, stochasticity=False, dt=None, use_fi
     Returns:
         Protocol
     """
-    cvode_active = False if dt is None else True
+    # cvode_active is False if dt is None else True
+    cvode_active = not dt
 
     recordings = []
     for rec_conf in protocol_configuration.recordings:
@@ -398,7 +400,7 @@ def define_protocols(
     include_validation_protocols,
     stochasticity,
     use_fixed_dt_recordings,
-    dt=None,
+    dt,
 ):
     """Instantiate several efeatures"""
 
@@ -407,7 +409,7 @@ def define_protocols(
         if not include_validation_protocols and protocols_def.validation:
             continue
         protocols[protocols_def.name] = define_protocol(
-            protocols_def, stochasticity, use_fixed_dt_recordings, dt=dt
+            protocols_def, stochasticity, use_fixed_dt_recordings, dt
         )
 
     return protocols
@@ -446,6 +448,7 @@ def define_optimisation_protocol(
     stochasticity=True,
     efel_settings=None,
     use_fixed_dt_recordings=False,
+    dt=None,
 ):
     """Create a meta protocol in charge of running the other protocols.
 
@@ -459,6 +462,7 @@ def define_optimisation_protocol(
         efel_settings (dict): eFEl settings.
         use_fixed_dt_recordings (bool): used for legacy currentscape 
             to record at a fixed dt of 0.1 ms.
+        dt (float): NEURON dt for fixed time step simulation. If None, variable dt will be used.
     """
 
     protocols = define_protocols(
@@ -466,6 +470,7 @@ def define_optimisation_protocol(
         include_validation_protocols,
         stochasticity,
         use_fixed_dt_recordings,
+        dt,
     )
 
     efeatures = define_efeatures(
@@ -485,13 +490,12 @@ def define_threshold_based_optimisation_protocol(
     efel_settings=None,
     max_threshold_voltage=-30,
     strict_holding_bounds=True,
-    dt=None,
     use_fixed_dt_recordings=False,
     max_depth_holding_search=7,
     max_depth_threshold_search=10,
     spikecount_timeout=50,
-    
-):
+    dt=None,
+    ):
     """Create a meta protocol in charge of running the other protocols.
 
     The amplitude of the "threshold_protocols" depend on the computation of
@@ -510,7 +514,6 @@ def define_threshold_based_optimisation_protocol(
             will search for the rheobase.
         strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
             when set to False
-        dt (float): NEURON dt for fixed time step simulation. If None, variable dt will be used.
         use_fixed_dt_recordings (bool): used for legacy currentscape 
             to record at a fixed dt of 0.1 ms.
         max_depth_holding_search (int): maximum depth for the binary search for the
@@ -519,7 +522,7 @@ def define_threshold_based_optimisation_protocol(
             threshold current
         spikecount_timeout (float): timeout for spikecount computation, if timeout is reached,
             we set spikecount=2 as if many spikes were present, to speed up bisection search.
-        
+        dt (float): NEURON dt for fixed time step simulation. If None, variable dt will be used.
     """
 
     protocols = define_protocols(
@@ -527,7 +530,7 @@ def define_threshold_based_optimisation_protocol(
         include_validation_protocols,
         stochasticity,
         use_fixed_dt_recordings,
-        dt=dt,
+        dt,
     )
 
     efeatures = define_efeatures(
@@ -683,11 +686,11 @@ def create_evaluator(
             efel_settings=pipeline_settings.efel_settings,
             max_threshold_voltage=pipeline_settings.max_threshold_voltage,
             strict_holding_bounds=pipeline_settings.strict_holding_bounds,
-            dt=pipeline_settings.neuron_dt,
             use_fixed_dt_recordings=use_fixed_dt_recordings,
             max_depth_holding_search=pipeline_settings.max_depth_holding_search,
             max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
             spikecount_timeout=pipeline_settings.spikecount_timeout,
+            dt=pipeline_settings.neuron_dt,
         )
     else:
         main_protocol, features = define_optimisation_protocol(
@@ -695,8 +698,8 @@ def create_evaluator(
             include_validation_protocols,
             stochasticity=stochasticity,
             efel_settings=pipeline_settings.efel_settings,
-            dt=pipeline_settings.neuron_dt,
             use_fixed_dt_recordings=use_fixed_dt_recordings,
+            dt=pipeline_settings.neuron_dt,
         )
 
     fitness_calculator = define_fitness_calculator(features)
