@@ -241,7 +241,7 @@ def get_evaluator_from_access_point(
             and validation efeatures be added to the evaluator.
         timeout (float): duration (in second) after which the evaluation of a
             protocol will be interrupted.
-        use_fixed_dt_recordings (bool): used for legacy currentscape 
+        use_fixed_dt_recordings (bool): used for legacy currentscape
             to record at a fixed dt of 0.1 ms.
         record_ions_and_currents (bool): whether to add the ion and non-specific currents
             and the ionic concentration to the recordings.

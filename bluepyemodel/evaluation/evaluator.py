@@ -108,7 +108,7 @@ def define_recording(recording_conf, use_fixed_dt_recordings=False):
         recording_conf (dict): configuration of the recording. Must contain the type of the
             recording as well as information about the location of the recording (see function
             define_location).
-        use_fixed_dt_recordings (bool): used for legacy currentscape 
+        use_fixed_dt_recordings (bool): used for legacy currentscape
             to record at a fixed dt of 0.1 ms.
 
     Returns:
@@ -126,20 +126,19 @@ def define_recording(recording_conf, use_fixed_dt_recordings=False):
     return rec_class(name=recording_conf["name"], location=location, variable=variable)
 
 
-def define_protocol(protocol_configuration, stochasticity=False, use_fixed_dt_recordings=False,
-                    dt=None):
+def define_protocol(
+    protocol_configuration, stochasticity=False, use_fixed_dt_recordings=False, dt=None
+):
     """Create a protocol.
 
     Args:
         protocol_configuration (ProtocolConfiguration): configuration of the protocol
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
-        dt (float): NEURON dt for fixed time step simulation. If None, variable 
+        use_fixed_dt_recordings (bool): used for legacy currentscape to record at a fixed dt
+            of 0.1 ms. However, Simulations will be run based on dt.
+        dt (float): NEURON dt for fixed time step simulation. If None, variable
             dt will be used.
-        use_fixed_dt_recordings (bool): used for legacy currentscape 
-            to record at a fixed dt of 0.1 ms. 
-            However, Simulations will be run based on pipeline_settings.neuron_dt.
-        
     Returns:
         Protocol
     """
@@ -460,7 +459,7 @@ def define_optimisation_protocol(
         stochasticity (bool): Should the stochastic channels be stochastic or
             deterministic
         efel_settings (dict): eFEl settings.
-        use_fixed_dt_recordings (bool): used for legacy currentscape 
+        use_fixed_dt_recordings (bool): used for legacy currentscape
             to record at a fixed dt of 0.1 ms.
         dt (float): NEURON dt for fixed time step simulation. If None, variable dt will be used.
     """
@@ -495,7 +494,7 @@ def define_threshold_based_optimisation_protocol(
     max_depth_threshold_search=10,
     spikecount_timeout=50,
     dt=None,
-    ):
+):
     """Create a meta protocol in charge of running the other protocols.
 
     The amplitude of the "threshold_protocols" depend on the computation of
@@ -514,7 +513,7 @@ def define_threshold_based_optimisation_protocol(
             will search for the rheobase.
         strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
             when set to False
-        use_fixed_dt_recordings (bool): used for legacy currentscape 
+        use_fixed_dt_recordings (bool): used for legacy currentscape
             to record at a fixed dt of 0.1 ms.
         max_depth_holding_search (int): maximum depth for the binary search for the
             holding current
@@ -655,7 +654,7 @@ def create_evaluator(
         include_validation_protocols (bool): should the validation protocols
             and validation efeatures be added to the evaluator.
         mechanisms_directory (str or Path): path to the directory containing the mechanisms.
-        use_fixed_dt_recordings (bool): used for legacy currentscape 
+        use_fixed_dt_recordings (bool): used for legacy currentscape
             to record at a fixed dt of 0.1 ms.
 
     Returns:
