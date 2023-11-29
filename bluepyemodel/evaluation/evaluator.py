@@ -142,7 +142,6 @@ def define_protocol(
     Returns:
         Protocol
     """
-    # cvode_active is False if dt is None else True
     cvode_active = not dt
 
     recordings = []
