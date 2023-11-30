@@ -26,6 +26,7 @@ from bluepyopt.ephys.morphologies import NrnFileMorphology
 from bluepyemodel.evaluation import modifiers
 from bluepyemodel.evaluation.modifiers import replace_axon_hoc
 from bluepyemodel.evaluation.modifiers import replace_axon_with_taper
+from bluepyemodel.model.morphology_utils import get_hotspot_location
 
 logger = logging.getLogger(__name__)
 
@@ -58,18 +59,28 @@ def multi_locations(section_name, additional_multiloc_map):
     ]
 
 
-def define_distributions(distributions_definition):
+def define_distributions(distributions_definition, morphology=None):
     """Create a list of ParameterScaler from a the definition of channel distributions
 
     Args:
         distributions_definition (list): definitions of the distributions
     """
-
+    if any(definition.name == "step" for definition in distributions_definition):
+        hotspot_begin, hotspot_end = get_hotspot_location(morphology.morphology_path) 
     distributions = collections.OrderedDict()
 
     for definition in distributions_definition:
         if definition.name == "uniform":
             distributions[definition.name] = ephys.parameterscalers.NrnSegmentLinearScaler()
+        elif definition.name == "step":
+            distributions[definition.name] = ephys.parameterscalers.NrnSegmentSomaDistanceStepScaler(
+                name=definition.name,
+                distribution=definition.function,
+                dist_param_names=definition.parameters,
+                soma_ref_location=definition.soma_ref_location,
+                step_begin=hotspot_begin,
+                step_end=hotspot_end,
+            )
         else:
             distributions[definition.name] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
                 name=definition.name,
@@ -287,7 +298,7 @@ def create_cell_model(
     mechanisms = define_mechanisms(
         model_configuration.mechanisms, model_configuration.mapping_multilocation
     )
-    distributions = define_distributions(model_configuration.distributions)
+    distributions = define_distributions(model_configuration.distributions, morph)
     parameters = define_parameters(
         model_configuration.parameters, distributions, model_configuration.mapping_multilocation
     )

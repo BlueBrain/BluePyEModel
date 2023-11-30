@@ -37,6 +37,7 @@ from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
+from bluepyemodel.evaluation.protocols import LocalThresholdBasedProtocol
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
@@ -90,7 +91,7 @@ def get_recording_names(protocol_config, stimuli):
     pre_prot_rec_names = {
         protocol.recordings[0].name
         for protocol in stimuli.values()
-        if protocol.name not in prot_names
+        if protocol.name not in prot_names and protocol.recordings
     }
     recording_names.update(pre_prot_rec_names)
 
@@ -435,7 +436,7 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
 
             # Plot current
             basename = t.split(".")[0]
-            if basename in stimuli:
+            if basename in stimuli and not "bAP" in basename:
                 if hasattr(stimuli[basename], "stimulus"):
                     if (
                         isinstance(stimuli[basename], ThresholdBasedProtocol)
@@ -445,10 +446,12 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
                         stimuli[basename].stimulus.holding_current = holding
                         stimuli[basename].stimulus.threshold_current = threshold
 
-                    time, current = stimuli[basename].stimulus.generate()
-                    if len(time) > 0 and len(current) > 0:
-                        axs_c.append(axs[idx, 0].twinx())
-                        plot_traces_current(axs_c[-1], time, current)
+                    # TODO: also plot current for LocalThresholdBasedProtocol (need for threshold, etc. for each location)
+                    if not isinstance(stimuli[basename], LocalThresholdBasedProtocol):
+                        time, current = stimuli[basename].stimulus.generate()
+                        if len(time) > 0 and len(current) > 0:
+                            axs_c.append(axs[idx, 0].twinx())
+                            plot_traces_current(axs_c[-1], time, current)
 
         idx += 1
 
@@ -818,8 +821,10 @@ def get_ordered_currentscape_keys(keys):
         if len(n) == 4 and n[1].isdigit():
             n = [".".join(n[:2]), n[2], n[3]]
         prot_name = n[0]
-        if prot_name not in to_skip:
-            assert len(n) == 3
+        # prot_name can be e.g. RMPProtocol, or RMPProtocol_apical055
+        if not any(to_skip_ in prot_name for to_skip_ in to_skip):
+            if len(n) != 3:
+                raise ValueError(f"Expected 3 elements in {n}")
             loc_name = n[1]
             curr_name = n[2]
 
