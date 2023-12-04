@@ -189,13 +189,9 @@ class eFELFeatureBPEM(eFELFeature):
         logger.debug("Calculated values for %s: %s", self.name, str(feature_values))
         return feature_values
 
-    def calculate_score(self, responses, trace_check=False):
-        """Calculate the score"""
-
-        if self.efel_feature_name.startswith("bpo_"):
-            score = self.calculate_bpo_score(responses)
-
-        elif self.exp_mean is None:
+    def calulate_score_(self, responses):
+        """Calculate the score for non-bpo feature"""
+        if self.exp_mean is None:
             score = 0
 
         else:
@@ -211,6 +207,16 @@ class eFELFeatureBPEM(eFELFeature):
                 logger.debug("Calculated score for %s: %f", self.name, score)
 
             score = numpy.min([score, self.max_score])
+        return score
+
+    def calculate_score(self, responses, trace_check=False):
+        """Calculate the score"""
+
+        if self.efel_feature_name.startswith("bpo_"):
+            score = self.calculate_bpo_score(responses)
+
+        else:
+            score = self.calulate_score_(responses)
 
         if score is None or math.isnan(score):
             return self.max_score
@@ -371,16 +377,19 @@ class DendFitFeature(eFELFeatureBPEM):
                 values = efel.getFeatureValues(
                     efel_traces, [self.efel_feature_name], raise_warnings=raise_warnings
                 )
-                logger.warning(values)
-                logger.warning(self.distances)
                 feature_values_ = [val[self.efel_feature_name][0] for val in values if val[self.efel_feature_name] is not None]
                 distances = [d for d, v in zip(self.distances, values) if v[self.efel_feature_name] is not None]
 
+
                 efel.reset()
 
+        # For debugging. Remove those warning before merging. Please notice this if you are reviewing UwU
+        logger.warning(self.efel_feature_name)
+        logger.warning(feature_values_)
+        logger.warning(distances)
         if distances and feature_values_:
             if 0 in distances:
-                feature_values = numpy.array([self.fit(distances, feature_values_)])
+                feature_values = numpy.array([min([self.fit(distances, feature_values_), 250.])])
             else:
                 feature_values = None
         else:
@@ -388,6 +397,15 @@ class DendFitFeature(eFELFeatureBPEM):
 
         logger.debug("Calculated values for %s: %s", self.name, str(feature_values))
         return feature_values
+
+    def calculate_score(self, responses, trace_check=False):
+        """Calculate score. bpo and non-bpo feature should use calulate_feature"""
+        score = self.calulate_score_(responses)
+
+        if score is None or math.isnan(score):
+            return self.max_score
+
+        return score
 
 
 class DendFitMultiProtocolsFeature(DendFitFeature):
