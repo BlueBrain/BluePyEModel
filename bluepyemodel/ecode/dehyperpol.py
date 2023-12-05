@@ -29,6 +29,9 @@ class DeHyperpol(BPEM_stimulus):
 
     """DeHyperpol current stimulus
 
+    The hyperpolarizing step is usually fixed at 150% of rheobase, and the hyperpolarizing step
+    can usually vary from -40% to -160% of rheobase.
+
     .. code-block:: none
 
              holdi         holdi+amp        holdi+amp2     holdi
@@ -55,10 +58,14 @@ class DeHyperpol(BPEM_stimulus):
             location(Location): location of stimulus
         """
 
+        hyper_amp_rel = kwargs.get("thresh_perc", None)
         self.depol_amp = kwargs.get("amp", None)
         self.depol_amp_rel = kwargs.get("amp_rel", None)
         self.hyper_amp = kwargs.get("amp2", None)
         self.hyper_amp_rel = kwargs.get("amp2_rel", None)
+
+        if self.hyper_amp_rel is None and hyper_amp_rel is not None:
+            self.hyper_amp_rel = hyper_amp_rel
 
         if self.hyper_amp is None and self.hyper_amp_rel is None:
             raise TypeError(
