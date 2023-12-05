@@ -322,11 +322,13 @@ def evolution_parameters_density(
         )
 
     # Plot the figure with the sums of all histograms
-    sum_histograms = {idx: h / len(checkpoint_path) for idx, h in sum_histograms.items()}
-    dummy_path = checkpoint_paths[0].partition("__seed=")[0] + "__all_seeds.pkl"
-    fig, axs = _create_figure_parameter_histograms(
-        sum_histograms, evaluator, dummy_path, max_n_gen, gen_per_bin, figures_dir, write_fig
-    )
+    fig, axs = None, None
+    if sum_histograms:
+        sum_histograms = {idx: h / len(checkpoint_path) for idx, h in sum_histograms.items()}
+        dummy_path = checkpoint_paths[0].partition("__seed=")[0] + "__all_seeds.pkl"
+        fig, axs = _create_figure_parameter_histograms(
+            sum_histograms, evaluator, dummy_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+        )
 
     return fig, axs
 
