@@ -48,6 +48,7 @@ class SineSpec(BPEM_stimulus):
 
         self.delay = kwargs.get("delay", 0.0)
         self.duration = kwargs.get("duration", 5000.0)
+        self.total_duration = kwargs.get("totduration", 5000.0)
 
         super().__init__(
             location=location,
@@ -59,10 +60,6 @@ class SineSpec(BPEM_stimulus):
 
     @property
     def stim_end(self):
-        return self.duration + self.delay
-
-    @property
-    def total_duration(self):
         return self.duration + self.delay
 
     @property

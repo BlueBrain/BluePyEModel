@@ -258,12 +258,15 @@ def get_sinespec_stimulus():
 
     # custom values, to check edge case (delay > 0)
     delay = 100.0
+    total_duration = 5100.0 # delay + duration
 
     # generate stimulus
-    prot_def = {"amp": 0.2, "holding_current": -0.001, "delay": delay}
+    prot_def = {
+        "amp": 0.2, "holding_current": -0.001, "delay": delay, "totduration": total_duration
+    }
     stimulus = eCodes["sinespec"](location=soma_loc, **prot_def)
 
-    return stimulus, delay, duration, prot_def["amp"], prot_def["holding_current"]
+    return stimulus, delay, duration, total_duration, prot_def["amp"], prot_def["holding_current"]
 
 def get_spikerecmultispikes_stimulus():
     """Return SpikeRecMultiSpikes stimulus and stim properties."""
@@ -976,7 +979,7 @@ def test_negcheops_instantiate():
     )
 
 
-def check_sinespec_stim(time, current, delay, duration, holding_current, amp):
+def check_sinespec_stim(time, current, delay, duration, total_duration, holding_current, amp):
     """Assert SineSpec stimulus behaves as expected."""
     if delay > 0:
         # before stimulus
@@ -986,7 +989,7 @@ def check_sinespec_stim(time, current, delay, duration, holding_current, amp):
 
         # after stimulus
         current_after = current[
-            numpy.where((delay + duration < time) & (time <= 2 * delay + duration))
+            numpy.where((delay + duration < time) & (time <= total_duration))
         ]
         assert numpy.all(current_after == holding_current)
 
@@ -1008,27 +1011,27 @@ def check_sinespec_stim(time, current, delay, duration, holding_current, amp):
 
 def test_sinespec():
     """Test SineSpec generate."""
-    stimulus, delay, duration, amp, holding_curr = get_sinespec_stimulus()
+    stimulus, delay, duration, total_duration, amp, holding_curr = get_sinespec_stimulus()
     time, current = stimulus.generate()
 
     assert stimulus.name == "SineSpec"
-    assert stimulus.total_duration == duration + delay
-    check_sinespec_stim(time, current, delay, duration, holding_curr, amp)
+    assert stimulus.total_duration == total_duration
+    check_sinespec_stim(time, current, delay, duration, total_duration, holding_curr, amp)
 
     stimulus.holding_current = None
     time, current = stimulus.generate()
-    check_sinespec_stim(time, current, delay, duration, 0.0, amp)
+    check_sinespec_stim(time, current, delay, duration, total_duration, 0.0, amp)
 
 
 def test_sinespec_instantiate():
     """Test SineSpec instantiate."""
-    stimulus, delay, duration, amp, holding_curr = get_sinespec_stimulus()
+    stimulus, delay, duration, total_duration, amp, holding_curr = get_sinespec_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
-    check_sinespec_stim(time, current, delay, duration, holding_curr, amp)
+    check_sinespec_stim(time, current, delay, duration, total_duration, holding_curr, amp)
 
     stimulus.holding_current = None
     time, current = run_stim_on_dummy_cell(stimulus)
-    check_sinespec_stim(time, current, delay, duration, 0.0, amp)
+    check_sinespec_stim(time, current, delay, duration, total_duration, 0.0, amp)
 
 
 def check_spikerecmultispikes_stim(
