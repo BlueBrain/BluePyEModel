@@ -29,6 +29,9 @@ class sAHP(BPEM_stimulus):
 
     """sAHP current stimulus
 
+    The long step (here amp) is usually fixed at 40% of rheobase, and the short step (here amp2)
+    can usually vary from 150% to 300% of rheobase.
+
     .. code-block:: none
 
            holdi       holdi+long_amp      holdi+amp       holdi+long_amp          holdi
