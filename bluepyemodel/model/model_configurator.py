@@ -158,5 +158,7 @@ class ModelConfigurator:
                 stochastic=m.get("stochastic", None),
                 version=version,
                 temperature=temperature,
-                ljp_corrected=m.get("ljp_corrected") if "ljp_corrected" in m else m.get("isLjpCorrected", None)
+                ljp_corrected=m.get("ljp_corrected")
+                if "ljp_corrected" in m
+                else m.get("isLjpCorrected", None),
             )
