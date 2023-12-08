@@ -19,6 +19,8 @@ limitations under the License.
 import glob
 import logging
 import pathlib
+import string
+import sys
 
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
@@ -130,6 +132,8 @@ class EModel_pipeline:
                 "Attempted to set a legacy variable. "
                 "This variable should not be modified in new code."
             )
+
+        self.check_name(emodel)  # check if name complies with requirements
 
         self.access_point = get_access_point(
             emodel=emodel,
@@ -315,6 +319,31 @@ class EModel_pipeline:
         """Prints a summary of the state of the current e-model building procedure"""
 
         print(self.access_point)
+
+    def check_name(self, emodel_name):
+        """Check if name complies with requirements:
+        https://nrn.readthedocs.io/en/8.2.3/guide/hoc_chapter_11_old_reference.html#names"""
+
+
+        allowed_chars = string.ascii_letters + string.digits + "_"
+
+        if sys.version_info[0] < 3:
+            translate_args = [None, allowed_chars]
+        else:
+            translate_args = [str.maketrans("", "", allowed_chars)]
+
+        if (
+            emodel_name == ""
+            or emodel_name[0] not in string.ascii_letters
+            or not str(emodel_name).translate(*translate_args) == ""
+        ):
+            raise TypeError(
+                'Emodel: name "%s" provided to constructor does not comply '
+                "with the rules for Neuron template name: name should be "
+                "alphanumeric "
+                "non-empty string, underscores are allowed, "
+                "first char should be letter" % emodel_name
+            )
 
 
 def sanitize_gitignore():
