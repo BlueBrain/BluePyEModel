@@ -324,7 +324,6 @@ class EModel_pipeline:
         """Check if name complies with requirements:
         https://nrn.readthedocs.io/en/8.2.3/guide/hoc_chapter_11_old_reference.html#names"""
 
-
         allowed_chars = string.ascii_letters + string.digits + "_"
 
         if sys.version_info[0] < 3:
@@ -338,11 +337,11 @@ class EModel_pipeline:
             or not str(emodel_name).translate(*translate_args) == ""
         ):
             raise TypeError(
-                'Emodel: name "%s" provided to constructor does not comply '
+                f"Emodel: name {emodel_name} provided to constructor does not comply "
                 "with the rules for Neuron template name: name should be "
                 "alphanumeric "
                 "non-empty string, underscores are allowed, "
-                "first char should be letter" % emodel_name
+                "first char should be letter"
             )
 
 
