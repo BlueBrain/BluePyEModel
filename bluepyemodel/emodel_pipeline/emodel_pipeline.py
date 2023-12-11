@@ -324,12 +324,12 @@ class EModel_pipeline:
         https://nrn.readthedocs.io/en/8.2.3/guide/hoc_chapter_11_old_reference.html#names"""
 
         allowed_chars = string.ascii_letters + string.digits + "_"
-        translate_args = [str.maketrans("", "", allowed_chars)]
+        translate_args = str.maketrans("", "", allowed_chars)
 
         if (
             emodel_name == ""
             or emodel_name[0] not in string.ascii_letters
-            or not str(emodel_name).translate(*translate_args) == ""
+            or emodel_name.translate(translate_args)
         ):
             raise TypeError(
                 f"Emodel: name {emodel_name} provided to constructor does not comply "
