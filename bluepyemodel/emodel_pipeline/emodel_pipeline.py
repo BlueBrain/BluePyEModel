@@ -20,7 +20,6 @@ import glob
 import logging
 import pathlib
 import string
-import sys
 
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
