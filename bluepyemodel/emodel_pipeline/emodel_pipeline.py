@@ -325,11 +325,7 @@ class EModel_pipeline:
         https://nrn.readthedocs.io/en/8.2.3/guide/hoc_chapter_11_old_reference.html#names"""
 
         allowed_chars = string.ascii_letters + string.digits + "_"
-
-        if sys.version_info[0] < 3:
-            translate_args = [None, allowed_chars]
-        else:
-            translate_args = [str.maketrans("", "", allowed_chars)]
+        translate_args = [str.maketrans("", "", allowed_chars)]
 
         if (
             emodel_name == ""
