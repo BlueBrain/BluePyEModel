@@ -22,7 +22,7 @@ from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 
 
 metadata_args = {
-    "emodel": "L5_TPC:B_cAC",
+    "emodel": "L5_TPC",
     "etype": "cAC",
     "mtype": "L5_TPC:B",
     "ttype": "245_L5 PT CTX",
@@ -43,9 +43,12 @@ def test_init():
     with pytest.raises(ValueError, match="At least emodel or etype should be informed"):
         metadata = EModelMetadata()
 
+    with pytest.raises(TypeError):
+        EModelMetadata(emodel="L5_TPC:B_cAC")
+
     metadata = EModelMetadata(**metadata_args)
 
-    assert metadata.emodel == "L5_TPC:B_cAC"
+    assert metadata.emodel == "L5_TPC"
     assert metadata.etype == "cAC"
     assert metadata.mtype == "L5_TPC:B"
     assert metadata.ttype == "245_L5 PT CTX"
@@ -192,22 +195,22 @@ def test_for_resource(metadata):
 def test_as_string(metadata):
     """Test as_string method."""
     assert metadata.as_string(seed=42) == (
-        "emodel=L5_TPC:B_cAC__etype=cAC__ttype=245_L5 PT CTX__mtype=L5_TPC:B__"
+        "emodel=L5_TPC__etype=cAC__ttype=245_L5 PT CTX__mtype=L5_TPC:B__"
         "species=mouse__brain_region=SSCX__iteration=v0__seed=42"
     )
 
     metadata.allen_notation = "SS"
     assert metadata.as_string() == (
-        "emodel=L5_TPC:B_cAC__etype=cAC__ttype=245_L5 PT CTX__mtype=L5_TPC:B__"
+        "emodel=L5_TPC__etype=cAC__ttype=245_L5 PT CTX__mtype=L5_TPC:B__"
         "species=mouse__brain_region=SS__iteration=v0"
     )
 
     assert metadata.as_string(use_allen_notation=False) == (
-        "emodel=L5_TPC:B_cAC__etype=cAC__ttype=245_L5 PT CTX__mtype=L5_TPC:B__"
+        "emodel=L5_TPC__etype=cAC__ttype=245_L5 PT CTX__mtype=L5_TPC:B__"
         "species=mouse__brain_region=SSCX__iteration=v0"
     )
 
     # with None values and slashes
-    metadata = EModelMetadata(emodel="w/it/h_sla/she/s")
-    assert metadata.as_string(seed="None") == "emodel=with_slashes"
+    metadata = EModelMetadata(emodel="L5_TPC", etype="w/it/h_sla/she/s")
+    assert metadata.as_string(seed="None") == "emodel=L5_TPC__etype=with_slashes"
 
