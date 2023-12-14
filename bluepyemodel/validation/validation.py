@@ -86,6 +86,7 @@ def validate(
         access_point,
         cell_evaluator=cell_evaluator,
         map_function=mapper,
+        # seeds=[13], # uncomment before merging
         # preselect_for_validation=True, # Uncomment this before merging. Please notice this if you are reviewing UwU
     )
 

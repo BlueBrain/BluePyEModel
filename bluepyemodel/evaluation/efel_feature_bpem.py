@@ -389,7 +389,7 @@ class DendFitFeature(eFELFeatureBPEM):
         logger.warning(distances)
         if distances and feature_values_:
             if 0 in distances:
-                feature_values = numpy.array([min([self.fit(distances, feature_values_), 250.])])
+                feature_values = numpy.array([self.fit(distances, feature_values_)])
             else:
                 feature_values = None
         else:
