@@ -16,6 +16,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import string
+
 
 class EModelMetadata:
 
@@ -55,6 +57,7 @@ class EModelMetadata:
             raise ValueError("At least emodel or etype should be informed")
 
         self.emodel = emodel
+        self.check_emodel_name()  # check if name complies with requirements
         self.etype = None if etype == "None" else etype
         self.ttype = None if ttype == "None" else ttype
         self.mtype = None if mtype == "None" else mtype
@@ -179,3 +182,23 @@ class EModelMetadata:
             s += f"seed={seed}__"
 
         return s[:-2]
+
+    def check_emodel_name(self):
+        """Check if name complies with requirements:
+        https://nrn.readthedocs.io/en/8.2.3/guide/hoc_chapter_11_old_reference.html#names"""
+
+        allowed_chars = string.ascii_letters + string.digits + "_"
+        translate_args = str.maketrans("", "", allowed_chars)
+
+        if (
+            self.emodel == ""
+            or self.emodel[0] not in string.ascii_letters
+            or not str(self.emodel).translate(translate_args) == ""
+        ):
+            raise TypeError(
+                f"Emodel: name {self.emodel} provided to constructor does not comply "
+                "with the rules for Neuron template name: name should be "
+                "alphanumeric "
+                "non-empty string, underscores are allowed, "
+                "first char should be letter"
+            )

@@ -144,13 +144,21 @@ class ModelConfigurator:
             version = None
             for k in nexus_keys:
                 if k["name"] == m["name"]:
-                    version = k.get("modelid", None)
+                    version = k.get("modelid") if "modelid" in k else k.get("modelId", None)
+
+            temp_entry = m.get("temperature", None)
+            if isinstance(temp_entry, dict) and "value" in temp_entry:
+                temperature = temp_entry.get("value")
+            else:
+                temperature = temp_entry
 
             self.configuration.add_mechanism(
                 m["name"],
                 locations=m["location"],
                 stochastic=m.get("stochastic", None),
                 version=version,
-                temperature=m.get("temperature", None),
-                ljp_corrected=m.get("ljp_corrected", None),
+                temperature=temperature,
+                ljp_corrected=m.get("ljp_corrected")
+                if "ljp_corrected" in m
+                else m.get("isLjpCorrected", None),
             )
