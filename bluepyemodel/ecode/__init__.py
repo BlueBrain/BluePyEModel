@@ -45,6 +45,7 @@ eCodes = {
     "spontaneous": IDrest,
     "idrest": IDrest,
     "idthres": IDrest,
+    "idthresh": IDrest,
     "step": IDrest,
     "spontaps": IDrest,
     "sponnohold30": IDrest,
