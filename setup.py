@@ -84,7 +84,7 @@ setup(
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
     },
-    packages=find_packages(),
+    packages=find_packages(exclude=('tests',)),
     include_package_data=True,
     package_data={"": ["data/*.npy"]},
     keywords=[
