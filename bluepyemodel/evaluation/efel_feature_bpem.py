@@ -351,8 +351,8 @@ class DendFitFeature(eFELFeatureBPEM):
 
         return params[0]
 
-    def calculate_feature(self, responses, raise_warnings=False):
-        """Calculate feature value"""
+    def get_distances_feature_values(self, responses, raise_warnings=False):
+        """Compute feature at each distance, and return distances and feature values."""
         distances = []
         feature_values_ = []
         if self.efel_feature_name.startswith("bpo_"):
@@ -368,7 +368,7 @@ class DendFitFeature(eFELFeatureBPEM):
             efel_traces = self._construct_efel_trace(responses)
 
             if efel_traces is None:
-                feature_values = None
+                feature_values_ = None
             else:
                 self._setup_efel()
                 logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
@@ -382,6 +382,12 @@ class DendFitFeature(eFELFeatureBPEM):
 
 
                 efel.reset()
+
+        return distances, feature_values_
+
+    def calculate_feature(self, responses, raise_warnings=False):
+        """Calculate feature value"""
+        distances, feature_values_ = self.get_distances_feature_values(responses, raise_warnings)
 
         # For debugging. Remove those warning before merging. Please notice this if you are reviewing UwU
         logger.warning(self.efel_feature_name)
