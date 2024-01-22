@@ -86,7 +86,6 @@ setup(
     },
     packages=find_packages(exclude=('tests',)),
     include_package_data=True,
-    package_data={"": ["data/*.npy"]},
     keywords=[
         'computational neuroscience',
         'simulation',
