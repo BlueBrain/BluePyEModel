@@ -554,6 +554,10 @@ def define_efeatures(
             else:
                 prot_names = [feature_def.protocol_name]
             for prot_name in prot_names:
+                # here, we assume that all protocols used in a DendFitMultiProtocolsFeature
+                # have the same stim_start and stim_end, and also that
+                # we will not use any feature depending on protocol stimulus current.
+                # As such, we can pass any protocol matching any item in prot_names.
                 protocol = next(
                     (p for p in protocols.values() if p.name == prot_name), None
                 )

@@ -371,7 +371,6 @@ class DendFitFeature(eFELFeatureBPEM):
                 feature_values_ = None
             else:
                 self._setup_efel()
-                logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
                 import efel
 
                 values = efel.getFeatureValues(
@@ -417,6 +416,10 @@ class DendFitFeature(eFELFeatureBPEM):
 class DendFitMultiProtocolsFeature(DendFitFeature):
 
     """Fit across apical dendrite using multiple protocols.
+
+    Attention! Since this feature depends on multiple protocols,
+    the stimulus_current passed can be wrong for some of them, and in such a case,
+    efel features depending on stimulus_current should not be used.
     
     To use this class:
         - have a protocol_name with distances in brackets in it

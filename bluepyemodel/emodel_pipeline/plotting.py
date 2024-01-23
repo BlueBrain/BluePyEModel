@@ -33,6 +33,7 @@ from bluepyopt.ephys.stimuli import NrnSquarePulse
 from matplotlib import cm
 from matplotlib import colors
 
+from bluepyemodel.data.utils import read_dendritic_data
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
@@ -48,6 +49,15 @@ matplotlib.rcParams["pdf.fonttype"] = 42
 
 logger = logging.getLogger("__main__")
 logging.getLogger("matplotlib").setLevel(level=logging.ERROR)
+
+colours = {
+    "datapoint": "orangered",
+    "dataline": "red",
+    "modelpoint_apical": "cornflowerblue",
+    "modelline_apical": "darkblue",
+    "modelpoint_basal": "grey",
+    "modelline_basal": "black"
+}
 
 
 def save_fig(figures_dir, figure_name):
@@ -468,6 +478,92 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
     return fig, axs
 
 
+def dendritic_feature_plot(model, responses, feature, feature_name, figures_dir="./figures", write_fig=True):
+    """Plots a accross dendrites and compare it with experimental data.
+    
+    feature_name can be either 'ISI_CV' or 'rheobase'.
+    Returns a figure and its single axe.
+    """
+    make_dir(figures_dir)
+
+    if feature_name == "ISI_CV":
+        exp_label = "exp. data (Shai et al. 2015)"
+        y_label = "ISI CV"
+        fig_title = "ISI CV along the apical dendrite main branch"
+    elif feature_name == "rheobase":
+        exp_label = "exp. data (Beaulieu-Laroche (2021))"
+        y_label = "rheobase (nA)"
+        fig_title = "rheobase along the apical dendrite main branch"
+    else:
+        raise ValueError(f"Expected 'ISI_CV' or 'rheobase' for feature_name. Got {feature_name}")
+
+    distances, feat_values = feature.get_distances_feature_values(responses)
+    exp_distances, exp_values = read_dendritic_data(feature_name)
+
+    min_dist = min((distances[0], exp_distances[0]))
+    max_dist = max((distances[-1], exp_distances[-1]))
+
+    # model fit
+    slope = numpy.array([feature.fit(distances, feat_values)])
+    x_fit = numpy.linspace(min_dist, max_dist, num=20)
+    y_fit = feature.linear_fit(x_fit, slope)
+
+    # data fit
+    data_fit = numpy.polyfit(exp_distances, exp_values, 1)
+    x_data_fit = numpy.linspace(min_dist, max_dist, num=20)
+    y_data_fit = numpy.poly1d(data_fit)(x_data_fit)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ax.scatter(distances, feat_values, c=colours["modelpoint_apical"], label="emodel")
+    ax.plot(x_fit, y_fit, "--", c=colours["modelline_apical"], label="emodel fit")
+    ax.scatter(exp_distances, exp_values, c=colours["datapoint"], label=exp_label)
+    ax.plot(x_data_fit, y_data_fit, c=colours["dataline"], label="data fit")
+    ax.set_xlabel(r"distance from soma ($\mu$m)")
+    ax.set_ylabel(y_label)
+    ax.legend(fontsize="x-small")
+
+    fig.suptitle(fig_title)
+
+    if write_fig:
+        fname = model.emodel_metadata.as_string(model.seed) + f"__{feature.name}.pdf"
+        save_fig(figures_dir, fname)
+
+    return fig, ax
+
+
+def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"):
+    """Calls dendritic_feature_plot for all features corresponding to feature_name.
+    
+    feature_name can be either 'ISI_CV' or 'rheobase'.
+    """
+    # translate feature_name into whatever name we expect to be present in fitness_calculator
+    if feature_name == "ISI_CV":
+        efeature_name = "ISI_CV_linear"
+    elif feature_name == "rheobase":
+        efeature_name = "bpo_threshold_current_linear"
+    else:
+        raise ValueError(f"Expected 'ISI_CV' or 'rheobase' for feature_name. Got {feature_name}")
+
+    figures_dir_dendritic = figures_dir / "dendritic" / dest_leaf
+    dend_feat_list = [
+        obj.features[0] for obj in mo.evaluator.fitness_calculator.objectives if efeature_name in obj.features[0].name
+    ]
+    if len(dend_feat_list) < 1:
+        logger.debug(
+            f"Could not find any feature with {efeature_name} feature name "
+            f"for emodel {mo.emodel_metadata.emodel}."
+        )
+    for feat in dend_feat_list:
+        # prevent stimulus current to be None if load_from_local is True
+        # it is not used in this feature computation, but can make the plot crash if None
+        if feat.stimulus_current is None or callable(feat.stimulus_current) and feat.stimulus_current() is None:
+            feat.stimulus_current = 0.0
+
+        dendritic_feature_plot(mo, mo.responses, feat, feature_name, figures_dir_dendritic)
+
+
 def _get_if_curve_from_evaluator(
     holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
 ):
@@ -648,6 +744,8 @@ def plot_models(
     plot_traces=True,
     plot_currentscape=False,
     plot_if_curve=False,
+    plot_dendritic_ISI_CV=True,
+    plot_dendritic_rheobase=True,
     only_validated=False,
     save_recordings=False,
     load_from_local=False,
@@ -667,6 +765,8 @@ def plot_models(
         plot_traces (bool): True to plot the traces
         plot_currentscape (bool): True to plot the currentscapes
         plot_if_curve (bool): True to plot the current / frequency curve
+        plot_dendritic_ISI_CV (bool): True to plot dendritic ISI CV (if present)
+        plot_dendritic_rheobase (bool): True to plot dendritic rheobase (if present)
         only_validated (bool): True to only plot validated models
         save_recordings (bool): Whether to save the responses data under a folder
             named `recordings`. Responses can then be loaded using load_from_local
@@ -700,7 +800,7 @@ def plot_models(
             use_fixed_dt_recordings=False,
         )
 
-    if plot_traces or plot_currentscape:
+    if plot_traces or plot_currentscape or plot_dendritic_ISI_CV or plot_dendritic_rheobase:
         emodels = compute_responses(
             access_point,
             cell_evaluator,
@@ -758,6 +858,12 @@ def plot_models(
                 stimuli,
             )
             traces(mo, mo.responses, recording_names, stimuli, figures_dir_traces)
+
+        if plot_dendritic_ISI_CV:
+            dendritic_feature_plots(mo, "ISI_CV", dest_leaf, figures_dir)
+        
+        if plot_dendritic_rheobase:
+            dendritic_feature_plots(mo, "rheobase", dest_leaf, figures_dir)
 
         if plot_currentscape:
             config = access_point.pipeline_settings.currentscape_config

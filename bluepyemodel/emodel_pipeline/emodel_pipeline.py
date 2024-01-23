@@ -290,6 +290,8 @@ class EModel_pipeline:
             plot_scores=True,
             plot_traces=True,
             plot_currentscape=self.access_point.pipeline_settings.plot_currentscape,
+            plot_dendritic_ISI_CV=True,
+            plot_dendritic_rheobase=True,
             only_validated=only_validated,
             save_recordings=self.access_point.pipeline_settings.save_recordings,
             load_from_local=load_from_local,

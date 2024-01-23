@@ -1268,6 +1268,8 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             plot_distributions=plot_optimisation,
             plot_traces=plot_optimisation,
             plot_scores=plot_optimisation,
+            plot_dendritic_ISI_CV=plot_optimisation,
+            plot_dendritic_rheobase=plot_optimisation,
             plot_currentscape=plot_currentscape,
         )
 
@@ -1343,6 +1345,8 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
             plot_distributions=True,
             plot_traces=False,
             plot_scores=False,
+            plot_dendritic_ISI_CV=False,
+            plot_dendritic_rheobase=False,
             only_validated=True,
         )
 
