@@ -32,7 +32,14 @@ def add_dendritic_recordings(
 ):
     """Add dendritic recordings to recordings list.
     
-    dend_type can be 'apical' or 'basal'
+    Args:
+        recordings (list): variable to be updated with new recordings
+        prot_name (str): protocol name
+        dend_type (str): On which dendrite should the recording be.
+            Can be 'apical' or 'basal'
+        dist_start (int): closest distance on the dendrite on which to record
+        dist_end (int): furthest distance on the dendrite on which to record
+        dist_step (int): record every dist_step distance on the dendrite
     """
     for dist in range(dist_start, dist_end, dist_step):
         rec_dict = {
@@ -47,7 +54,14 @@ def add_dendritic_recordings(
 
 
 def define_bAP_protocol(dist_start=10, dist_end=600, dist_step=10, dist_end_basal=150):
-    """Utility function to create a ready-to-use bAP protocol."""
+    """Utility function to create a ready-to-use bAP protocol.
+    
+    Args:
+        dist_start (int): closest distance on the dendrites on which to record
+        dist_end (int): furthest distance on the apical dendrite on which to record
+        dist_step (int): record every dist_step distance on the dendrites
+        dist_end_basal (int): furthest distance on the basal dendrite on which to record
+    """
     name = "bAP_1000"
     soma_loc = define_location("soma")
     stim = {
@@ -74,17 +88,18 @@ def define_bAP_protocol(dist_start=10, dist_end=600, dist_step=10, dist_end_basa
 
 
 def define_bAP_feature(
-    dend_type="apical", dist_start=10, dist_end=600, dist_step=10, dist_end_basal=150
+    dend_type="apical", dist_start=10, dist_end=600, dist_step=10
 ):
     """Utility function to create a ready-to-use dendrite backpropagation fit feature
-    
-    dend_type can be 'apical' or 'basal'
+
+    Args:
+        dend_type (str): Which dendrite data should the feature compute.
+            Can be 'apical' or 'basal'
+        dist_start (int): closest distance on the dendrite on which to record
+        dist_end (int): furthest distance on the dendrite on which to record
+        dist_step (int): record every dist_step distance on the dendrite
     """
     name = "bAP_1000"
-    if dend_type == "basal":
-        dist_end = dist_end_basal
-    elif dend_type != "apical":
-        raise ValueError(f"Expected 'apical' or 'basal' for dend_type. Got {dend_type} instead")
 
     recording_names = {"": f"{name}.soma.v"}
     for dist in range(dist_start, dist_end, dist_step):
@@ -113,7 +128,12 @@ def define_bAP_feature(
 def define_EPSP_protocol(dend_type, dist_start=100, dist_end=600, dist_step=100):
     """Returns ready-to-use EPSP protocols at multiple locations along the dendrite.
     
-    dend_type can be 'apical' or 'basal'
+    Args:
+        dend_type (str): Which dendrite data should the feature compute.
+            Can be 'apical' or 'basal'
+        dist_start (int): closest distance on the dendrite on which to record
+        dist_end (int): furthest distance on the dendrite on which to record
+        dist_step (int): record every dist_step distance on the dendrite
     """
     prots = {}
     # should we translate apical to apic here or not?
@@ -173,11 +193,17 @@ def define_EPSP_feature(
 ):
     """Utility function to create a ready-to-use dendrite EPSP fit feature
     
-    dend_type can be 'apical' or 'basal'
-    rec_loc can be either 'dend' or 'soma'
+    Args:
+        dend_type (str): Which dendrite data should the feature compute.
+            Can be 'apical' or 'basal'
+        rec_loc (str): where should data be recorded from.
+            Can be either 'dend' or 'soma'
+        dist_start (int): closest distance on the dendrite on which to record
+        dist_end (int): furthest distance on the dendrite on which to record
+        dist_step (int): record every dist_step distance on the dendrite
 
     Attention! This is just used for plotting function,
-    BPEM cannot currently handle EPSP attenuation fit feature
+    BPEM cannot currently handle EPSP attenuation fit feature on its own
     """
     recording_names = {"": "ProbAMPANMDA_EMS_0.soma.v"}
     for dist in range(dist_start, dist_end, dist_step):

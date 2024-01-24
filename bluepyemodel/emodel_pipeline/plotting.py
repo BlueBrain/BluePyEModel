@@ -37,8 +37,14 @@ from bluepyemodel.data.utils import read_dendritic_data
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
+from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from bluepyemodel.evaluation.protocols import LocalThresholdBasedProtocol
+from bluepyemodel.evaluation.utils import define_bAP_feature
+from bluepyemodel.evaluation.utils import define_bAP_protocol
+from bluepyemodel.evaluation.utils import define_EPSP_feature
+from bluepyemodel.evaluation.utils import define_EPSP_protocol
+from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
@@ -481,7 +487,14 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
 def dendritic_feature_plot(model, responses, feature, feature_name, figures_dir="./figures", write_fig=True):
     """Plots a accross dendrites and compare it with experimental data.
     
-    feature_name can be either 'ISI_CV' or 'rheobase'.
+    Args:
+        model (bluepyopt.ephys.CellModel): cell model
+        responses (dict): responses of the cell model
+        feature (DendFitFeature): feature to plot
+        feature_name (str): which feature to plot. Can be either 'ISI_CV' or 'rheobase'.
+        figures_dir (str or Path): Where to save the figures.
+        write_fig (bool): whether to save the figure
+
     Returns a figure and its single axe.
     """
     make_dir(figures_dir)
@@ -536,7 +549,11 @@ def dendritic_feature_plot(model, responses, feature, feature_name, figures_dir=
 def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"):
     """Calls dendritic_feature_plot for all features corresponding to feature_name.
     
-    feature_name can be either 'ISI_CV' or 'rheobase'.
+    Args:
+        mo (bluepyopt.ephys.CellModel): cell model
+        feature_name (str): which feature to plot. Can be either 'ISI_CV' or 'rheobase'.
+        dest_leaf (str): name of repo to use in output path. Usually either 'validated' or 'all'.
+        figures_dir (str or Path): base directory where to save the figures.
     """
     figures_dir = Path(figures_dir)
     # translate feature_name into whatever name we expect to be present in fitness_calculator
@@ -736,7 +753,14 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
 
 
 def bAP_fit(feature, distances, values, npoints=20):
-    """Returns a x and y arrays, y being a exponential decay fit for bAP feature."""
+    """Returns a x and y arrays, y being a exponential decay fit for bAP feature.
+    
+    Args:
+        feature (DendFitFeature): bAP feature
+        distances (list): distances of the recordings
+        values (list): bAP values
+        npoints (int): number of items in the returned ndarrays
+    """
     slope = numpy.array([feature.fit(distances, values)])
     x_fit = numpy.linspace(distances[0], distances[-1], num=npoints)
     y_fit = feature.exp_decay(x_fit, slope)
@@ -744,7 +768,14 @@ def bAP_fit(feature, distances, values, npoints=20):
 
 
 def EPSP_fit(feature, distances, values, npoints=20):
-    """Returns a x and y arrays, y being a exponential fit for EPSP feature."""
+    """Returns a x and y arrays, y being a exponential fit for EPSP feature.
+    
+    Args:
+        feature (DendFitFeature): EPSP feature
+        distances (list): distances of the recordings
+        values (list): EPSP values
+        npoints (int): number of items in the returned ndarrays
+    """
     slope = numpy.array([feature.fit(distances, values)])
     x_fit = numpy.linspace(distances[0], distances[-1], num=npoints)
     y_fit = feature.exp(x_fit, slope)
@@ -752,7 +783,16 @@ def EPSP_fit(feature, distances, values, npoints=20):
 
 
 def plot_bAP(model, responses, apical_feature, basal_feature, figures_dir="./figures", write_fig=True):
-    """Plot back-propagating action potential."""
+    """Plot back-propagating action potential.
+    
+    Args:
+        model (bluepyopt.ephys.CellModel): cell model
+        responses (dict): responses of the cell model
+        apical_feature (DendFitFeature): bAP feature with apical recs,
+        basal_feature (DendFitFeature): bAP feature with basal recs,
+        figures_dir (str or Path): directory where to save the figures
+        write_fig (bool): whether to save the figure
+    """
     make_dir(figures_dir)
 
     fig = plt.figure()
@@ -781,6 +821,21 @@ def plot_bAP(model, responses, apical_feature, basal_feature, figures_dir="./fig
     return fig, ax
 
 
+def compute_attenuation(dendrec_feature, somarec_feature, responses):
+    """Returns EPSP attenuation and corresponding distances.
+    
+    Args:
+        dendrec_feature (DendFitFeature): feature with recordings in the dendrite
+        somarec_feature (DendFitFeature): feature with recordings in the soma
+        responses (dict): responses to feed to the features
+    """
+    distances, dend_values = dendrec_feature.get_distances_feature_values(responses)
+    _, soma_values = somarec_feature.get_distances_feature_values(responses)
+    attenuation = numpy.asarray(dend_values) / numpy.asarray(soma_values)
+
+    return distances, attenuation
+
+
 def plot_EPSP(
     model,
     responses,
@@ -791,18 +846,29 @@ def plot_EPSP(
     figures_dir="./figures",
     write_fig=True,
 ):
-    """Plot EPSP attenuation across dendrites."""
+    """Plot EPSP attenuation across dendrites.
+    
+    Args:
+        model (bluepyopt.ephys.CellModel): cell model
+        responses (dict): responses of the cell model
+        apical_apicrec_feat (DendFitFeature): EPSP feature with apical stim and apical recs,
+        apical_somarec_feat (DendFitFeature): EPSP feature with apical stim and soma recs,
+        basal_basalrec_feat (DendFitFeature): EPSP feature with basal stim and basal recs,
+        basal_somarec_feat (DendFitFeature): EPSP feature with basal stim and soma recs,
+        figures_dir (str or Path): directory where to save the figures
+        write_fig (bool): whether to save the figure
+    """
     make_dir(figures_dir)
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
 
-    apical_distances, apical_values = apical_apicrec_feat.get_distances_feature_values(responses)
-    _, apical_somarec_values = apical_somarec_feat.get_distances_feature_values(responses)
-    apical_attenuation = numpy.asarray(apical_values) / numpy.asarray(apical_somarec_values)
-    basal_distances, basal_values = basal_basalrec_feat.get_distances_feature_values(responses)
-    _, basal_somarec_values = basal_somarec_feat.get_distances_feature_values(responses)
-    basal_attenuation = numpy.asarray(basal_values) / numpy.asarray(basal_somarec_values)
+    apical_distances, apical_attenuation = compute_attenuation(
+        apical_apicrec_feat, apical_somarec_feat, responses
+    )
+    basal_distances, basal_attenuation = compute_attenuation(
+        basal_basalrec_feat, basal_somarec_feat, responses
+    )
 
     apical_x_fit, apical_y_fit = EPSP_fit(apical_apicrec_feat, apical_distances, apical_attenuation)
     basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
@@ -834,12 +900,24 @@ def run_and_plot_bAP(
     only_validated=False,
     figures_dir="./figures",
 ):
-    """Runs and plots ready-to-use bAP protocol for apical and basal dendrites."""
-    from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
-    from bluepyemodel.evaluation.utils import define_bAP_feature
-    from bluepyemodel.evaluation.utils import define_bAP_protocol
-    from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
-
+    """Runs and plots ready-to-use bAP protocol for apical and basal dendrites.
+    
+    Args:
+        original_cell_evaluator (CellEvaluator): original cell evaluator.
+            A copy will be modified and then used to compute the responses.
+        access_point (DataAccessPoint): data access point.
+        mapper (map): used to parallelize the evaluation of the
+            individual in the population.
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        save_recordings (bool): Whether to save the responses data under a folder
+            named `recordings`. Responses can then be loaded using load_from_local
+            instead of being re-run.
+        load_from_local (bool): True to load responses from locally saved recordings.
+            Responses are saved locally when save_recordings is True.
+        only_validated (bool): True to only plot validated models
+        figures_dir (str): path of the directory in which the figures should be saved.
+        
+    """
     figures_dir = Path(figures_dir)
     cell_evaluator = copy.deepcopy(original_cell_evaluator)
 
@@ -863,7 +941,7 @@ def run_and_plot_bAP(
     cell_evaluator.fitness_protocols["main_protocol"].execution_order = cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
 
     apical_feature = define_bAP_feature("apical", dist_end=max_apical_length)
-    basal_feature = define_bAP_feature("basal", dist_end_basal=max_basal_length)
+    basal_feature = define_bAP_feature("basal", dist_end=max_basal_length)
     # run emodel(s)
     emodels = compute_responses(
         access_point,
@@ -896,11 +974,23 @@ def run_and_plot_EPSP(
     only_validated=False,
     figures_dir="./figures",
 ):
-    """Runs and plots ready-to-use EPSP protocol for apical and basal dendrites."""
-    from bluepyemodel.evaluation.utils import define_EPSP_feature
-    from bluepyemodel.evaluation.utils import define_EPSP_protocol
-    from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
-
+    """Runs and plots ready-to-use EPSP protocol for apical and basal dendrites.
+    
+    Args:
+        original_cell_evaluator (CellEvaluator): original cell evaluator.
+            A copy will be modified and then used to compute the responses.
+        access_point (DataAccessPoint): data access point.
+        mapper (map): used to parallelize the evaluation of the
+            individual in the population.
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        save_recordings (bool): Whether to save the responses data under a folder
+            named `recordings`. Responses can then be loaded using load_from_local
+            instead of being re-run.
+        load_from_local (bool): True to load responses from locally saved recordings.
+            Responses are saved locally when save_recordings is True.
+        only_validated (bool): True to only plot validated models
+        figures_dir (str): path of the directory in which the figures should be saved.
+    """
     figures_dir = Path(figures_dir)
     cell_evaluator = copy.deepcopy(original_cell_evaluator)
 
@@ -986,6 +1076,8 @@ def plot_models(
         plot_if_curve (bool): True to plot the current / frequency curve
         plot_dendritic_ISI_CV (bool): True to plot dendritic ISI CV (if present)
         plot_dendritic_rheobase (bool): True to plot dendritic rheobase (if present)
+        plot_bAP_EPSP (bool): True to plot bAP and EPSP protocol.
+            Only use this on model having apical dendrites.
         only_validated (bool): True to only plot validated models
         save_recordings (bool): Whether to save the responses data under a folder
             named `recordings`. Responses can then be loaded using load_from_local
