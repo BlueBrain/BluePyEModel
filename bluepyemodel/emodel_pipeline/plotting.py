@@ -55,8 +55,8 @@ colours = {
     "dataline": "red",
     "modelpoint_apical": "cornflowerblue",
     "modelline_apical": "darkblue",
-    "modelpoint_basal": "grey",
-    "modelline_basal": "black"
+    "modelpoint_basal": "mediumseagreen",
+    "modelline_basal": "darkgreen"
 }
 
 
@@ -538,6 +538,7 @@ def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"
     
     feature_name can be either 'ISI_CV' or 'rheobase'.
     """
+    figures_dir = Path(figures_dir)
     # translate feature_name into whatever name we expect to be present in fitness_calculator
     if feature_name == "ISI_CV":
         efeature_name = "ISI_CV_linear"
@@ -734,6 +735,97 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
     return fig, axs
 
 
+def plot_bAP(model, responses, apical_feature, basal_feature, figures_dir="./figures", write_fig=True):
+    """Plot back-propagating action potential."""
+    make_dir(figures_dir)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    apical_distances, apical_values = apical_feature.get_distances_feature_values(responses)
+    basal_distances, basal_values = basal_feature.get_distances_feature_values(responses)
+
+    # make a function and call it twice here?
+    # model fit
+    apical_slope = numpy.array([apical_feature.fit(apical_distances, apical_values)])
+    apical_x_fit = numpy.linspace(apical_distances[0], apical_distances[-1], num=20)
+    apical_y_fit = apical_feature.exp_decay(apical_x_fit, apical_slope)
+
+    basal_slope = numpy.array([basal_feature.fit(basal_distances, basal_values)])
+    basal_x_fit = numpy.linspace(basal_distances[0], basal_distances[-1], num=20)
+    basal_y_fit = basal_feature.exp_decay(basal_x_fit, basal_slope)
+
+    ax.scatter(apical_distances, apical_values, c=colours["modelpoint_apical"], label="model apical")
+    ax.plot(apical_x_fit, apical_y_fit, "--", c=colours["modelline_apical"], label="model apical fit")
+    ax.scatter(basal_distances, basal_values, c=colours["modelpoint_basal"], label="model basal")
+    ax.plot(basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit")
+    ax.set_xlabel(r"distance from soma ($\mu$m)")
+    ax.set_ylabel("Amplitude (mV)")
+    ax.legend(fontsize="x-small")
+
+    fig.suptitle("Dendrite back-propagating action potential")
+
+    if write_fig:
+        fname = model.emodel_metadata.as_string(model.seed) + f"__dendrite_backpropagation_fit_decay.pdf"
+        save_fig(figures_dir, fname)
+
+    return fig, ax
+
+
+def run_and_plot_bAP(
+    original_cell_evaluator,
+    access_point,
+    mapper,
+    seeds,
+    save_recordings,
+    load_from_local,
+    only_validated=False,
+    figures_dir="./figures",
+):
+    """Runs and plots hardcoded bAP protocol for apical and basal dendrites."""
+    from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
+    from bluepyemodel.evaluation.utils import define_bAP_feature
+    from bluepyemodel.evaluation.utils import define_bAP_protocol
+
+    figures_dir = Path(figures_dir)
+    cell_evaluator = copy.deepcopy(original_cell_evaluator)
+    # remove protocols except for pre-protocols
+    old_prots = cell_evaluator.fitness_protocols["main_protocol"].protocols
+    new_prots = {}
+    for k, v in old_prots.items():
+        if k in PRE_PROTOCOLS:
+            new_prots[k] = v
+
+    bAP_prot = define_bAP_protocol()
+    new_prots[bAP_prot.name] = bAP_prot
+
+    cell_evaluator.fitness_protocols["main_protocol"].protocols = new_prots
+    cell_evaluator.fitness_protocols["main_protocol"].execution_order = cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+
+    apical_feature = define_bAP_feature("apical")
+    basal_feature = define_bAP_feature("basal")
+    # run emodel(s)
+    emodels = compute_responses(
+        access_point,
+        cell_evaluator,
+        mapper,
+        seeds,
+        store_responses=save_recordings,
+        load_from_local=load_from_local,
+    )
+    # make this a function
+    if only_validated:
+        emodels = [model for model in emodels if model.passed_validation]
+        dest_leaf = "validated"
+    else:
+        dest_leaf = "all"
+
+    # plot
+    for mo in emodels:
+        figures_dir_bAP = figures_dir / "dendritic" / dest_leaf
+        plot_bAP(mo, mo.responses, apical_feature, basal_feature, figures_dir_bAP)
+
+
 def plot_models(
     access_point,
     mapper,
@@ -746,6 +838,7 @@ def plot_models(
     plot_if_curve=False,
     plot_dendritic_ISI_CV=True,
     plot_dendritic_rheobase=True,
+    plot_bAP_EPSP=False,
     only_validated=False,
     save_recordings=False,
     load_from_local=False,
@@ -885,6 +978,16 @@ def plot_models(
             IF_curve(
                 mo, mo.responses, copy.deepcopy(cell_evaluator), figures_dir=figures_dir_traces
             )
+
+    if plot_bAP_EPSP:
+        run_and_plot_bAP(
+            cell_evaluator,
+            access_point,
+            mapper,
+            seeds,
+            save_recordings,
+            load_from_local,
+        )
 
     return emodels
 
