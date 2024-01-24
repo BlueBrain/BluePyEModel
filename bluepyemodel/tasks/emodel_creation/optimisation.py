@@ -1257,6 +1257,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
 
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
         plot_currentscape = self.access_point.pipeline_settings.plot_currentscape
+        plot_bAP_EPSP = self.access_point.pipeline_settings.plot_bAP_EPSP
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
 
         mapper = self.get_mapper()
@@ -1271,6 +1272,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             plot_dendritic_ISI_CV=plot_optimisation,
             plot_dendritic_rheobase=plot_optimisation,
             plot_currentscape=plot_currentscape,
+            plot_bAP_EPSP=plot_bAP_EPSP,
         )
 
     def output(self):
@@ -1347,6 +1349,7 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
             plot_scores=False,
             plot_dendritic_ISI_CV=False,
             plot_dendritic_rheobase=False,
+            plot_bAP_EPSP=False,
             only_validated=True,
         )
 

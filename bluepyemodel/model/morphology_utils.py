@@ -25,6 +25,15 @@ def get_apical_length(morph_path):
     neurom_morph = neurom.load_morphology(morph_path)
     return neurom.features.get("max_radial_distance", neurom_morph, neurite_type=neurom.APICAL_DENDRITE)
 
+def get_basal_and_apical_lengths(morph_path):
+    """Returns the max radial distance of the apical and basal dendrites."""
+    import neurom
+
+    neurom_morph = neurom.load_morphology(morph_path)
+    basal_length = neurom.features.get("max_radial_distance", neurom_morph, neurite_type=neurom.BASAL_DENDRITE)
+    apical_length = neurom.features.get("max_radial_distance", neurom_morph, neurite_type=neurom.APICAL_DENDRITE)
+    return basal_length, apical_length
+
 def get_hotspot_location(morph_path, hotspot_percent=20.):
     """Get hot spot begin and end in terms of soma distance.
 

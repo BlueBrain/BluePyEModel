@@ -26,8 +26,29 @@ from .recordings import LooseDtRecordingCustom
 
 logger = logging.getLogger(__name__)
 
+
+def add_dendritic_recordings(
+    recordings, prot_name, dend_type, dist_start=10, dist_end=600, dist_step=10
+):
+    """Add dendritic recordings to recordings list.
+    
+    dend_type can be 'apical' or 'basal'
+    """
+    for dist in range(dist_start, dist_end, dist_step):
+        rec_dict = {
+            "type": "somadistanceapic",
+            "somadistance": dist,
+            "name": f"{prot_name}.{dend_type}{dist:03d}.v",
+            "seclist_name": dend_type
+        }
+        new_loc = define_location(rec_dict)
+        rec = LooseDtRecordingCustom(name=rec_dict["name"], location=new_loc, variable="v")
+        recordings.append(rec)
+
+
 def define_bAP_protocol(dist_start=10, dist_end=600, dist_step=10, dist_end_basal=150):
     """Utility function to create a ready-to-use bAP protocol."""
+    name = "bAP_1000"
     soma_loc = define_location("soma")
     stim = {
         "delay": 700,
@@ -39,41 +60,12 @@ def define_bAP_protocol(dist_start=10, dist_end=600, dist_step=10, dist_end_basa
     }
     stimulus = eCodes["idrest"](location=soma_loc, **stim)
 
-    recordings = []
-    soma_rec = {
-        "type": "CompRecording",
-        "name": "bAP_1000.soma.v",
-        "location": "soma",
-        "variable": "v"
-    }
-    rec = LooseDtRecordingCustom(name=soma_rec["name"], location=soma_loc, variable="v")
-    recordings.append(rec)
-    # make a function called in those two loops
-    for dist in range(dist_start, dist_end, dist_step):
-        rec_dict = {
-            "type": "somadistanceapic",
-            "somadistance": dist,
-            "name": f"bAP_1000.dend{dist:03d}.v",
-            "seclist_name": "apical",
-            "variable": "v"
-        }
-        new_loc = define_location(rec_dict)
-        rec = LooseDtRecordingCustom(name=rec_dict["name"], location=new_loc, variable="v")
-        recordings.append(rec)
-    for dist in range(dist_start, dist_end_basal, dist_step):
-        rec_dict = {
-            "type": "somadistanceapic",
-            "somadistance": dist,
-            "name": f"bAP_1000.basal{dist:03d}.v",
-            "seclist_name": "basal",
-            "variable": "v"
-        }
-        new_loc = define_location(rec_dict)
-        rec = LooseDtRecordingCustom(name=rec_dict["name"], location=new_loc, variable="v")
-        recordings.append(rec)
+    recordings = [LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v")]
+    add_dendritic_recordings(recordings, name, "apical", dist_start, dist_end, dist_step)
+    add_dendritic_recordings(recordings, name, "basal", dist_start, dist_end_basal, dist_step)
 
     return protocol_type_to_class["ThresholdBasedProtocol"](
-        name="bAP_1000",
+        name=name,
         stimulus=stimulus,
         recordings=recordings,
         cvode_active=True,
@@ -88,17 +80,15 @@ def define_bAP_feature(
     
     dend_type can be 'apical' or 'basal'
     """
-    if dend_type == "apical":
-        rec_dend_type = "dend"
-    elif dend_type == "basal":
-        rec_dend_type = "basal"
+    name = "bAP_1000"
+    if dend_type == "basal":
         dist_end = dist_end_basal
-    else:
+    elif dend_type != "apical":
         raise ValueError(f"Expected 'apical' or 'basal' for dend_type. Got {dend_type} instead")
 
-    recording_names = {"": "bAP_1000.soma.v"}
+    recording_names = {"": f"{name}.soma.v"}
     for dist in range(dist_start, dist_end, dist_step):
-        recording_names[dist] = f"bAP_1000.{rec_dend_type}{dist:03d}.v"
+        recording_names[dist] = f"{name}.{dend_type}{dist:03d}.v"
 
     feat = DendFitFeature(
         f"{dend_type}_dendrite_backpropagation_fit_decay",
@@ -115,6 +105,104 @@ def define_bAP_feature(
         int_settings={"strict_stiminterval": 1},
         string_settings={},
         decay=True,
+        linear=False,
+    )
+    return feat
+
+
+def define_EPSP_protocol(dend_type, dist_start=100, dist_end=600, dist_step=100):
+    """Returns ready-to-use EPSP protocols at multiple locations along the dendrite.
+    
+    dend_type can be 'apical' or 'basal'
+    """
+    prots = {}
+    # should we translate apical to apic here or not?
+    soma_loc = define_location("soma")
+    stim = {
+        "syn_weight": 1.13,
+        "syn_delay": 400.0,
+        "totduration": 500.0,
+    }
+
+    # create a protocol injecting at soma location to have a datapoint at 0 distance
+    name = f"ProbAMPANMDA_EMS_0"
+    stimulus = eCodes["probampanmda_ems"](location=soma_loc, **stim)
+    recordings = [LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v")]
+    prot = protocol_type_to_class["Protocol"](
+        name=name,
+        stimulus=stimulus,
+        recordings=recordings,
+        cvode_active=False, # cannot be used with cvode
+        stochasticity=False,
+    )
+    prots[prot.name] = prot
+
+    # create protocols injecting in the dendrites
+    for dist in range(dist_start, dist_end, dist_step):
+        name = f"ProbAMPANMDA_EMS{dend_type}{dist:03d}_0"
+        loc_name = f"{dend_type}{dist:03d}"
+        loc = define_location(
+            {
+                "type": "somadistanceapic",
+                "somadistance": dist,
+                "name": loc_name,
+                "seclist_name": dend_type,
+            }
+        )
+        stimulus = eCodes["probampanmda_ems"](location=loc, **stim)
+
+        recordings = [
+            LooseDtRecordingCustom(name=f"{name}.{loc_name}.v", location=loc, variable="v"),
+            LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v"),
+        ]
+
+        prot = protocol_type_to_class["Protocol"](
+            name=name,
+            stimulus=stimulus,
+            recordings=recordings,
+            cvode_active=False, # cannot be used with cvode
+            stochasticity=False,
+        )
+        prots[prot.name] = prot
+
+    return prots
+
+
+def define_EPSP_feature(
+    dend_type="apical", rec_loc="dend", dist_start=100, dist_end=600, dist_step=100
+):
+    """Utility function to create a ready-to-use dendrite EPSP fit feature
+    
+    dend_type can be 'apical' or 'basal'
+    rec_loc can be either 'dend' or 'soma'
+
+    Attention! This is just used for plotting function,
+    BPEM cannot currently handle EPSP attenuation fit feature
+    """
+    recording_names = {"": "ProbAMPANMDA_EMS_0.soma.v"}
+    for dist in range(dist_start, dist_end, dist_step):
+        loc_name = f"{dend_type}{dist:03d}"
+        if rec_loc == "dend":
+            rec_name = loc_name
+        else:
+            rec_name = "soma"
+        recording_names[dist] = f"ProbAMPANMDA_EMS{loc_name}_0.{rec_name}.v"
+
+    feat = DendFitFeature(
+        f"EPSP_{dend_type}_{rec_loc}",
+        efel_feature_name="maximum_voltage_from_voltagebase",
+        recording_names=recording_names,
+        stim_start=400.0,
+        stim_end=500.0,
+        exp_mean=1.0, # filler
+        exp_std=1.0, # filler
+        stimulus_current=0.0, # filler
+        threshold=-30.0,
+        interp_step=0.025,
+        double_settings={},
+        int_settings={"strict_stiminterval": 1},
+        string_settings={},
+        decay=False,
         linear=False,
     )
     return feat

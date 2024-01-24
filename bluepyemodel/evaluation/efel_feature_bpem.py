@@ -388,10 +388,6 @@ class DendFitFeature(eFELFeatureBPEM):
         """Calculate feature value"""
         distances, feature_values_ = self.get_distances_feature_values(responses, raise_warnings)
 
-        # For debugging. Remove those warning before merging. Please notice this if you are reviewing UwU
-        logger.warning(self.efel_feature_name)
-        logger.warning(feature_values_)
-        logger.warning(distances)
         if distances and feature_values_:
             if 0 in distances:
                 feature_values = numpy.array([self.fit(distances, feature_values_)])

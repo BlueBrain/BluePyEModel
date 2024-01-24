@@ -71,6 +71,7 @@ class EModelPipelineSettings:
         name_gene_map=None,
         plot_currentscape=False,
         plot_parameter_evolution=True,
+        plot_bAP_EPSP=False,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -221,6 +222,10 @@ class EModelPipelineSettings:
                 plotted for the recordings.
             plot_parameter_evolution (bool): during the plotting, should the evolution of the
                 parameters be plotted.
+            plot_bAP_EPSP (bool): during the plotting, should ready-to-use back-propagating AP
+                and EPSP protocols be run and plotted.
+                Should be True only for pyramidal cells,
+                since it depends on the presence of apical dendrite.
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
@@ -323,6 +328,7 @@ class EModelPipelineSettings:
         self.currentscape_config = currentscape_config
 
         self.plot_parameter_evolution = plot_parameter_evolution
+        self.plot_bAP_EPSP = plot_bAP_EPSP
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings

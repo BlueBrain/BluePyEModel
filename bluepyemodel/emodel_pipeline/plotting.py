@@ -735,6 +735,22 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
     return fig, axs
 
 
+def bAP_fit(feature, distances, values, npoints=20):
+    """Returns a x and y arrays, y being a exponential decay fit for bAP feature."""
+    slope = numpy.array([feature.fit(distances, values)])
+    x_fit = numpy.linspace(distances[0], distances[-1], num=npoints)
+    y_fit = feature.exp_decay(x_fit, slope)
+    return x_fit, y_fit
+
+
+def EPSP_fit(feature, distances, values, npoints=20):
+    """Returns a x and y arrays, y being a exponential fit for EPSP feature."""
+    slope = numpy.array([feature.fit(distances, values)])
+    x_fit = numpy.linspace(distances[0], distances[-1], num=npoints)
+    y_fit = feature.exp(x_fit, slope)
+    return x_fit, y_fit
+
+
 def plot_bAP(model, responses, apical_feature, basal_feature, figures_dir="./figures", write_fig=True):
     """Plot back-propagating action potential."""
     make_dir(figures_dir)
@@ -745,21 +761,14 @@ def plot_bAP(model, responses, apical_feature, basal_feature, figures_dir="./fig
     apical_distances, apical_values = apical_feature.get_distances_feature_values(responses)
     basal_distances, basal_values = basal_feature.get_distances_feature_values(responses)
 
-    # make a function and call it twice here?
-    # model fit
-    apical_slope = numpy.array([apical_feature.fit(apical_distances, apical_values)])
-    apical_x_fit = numpy.linspace(apical_distances[0], apical_distances[-1], num=20)
-    apical_y_fit = apical_feature.exp_decay(apical_x_fit, apical_slope)
-
-    basal_slope = numpy.array([basal_feature.fit(basal_distances, basal_values)])
-    basal_x_fit = numpy.linspace(basal_distances[0], basal_distances[-1], num=20)
-    basal_y_fit = basal_feature.exp_decay(basal_x_fit, basal_slope)
+    apical_x_fit, apical_y_fit = bAP_fit(apical_feature, apical_distances, apical_values)
+    basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
 
     ax.scatter(apical_distances, apical_values, c=colours["modelpoint_apical"], label="model apical")
     ax.plot(apical_x_fit, apical_y_fit, "--", c=colours["modelline_apical"], label="model apical fit")
     ax.scatter(basal_distances, basal_values, c=colours["modelpoint_basal"], label="model basal")
     ax.plot(basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit")
-    ax.set_xlabel(r"distance from soma ($\mu$m)")
+    ax.set_xlabel(r"Distance from soma ($\mu$m)")
     ax.set_ylabel("Amplitude (mV)")
     ax.legend(fontsize="x-small")
 
@@ -767,6 +776,49 @@ def plot_bAP(model, responses, apical_feature, basal_feature, figures_dir="./fig
 
     if write_fig:
         fname = model.emodel_metadata.as_string(model.seed) + f"__dendrite_backpropagation_fit_decay.pdf"
+        save_fig(figures_dir, fname)
+
+    return fig, ax
+
+
+def plot_EPSP(
+    model,
+    responses,
+    apical_apicrec_feat,
+    apical_somarec_feat,
+    basal_basalrec_feat,
+    basal_somarec_feat,
+    figures_dir="./figures",
+    write_fig=True,
+):
+    """Plot EPSP attenuation across dendrites."""
+    make_dir(figures_dir)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    apical_distances, apical_values = apical_apicrec_feat.get_distances_feature_values(responses)
+    _, apical_somarec_values = apical_somarec_feat.get_distances_feature_values(responses)
+    apical_attenuation = numpy.asarray(apical_values) / numpy.asarray(apical_somarec_values)
+    basal_distances, basal_values = basal_basalrec_feat.get_distances_feature_values(responses)
+    _, basal_somarec_values = basal_somarec_feat.get_distances_feature_values(responses)
+    basal_attenuation = numpy.asarray(basal_values) / numpy.asarray(basal_somarec_values)
+
+    apical_x_fit, apical_y_fit = EPSP_fit(apical_apicrec_feat, apical_distances, apical_attenuation)
+    basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
+
+    ax.scatter(apical_distances, apical_attenuation, c=colours["modelpoint_apical"], label="model apical")
+    ax.plot(apical_x_fit, apical_y_fit, "--", c=colours["modelline_apical"], label="model apical fit")
+    ax.scatter(basal_distances, basal_attenuation, c=colours["modelpoint_basal"], label="model basal")
+    ax.plot(basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit")
+    ax.set_xlabel(r"Distance from soma ($\mu$m)")
+    ax.set_ylabel("Attenuation dendrite amplitude / soma amplitude")
+    ax.legend(fontsize="x-small")
+
+    fig.suptitle("EPSP attenuation")
+
+    if write_fig:
+        fname = model.emodel_metadata.as_string(model.seed) + f"__dendrite_EPSP_attenuation_fit.pdf"
         save_fig(figures_dir, fname)
 
     return fig, ax
@@ -782,13 +834,21 @@ def run_and_plot_bAP(
     only_validated=False,
     figures_dir="./figures",
 ):
-    """Runs and plots hardcoded bAP protocol for apical and basal dendrites."""
+    """Runs and plots ready-to-use bAP protocol for apical and basal dendrites."""
     from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
     from bluepyemodel.evaluation.utils import define_bAP_feature
     from bluepyemodel.evaluation.utils import define_bAP_protocol
+    from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
 
     figures_dir = Path(figures_dir)
     cell_evaluator = copy.deepcopy(original_cell_evaluator)
+
+    # get basal and apical lengths
+    morph_path = cell_evaluator.cell_model.morphology.morphology_path
+    max_basal_length, max_apical_length = get_basal_and_apical_lengths(morph_path)
+    max_basal_length = int(max_basal_length)
+    max_apical_length = int(max_apical_length)
+
     # remove protocols except for pre-protocols
     old_prots = cell_evaluator.fitness_protocols["main_protocol"].protocols
     new_prots = {}
@@ -796,14 +856,14 @@ def run_and_plot_bAP(
         if k in PRE_PROTOCOLS:
             new_prots[k] = v
 
-    bAP_prot = define_bAP_protocol()
+    bAP_prot = define_bAP_protocol(dist_end=max_apical_length, dist_end_basal=max_basal_length)
     new_prots[bAP_prot.name] = bAP_prot
 
     cell_evaluator.fitness_protocols["main_protocol"].protocols = new_prots
     cell_evaluator.fitness_protocols["main_protocol"].execution_order = cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
 
-    apical_feature = define_bAP_feature("apical")
-    basal_feature = define_bAP_feature("basal")
+    apical_feature = define_bAP_feature("apical", dist_end=max_apical_length)
+    basal_feature = define_bAP_feature("basal", dist_end_basal=max_basal_length)
     # run emodel(s)
     emodels = compute_responses(
         access_point,
@@ -813,7 +873,7 @@ def run_and_plot_bAP(
         store_responses=save_recordings,
         load_from_local=load_from_local,
     )
-    # make this a function
+
     if only_validated:
         emodels = [model for model in emodels if model.passed_validation]
         dest_leaf = "validated"
@@ -824,6 +884,72 @@ def run_and_plot_bAP(
     for mo in emodels:
         figures_dir_bAP = figures_dir / "dendritic" / dest_leaf
         plot_bAP(mo, mo.responses, apical_feature, basal_feature, figures_dir_bAP)
+
+
+def run_and_plot_EPSP(
+    original_cell_evaluator,
+    access_point,
+    mapper,
+    seeds,
+    save_recordings,
+    load_from_local,
+    only_validated=False,
+    figures_dir="./figures",
+):
+    """Runs and plots ready-to-use EPSP protocol for apical and basal dendrites."""
+    from bluepyemodel.evaluation.utils import define_EPSP_feature
+    from bluepyemodel.evaluation.utils import define_EPSP_protocol
+    from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
+
+    figures_dir = Path(figures_dir)
+    cell_evaluator = copy.deepcopy(original_cell_evaluator)
+
+    # get basal and apical lengths
+    morph_path = cell_evaluator.cell_model.morphology.morphology_path
+    max_basal_length, max_apical_length = get_basal_and_apical_lengths(morph_path)
+    max_basal_length = int(max_basal_length)
+    max_apical_length = int(max_apical_length)
+
+    # remove protocols except for pre-protocols
+    apical_prots = define_EPSP_protocol("apical", dist_end=max_apical_length, dist_start=100, dist_step=100)
+    basal_prots = define_EPSP_protocol("basal", dist_end=max_basal_length, dist_start=30, dist_step=30)
+    EPSP_prots = {**apical_prots, **basal_prots}
+
+    cell_evaluator.fitness_protocols["main_protocol"].protocols = EPSP_prots
+    cell_evaluator.fitness_protocols["main_protocol"].execution_order = cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+
+    apical_apicrec_feat = define_EPSP_feature("apical", "dend", dist_end=max_apical_length, dist_start=100, dist_step=100)
+    apical_somarec_feat = define_EPSP_feature("apical", "soma", dist_end=max_apical_length, dist_start=100, dist_step=100)
+    basal_basalrec_feat = define_EPSP_feature("basal", "dend", dist_end=max_basal_length, dist_start=30, dist_step=30)
+    basal_somarec_feat = define_EPSP_feature("basal", "soma", dist_end=max_basal_length, dist_start=30, dist_step=30)
+    # run emodel(s)
+    emodels = compute_responses(
+        access_point,
+        cell_evaluator,
+        mapper,
+        seeds,
+        store_responses=save_recordings,
+        load_from_local=load_from_local,
+    )
+
+    if only_validated:
+        emodels = [model for model in emodels if model.passed_validation]
+        dest_leaf = "validated"
+    else:
+        dest_leaf = "all"
+
+    # plot
+    for mo in emodels:
+        figures_dir_EPSP = figures_dir / "dendritic" / dest_leaf
+        plot_EPSP(
+            mo,
+            mo.responses,
+            apical_apicrec_feat,
+            apical_somarec_feat,
+            basal_basalrec_feat,
+            basal_somarec_feat,
+            figures_dir_EPSP,
+        )
 
 
 def plot_models(
@@ -987,6 +1113,18 @@ def plot_models(
             seeds,
             save_recordings,
             load_from_local,
+            only_validated,
+            figures_dir,
+        )
+        run_and_plot_EPSP(
+            cell_evaluator,
+            access_point,
+            mapper,
+            seeds,
+            save_recordings,
+            load_from_local,
+            only_validated,
+            figures_dir,
         )
 
     return emodels
