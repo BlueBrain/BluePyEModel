@@ -27,7 +27,8 @@ from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import define_location
 from bluepyemodel.evaluation.evaluator import seclist_to_sec
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
-from bluepyemodel.tools.utils import are_same_protocol, get_mapped_protocol_name
+from bluepyemodel.tools.utils import are_same_protocol
+from bluepyemodel.tools.utils import get_mapped_protocol_name
 
 logger = logging.getLogger(__name__)
 
@@ -311,7 +312,14 @@ class FitnessCalculatorConfiguration:
 
         self.efeatures.append(tmp_feature)
 
-    def init_from_bluepyefe(self, efeatures, protocols, currents, threshold_efeature_std, protocols_mapping=None):
+    def init_from_bluepyefe(
+        self,
+        efeatures,
+        protocols,
+        currents,
+        threshold_efeature_std,
+        protocols_mapping=None,
+    ):
         """Fill the configuration using the output of BluePyEfe"""
 
         if self.name_rmp_protocol and not any(
@@ -346,7 +354,6 @@ class FitnessCalculatorConfiguration:
                 for feature in efeatures[protocol_name][recording]:
                     p_name = get_mapped_protocol_name(protocol_name, protocols_mapping)
                     self._add_bluepyefe_efeature(feature, p_name, recording, threshold_efeature_std)
-
 
         # Add the current related features
         if currents and self.name_rmp_protocol and self.name_rin_protocol:
@@ -608,7 +615,10 @@ class FitnessCalculatorConfiguration:
                 "type": "Generation",
                 "activity": {
                     "type": "Activity",
-                    "followedWorkflow": {"type": "EModelWorkflow", "id": self.workflow_id},
+                    "followedWorkflow": {
+                        "type": "EModelWorkflow",
+                        "id": self.workflow_id,
+                    },
                 },
             }
         }

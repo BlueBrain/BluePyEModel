@@ -42,7 +42,12 @@ class TargetsConfigurator:
         self.configuration = configuration
 
     def new_configuration(
-        self, files=None, targets=None, protocols_rheobase=None, auto_targets=None, protocols_mapping=None
+        self,
+        files=None,
+        targets=None,
+        protocols_rheobase=None,
+        auto_targets=None,
+        protocols_mapping=None,
     ):
         """Create a new configuration"""
 
@@ -53,7 +58,13 @@ class TargetsConfigurator:
         available_efeatures = self.access_point.get_available_efeatures()
 
         self.configuration = TargetsConfiguration(
-            files, targets, protocols_rheobase, available_traces, available_efeatures, auto_targets, protocols_mapping
+            files,
+            targets,
+            protocols_rheobase,
+            available_traces,
+            available_efeatures,
+            auto_targets,
+            protocols_mapping,
         )
 
     def load_configuration(self):
