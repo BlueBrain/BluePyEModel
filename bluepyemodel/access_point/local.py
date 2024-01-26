@@ -448,6 +448,7 @@ class LocalAccessPoint(DataAccessPoint):
             files=config_dict["files"],
             targets=config_dict["targets"],
             protocols_rheobase=config_dict["protocols_rheobase"],
+            protocols_mapping=config_dict["protocols_mapping"]
         )
 
         return configuration
