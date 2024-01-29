@@ -22,6 +22,9 @@ import logging
 
 from bluepyopt import ephys
 from bluepyopt.ephys.morphologies import NrnFileMorphology
+from bluepyopt.ephys.parameterscalers import NrnSegmentLinearScaler
+from bluepyopt.ephys.parameterscalers import NrnSegmentSomaDistanceScaler
+from bluepyopt.ephys.parameterscalers import NrnSegmentSomaDistanceStepScaler
 
 from bluepyemodel.evaluation import modifiers
 from bluepyemodel.evaluation.modifiers import replace_axon_hoc
@@ -71,9 +74,9 @@ def define_distributions(distributions_definition, morphology=None):
 
     for definition in distributions_definition:
         if definition.name == "uniform":
-            distributions[definition.name] = ephys.parameterscalers.NrnSegmentLinearScaler()
+            distributions[definition.name] = NrnSegmentLinearScaler()
         elif definition.name == "step":
-            distributions[definition.name] = ephys.parameterscalers.NrnSegmentSomaDistanceStepScaler(
+            distributions[definition.name] = NrnSegmentSomaDistanceStepScaler(
                 name=definition.name,
                 distribution=definition.function,
                 dist_param_names=definition.parameters,
@@ -82,7 +85,7 @@ def define_distributions(distributions_definition, morphology=None):
                 step_end=hotspot_end,
             )
         else:
-            distributions[definition.name] = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
+            distributions[definition.name] = NrnSegmentSomaDistanceScaler(
                 name=definition.name,
                 distribution=definition.function,
                 dist_param_names=definition.parameters,

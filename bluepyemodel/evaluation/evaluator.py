@@ -37,14 +37,12 @@ from .efel_feature_bpem import DendFitFeature
 from .efel_feature_bpem import DendFitMultiProtocolsFeature
 from .efel_feature_bpem import eFELFeatureBPEM
 from .protocols import BPEMProtocol
-from .protocols import LocalThresholdBasedProtocol
 from .protocols import NoHoldingCurrent
 from .protocols import ProtocolRunner
 from .protocols import RinProtocol
 from .protocols import RMPProtocol
 from .protocols import SearchHoldingCurrent
 from .protocols import SearchThresholdCurrent
-from .protocols import ThresholdBasedNoHoldingProtocol
 from .protocols import ThresholdBasedProtocol
 from .recordings import FixedDtRecordingCustom
 from .recordings import LooseDtRecordingCustom
@@ -67,8 +65,8 @@ seclist_to_sec = {
 protocol_type_to_class = {
     "Protocol": BPEMProtocol,
     "ThresholdBasedProtocol": ThresholdBasedProtocol,
-    "ThresholdBasedNoHoldingProtocol": ThresholdBasedNoHoldingProtocol,
-    "LocalThresholdBasedProtocol": LocalThresholdBasedProtocol,
+    "ThresholdBasedNoHoldingProtocol": ThresholdBasedProtocol,
+    "LocalThresholdBasedProtocol": ThresholdBasedProtocol,
 }
 
 
@@ -184,7 +182,7 @@ def define_protocol(
 
     kwargs = {}
     if protocol_configuration.protocol_type == "LocalThresholdBasedProtocol":
-        loc_name = location_dict['name']
+        loc_name = location_dict["name"]
         kwargs = {
             "hold_key": f"bpo_holding_current_{loc_name}",
             "thres_key": f"bpo_threshold_current_{loc_name}",
@@ -194,10 +192,10 @@ def define_protocol(
 
     if protocol_configuration.protocol_type == "ThresholdBasedNoHoldingProtocol":
         kwargs = {
-            "hold_key": f"bpo_holding_current_noholding",
-            "thres_key": f"bpo_threshold_current_noholding",
-            "hold_prot_name": f"SearchHoldingCurrent_noholding",
-            "thres_prot_name": f"SearchThresholdCurrent_noholding",
+            "hold_key": "bpo_holding_current_noholding",
+            "thres_key": "bpo_threshold_current_noholding",
+            "hold_prot_name": "SearchHoldingCurrent_noholding",
+            "thres_prot_name": "SearchThresholdCurrent_noholding",
         }
 
     if protocol_configuration.protocol_type in protocol_type_to_class:
@@ -314,13 +312,13 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
 
 
 def define_RMP_protocol(
-        efeatures,
-        stimulus_duration=500.0,
-        location=soma_loc,
-        output_key="bpo_rmp",
-        rmp_prot_name="RMPProtocol",
-        recording_name=None,
-    ):
+    efeatures,
+    stimulus_duration=500.0,
+    location=soma_loc,
+    output_key="bpo_rmp",
+    rmp_prot_name="RMPProtocol",
+    recording_name=None,
+):
     """Define the resting membrane potential protocol"""
 
     target_voltage = None
@@ -477,13 +475,11 @@ def define_threshold_protocol(
     thres_prot_name="SearchThresholdCurrent",
 ):
     """Define the search threshold current protocol"""
+    # pylint: disable=too-many-arguments
 
     target_current = []
     for f in efeatures:
-        if (
-            thres_prot_name in f.recording_names[""]
-            and f.efel_feature_name == output_key
-        ):
+        if thres_prot_name in f.recording_names[""] and f.efel_feature_name == output_key:
             target_current.append(f)
 
     if not target_current:
@@ -548,7 +544,10 @@ def define_efeatures(
         protocol = None
         # split("_")[0] is to account for 'local' pre-protocol,
         # e.g. "SearchThresholdCurrent_apical055"
-        if feature_def.protocol_name not in PRE_PROTOCOLS and feature_def.protocol_name.split("_")[0] not in PRE_PROTOCOLS:
+        if (
+            feature_def.protocol_name not in PRE_PROTOCOLS
+            and feature_def.protocol_name.split("_")[0] not in PRE_PROTOCOLS
+        ):
             if "[" in feature_def.protocol_name:
                 prot_names = get_protocol_list_from_protocol_name(feature_def.protocol_name)
             else:
@@ -558,9 +557,7 @@ def define_efeatures(
                 # have the same stim_start and stim_end, and also that
                 # we will not use any feature depending on protocol stimulus current.
                 # As such, we can pass any protocol matching any item in prot_names.
-                protocol = next(
-                    (p for p in protocols.values() if p.name == prot_name), None
-                )
+                protocol = next((p for p in protocols.values() if p.name == prot_name), None)
                 if protocol is None:
                     raise ValueError(f"Could not find protocol named {prot_name}")
 
@@ -607,6 +604,97 @@ def define_optimisation_protocol(
     protocol_runner = ProtocolRunner(protocols)
 
     return protocol_runner, efeatures
+
+
+def define_preprotocols(
+    efeatures,
+    location,
+    fitness_calculator_configuration,
+    strict_holding_bounds=False,
+    max_depth_holding_search=7,
+    max_threshold_voltage=-30,
+    spikecount_timeout=50,
+    max_depth_threshold_search=10,
+    efel_thresh_for_thres_search=None,
+    rmp_key="bpo_rmp",
+    hold_key="bpo_holding_current",
+    rin_key="bpo_rin",
+    thres_key="bpo_threshold_current",
+    rmp_prot_name="RMPProtocol",
+    hold_prot_name="SearchHoldingCurrent",
+    rin_prot_name="RinProtocol",
+    thres_prot_name="SearchThresholdCurrent",
+    recording_name=None,
+    no_holding=False,
+):
+    """Returns a dict containing the preprotocols"""
+    # pylint: disable=too-many-arguments
+    rmp_prot = define_RMP_protocol(
+        efeatures,
+        stimulus_duration=fitness_calculator_configuration.rmp_duration,
+        location=location,
+        output_key=rmp_key,
+        rmp_prot_name=rmp_prot_name,
+        recording_name=recording_name,
+    )
+    if no_holding:
+        holding_prot = NoHoldingCurrent(
+            name=hold_prot_name,
+            output_key=hold_key,
+        )
+        # without holding current, cell can spike spontaneously
+        no_spikes = False
+    else:
+        holding_prot = define_holding_protocol(
+            efeatures,
+            strict_holding_bounds,
+            max_depth_holding_search,
+            stimulus_duration=fitness_calculator_configuration.search_holding_duration,
+            location=location,
+            output_key=hold_key,
+            hold_prot_name=hold_prot_name,
+            recording_name=recording_name,
+        )
+        no_spikes = True
+    rin_prot = define_Rin_protocol(
+        efeatures,
+        amp=fitness_calculator_configuration.rin_step_amp,
+        stimulus_delay=fitness_calculator_configuration.rin_step_delay,
+        stimulus_duration=fitness_calculator_configuration.rin_step_duration,
+        totduration=fitness_calculator_configuration.rin_totduration,
+        location=location,
+        output_key=rin_key,
+        hold_key=hold_key,
+        hold_prot_name=hold_prot_name,
+        rin_prot_name=rin_prot_name,
+        recording_name=recording_name,
+    )
+    threshold_prot = define_threshold_protocol(
+        efeatures,
+        max_threshold_voltage,
+        fitness_calculator_configuration.search_threshold_step_delay,
+        fitness_calculator_configuration.search_threshold_step_duration,
+        fitness_calculator_configuration.search_threshold_totduration,
+        spikecount_timeout,
+        max_depth_threshold_search,
+        location=location,
+        no_spikes=no_spikes,
+        efel_threshold=efel_thresh_for_thres_search,
+        output_key=thres_key,
+        hold_key=hold_key,
+        rmp_key=rmp_key,
+        rin_key=rin_key,
+        hold_prot_name=hold_prot_name,
+        rmp_prot_name=rmp_prot_name,
+        rin_prot_name=rin_prot_name,
+        thres_prot_name=thres_prot_name,
+    )
+    return {
+        rmp_prot_name: rmp_prot,
+        hold_prot_name: holding_prot,
+        rin_prot_name: rin_prot,
+        thres_prot_name: threshold_prot,
+    }
 
 
 def define_threshold_based_optimisation_protocol(
@@ -675,166 +763,79 @@ def define_threshold_based_optimisation_protocol(
                 stim = prot.stimuli[0]
                 loc_name = stim["location"]["name"]
                 location = define_location(stim["location"])
-                if f"RMPProtocol_{loc_name}" not in protocols:
-                    rmp_key = f"bpo_rmp_{loc_name}"
-                    hold_key = f"bpo_holding_current_{loc_name}"
-                    rin_key = f"bpo_rin_{loc_name}"
-                    thres_key = f"bpo_threshold_current_{loc_name}"
-                    rmp_prot_name = f"RMPProtocol_{loc_name}"
-                    hold_prot_name = f"SearchHoldingCurrent_{loc_name}"
-                    rin_prot_name = f"RinProtocol_{loc_name}"
-                    thres_prot_name = f"SearchThresholdCurrent_{loc_name}"
-                    recording_name = f"{loc_name}.{stim['location']['variable']}"
 
+                if f"RMPProtocol_{loc_name}" not in protocols:
                     protocols.update(
-                        {
-                            rmp_prot_name: define_RMP_protocol(
-                                efeatures,
-                                stimulus_duration=fitness_calculator_configuration.rmp_duration,
-                                location=location,
-                                output_key=rmp_key,
-                                rmp_prot_name=rmp_prot_name,
-                                recording_name=recording_name,
-                            ),
+                        define_preprotocols(
+                            efeatures=efeatures,
+                            location=location,
+                            fitness_calculator_configuration=fitness_calculator_configuration,
+                            strict_holding_bounds=strict_holding_bounds,
+                            max_depth_holding_search=max_depth_holding_search,
+                            max_threshold_voltage=max_threshold_voltage,
+                            spikecount_timeout=spikecount_timeout,
+                            max_depth_threshold_search=max_depth_threshold_search,
+                            efel_thresh_for_thres_search=efel_threshold_for_threshold_search,
+                            rmp_key=f"bpo_rmp_{loc_name}",
+                            hold_key=f"bpo_holding_current_{loc_name}",
+                            rin_key=f"bpo_rin_{loc_name}",
+                            thres_key=f"bpo_threshold_current_{loc_name}",
+                            rmp_prot_name=f"RMPProtocol_{loc_name}",
+                            hold_prot_name=f"SearchHoldingCurrent_{loc_name}",
+                            rin_prot_name=f"RinProtocol_{loc_name}",
+                            thres_prot_name=f"SearchThresholdCurrent_{loc_name}",
+                            recording_name=f"{loc_name}.{stim['location']['variable']}",
                             # use holding current = 0 for local injection protocols
-                            # TODO: let the user decide when to use noholding and when to use holding
-                            hold_prot_name: NoHoldingCurrent(
-                                name=hold_prot_name,
-                                output_key=hold_key,
-                            ),
-                            rin_prot_name: define_Rin_protocol(
-                                efeatures,
-                                amp=fitness_calculator_configuration.rin_step_amp,
-                                stimulus_delay=fitness_calculator_configuration.rin_step_delay,
-                                stimulus_duration=fitness_calculator_configuration.rin_step_duration,
-                                totduration=fitness_calculator_configuration.rin_totduration,
-                                location=location,
-                                output_key=rin_key,
-                                hold_key=hold_key,
-                                hold_prot_name=hold_prot_name,
-                                rin_prot_name=rin_prot_name,
-                                recording_name=recording_name,
-                            ),
-                            thres_prot_name: define_threshold_protocol(
-                                efeatures,
-                                max_threshold_voltage,
-                                fitness_calculator_configuration.search_threshold_step_delay,
-                                fitness_calculator_configuration.search_threshold_step_duration,
-                                fitness_calculator_configuration.search_threshold_totduration,
-                                spikecount_timeout,
-                                max_depth_threshold_search,
-                                location=location,
-                                no_spikes=False, # without holding current, cell can spike spontaneously
-                                efel_threshold=efel_threshold_for_threshold_search,
-                                output_key=thres_key,
-                                hold_key=hold_key,
-                                rmp_key=rmp_key,
-                                rin_key=rin_key,
-                                hold_prot_name=hold_prot_name,
-                                rmp_prot_name=rmp_prot_name,
-                                rin_prot_name=rin_prot_name,
-                                thres_prot_name=thres_prot_name,
-                            ),
-                        }
+                            # TODO: let the user decide whether to use noholding or holding
+                            no_holding=True,
+                        )
                     )
 
             if prot.protocol_type == "ThresholdBasedNoHoldingProtocol":
                 stim = prot.stimuli[0]
-                if f"RMPProtocol_noholding" not in protocols:
-                    rmp_key = f"bpo_rmp_noholding"
-                    hold_key = f"bpo_holding_current_noholding"
-                    rin_key = f"bpo_rin_noholding"
-                    thres_key = f"bpo_threshold_current_noholding"
-                    rmp_prot_name = f"RMPProtocol_noholding"
-                    hold_prot_name = f"SearchHoldingCurrent_noholding"
-                    rin_prot_name = f"RinProtocol_noholding"
-                    thres_prot_name = f"SearchThresholdCurrent_noholding"
-                    recording_name = f"soma.v"
+                location = ais_loc if ais_recording else soma_loc
 
+                if "RMPProtocol_noholding" not in protocols:
                     protocols.update(
-                        {
-                            rmp_prot_name: define_RMP_protocol(
-                                efeatures,
-                                stimulus_duration=fitness_calculator_configuration.rmp_duration,
-                                location=location,
-                                output_key=rmp_key,
-                                rmp_prot_name=rmp_prot_name,
-                                recording_name=recording_name,
-                            ),
-                            hold_prot_name: NoHoldingCurrent(
-                                name=hold_prot_name,
-                                output_key=hold_key,
-                            ),
-                            rin_prot_name: define_Rin_protocol(
-                                efeatures,
-                                amp=fitness_calculator_configuration.rin_step_amp,
-                                stimulus_delay=fitness_calculator_configuration.rin_step_delay,
-                                stimulus_duration=fitness_calculator_configuration.rin_step_duration,
-                                totduration=fitness_calculator_configuration.rin_totduration,
-                                location=location,
-                                output_key=rin_key,
-                                hold_key=hold_key,
-                                hold_prot_name=hold_prot_name,
-                                rin_prot_name=rin_prot_name,
-                                recording_name=recording_name,
-                            ),
-                            thres_prot_name: define_threshold_protocol(
-                                efeatures,
-                                max_threshold_voltage,
-                                fitness_calculator_configuration.search_threshold_step_delay,
-                                fitness_calculator_configuration.search_threshold_step_duration,
-                                fitness_calculator_configuration.search_threshold_totduration,
-                                spikecount_timeout,
-                                max_depth_threshold_search,
-                                location=location,
-                                no_spikes=False, # without holding current, cell can spike spontaneously
-                                efel_threshold=efel_threshold_for_threshold_search,
-                                output_key=thres_key,
-                                hold_key=hold_key,
-                                rmp_key=rmp_key,
-                                rin_key=rin_key,
-                                hold_prot_name=hold_prot_name,
-                                rmp_prot_name=rmp_prot_name,
-                                rin_prot_name=rin_prot_name,
-                                thres_prot_name=thres_prot_name,
-                            ),
-                        }
+                        define_preprotocols(
+                            efeatures=efeatures,
+                            location=location,
+                            fitness_calculator_configuration=fitness_calculator_configuration,
+                            strict_holding_bounds=strict_holding_bounds,
+                            max_depth_holding_search=max_depth_holding_search,
+                            max_threshold_voltage=max_threshold_voltage,
+                            spikecount_timeout=spikecount_timeout,
+                            max_depth_threshold_search=max_depth_threshold_search,
+                            efel_thresh_for_thres_search=efel_threshold_for_threshold_search,
+                            rmp_key="bpo_rmp_noholding",
+                            hold_key="bpo_holding_current_noholding",
+                            rin_key="bpo_rin_noholding",
+                            thres_key="bpo_threshold_current_noholding",
+                            rmp_prot_name="RMPProtocol_noholding",
+                            hold_prot_name="SearchHoldingCurrent_noholding",
+                            rin_prot_name="RinProtocol_noholding",
+                            thres_prot_name="SearchThresholdCurrent_noholding",
+                            recording_name="soma.v",
+                            no_holding=True,
+                        )
                     )
 
             # Create the special protocols for soma stimulation
             if prot.protocol_type == "ThresholdBasedProtocol" and "RMPProtocol" not in protocols:
                 location = ais_loc if ais_recording else soma_loc
                 protocols.update(
-                    {
-                        "RMPProtocol": define_RMP_protocol(
-                            efeatures, stimulus_duration=fitness_calculator_configuration.rmp_duration
-                        ),
-                        "SearchHoldingCurrent": define_holding_protocol(
-                            efeatures,
-                            strict_holding_bounds,
-                            max_depth_holding_search,
-                            stimulus_duration=fitness_calculator_configuration.search_holding_duration,
-                            location=location
-                        ),
-                        "RinProtocol": define_Rin_protocol(
-                            efeatures,
-                            amp=fitness_calculator_configuration.rin_step_amp,
-                            stimulus_delay=fitness_calculator_configuration.rin_step_delay,
-                            stimulus_duration=fitness_calculator_configuration.rin_step_duration,
-                            totduration=fitness_calculator_configuration.rin_totduration,
-                            location=location
-                        ),
-                        "SearchThresholdCurrent": define_threshold_protocol(
-                            efeatures,
-                            max_threshold_voltage,
-                            fitness_calculator_configuration.search_threshold_step_delay,
-                            fitness_calculator_configuration.search_threshold_step_duration,
-                            fitness_calculator_configuration.search_threshold_totduration,
-                            spikecount_timeout,
-                            max_depth_threshold_search,
-                            efel_threshold=efel_threshold_for_threshold_search,
-                        ),
-                    }
+                    define_preprotocols(
+                        efeatures=efeatures,
+                        location=location,
+                        fitness_calculator_configuration=fitness_calculator_configuration,
+                        strict_holding_bounds=strict_holding_bounds,
+                        max_depth_holding_search=max_depth_holding_search,
+                        max_threshold_voltage=max_threshold_voltage,
+                        spikecount_timeout=spikecount_timeout,
+                        max_depth_threshold_search=max_depth_threshold_search,
+                        efel_thresh_for_thres_search=efel_threshold_for_threshold_search,
+                        no_holding=False,
+                    )
                 )
 
     # Create the protocol runner
@@ -943,9 +944,12 @@ def create_evaluator(
     fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
 
     if any(
-        p.protocol_type == "ThresholdBasedProtocol" or
-        p.protocol_type == "LocalThresholdBasedProtocol" or
-        p.protocol_type == "ThresholdBasedNoHoldingProtocol"
+        p.protocol_type
+        in (
+            "ThresholdBasedProtocol",
+            "LocalThresholdBasedProtocol",
+            "ThresholdBasedNoHoldingProtocol",
+        )
         for p in fitness_calculator_configuration.protocols
     ):
         main_protocol, features = define_threshold_based_optimisation_protocol(
@@ -959,7 +963,9 @@ def create_evaluator(
             max_depth_holding_search=pipeline_settings.max_depth_holding_search,
             max_depth_threshold_search=pipeline_settings.max_depth_threshold_search,
             spikecount_timeout=pipeline_settings.spikecount_timeout,
-            efel_threshold_for_threshold_search=pipeline_settings.efel_settings.get("Threshold", None),
+            efel_threshold_for_threshold_search=pipeline_settings.efel_settings.get(
+                "Threshold", None
+            ),
             dt=pipeline_settings.neuron_dt,
         )
     else:

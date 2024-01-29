@@ -46,7 +46,6 @@ def locally_store_responses(emodel):
     for key, resp in emodel.responses.items():
         output_path = Path(output_dir) / ".".join((key, "dat"))
         if not ("holding_current" in key or "threshold_current" in key or "bpo" in key):
-
             if resp["time"] is not None and resp["voltage"] is not None:
                 time = numpy.array(resp["time"])
                 data = numpy.array(resp["voltage"])  # even current will be named voltage here
@@ -100,7 +99,9 @@ def load_responses_from_local_files(emodels, cell_eval):
             response_name = response_key.split(".")[0]
             data = numpy.loadtxt(filepath)
             if not (
-                "holding_current" in response_key or "threshold_current" in response_key or "bpo" in response_key
+                "holding_current" in response_key
+                or "threshold_current" in response_key
+                or "bpo" in response_key
             ):
                 responses[response_key] = TimeVoltageResponse(
                     name=response_name, time=data[:, 0], voltage=data[:, 1]

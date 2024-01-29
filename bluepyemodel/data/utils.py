@@ -23,7 +23,7 @@ import numpy as np
 
 def get_dendritic_data_filepath(data_type):
     """Gets a dendritic data file path.
-    
+
     Args:
         data_type (str): can be 'ISI_CV' or 'rheobase'
 
@@ -43,7 +43,7 @@ def read_dendritic_data(data_type):
     """Reads a dendritic data file and returns distance and data values.
 
     rheobase values are returned in nA.
-    
+
     Args:
         data_type (str): can be 'ISI_CV' or 'rheobase'
     """
@@ -58,5 +58,5 @@ def read_dendritic_data(data_type):
             data.append(float(dat))
 
     if data_type == "rheobase":
-        data = np.asarray(data) / 1000. # pA -> nA
+        data = np.asarray(data) / 1000.0  # pA -> nA
     return np.asarray(distances), data

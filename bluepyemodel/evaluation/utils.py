@@ -31,7 +31,7 @@ def add_dendritic_recordings(
     recordings, prot_name, dend_type, dist_start=10, dist_end=600, dist_step=10
 ):
     """Add dendritic recordings to recordings list.
-    
+
     Args:
         recordings (list): variable to be updated with new recordings
         prot_name (str): protocol name
@@ -46,7 +46,7 @@ def add_dendritic_recordings(
             "type": "somadistanceapic",
             "somadistance": dist,
             "name": f"{prot_name}.{dend_type}{dist:03d}.v",
-            "seclist_name": dend_type
+            "seclist_name": dend_type,
         }
         new_loc = define_location(rec_dict)
         rec = LooseDtRecordingCustom(name=rec_dict["name"], location=new_loc, variable="v")
@@ -55,7 +55,7 @@ def add_dendritic_recordings(
 
 def define_bAP_protocol(dist_start=10, dist_end=600, dist_step=10, dist_end_basal=150):
     """Utility function to create a ready-to-use bAP protocol.
-    
+
     Args:
         dist_start (int): closest distance on the dendrites on which to record
         dist_end (int): furthest distance on the apical dendrite on which to record
@@ -70,7 +70,7 @@ def define_bAP_protocol(dist_start=10, dist_end=600, dist_step=10, dist_end_basa
         "thresh_perc": 1000.0,
         "duration": 4.0,
         "totduration": 1000,
-        "holding_current": 0
+        "holding_current": 0,
     }
     stimulus = eCodes["idrest"](location=soma_loc, **stim)
 
@@ -87,9 +87,7 @@ def define_bAP_protocol(dist_start=10, dist_end=600, dist_step=10, dist_end_basa
     )
 
 
-def define_bAP_feature(
-    dend_type="apical", dist_start=10, dist_end=600, dist_step=10
-):
+def define_bAP_feature(dend_type="apical", dist_start=10, dist_end=600, dist_step=10):
     """Utility function to create a ready-to-use dendrite backpropagation fit feature
 
     Args:
@@ -111,9 +109,9 @@ def define_bAP_feature(
         recording_names=recording_names,
         stim_start=700.0,
         stim_end=704.0,
-        exp_mean=765.2223254692782, # filler
-        exp_std=37.98402943833677, # filler
-        stimulus_current=0.0, # filler
+        exp_mean=765.2223254692782,  # filler
+        exp_std=37.98402943833677,  # filler
+        stimulus_current=0.0,  # filler
         threshold=-30.0,
         interp_step=0.025,
         double_settings={},
@@ -127,7 +125,7 @@ def define_bAP_feature(
 
 def define_EPSP_protocol(dend_type, dist_start=100, dist_end=600, dist_step=100):
     """Returns ready-to-use EPSP protocols at multiple locations along the dendrite.
-    
+
     Args:
         dend_type (str): Which dendrite data should the feature compute.
             Can be 'apical' or 'basal'
@@ -145,14 +143,14 @@ def define_EPSP_protocol(dend_type, dist_start=100, dist_end=600, dist_step=100)
     }
 
     # create a protocol injecting at soma location to have a datapoint at 0 distance
-    name = f"ProbAMPANMDA_EMS_0"
+    name = "ProbAMPANMDA_EMS_0"
     stimulus = eCodes["probampanmda_ems"](location=soma_loc, **stim)
     recordings = [LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v")]
     prot = protocol_type_to_class["Protocol"](
         name=name,
         stimulus=stimulus,
         recordings=recordings,
-        cvode_active=False, # cannot be used with cvode
+        cvode_active=False,  # cannot be used with cvode
         stochasticity=False,
     )
     prots[prot.name] = prot
@@ -180,7 +178,7 @@ def define_EPSP_protocol(dend_type, dist_start=100, dist_end=600, dist_step=100)
             name=name,
             stimulus=stimulus,
             recordings=recordings,
-            cvode_active=False, # cannot be used with cvode
+            cvode_active=False,  # cannot be used with cvode
             stochasticity=False,
         )
         prots[prot.name] = prot
@@ -192,7 +190,7 @@ def define_EPSP_feature(
     dend_type="apical", rec_loc="dend", dist_start=100, dist_end=600, dist_step=100
 ):
     """Utility function to create a ready-to-use dendrite EPSP fit feature
-    
+
     Args:
         dend_type (str): Which dendrite data should the feature compute.
             Can be 'apical' or 'basal'
@@ -220,9 +218,9 @@ def define_EPSP_feature(
         recording_names=recording_names,
         stim_start=400.0,
         stim_end=500.0,
-        exp_mean=1.0, # filler
-        exp_std=1.0, # filler
-        stimulus_current=0.0, # filler
+        exp_mean=1.0,  # filler
+        exp_std=1.0,  # filler
+        stimulus_current=0.0,  # filler
         threshold=-30.0,
         interp_step=0.025,
         double_settings={},

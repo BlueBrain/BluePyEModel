@@ -194,13 +194,22 @@ class ThresholdBasedProtocol(ProtocolWithDependencies):
     respectively."""
 
     def __init__(
-        self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
+        self,
+        name=None,
+        stimulus=None,
+        recordings=None,
+        cvode_active=None,
+        stochasticity=False,
+        hold_key="bpo_holding_current",
+        thres_key="bpo_threshold_current",
+        hold_prot_name="SearchHoldingCurrent",
+        thres_prot_name="SearchThresholdCurrent",
     ):
         """Constructor"""
 
         dependencies = {
-            "stimulus.holding_current": ["SearchHoldingCurrent", "bpo_holding_current"],
-            "stimulus.threshold_current": ["SearchThresholdCurrent", "bpo_threshold_current"],
+            "stimulus.holding_current": [hold_prot_name, hold_key],
+            "stimulus.threshold_current": [thres_prot_name, thres_key],
         }
 
         ProtocolWithDependencies.__init__(
@@ -224,87 +233,13 @@ class ThresholdBasedProtocol(ProtocolWithDependencies):
         )
 
 
-class ThresholdBasedNoHoldingProtocol(ThresholdBasedProtocol):
-
-    """Protocol having rheobase-rescaling capabilities.
-    When using ThresholdBasedNoHoldingProtocol,
-    the step amplitude of the stimulus will be ignored and replaced by
-    values obtained from the rheobase of the cell model.
-    """
-
-    def __init__(
-        self,
-        name=None,
-        stimulus=None,
-        recordings=None,
-        cvode_active=None,
-        stochasticity=False,
-        hold_key= "bpo_holding_current",
-        thres_key="bpo_threshold_current",
-        hold_prot_name="SearchHoldingCurrent",
-        thres_prot_name="SearchThresholdCurrent",
-    ):
-        """Constructor"""
-
-        dependencies = {
-            "stimulus.holding_current": [hold_prot_name, hold_key],
-            "stimulus.threshold_current": [thres_prot_name, thres_key],
-        }
-
-        ProtocolWithDependencies.__init__(
-            self,
-            dependencies=dependencies,
-            name=name,
-            stimulus=stimulus,
-            recordings=recordings,
-            cvode_active=cvode_active,
-            stochasticity=stochasticity,
-        )
-
-
-class LocalThresholdBasedProtocol(ThresholdBasedProtocol):
-
-    """Protocol having rheobase-rescaling capabilities. When using LocalThresholdBasedProtocol,
-    the current amplitude and step amplitude of the stimulus will be ignored and replaced by
-    values obtained from the holding current and rheobase of the cell model respectively.
-    Modify docstring.
-    """
-
-    def __init__(
-        self,
-        name=None,
-        stimulus=None,
-        recordings=None,
-        cvode_active=None,
-        stochasticity=False,
-        hold_key= "bpo_holding_current",
-        thres_key="bpo_threshold_current",
-        hold_prot_name="SearchHoldingCurrent",
-        thres_prot_name="SearchThresholdCurrent",
-    ):
-        """Constructor"""
-
-        dependencies = {
-            "stimulus.holding_current": [hold_prot_name, hold_key],
-            "stimulus.threshold_current": [thres_prot_name, thres_key],
-        }
-
-        ProtocolWithDependencies.__init__(
-            self,
-            dependencies=dependencies,
-            name=name,
-            stimulus=stimulus,
-            recordings=recordings,
-            cvode_active=cvode_active,
-            stochasticity=stochasticity,
-        )
-
-
 class RMPProtocol(BPEMProtocol):
 
     """Protocol consisting of a step of amplitude zero"""
 
-    def __init__(self, name, location, target_voltage, stimulus_duration=500.0, output_key="bpo_rmp"):
+    def __init__(
+        self, name, location, target_voltage, stimulus_duration=500.0, output_key="bpo_rmp"
+    ):
         """Constructor"""
 
         stimulus_definition = {
@@ -437,6 +372,7 @@ class RinProtocol(ProtocolWithDependencies):
 
         return response
 
+
 class NoHoldingCurrent(ephys.protocols.Protocol):
     """Empty class returning a holding current of zero."""
 
@@ -448,10 +384,12 @@ class NoHoldingCurrent(ephys.protocols.Protocol):
         self.output_key = output_key
         self.recordings = {}
 
-    def run(self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None):
-        return {
-            self.output_key: 0
-        }
+    def run(
+        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+    ):
+        # pylint: disable=unused-argument
+        return {self.output_key: 0}
+
 
 class SearchHoldingCurrent(BPEMProtocol):
     """Protocol used to find the holding current of a model"""
@@ -726,6 +664,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             efel_threshold: spike threshold for the efel settings.
                 Set to None to keep the default value (currently -20 mV in efel)
         """
+        # pylint: disable=too-many-arguments
 
         dependencies = {
             "stimulus.holding_current": [hold_prot_name, hold_key],

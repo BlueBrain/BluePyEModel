@@ -244,12 +244,12 @@ class eFELFeatureBPEM(eFELFeature):
 class DendFitFeature(eFELFeatureBPEM):
 
     """Fit to back propagation feature
-    
+
     To use this class:
         - have "dendrite_backpropagation_fit" as the efeature name
         - have "maximum_voltage_from_voltagebase" as the efel_feature_name
         - have keys in recording names matching the distance from soma, and "" for soma, e.g.
-            {"": "soma.v", "50": "dend50.v", "100": "dend100.v", "150": "dend150.v", "200": "dend200.v"}
+            {"": "soma.v", "50": "dend50.v", "100": "dend100.v", "150": "dend150.v"}
         - have appropriate recordings in protocols
     """
 
@@ -273,6 +273,7 @@ class DendFitFeature(eFELFeatureBPEM):
         linear=None,
     ):
         """Constructor"""
+        # pylint: disable=too-many-arguments
         super().__init__(
             name,
             efel_feature_name,
@@ -291,22 +292,23 @@ class DendFitFeature(eFELFeatureBPEM):
         )
         self.decay = decay
         self.linear = linear
+        self.ymult = None  # set on the fly before the fitting
 
     @property
     def recording_names_list(self):
         return self.recording_names.values()
-    
+
     @property
     def distances(self):
         # expects keys in recordings names to be distances from soma (e.g. "50") or "" if at soma
         return [int(rec_name) if rec_name != "" else 0 for rec_name in self.recording_names.keys()]
-    
+
     @property
     def locations(self):
         # locations used in bpo features (holding current, threshold current)
         # as such, they are implemented for MultiProtocols, but not for simple protocol
         raise NotImplementedError
-    
+
     def _construct_efel_trace(self, responses):
         """Construct trace that can be passed to eFEL"""
 
@@ -322,9 +324,9 @@ class DendFitFeature(eFELFeatureBPEM):
                 return None
 
             if responses[recording_name] is None:
-                logger.debug(f"resp of {responses[recording_name]} is None")
+                logger.debug("resp of %s is None", responses[recording_name])
                 return None
-            
+
             trace = {}
             trace["T"] = responses[recording_name]["time"]
             trace["V"] = responses[recording_name]["voltage"]
@@ -346,7 +348,7 @@ class DendFitFeature(eFELFeatureBPEM):
 
     def exp(self, x, p):
         return numpy.exp(x / p) * self.ymult
-    
+
     def linear_fit(self, x, p):
         return self.ymult + p * x
 
@@ -355,17 +357,11 @@ class DendFitFeature(eFELFeatureBPEM):
         guess = [50]
         self.ymult = values[distances.index(0)]
         if self.linear:
-            params, _ = opt.minpack.curve_fit(
-                self.linear_fit, distances, values, p0=guess
-            )
+            params, _ = opt.minpack.curve_fit(self.linear_fit, distances, values, p0=guess)
         elif self.decay:
-            params, _ = opt.minpack.curve_fit(
-                self.exp_decay, distances, values, p0=guess
-            )
+            params, _ = opt.minpack.curve_fit(self.exp_decay, distances, values, p0=guess)
         else:
-            params, _ = opt.minpack.curve_fit(
-                self.exp, distances, values, p0=guess
-            )
+            params, _ = opt.minpack.curve_fit(self.exp, distances, values, p0=guess)
 
         return params[0]
 
@@ -374,12 +370,28 @@ class DendFitFeature(eFELFeatureBPEM):
         distances = []
         feature_values_ = []
         if self.efel_feature_name.startswith("bpo_"):
-            feature_names = [f"{self.efel_feature_name}_{loc}" if loc != "soma" else self.efel_feature_name for loc in self.locations]
-            feature_values_ = [responses[fname] for fname in feature_names if fname in responses and responses[fname] is not None]
-            distances = [d for d, fname in zip(self.distances, feature_names) if fname in responses and responses[fname] is not None]
+            feature_names = [
+                f"{self.efel_feature_name}_{loc}" if loc != "soma" else self.efel_feature_name
+                for loc in self.locations
+            ]
+            feature_values_ = [
+                responses[fname]
+                for fname in feature_names
+                if fname in responses and responses[fname] is not None
+            ]
+            distances = [
+                d
+                for d, fname in zip(self.distances, feature_names)
+                if fname in responses and responses[fname] is not None
+            ]
 
             # adjust soma value with holding current
-            if self.efel_feature_name == "bpo_threshold_current" and distances[0] == 0 and "bpo_holding_current" in responses and responses["bpo_holding_current"] is not None:
+            if (
+                self.efel_feature_name == "bpo_threshold_current"
+                and distances[0] == 0
+                and "bpo_holding_current" in responses
+                and responses["bpo_holding_current"] is not None
+            ):
                 feature_values_[0] += responses["bpo_holding_current"]
 
         else:
@@ -394,9 +406,16 @@ class DendFitFeature(eFELFeatureBPEM):
                 values = efel.getFeatureValues(
                     efel_traces, [self.efel_feature_name], raise_warnings=raise_warnings
                 )
-                feature_values_ = [val[self.efel_feature_name][0] for val in values if val[self.efel_feature_name] is not None]
-                distances = [d for d, v in zip(self.distances, values) if v[self.efel_feature_name] is not None]
-
+                feature_values_ = [
+                    val[self.efel_feature_name][0]
+                    for val in values
+                    if val[self.efel_feature_name] is not None
+                ]
+                distances = [
+                    d
+                    for d, v in zip(self.distances, values)
+                    if v[self.efel_feature_name] is not None
+                ]
 
                 efel.reset()
 
@@ -434,7 +453,7 @@ class DendFitMultiProtocolsFeature(DendFitFeature):
     Attention! Since this feature depends on multiple protocols,
     the stimulus_current passed can be wrong for some of them, and in such a case,
     efel features depending on stimulus_current should not be used.
-    
+
     To use this class:
         - have a protocol_name with distances in brackets in it
             e.g. LocalInjectionIDrestapic[050,100,150,200]_100
@@ -449,11 +468,11 @@ class DendFitMultiProtocolsFeature(DendFitFeature):
     @property
     def recording_names_list(self):
         return get_protocol_list_from_recording_name(self.recording_names[""])
-    
+
     @property
     def distances(self):
         return get_distances_from_recording_name(self.recording_names[""])
-    
+
     @property
     def locations(self):
         return get_locations_from_recording_name(self.recording_names[""])

@@ -34,23 +34,32 @@ def get_apical_point_soma_distance(morph_path):
     apical_point = morph_tool.apical_point.apical_point_position(morphio_morph)
     return neurom.morphmath.point_dist(apical_point, morphio_morph.soma.center)
 
+
 def get_apical_length(morph_path):
     """Returns the max radial distance of the apical dendrites."""
     import neurom
 
     neurom_morph = neurom.load_morphology(morph_path)
-    return neurom.features.get("max_radial_distance", neurom_morph, neurite_type=neurom.APICAL_DENDRITE)
+    return neurom.features.get(
+        "max_radial_distance", neurom_morph, neurite_type=neurom.APICAL_DENDRITE
+    )
+
 
 def get_basal_and_apical_lengths(morph_path):
     """Returns the max radial distance of the apical and basal dendrites."""
     import neurom
 
     neurom_morph = neurom.load_morphology(morph_path)
-    basal_length = neurom.features.get("max_radial_distance", neurom_morph, neurite_type=neurom.BASAL_DENDRITE)
-    apical_length = neurom.features.get("max_radial_distance", neurom_morph, neurite_type=neurom.APICAL_DENDRITE)
+    basal_length = neurom.features.get(
+        "max_radial_distance", neurom_morph, neurite_type=neurom.BASAL_DENDRITE
+    )
+    apical_length = neurom.features.get(
+        "max_radial_distance", neurom_morph, neurite_type=neurom.APICAL_DENDRITE
+    )
     return basal_length, apical_length
 
-def get_hotspot_location(morph_path, hotspot_percent=20.):
+
+def get_hotspot_location(morph_path, hotspot_percent=20.0):
     """Get hot spot begin and end in terms of soma distance.
 
     Calcium hot spot should be in distal apical trunk, and in primary and secondary tufts,
