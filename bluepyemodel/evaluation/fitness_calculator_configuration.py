@@ -75,7 +75,6 @@ def _set_morphology_dependent_locations(recording, cell):
 
 
 class FitnessCalculatorConfiguration:
-
     """The goal of this class is to store the results of an efeature extraction (efeatures
     and protocols) or to contain the results of a previous extraction retrieved from an access
     point. This object is used for the creation of the fitness calculator.
@@ -399,9 +398,9 @@ class FitnessCalculatorConfiguration:
         if "extra_recordings" in protocol:
             for protocol_def in protocol["extra_recordings"]:
                 recordings.append(protocol_def)
-                protocol_def[
-                    "name"
-                ] = f"{protocol_name}.{protocol_def['name']}.{protocol_def['var']}"
+                protocol_def["name"] = (
+                    f"{protocol_name}.{protocol_def['name']}.{protocol_def['var']}"
+                )
 
         stimulus = deepcopy(protocol["stimuli"]["step"])
         if "holding" in protocol["stimuli"]:

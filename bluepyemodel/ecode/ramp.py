@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class Ramp(BPEM_stimulus):
-
     """Ramp current stimulus
 
     .. code-block:: none

@@ -20,7 +20,6 @@ import string
 
 
 class EModelMetadata:
-
     """Contains the metadata of an emodel such as its e-model name or its brain region. These
     metadata can be understood as a unique identifier of an e-model.
 

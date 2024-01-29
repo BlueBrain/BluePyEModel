@@ -18,7 +18,6 @@ limitations under the License.
 
 
 class EFeatureConfiguration:
-
     """Container for the definition of an EFeature"""
 
     def __init__(

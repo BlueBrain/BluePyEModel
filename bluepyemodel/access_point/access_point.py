@@ -55,7 +55,6 @@ class OptimisationState(Enum):
 
 
 class DataAccessPoint:
-
     """Abstract data access point class. This class is not meant to be used directly.
     Instead, it is used through the classes LocalAccessPoint and NexusAccessPoint.
     """

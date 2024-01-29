@@ -52,7 +52,6 @@ seclist_to_sec = {
 
 
 class LocalAccessPoint(DataAccessPoint):
-
     """Access point to access configuration files and e-models when stored locally."""
 
     def __init__(
