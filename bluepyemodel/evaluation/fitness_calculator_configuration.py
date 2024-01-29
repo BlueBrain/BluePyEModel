@@ -339,10 +339,9 @@ class FitnessCalculatorConfiguration:
         self.protocols = []
         self.efeatures = []
 
-        if protocols_mapping:
-            self.validation_protocols = [
-                protocols_mapping.get(vp, vp) for vp in self.validation_protocols
-            ]
+        self.validation_protocols = [
+            get_mapped_protocol_name(vp, protocols_mapping) for vp in self.validation_protocols
+        ]
 
         for protocol_name, protocol in protocols.items():
             p_name = get_mapped_protocol_name(protocol_name, protocols_mapping)
