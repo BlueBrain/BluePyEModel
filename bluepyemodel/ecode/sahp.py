@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class sAHP(BPEM_stimulus):
-
     """sAHP current stimulus
 
     The long step (here amp) is usually fixed at 40% of rheobase, and the short step (here amp2)

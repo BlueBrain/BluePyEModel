@@ -157,7 +157,11 @@ def extract_save_features_protocols(access_point, mapper=map):
     )
 
     fitness_calculator_config.init_from_bluepyefe(
-        efeatures, stimuli, current, access_point.pipeline_settings.threshold_efeature_std
+        efeatures,
+        stimuli,
+        current,
+        access_point.pipeline_settings.threshold_efeature_std,
+        targets_configuration.protocols_mapping,
     )
 
     fitness_calculator_config = update_minimum_protocols_delay(

@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class TargetsConfiguration:
-
     """The goal of this class is to configure the targets and files metadata that will be
     used during efeature extraction"""
 
@@ -42,6 +41,7 @@ class TargetsConfiguration:
         available_traces=None,
         available_efeatures=None,
         auto_targets=None,
+        protocols_mapping=None,
     ):
         """Init
 
@@ -101,6 +101,20 @@ class TargetsConfiguration:
                         "preferred_number_protocols": 1,
                         "tolerance": 10.,
                     }]
+            protocols_mapping (dict, optional): maps original protocol
+                identifiers to renamed versions for standardization.
+                Defaults to None if not provided.
+
+                Example:
+
+                .. code-block::
+
+                    {
+                        "IDRest_150": 'Step_150_hyp',
+                        "IDRest_200": 'Step_200_hyp',
+                        "IDRest_250": 'Step_250_hyp',
+                        "IV_-120": 'IV_-120_hyp',
+                    }
         """
 
         self.available_traces = available_traces
@@ -131,6 +145,8 @@ class TargetsConfiguration:
             self.protocols_rheobase = [protocols_rheobase]
         else:
             self.protocols_rheobase = protocols_rheobase
+
+        self.protocols_mapping = protocols_mapping
 
     def is_trace_available(self, trace):
         if self.available_traces:
@@ -308,4 +324,5 @@ class TargetsConfiguration:
             "targets": [t.as_dict() for t in self.targets],
             "protocols_rheobase": self.protocols_rheobase,
             "auto_targets": self.auto_targets,
+            "protocols_mapping": self.protocols_mapping,
         }

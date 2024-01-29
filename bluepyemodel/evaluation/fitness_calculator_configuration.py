@@ -28,6 +28,7 @@ from bluepyemodel.evaluation.evaluator import define_location
 from bluepyemodel.evaluation.evaluator import seclist_to_sec
 from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.tools.utils import are_same_protocol
+from bluepyemodel.tools.utils import get_mapped_protocol_name
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,6 @@ def _set_morphology_dependent_locations(recording, cell):
 
 
 class FitnessCalculatorConfiguration:
-
     """The goal of this class is to store the results of an efeature extraction (efeatures
     and protocols) or to contain the results of a previous extraction retrieved from an access
     point. This object is used for the creation of the fitness calculator.
@@ -311,7 +311,14 @@ class FitnessCalculatorConfiguration:
 
         self.efeatures.append(tmp_feature)
 
-    def init_from_bluepyefe(self, efeatures, protocols, currents, threshold_efeature_std):
+    def init_from_bluepyefe(
+        self,
+        efeatures,
+        protocols,
+        currents,
+        threshold_efeature_std,
+        protocols_mapping=None,
+    ):
         """Fill the configuration using the output of BluePyEfe"""
 
         if self.name_rmp_protocol and not any(
@@ -332,15 +339,19 @@ class FitnessCalculatorConfiguration:
         self.protocols = []
         self.efeatures = []
 
+        self.validation_protocols = [
+            get_mapped_protocol_name(vp, protocols_mapping) for vp in self.validation_protocols
+        ]
+
         for protocol_name, protocol in protocols.items():
-            self._add_bluepyefe_protocol(protocol_name, protocol)
+            p_name = get_mapped_protocol_name(protocol_name, protocols_mapping)
+            self._add_bluepyefe_protocol(p_name, protocol)
 
         for protocol_name in efeatures:
             for recording in efeatures[protocol_name]:
                 for feature in efeatures[protocol_name][recording]:
-                    self._add_bluepyefe_efeature(
-                        feature, protocol_name, recording, threshold_efeature_std
-                    )
+                    p_name = get_mapped_protocol_name(protocol_name, protocols_mapping)
+                    self._add_bluepyefe_efeature(feature, p_name, recording, threshold_efeature_std)
 
         # Add the current related features
         if currents and self.name_rmp_protocol and self.name_rin_protocol:
@@ -386,9 +397,9 @@ class FitnessCalculatorConfiguration:
         if "extra_recordings" in protocol:
             for protocol_def in protocol["extra_recordings"]:
                 recordings.append(protocol_def)
-                protocol_def[
-                    "name"
-                ] = f"{protocol_name}.{protocol_def['name']}.{protocol_def['var']}"
+                protocol_def["name"] = (
+                    f"{protocol_name}.{protocol_def['name']}.{protocol_def['var']}"
+                )
 
         stimulus = deepcopy(protocol["stimuli"]["step"])
         if "holding" in protocol["stimuli"]:
@@ -602,7 +613,10 @@ class FitnessCalculatorConfiguration:
                 "type": "Generation",
                 "activity": {
                     "type": "Activity",
-                    "followedWorkflow": {"type": "EModelWorkflow", "id": self.workflow_id},
+                    "followedWorkflow": {
+                        "type": "EModelWorkflow",
+                        "id": self.workflow_id,
+                    },
                 },
             }
         }

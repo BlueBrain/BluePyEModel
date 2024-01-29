@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class SineSpec(BPEM_stimulus):
-
     """SineSpec current stimulus"""
 
     name = "SineSpec"

@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class CustomFromFile(BPEM_stimulus):
-
     """CustomFromFile current stimulus to be loaded from a file"""
 
     name = "CustomFromFile"

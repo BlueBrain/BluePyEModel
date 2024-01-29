@@ -18,7 +18,6 @@ limitations under the License.
 
 
 class EModelScript:
-
     """Contains an emodel hoc file path."""
 
     def __init__(self, hoc_file_path=None, seed=None, workflow_id=None):

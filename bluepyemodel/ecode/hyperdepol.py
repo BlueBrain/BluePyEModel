@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class HyperDepol(BPEM_stimulus):
-
     """HyperDepol current stimulus
 
     The hyperpolarizing step is usually fixed at 100% of rheobase, and the hyperpolarizing step

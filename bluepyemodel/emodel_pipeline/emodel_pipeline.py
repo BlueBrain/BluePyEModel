@@ -37,7 +37,6 @@ logger = logging.getLogger()
 
 
 class EModel_pipeline:
-
     """The EModel_pipeline class is there to allow the execution of the steps
     of the e-model building pipeline using python (as opposed to the Luigi workflow).
 

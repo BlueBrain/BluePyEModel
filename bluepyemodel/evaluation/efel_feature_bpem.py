@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class eFELFeatureBPEM(eFELFeature):
-
     """eFEL feature extra"""
 
     SERIALIZED_FIELDS = (

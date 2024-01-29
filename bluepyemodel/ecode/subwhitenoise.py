@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 class SubWhiteNoise(BPEM_stimulus):
-
     """SubWhiteNoise current stimulus"""
 
     name = "SubWhiteNoise"

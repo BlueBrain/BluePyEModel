@@ -39,7 +39,6 @@ def format_dict_for_resource(d):
 
 
 class EModel:
-
     """Contains all the information related to an optimized e-model, such as its parameters or
     its e-feature values and scores.
 

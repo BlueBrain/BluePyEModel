@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class ProbAMPANMDA_EMS(BPEM_stimulus):
-
     """ProbAMPANMDA_EMS synapse current injection"""
 
     name = "ProbAMPANMDA_EMS"
