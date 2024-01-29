@@ -517,9 +517,10 @@ def dendritic_feature_plot(model, responses, feature, feature_name, figures_dir=
     max_dist = max((distances[-1], exp_distances[-1]))
 
     # model fit
-    slope = numpy.array([feature.fit(distances, feat_values)])
-    x_fit = numpy.linspace(min_dist, max_dist, num=20)
-    y_fit = feature.linear_fit(x_fit, slope)
+    if 0 in distances:
+        slope = numpy.array([feature.fit(distances, feat_values)])
+        x_fit = numpy.linspace(min_dist, max_dist, num=20)
+        y_fit = feature.linear_fit(x_fit, slope)
 
     # data fit
     data_fit = numpy.polyfit(exp_distances, exp_values, 1)
@@ -529,10 +530,11 @@ def dendritic_feature_plot(model, responses, feature, feature_name, figures_dir=
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
 
-    ax.scatter(distances, feat_values, c=colours["modelpoint_apical"], label="emodel")
-    ax.plot(x_fit, y_fit, "--", c=colours["modelline_apical"], label="emodel fit")
     ax.scatter(exp_distances, exp_values, c=colours["datapoint"], label=exp_label)
     ax.plot(x_data_fit, y_data_fit, c=colours["dataline"], label="data fit")
+    ax.scatter(distances, feat_values, c=colours["modelpoint_apical"], label="emodel")
+    if 0 in distances:
+        ax.plot(x_fit, y_fit, "--", c=colours["modelline_apical"], label="emodel fit")
     ax.set_xlabel(r"distance from soma ($\mu$m)")
     ax.set_ylabel(y_label)
     ax.legend(fontsize="x-small")
@@ -801,13 +803,17 @@ def plot_bAP(model, responses, apical_feature, basal_feature, figures_dir="./fig
     apical_distances, apical_values = apical_feature.get_distances_feature_values(responses)
     basal_distances, basal_values = basal_feature.get_distances_feature_values(responses)
 
-    apical_x_fit, apical_y_fit = bAP_fit(apical_feature, apical_distances, apical_values)
-    basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
+    if 0 in apical_distances:
+        apical_x_fit, apical_y_fit = bAP_fit(apical_feature, apical_distances, apical_values)
+    if 0 in basal_distances:
+        basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
 
     ax.scatter(apical_distances, apical_values, c=colours["modelpoint_apical"], label="model apical")
-    ax.plot(apical_x_fit, apical_y_fit, "--", c=colours["modelline_apical"], label="model apical fit")
     ax.scatter(basal_distances, basal_values, c=colours["modelpoint_basal"], label="model basal")
-    ax.plot(basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit")
+    if 0 in apical_distances:
+        ax.plot(apical_x_fit, apical_y_fit, "--", c=colours["modelline_apical"], label="model apical fit")
+    if 0 in basal_distances:
+        ax.plot(basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit")
     ax.set_xlabel(r"Distance from soma ($\mu$m)")
     ax.set_ylabel("Amplitude (mV)")
     ax.legend(fontsize="x-small")
@@ -870,13 +876,17 @@ def plot_EPSP(
         basal_basalrec_feat, basal_somarec_feat, responses
     )
 
-    apical_x_fit, apical_y_fit = EPSP_fit(apical_apicrec_feat, apical_distances, apical_attenuation)
-    basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
+    if 0 in apical_distances:
+        apical_x_fit, apical_y_fit = EPSP_fit(apical_apicrec_feat, apical_distances, apical_attenuation)
+    if 0 in basal_distances:
+        basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
 
     ax.scatter(apical_distances, apical_attenuation, c=colours["modelpoint_apical"], label="model apical")
-    ax.plot(apical_x_fit, apical_y_fit, "--", c=colours["modelline_apical"], label="model apical fit")
     ax.scatter(basal_distances, basal_attenuation, c=colours["modelpoint_basal"], label="model basal")
-    ax.plot(basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit")
+    if 0 in apical_distances:
+        ax.plot(apical_x_fit, apical_y_fit, "--", c=colours["modelline_apical"], label="model apical fit")
+    if 0 in basal_distances:
+        ax.plot(basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit")
     ax.set_xlabel(r"Distance from soma ($\mu$m)")
     ax.set_ylabel("Attenuation dendrite amplitude / soma amplitude")
     ax.legend(fontsize="x-small")

@@ -298,7 +298,7 @@ class DendFitFeature(eFELFeatureBPEM):
 
         for recording_name in self.recording_names_list:
             if recording_name not in responses:
-                logger.debug(
+                logger.warning(
                     "Recording named %s not found in responses %s", recording_name, str(responses)
                 )
                 return None
