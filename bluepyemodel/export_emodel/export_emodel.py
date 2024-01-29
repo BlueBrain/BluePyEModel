@@ -119,7 +119,7 @@ def _export_model_sonata(cell_model, emodel, output_dir=None, new_emodel_name=No
         cell_model,
         emodel,
         hoc_file_path,
-        template="cell_template_neurodamus.jinja2",
+        template="cell_template_neurodamus_sbo.jinja2",
         new_emodel_name=new_emodel_name,
     )
 
