@@ -39,7 +39,6 @@ from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
-from bluepyemodel.evaluation.protocols import LocalThresholdBasedProtocol
 from bluepyemodel.evaluation.utils import define_bAP_feature
 from bluepyemodel.evaluation.utils import define_bAP_protocol
 from bluepyemodel.evaluation.utils import define_EPSP_feature
@@ -455,23 +454,37 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
 
             # Plot current
             basename = t.split(".")[0]
-            if basename in stimuli and "bAP" not in basename:
-                if hasattr(stimuli[basename], "stimulus"):
-                    if (
-                        isinstance(stimuli[basename], ThresholdBasedProtocol)
-                        and threshold
-                        and holding
-                    ):
-                        stimuli[basename].stimulus.holding_current = holding
-                        stimuli[basename].stimulus.threshold_current = threshold
+            if basename in stimuli:
+                prot = stimuli[basename]
+                if hasattr(prot, "stimulus"):
+                    if isinstance(prot, ThresholdBasedProtocol) and threshold and holding:
+                        prot.stimulus.holding_current = holding
+                        prot.stimulus.threshold_current = threshold
+                        if (
+                            hasattr(prot, "dependencies")
+                            and prot.dependencies["stimulus.holding_current"][1]
+                            != "bpo_holding_current"
+                        ):
+                            resp_name = prot.dependencies["stimulus.holding_current"][1]
+                            if resp_name in responses:
+                                prot.stimulus.holding_current = responses[resp_name]
+                            else:
+                                continue
+                        if (
+                            hasattr(prot, "dependencies")
+                            and prot.dependencies["stimulus.threshold_current"][1]
+                            != "bpo_threshold_current"
+                        ):
+                            resp_name = prot.dependencies["stimulus.threshold_current"][1]
+                            if resp_name in responses:
+                                prot.stimulus.threshold_current = responses[resp_name]
+                            else:
+                                continue
 
-                    # TODO: also plot current for LocalThresholdBasedProtocol
-                    # (need for threshold, etc. for each location)
-                    if not isinstance(stimuli[basename], LocalThresholdBasedProtocol):
-                        time, current = stimuli[basename].stimulus.generate()
-                        if len(time) > 0 and len(current) > 0:
-                            axs_c.append(axs[idx, 0].twinx())
-                            plot_traces_current(axs_c[-1], time, current)
+                    time, current = prot.stimulus.generate()
+                    if len(time) > 0 and len(current) > 0:
+                        axs_c.append(axs[idx, 0].twinx())
+                        plot_traces_current(axs_c[-1], time, current)
 
         idx += 1
 
