@@ -20,8 +20,9 @@ import logging
 import math
 
 import numpy
-from scipy import optimize as opt
 from bluepyopt.ephys.efeatures import eFELFeature
+from scipy import optimize as opt
+
 from bluepyemodel.tools.multiprotocols_efeatures_utils import get_distances_from_recording_name
 from bluepyemodel.tools.multiprotocols_efeatures_utils import get_locations_from_recording_name
 from bluepyemodel.tools.multiprotocols_efeatures_utils import get_protocol_list_from_recording_name

@@ -26,8 +26,8 @@ def get_apical_point_soma_distance(morph_path):
     Returns:
         float: euclidian distance between soma and apical point
     """
-    import morphio
     import morph_tool
+    import morphio
     import neurom
 
     morphio_morph = morphio.Morphology(morph_path)

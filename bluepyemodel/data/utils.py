@@ -17,8 +17,9 @@ limitations under the License.
 """
 
 import csv
-import pkg_resources
+
 import numpy as np
+import pkg_resources
 
 
 def get_dendritic_data_filepath(data_type):

@@ -30,8 +30,8 @@ from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.simulators import NrnSimulator
 
 from ..ecode import eCodes
-from ..tools.multiprotocols_efeatures_utils import get_protocol_list_from_protocol_name
 from ..ecode import fixed_timestep_eCodes
+from ..tools.multiprotocols_efeatures_utils import get_protocol_list_from_protocol_name
 from ..tools.utils import are_same_protocol
 from .efel_feature_bpem import DendFitFeature
 from .efel_feature_bpem import DendFitMultiProtocolsFeature

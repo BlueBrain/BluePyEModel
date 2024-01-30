@@ -74,6 +74,7 @@ setup(
         "configparser",
         "neuron>=8.0",
         "morph_tool>=2.8",
+        "morphio",
         "fasteners>=0.16",
         "jinja2==3.0.3",
         "currentscape>=0.0.11"
