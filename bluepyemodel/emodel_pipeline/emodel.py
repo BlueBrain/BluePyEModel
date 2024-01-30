@@ -132,6 +132,22 @@ class EModel:
         if parameters_pdf:
             pdfs += [p for p in parameters_pdf if p]
 
+        bAP_pdf = search_pdfs.search_figure_emodel_bAP(self.emodel_metadata, seed)
+        if bAP_pdf:
+            pdfs += [p for p in bAP_pdf if p]
+
+        EPSP_pdf = search_pdfs.search_figure_emodel_EPSP(self.emodel_metadata, seed)
+        if EPSP_pdf:
+            pdfs += [p for p in EPSP_pdf if p]
+
+        ISI_CV_pdf = search_pdfs.search_figure_emodel_ISI_CV(self.emodel_metadata, seed)
+        if ISI_CV_pdf:
+            pdfs += [p for p in ISI_CV_pdf if p]
+
+        rheobase_pdf = search_pdfs.search_figure_emodel_rheobase(self.emodel_metadata, seed)
+        if rheobase_pdf:
+            pdfs += [p for p in rheobase_pdf if p]
+
         return pdfs
 
     def get_related_nexus_ids(self):

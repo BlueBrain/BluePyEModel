@@ -40,6 +40,18 @@ def search_figure_path(pathname):
     return str(Path(matches[0]).resolve())
 
 
+def search_figure_paths(pathname):
+    """Search for at least one pdf based on an expression"""
+
+    matches = glob.glob(pathname)
+
+    if not matches:
+        logger.debug("No pdf for pathname %s", pathname)
+        return []
+
+    return [str(Path(match).resolve()) for match in matches]
+
+
 def figure_efeatures(emodel, protocol_name, efeature):
     """Get path to pdf representing the efeature extracted from ephys recordings"""
 
@@ -122,6 +134,94 @@ def search_figure_emodel_score(emodel_metadata, seed, use_allen_notation=True):
     )
 
     return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
+
+
+def figure_emodel_bAP(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdf representing the bAP of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__dendrite_backpropagation_fit_decay.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "dendritic" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_bAP(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdf representing the bAP of an emodel"""
+
+    pathname, pathname_val = figure_emodel_bAP(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
+
+
+def figure_emodel_EPSP(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdf representing the EPSP of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__dendrite_EPSP_attenuation_fit.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "dendritic" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_EPSP(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdf representing the EPSP of an emodel"""
+
+    pathname, pathname_val = figure_emodel_EPSP(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
+
+
+def figure_emodel_ISI_CV(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdf representing the ISI_CV fit of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__*ISI_CV_linear.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "dendritic" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_ISI_CV(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdf representing the ISI_CV fit of an emodel"""
+
+    pathname, pathname_val = figure_emodel_ISI_CV(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return list(search_figure_paths(str(pathname))) + list(search_figure_paths(str(pathname_val)))
+
+
+def figure_emodel_rheobase(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdf representing the rheobase fit of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__*bpo_threshold_current_linear.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "dendritic" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_rheobase(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdf representing the rheobase fit of an emodel"""
+
+    pathname, pathname_val = figure_emodel_rheobase(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return list(search_figure_paths(str(pathname))) + list(search_figure_paths(str(pathname_val)))
 
 
 def figure_emodel_parameters(emodel_metadata, use_allen_notation=True):
