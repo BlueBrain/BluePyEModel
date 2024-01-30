@@ -82,9 +82,11 @@ def get_protocol_list_from_recording_name(rec_name):
     prot_name, isolate_list, amplitude = split_protocol_name_with_location_list(prot)
     loc = loc.split("[")[0]
     prot_list = [
-        f"{prot_name}{distance}_{amplitude}.{loc}.{var}"
-        if loc == "soma"
-        else f"{prot_name}{distance}_{amplitude}.{loc}{distance}.{var}"
+        (
+            f"{prot_name}{distance}_{amplitude}.{loc}.{var}"
+            if loc == "soma"
+            else f"{prot_name}{distance}_{amplitude}.{loc}{distance}.{var}"
+        )
         for distance in isolate_list.split(",")
     ]
 

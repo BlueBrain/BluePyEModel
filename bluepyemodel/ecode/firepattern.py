@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class FirePattern(IDrest):
-
     """FirePattern current stimulus"""
 
     name = "FirePattern"

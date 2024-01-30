@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class IDrest(BPEM_stimulus):
-
     """IDrest current stimulus
 
     .. code-block:: none

@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class MultipleRandomStepInputs(BPEM_stimulus):
-
     """MultipleRandomStepInputs current stimulus on one or several chosen sections
 
     .. code-block:: none

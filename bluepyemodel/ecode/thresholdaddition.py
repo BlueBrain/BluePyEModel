@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class ThresholdAddition(IDrest):
-
     """IDrest current stimulus
 
     .. code-block:: none

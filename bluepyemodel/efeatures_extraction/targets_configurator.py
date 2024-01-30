@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 class TargetsConfigurator:
-
     """Handles the loading, saving and modification of a targets configuration"""
 
     def __init__(self, access_point, configuration=None):

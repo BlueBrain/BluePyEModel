@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 class Target:
-
     """Describes an extraction (or optimisation) target"""
 
     def __init__(

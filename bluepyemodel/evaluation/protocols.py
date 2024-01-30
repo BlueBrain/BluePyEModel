@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 
 
 class BPEMProtocol(ephys.protocols.SweepProtocol):
-
     """Base protocol"""
 
     def __init__(
@@ -96,7 +95,6 @@ class BPEMProtocol(ephys.protocols.SweepProtocol):
 
 
 class ResponseDependencies:
-
     """To add to a protocol to specify that it depends on the responses of other protocols"""
 
     def __init__(self, dependencies=None):
@@ -151,7 +149,6 @@ class ResponseDependencies:
 
 
 class ProtocolWithDependencies(BPEMProtocol, ResponseDependencies):
-
     """To add to a protocol to specify that it depends on the responses of other protocols"""
 
     def __init__(
@@ -187,7 +184,6 @@ class ProtocolWithDependencies(BPEMProtocol, ResponseDependencies):
 
 
 class ThresholdBasedProtocol(ProtocolWithDependencies):
-
     """Protocol having rheobase-rescaling capabilities. When using ThresholdBasedProtocol,
     the holding current amplitude and step amplitude of the stimulus will be ignored and
     replaced by values obtained from the holding current and rheobase of the cell model
@@ -234,7 +230,6 @@ class ThresholdBasedProtocol(ProtocolWithDependencies):
 
 
 class RMPProtocol(BPEMProtocol):
-
     """Protocol consisting of a step of amplitude zero"""
 
     def __init__(
@@ -298,7 +293,6 @@ class RMPProtocol(BPEMProtocol):
 
 
 class RinProtocol(ProtocolWithDependencies):
-
     """Protocol used to find the input resistance of a model"""
 
     def __init__(
@@ -616,7 +610,6 @@ class SearchHoldingCurrent(BPEMProtocol):
 
 
 class SearchThresholdCurrent(ProtocolWithDependencies):
-
     """Protocol used to find the threshold current (rheobase) of a model"""
 
     def __init__(
@@ -851,7 +844,6 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
 
 class ProtocolRunner(ephys.protocols.Protocol):
-
     """Meta-protocol in charge of running the other protocols in the correct order"""
 
     def __init__(self, protocols, name="ProtocolRunner"):

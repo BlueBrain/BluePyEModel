@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class TargetsConfiguration:
-
     """The goal of this class is to configure the targets and files metadata that will be
     used during efeature extraction"""
 

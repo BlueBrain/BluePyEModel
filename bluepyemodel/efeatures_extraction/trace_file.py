@@ -48,7 +48,6 @@ def list_ecodes_per_traces(traces, threshold_count=0):
 
 
 class TraceFile:
-
     """Contains the metadata of a trace file"""
 
     def __init__(

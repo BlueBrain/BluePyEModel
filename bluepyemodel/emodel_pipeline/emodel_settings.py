@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 class EModelPipelineSettings:
-
     """Container for the settings used during the different steps of the e-model building pipeline.
     When using the "local" access point, these settings will be coming from the recipes.json file.
     When using the "nexus" access point, these settings will be coming from a resource of type

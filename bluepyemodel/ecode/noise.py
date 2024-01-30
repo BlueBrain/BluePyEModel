@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class NoiseMixin(BPEM_stimulus):
-
     """Noise current stimulus"""
 
     name = "Noise"

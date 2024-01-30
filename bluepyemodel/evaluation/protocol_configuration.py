@@ -20,7 +20,6 @@ import copy
 
 
 class ProtocolConfiguration:
-
     """Container for the definition of a protocol"""
 
     def __init__(

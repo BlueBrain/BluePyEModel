@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class IV(IDrest):
-
     """IV current stimulus"""
 
     name = "IV"

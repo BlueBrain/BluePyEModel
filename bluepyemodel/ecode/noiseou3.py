@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 class NoiseOU3(NoiseMixin):
-
     """NoiseOU3 current stimulus"""
 
     name = "NoiseOU3"

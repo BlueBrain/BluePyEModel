@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 class WhiteNoise(NoiseMixin):
-
     """WhiteNoise current stimulus"""
 
     name = "WhiteNoise"

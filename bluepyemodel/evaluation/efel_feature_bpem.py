@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 
 
 class eFELFeatureBPEM(eFELFeature):
-
     """eFEL feature extra"""
 
     SERIALIZED_FIELDS = (
@@ -243,7 +242,6 @@ class eFELFeatureBPEM(eFELFeature):
 
 
 class DendFitFeature(eFELFeatureBPEM):
-
     """Fit to back propagation feature
 
     To use this class:
@@ -448,7 +446,6 @@ class DendFitFeature(eFELFeatureBPEM):
 
 
 class DendFitMultiProtocolsFeature(DendFitFeature):
-
     """Fit across apical dendrite using multiple protocols.
 
     Attention! Since this feature depends on multiple protocols,
