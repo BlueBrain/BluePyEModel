@@ -44,7 +44,7 @@ def interpolate_RMP(fitness_calculator_configuration):
         ):
             rin = f.mean
         if f.efel_feature_name == "voltage_base" and (
-            "IV" in f.protocol_name or "IDrest" in f.protocol_name
+            "iv" in f.protocol_name.lower() or "idrest" in f.protocol_name.lower() or "idthres" in f.protocol_name.lower()
         ):
             holding_voltages.append(f.mean)
         if f.efel_feature_name == "bpo_holding_current":
@@ -71,6 +71,14 @@ def interpolate_RMP(fitness_calculator_configuration):
             break
     else:
         raise ValueError("RMP feature not found and cannot be replaced")
+
+
+def threshold_efeatures_std(fitness_calculator_configuration, default_std_value):
+    """Set std as the mean value if std is higher than mean value."""
+    for i, f in enumerate(fitness_calculator_configuration.efeatures):
+        if f.original_std > abs(1.0 * f.mean) and f.original_std != default_std_value:
+            logger.debug(f"Thresholding {f.name}: {f.original_std} -> {abs(1.0 * f.mean)}")
+            fitness_calculator_configuration.efeatures[i].original_std = abs(1.0 * f.mean)
 
 
 def define_extraction_reader_function(access_point):
@@ -208,6 +216,11 @@ def extract_save_features_protocols(access_point, mapper=map):
         access_point.pipeline_settings.threshold_efeature_std,
         targets_configuration.protocols_mapping,
     )
+
+    if access_point.pipeline_settings.bound_max_std:
+        threshold_efeatures_std(
+            fitness_calculator_config, access_point.pipeline_settings.default_std_value
+        )
 
     fitness_calculator_config.protocols += fitness_calculator_config.initialise_protocols(
         targets_configuration.additional_fitness_protocols

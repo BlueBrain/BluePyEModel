@@ -43,6 +43,7 @@ class EModelPipelineSettings:
         rheobase_settings_extraction=None,
         interpolate_RMP=True,
         default_std_value=1e-3,
+        bound_max_std=False,
         efel_settings=None,
         minimum_protocol_delay=0.0,
         stochasticity=False,
@@ -120,6 +121,8 @@ class EModelPipelineSettings:
             default_std_value (float): At the end of e-features extraction, all features
                 presenting a standard deviation of 0, will see their standard deviation
                 replaced by the present value.
+            bound_max_std (bool): If set to True, the std from extraction will be set to
+                the mean value from extraction if it goes above it.
             efel_settings (dict): efel settings in the form {setting_name: setting_value} to be
                 used during extraction. If settings are also informed in the targets on a per
                 efeature basis, the latter will have priority.
@@ -271,6 +274,7 @@ class EModelPipelineSettings:
         self.rheobase_settings_extraction = rheobase_settings_extraction
         self.interpolate_RMP = interpolate_RMP
         self.default_std_value = default_std_value
+        self.bound_max_std = bound_max_std
         self.minimum_protocol_delay = minimum_protocol_delay
 
         # Settings related to the evaluator

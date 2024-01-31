@@ -356,11 +356,11 @@ class DendFitFeature(eFELFeatureBPEM):
         guess = [50]
         self.ymult = values[distances.index(0)]
         if self.linear:
-            params, _ = opt.minpack.curve_fit(self.linear_fit, distances, values, p0=guess)
+            params, _ = opt.curve_fit(self.linear_fit, distances, values, p0=guess)
         elif self.decay:
-            params, _ = opt.minpack.curve_fit(self.exp_decay, distances, values, p0=guess)
+            params, _ = opt.curve_fit(self.exp_decay, distances, values, p0=guess)
         else:
-            params, _ = opt.minpack.curve_fit(self.exp, distances, values, p0=guess)
+            params, _ = opt.curve_fit(self.exp, distances, values, p0=guess)
 
         return params[0]
 
