@@ -76,7 +76,7 @@ setup(
         "morph_tool>=2.8",
         "morphio",
         "fasteners>=0.16",
-        "jinja2==3.0.3",
+        "jinja2>=3.0.3",
         "currentscape>=0.0.11"
     ],
     extras_require={
@@ -85,9 +85,8 @@ setup(
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
     },
-    packages=find_packages(),
+    packages=find_packages(exclude=('tests',)),
     include_package_data=True,
-    package_data={"": ["data/*.npy"]},
     keywords=[
         'computational neuroscience',
         'simulation',

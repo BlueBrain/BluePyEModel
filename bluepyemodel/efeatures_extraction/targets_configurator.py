@@ -41,7 +41,12 @@ class TargetsConfigurator:
         self.configuration = configuration
 
     def new_configuration(
-        self, files=None, targets=None, protocols_rheobase=None, auto_targets=None
+        self,
+        files=None,
+        targets=None,
+        protocols_rheobase=None,
+        auto_targets=None,
+        protocols_mapping=None,
     ):
         """Create a new configuration"""
 
@@ -52,7 +57,13 @@ class TargetsConfigurator:
         available_efeatures = self.access_point.get_available_efeatures()
 
         self.configuration = TargetsConfiguration(
-            files, targets, protocols_rheobase, available_traces, available_efeatures, auto_targets
+            files,
+            targets,
+            protocols_rheobase,
+            available_traces,
+            available_efeatures,
+            auto_targets,
+            protocols_mapping,
         )
 
     def load_configuration(self):
@@ -97,6 +108,7 @@ class TargetsConfigurator:
         files = self.access_point.pipeline_settings.files_for_extraction
         targets = self.access_point.pipeline_settings.targets
         protocols_rheobase = self.access_point.pipeline_settings.protocols_rheobase
+        protocols_mapping = self.access_point.pipeline_settings.protocols_mapping
 
         if not targets:
             auto_targets = self.access_point.pipeline_settings.auto_targets
@@ -109,5 +121,5 @@ class TargetsConfigurator:
                     )
                 auto_targets = get_auto_target_from_presets(auto_targets_presets)
 
-        self.new_configuration(files, targets, protocols_rheobase, auto_targets)
+        self.new_configuration(files, targets, protocols_rheobase, auto_targets, protocols_mapping)
         self.save_configuration()

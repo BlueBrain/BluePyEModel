@@ -196,3 +196,14 @@ def are_same_protocol(name_a, name_b):
     if ecodes[0] == ecodes[1] and numpy.isclose(amps[0], amps[1]):
         return True
     return False
+
+
+def get_mapped_protocol_name(protocol_name, protocols_mapping):
+    """Returns the mapped protocol name from protocols_mapping if available;
+    otherwise, returns the original name."""
+
+    if protocols_mapping:
+        for p in protocols_mapping:
+            if protocol_name.lower() in p.lower():
+                return protocols_mapping[p]
+    return protocol_name

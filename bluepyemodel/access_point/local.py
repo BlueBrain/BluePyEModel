@@ -278,7 +278,8 @@ class LocalAccessPoint(DataAccessPoint):
 
     def store_emodel(self, emodel):
         """Store an emodel obtained from BluePyOpt in the final.json. Note that if a model in the
-        final.json has the same key (emodel__iteration_tag__seed), it will be overwritten."""
+        final.json has the same key (emodel__iteration_tag__seed), it will be overwritten.
+        """
 
         with self.rw_lock_final.write_lock():
             with self.rw_lock_final_tmp.write_lock():
@@ -287,7 +288,8 @@ class LocalAccessPoint(DataAccessPoint):
 
                 if model_name in final:
                     logger.warning(
-                        "Entry %s was already in the final.json and will be overwritten", model_name
+                        "Entry %s was already in the final.json and will be overwritten",
+                        model_name,
                     )
 
                 pdf_dependencies = emodel.build_pdf_dependencies(int(emodel.seed))
@@ -449,6 +451,7 @@ class LocalAccessPoint(DataAccessPoint):
             protocols_rheobase=config_dict["protocols_rheobase"],
             additional_fitness_efeatures=config_dict.get("additional_fitness_efeatures", None),
             additional_fitness_protocols=config_dict.get("additional_fitness_protocols", None),
+            protocols_mapping=config_dict["protocols_mapping"],
         )
 
         return configuration
@@ -498,7 +501,10 @@ class LocalAccessPoint(DataAccessPoint):
 
             if from_bpe:
                 configuration.init_from_bluepyefe(
-                    efeatures, protocols, {}, self.pipeline_settings.threshold_efeature_std
+                    efeatures,
+                    protocols,
+                    {},
+                    self.pipeline_settings.threshold_efeature_std,
                 )
             else:
                 configuration.init_from_legacy_dict(

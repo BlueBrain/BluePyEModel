@@ -43,6 +43,7 @@ class TargetsConfiguration:
         auto_targets=None,
         additional_fitness_efeatures=None,
         additional_fitness_protocols=None,
+        protocols_mapping=None,
     ):
         """Init
 
@@ -161,6 +162,20 @@ class TargetsConfiguration:
                             "stochasticity": false
                         }
                     ]
+             protocols_mapping (dict, optional): maps original protocol
+                identifiers to renamed versions for standardization.
+                Defaults to None if not provided.
+
+                Example:
+
+                .. code-block::
+
+                    {
+                        "IDRest_150": 'Step_150_hyp',
+                        "IDRest_200": 'Step_200_hyp',
+                        "IDRest_250": 'Step_250_hyp',
+                        "IV_-120": 'IV_-120_hyp',
+                    }
         """
 
         self.available_traces = available_traces
@@ -194,6 +209,8 @@ class TargetsConfiguration:
 
         self.additional_fitness_efeatures = additional_fitness_efeatures
         self.additional_fitness_protocols = additional_fitness_protocols
+
+        self.protocols_mapping = protocols_mapping
 
     def is_trace_available(self, trace):
         if self.available_traces:
@@ -373,4 +390,5 @@ class TargetsConfiguration:
             "auto_targets": self.auto_targets,
             "additional_fitness_efeatures": self.additional_fitness_efeatures,
             "additional_fitness_protocols": self.additional_fitness_protocols,
+            "protocols_mapping": self.protocols_mapping,
         }
