@@ -41,6 +41,7 @@ class EModelPipelineSettings:
         extract_absolute_amplitudes=False,
         rheobase_strategy_extraction="absolute",
         rheobase_settings_extraction=None,
+        interpolate_RMP=True,
         default_std_value=1e-3,
         efel_settings=None,
         minimum_protocol_delay=0.0,
@@ -114,6 +115,8 @@ class EModelPipelineSettings:
             rheobase_settings_extraction (dict): settings related to the rheobase computation
                 strategy. Keys have to match the arguments expected by the rheobase computation
                 function present in the module bluepyefe.rheobase.
+            interpolate_RMP (bool): whether to set the RMP after extraction as
+                V_hold - R_in*I_Hold.
             default_std_value (float): At the end of e-features extraction, all features
                 presenting a standard deviation of 0, will see their standard deviation
                 replaced by the present value.
@@ -266,6 +269,7 @@ class EModelPipelineSettings:
         self.path_extract_config = path_extract_config
         self.rheobase_strategy_extraction = rheobase_strategy_extraction
         self.rheobase_settings_extraction = rheobase_settings_extraction
+        self.interpolate_RMP = interpolate_RMP
         self.default_std_value = default_std_value
         self.minimum_protocol_delay = minimum_protocol_delay
 

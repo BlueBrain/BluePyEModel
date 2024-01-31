@@ -17,6 +17,7 @@ limitations under the License.
 """
 
 import logging
+import numpy
 import pathlib
 from importlib.machinery import SourceFileLoader
 
@@ -26,6 +27,50 @@ from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalc
 from bluepyemodel.tools.search_pdfs import search_figure_efeatures
 
 logger = logging.getLogger(__name__)
+
+
+def interpolate_RMP(fitness_calculator_configuration):
+    """If we do not have recordings with no holding, we need to estimate the RMP as:
+        RMP = V_hold - R_in*I_Hold
+    """
+    rin = None
+    holding_current = None
+    holding_voltages = []
+
+    for f in fitness_calculator_configuration.efeatures:
+        if (
+            f.efel_feature_name == "ohmic_input_resistance_vb_ssse"
+            and f.protocol_name == "RinProtocol"
+        ):
+            rin = f.mean
+        if f.efel_feature_name == "voltage_base" and ("IV" in f.protocol_name or "IDrest" in f.protocol_name):
+            holding_voltages.append(f.mean)
+        if f.efel_feature_name == "bpo_holding_current":
+            holding_current = f.mean
+
+    if rin is None:
+        raise Exception("Impossible to interpolate the RMP as Rin is also missing")
+    if holding_current is None:
+        raise Exception(
+            "Impossible to interpolate the RMP as the holding current is also missing"
+        )
+    if not holding_voltages:
+        raise Exception("Impossible to interpolate the RMP as no voltage base is available")
+
+    holding_voltage = numpy.median(holding_voltages)
+    rmp = holding_voltage - (rin * holding_current)
+
+    logger.debug(f"The RMP was computed to be: {rmp}")
+
+    for i, f in enumerate(fitness_calculator_configuration.efeatures):
+        if (
+            f.efel_feature_name == "steady_state_voltage_stimend"
+            and f.protocol_name == "RMPProtocol"
+        ):
+            fitness_calculator_configuration.efeatures[i].mean = rmp
+            break
+    else:
+        raise Exception("RMP feature not found and cannot be replaced")
 
 
 def define_extraction_reader_function(access_point):
@@ -159,6 +204,18 @@ def extract_save_features_protocols(access_point, mapper=map):
     fitness_calculator_config.init_from_bluepyefe(
         efeatures, stimuli, current, access_point.pipeline_settings.threshold_efeature_std
     )
+
+    fitness_calculator_config.protocols += fitness_calculator_config.initialise_protocols(
+        targets_configuration.additional_fitness_protocols
+    )
+
+    fitness_calculator_config.efeatures += fitness_calculator_config.initialise_efeatures(
+        targets_configuration.additional_fitness_efeatures,
+        threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std
+    )
+
+    if access_point.pipeline_settings.interpolate_RMP:
+        interpolate_RMP(fitness_calculator_config)
 
     fitness_calculator_config = update_minimum_protocols_delay(
         access_point, fitness_calculator_config

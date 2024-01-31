@@ -189,25 +189,13 @@ class FitnessCalculatorConfiguration:
         if protocols is None:
             self.protocols = []
         else:
-            self.protocols = [
-                ProtocolConfiguration(**p, ion_variables=self.ion_variables) for p in protocols
-            ]
+            self.protocols = self.initialise_protocols(protocols)
 
         self.efeatures = []
         if efeatures is not None:
-            for f in efeatures:
-                f_dict = deepcopy(f)
-                f_dict.pop("threshold_efeature_std", None)
-                f_dict.pop("default_std_value", None)
-                self.efeatures.append(
-                    EFeatureConfiguration(
-                        **f_dict,
-                        threshold_efeature_std=f.get(
-                            "threshold_efeature_std", threshold_efeature_std
-                        ),
-                        default_std_value=f.get("default_std_value", default_std_value),
-                    )
-                )
+            self.efeatures = self.initialise_efeatures(
+                efeatures, threshold_efeature_std, default_std_value
+            )
 
         if validation_protocols is None:
             self.validation_protocols = []
@@ -221,6 +209,34 @@ class FitnessCalculatorConfiguration:
 
         self.workflow_id = None
         self.default_std_value = default_std_value
+
+    def initialise_protocols(self, protocols):
+        """Initialise protocols from the FitnessCalculatorConfiguration format."""
+        if protocols is None:
+            return []
+        return [
+            ProtocolConfiguration(**p, ion_variables=self.ion_variables) for p in protocols
+        ]
+    
+    def initialise_efeatures(self, efeatures, threshold_efeature_std=None, default_std_value=1e-3):
+        """Initialise efeatures from the FitnessCalculatorConfiguration format."""
+        if efeatures is None:
+            return []
+        configured_efeatures = []
+        for f in efeatures:
+            f_dict = deepcopy(f)
+            f_dict.pop("threshold_efeature_std", None)
+            f_dict.pop("default_std_value", None)
+            configured_efeatures.append(
+                EFeatureConfiguration(
+                    **f_dict,
+                    threshold_efeature_std=f.get(
+                        "threshold_efeature_std", threshold_efeature_std
+                    ),
+                    default_std_value=f.get("default_std_value", default_std_value),
+                )
+            )
+        return configured_efeatures
 
     def protocol_exist(self, protocol_name):
         return bool(p for p in self.protocols if p.name == protocol_name)
@@ -528,7 +544,7 @@ class FitnessCalculatorConfiguration:
         self.remove_featureless_protocols()
 
     def remove_featureless_protocols(self):
-        """Remove the protocols that o not have any matching efeatures"""
+        """Remove the protocols that do not have any matching efeatures"""
 
         to_remove = []
 

@@ -41,6 +41,8 @@ class TargetsConfiguration:
         available_traces=None,
         available_efeatures=None,
         auto_targets=None,
+        additional_fitness_efeatures=None,
+        additional_fitness_protocols=None,
     ):
         """Init
 
@@ -100,6 +102,65 @@ class TargetsConfiguration:
                         "preferred_number_protocols": 1,
                         "tolerance": 10.,
                     }]
+            additional_fitness_efeatures (list of dicts): efeatures to add to
+                the output of the extraction, i.e. to the FitnessCalculatorConfiguration (FCC).
+                These efeatures will not be extracted from the targets,
+                but will be used during optimisation and / or validation.
+                They should have the same format as the efeatures of the FCC, e.g.
+
+                .. code-block::
+
+                    [
+                        {
+                            "efel_feature_name": "Spikecount",
+                            "protocol_name": "IDrest_130",
+                            "recording_name": "soma.v",
+                            "mean": 6.026,
+                            "original_std": 4.016,
+                            "efeature_name": "Spikecount",
+                            "efel_settings": {
+                                "strict_stiminterval": true,
+                                "Threshold": -30.0,
+                                "interp_step": 0.025,
+                                "stim_start": 700.0,
+                                "stim_end": 2700.0
+                            }
+                        }
+                    ]
+            additional_fitness_protocols (list of dicts): protocols to add to
+                the output of the extraction, i.e. to the FitnessCalculatorConfiguration (FCC).
+                These protocols will not be used during extraction,
+                but will be used during optimisation and / or validation.
+                They should have the same format as the protocols of the FCC, e.g.
+
+                .. code-block::
+
+                    [
+                        {
+                            "name": "IDrest_130",
+                            "stimuli": [
+                                {
+                                "delay": 663.3473451327434,
+                                "amp": 0.3491827776582547,
+                                "thresh_perc": 130.56103157894464,
+                                "duration": 2053.050884955752,
+                                "totduration": 3000.0,
+                                "holding_current": -0.13307330411636328
+                                }
+                            ],
+                            "recordings_from_config": [
+                                {
+                                "type": "CompRecording",
+                                "name": "IDrest_130.soma.v",
+                                "location": "soma",
+                                "variable": "v"
+                                }
+                            ],
+                            "validation": false,
+                            "protocol_type": "ThresholdBasedProtocol",
+                            "stochasticity": false
+                        }
+                    ]
         """
 
         self.available_traces = available_traces
@@ -130,6 +191,9 @@ class TargetsConfiguration:
             self.protocols_rheobase = [protocols_rheobase]
         else:
             self.protocols_rheobase = protocols_rheobase
+
+        self.additional_fitness_efeatures = additional_fitness_efeatures
+        self.additional_fitness_protocols = additional_fitness_protocols
 
     def is_trace_available(self, trace):
         if self.available_traces:
@@ -307,4 +371,6 @@ class TargetsConfiguration:
             "targets": [t.as_dict() for t in self.targets],
             "protocols_rheobase": self.protocols_rheobase,
             "auto_targets": self.auto_targets,
+            "additional_fitness_efeatures": self.additional_fitness_efeatures,
+            "additional_fitness_protocols": self.additional_fitness_protocols,
         }
