@@ -215,10 +215,8 @@ class FitnessCalculatorConfiguration:
         """Initialise protocols from the FitnessCalculatorConfiguration format."""
         if protocols is None:
             return []
-        return [
-            ProtocolConfiguration(**p, ion_variables=self.ion_variables) for p in protocols
-        ]
-    
+        return [ProtocolConfiguration(**p, ion_variables=self.ion_variables) for p in protocols]
+
     def initialise_efeatures(self, efeatures, threshold_efeature_std=None, default_std_value=1e-3):
         """Initialise efeatures from the FitnessCalculatorConfiguration format."""
         if efeatures is None:
@@ -231,9 +229,7 @@ class FitnessCalculatorConfiguration:
             configured_efeatures.append(
                 EFeatureConfiguration(
                     **f_dict,
-                    threshold_efeature_std=f.get(
-                        "threshold_efeature_std", threshold_efeature_std
-                    ),
+                    threshold_efeature_std=f.get("threshold_efeature_std", threshold_efeature_std),
                     default_std_value=f.get("default_std_value", default_std_value),
                 )
             )

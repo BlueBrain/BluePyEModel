@@ -17,9 +17,9 @@ limitations under the License.
 """
 
 import logging
-import numpy
 import pathlib
 from importlib.machinery import SourceFileLoader
+import numpy
 
 import bluepyefe.extract
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 def interpolate_RMP(fitness_calculator_configuration):
     """If we do not have recordings with no holding, we need to estimate the RMP as:
-        RMP = V_hold - R_in*I_Hold
+    RMP = V_hold - R_in*I_Hold
     """
     rin = None
     holding_current = None
@@ -43,7 +43,9 @@ def interpolate_RMP(fitness_calculator_configuration):
             and f.protocol_name == "RinProtocol"
         ):
             rin = f.mean
-        if f.efel_feature_name == "voltage_base" and ("IV" in f.protocol_name or "IDrest" in f.protocol_name):
+        if f.efel_feature_name == "voltage_base" and (
+            "IV" in f.protocol_name or "IDrest" in f.protocol_name
+        ):
             holding_voltages.append(f.mean)
         if f.efel_feature_name == "bpo_holding_current":
             holding_current = f.mean
@@ -51,16 +53,14 @@ def interpolate_RMP(fitness_calculator_configuration):
     if rin is None:
         raise Exception("Impossible to interpolate the RMP as Rin is also missing")
     if holding_current is None:
-        raise Exception(
-            "Impossible to interpolate the RMP as the holding current is also missing"
-        )
+        raise Exception("Impossible to interpolate the RMP as the holding current is also missing")
     if not holding_voltages:
         raise Exception("Impossible to interpolate the RMP as no voltage base is available")
 
     holding_voltage = numpy.median(holding_voltages)
     rmp = holding_voltage - (rin * holding_current)
 
-    logger.debug(f"The RMP was computed to be: {rmp}")
+    logger.debug("The RMP was computed to be: %s", rmp)
 
     for i, f in enumerate(fitness_calculator_configuration.efeatures):
         if (
@@ -215,7 +215,7 @@ def extract_save_features_protocols(access_point, mapper=map):
 
     fitness_calculator_config.efeatures += fitness_calculator_config.initialise_efeatures(
         targets_configuration.additional_fitness_efeatures,
-        threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std
+        threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std,
     )
 
     if access_point.pipeline_settings.interpolate_RMP:
