@@ -44,7 +44,9 @@ def interpolate_RMP(fitness_calculator_configuration):
         ):
             rin = f.mean
         if f.efel_feature_name == "voltage_base" and (
-            "iv" in f.protocol_name.lower() or "idrest" in f.protocol_name.lower() or "idthres" in f.protocol_name.lower()
+            "iv" in f.protocol_name.lower()
+            or "idrest" in f.protocol_name.lower()
+            or "idthres" in f.protocol_name.lower()
         ):
             holding_voltages.append(f.mean)
         if f.efel_feature_name == "bpo_holding_current":
@@ -77,7 +79,7 @@ def threshold_efeatures_std(fitness_calculator_configuration, default_std_value)
     """Set std as the mean value if std is higher than mean value."""
     for i, f in enumerate(fitness_calculator_configuration.efeatures):
         if f.original_std > abs(1.0 * f.mean) and f.original_std != default_std_value:
-            logger.debug(f"Thresholding {f.name}: {f.original_std} -> {abs(1.0 * f.mean)}")
+            logger.debug("Thresholding %s: %s -> %s", f.name, f.original_std, abs(1.0 * f.mean))
             fitness_calculator_configuration.efeatures[i].original_std = abs(1.0 * f.mean)
 
 
