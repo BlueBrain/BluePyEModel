@@ -19,9 +19,9 @@ limitations under the License.
 import logging
 import pathlib
 from importlib.machinery import SourceFileLoader
-import numpy
 
 import bluepyefe.extract
+import numpy
 
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.tools.search_pdfs import search_figure_efeatures
