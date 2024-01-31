@@ -51,11 +51,11 @@ def interpolate_RMP(fitness_calculator_configuration):
             holding_current = f.mean
 
     if rin is None:
-        raise Exception("Impossible to interpolate the RMP as Rin is also missing")
+        raise TypeError("Impossible to interpolate the RMP as Rin is also missing")
     if holding_current is None:
-        raise Exception("Impossible to interpolate the RMP as the holding current is also missing")
+        raise TypeError("Impossible to interpolate the RMP as the holding current is also missing")
     if not holding_voltages:
-        raise Exception("Impossible to interpolate the RMP as no voltage base is available")
+        raise ValueError("Impossible to interpolate the RMP as no voltage base is available")
 
     holding_voltage = numpy.median(holding_voltages)
     rmp = holding_voltage - (rin * holding_current)
@@ -70,7 +70,7 @@ def interpolate_RMP(fitness_calculator_configuration):
             fitness_calculator_configuration.efeatures[i].mean = rmp
             break
     else:
-        raise Exception("RMP feature not found and cannot be replaced")
+        raise ValueError("RMP feature not found and cannot be replaced")
 
 
 def define_extraction_reader_function(access_point):
