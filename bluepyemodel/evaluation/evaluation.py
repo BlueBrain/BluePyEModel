@@ -44,14 +44,15 @@ def locally_store_responses(emodel):
     output_dir = f"./recordings/{emodel.emodel_metadata.as_string(emodel.seed)}"
     make_dir(output_dir)
     for key, resp in emodel.responses.items():
+        output_path = Path(output_dir) / ".".join((key, "dat"))
         if not ("holding_current" in key or "threshold_current" in key or "bpo" in key):
-            output_path = Path(output_dir) / ".".join((key, "dat"))
-
             if resp["time"] is not None and resp["voltage"] is not None:
                 time = numpy.array(resp["time"])
                 data = numpy.array(resp["voltage"])  # even current will be named voltage here
 
                 numpy.savetxt(output_path, numpy.transpose(numpy.vstack((time, data))))
+        else:
+            numpy.savetxt(output_path, numpy.asarray([resp]))
 
 
 def check_local_responses_presence(emodels, cell_eval):
@@ -97,9 +98,16 @@ def load_responses_from_local_files(emodels, cell_eval):
             response_key = Path(filepath).stem
             response_name = response_key.split(".")[0]
             data = numpy.loadtxt(filepath)
-            responses[response_key] = TimeVoltageResponse(
-                name=response_name, time=data[:, 0], voltage=data[:, 1]
-            )
+            if not (
+                "holding_current" in response_key
+                or "threshold_current" in response_key
+                or "bpo" in response_key
+            ):
+                responses[response_key] = TimeVoltageResponse(
+                    name=response_name, time=data[:, 0], voltage=data[:, 1]
+                )
+            else:
+                responses[response_key] = data
         responses["evaluator"] = copy.deepcopy(cell_eval)
 
         responses_list.append(responses)

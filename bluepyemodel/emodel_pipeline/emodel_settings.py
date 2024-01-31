@@ -41,7 +41,9 @@ class EModelPipelineSettings:
         extract_absolute_amplitudes=False,
         rheobase_strategy_extraction="absolute",
         rheobase_settings_extraction=None,
+        interpolate_RMP=True,
         default_std_value=1e-3,
+        bound_max_std=False,
         efel_settings=None,
         minimum_protocol_delay=0.0,
         stochasticity=False,
@@ -70,6 +72,7 @@ class EModelPipelineSettings:
         name_gene_map=None,
         plot_currentscape=False,
         plot_parameter_evolution=True,
+        plot_bAP_EPSP=False,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -113,9 +116,13 @@ class EModelPipelineSettings:
             rheobase_settings_extraction (dict): settings related to the rheobase computation
                 strategy. Keys have to match the arguments expected by the rheobase computation
                 function present in the module bluepyefe.rheobase.
+            interpolate_RMP (bool): whether to set the RMP after extraction as
+                V_hold - R_in*I_Hold.
             default_std_value (float): At the end of e-features extraction, all features
                 presenting a standard deviation of 0, will see their standard deviation
                 replaced by the present value.
+            bound_max_std (bool): If set to True, the std from extraction will be set to
+                the mean value from extraction if it goes above it.
             efel_settings (dict): efel settings in the form {setting_name: setting_value} to be
                 used during extraction. If settings are also informed in the targets on a per
                 efeature basis, the latter will have priority.
@@ -220,6 +227,10 @@ class EModelPipelineSettings:
                 plotted for the recordings.
             plot_parameter_evolution (bool): during the plotting, should the evolution of the
                 parameters be plotted.
+            plot_bAP_EPSP (bool): during the plotting, should ready-to-use back-propagating AP
+                and EPSP protocols be run and plotted.
+                Should be True only for pyramidal cells,
+                since it depends on the presence of apical dendrite.
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
@@ -261,7 +272,9 @@ class EModelPipelineSettings:
         self.path_extract_config = path_extract_config
         self.rheobase_strategy_extraction = rheobase_strategy_extraction
         self.rheobase_settings_extraction = rheobase_settings_extraction
+        self.interpolate_RMP = interpolate_RMP
         self.default_std_value = default_std_value
+        self.bound_max_std = bound_max_std
         self.minimum_protocol_delay = minimum_protocol_delay
 
         # Settings related to the evaluator
@@ -322,6 +335,7 @@ class EModelPipelineSettings:
         self.currentscape_config = currentscape_config
 
         self.plot_parameter_evolution = plot_parameter_evolution
+        self.plot_bAP_EPSP = plot_bAP_EPSP
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings

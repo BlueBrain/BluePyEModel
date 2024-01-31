@@ -97,6 +97,7 @@ class TargetsConfigurator:
 
     def create_and_save_configuration_from_access_point(self):
         """Create and save a new configuration given data from access point."""
+        # TODO: this function does not handle additional fitness protocols and efeatures yet.
         if self.access_point.has_targets_configuration():
             logger.info(
                 "Targets configuration already present on access point."

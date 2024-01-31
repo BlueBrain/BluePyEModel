@@ -449,6 +449,8 @@ class LocalAccessPoint(DataAccessPoint):
             files=config_dict["files"],
             targets=config_dict["targets"],
             protocols_rheobase=config_dict["protocols_rheobase"],
+            additional_fitness_efeatures=config_dict.get("additional_fitness_efeatures", None),
+            additional_fitness_protocols=config_dict.get("additional_fitness_protocols", None),
             protocols_mapping=config_dict["protocols_mapping"],
         )
 

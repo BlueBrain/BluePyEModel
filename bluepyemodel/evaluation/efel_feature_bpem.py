@@ -1,7 +1,7 @@
 """Class eFELFeatureBPEM"""
 
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2023-2024, EPFL/Blue Brain Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,11 @@ import math
 
 import numpy
 from bluepyopt.ephys.efeatures import eFELFeature
+from scipy import optimize as opt
+
+from bluepyemodel.tools.multiprotocols_efeatures_utils import get_distances_from_recording_name
+from bluepyemodel.tools.multiprotocols_efeatures_utils import get_locations_from_recording_name
+from bluepyemodel.tools.multiprotocols_efeatures_utils import get_protocol_list_from_recording_name
 
 logger = logging.getLogger(__name__)
 
@@ -201,13 +206,9 @@ class eFELFeatureBPEM(eFELFeature):
         logger.debug("Calculated values for %s: %s", self.name, str(feature_values))
         return feature_values
 
-    def calculate_score(self, responses, trace_check=False):
-        """Calculate the score"""
-
-        if self.efel_feature_name.startswith("bpo_"):
-            score = self.calculate_bpo_score(responses)
-
-        elif self.exp_mean is None:
+    def calulate_score_(self, responses):
+        """Calculate the score for non-bpo feature"""
+        if self.exp_mean is None:
             score = 0
 
         else:
@@ -223,8 +224,253 @@ class eFELFeatureBPEM(eFELFeature):
                 logger.debug("Calculated score for %s: %f", self.name, score)
 
             score = numpy.min([score, self.max_score])
+        return score
+
+    def calculate_score(self, responses, trace_check=False):
+        """Calculate the score"""
+
+        if self.efel_feature_name.startswith("bpo_"):
+            score = self.calculate_bpo_score(responses)
+
+        else:
+            score = self.calulate_score_(responses)
 
         if score is None or math.isnan(score):
             return self.max_score
 
         return score
+
+
+class DendFitFeature(eFELFeatureBPEM):
+    """Fit to back propagation feature
+
+    To use this class:
+        - have "dendrite_backpropagation_fit" as the efeature name
+        - have "maximum_voltage_from_voltagebase" as the efel_feature_name
+        - have keys in recording names matching the distance from soma, and "" for soma, e.g.
+            {"": "soma.v", "50": "dend50.v", "100": "dend100.v", "150": "dend150.v"}
+        - have appropriate recordings in protocols
+    """
+
+    def __init__(
+        self,
+        name,
+        efel_feature_name=None,
+        recording_names=None,
+        stim_start=None,
+        stim_end=None,
+        exp_mean=None,
+        exp_std=None,
+        threshold=None,
+        stimulus_current=None,
+        comment="",
+        interp_step=None,
+        double_settings=None,
+        int_settings=None,
+        string_settings=None,
+        decay=None,
+        linear=None,
+    ):
+        """Constructor"""
+        # pylint: disable=too-many-arguments
+        super().__init__(
+            name,
+            efel_feature_name,
+            recording_names,
+            stim_start,
+            stim_end,
+            exp_mean,
+            exp_std,
+            threshold,
+            stimulus_current,
+            comment,
+            interp_step,
+            double_settings,
+            int_settings,
+            string_settings,
+        )
+        self.decay = decay
+        self.linear = linear
+        self.ymult = None  # set on the fly before the fitting
+
+    @property
+    def recording_names_list(self):
+        return self.recording_names.values()
+
+    @property
+    def distances(self):
+        # expects keys in recordings names to be distances from soma (e.g. "50") or "" if at soma
+        return [int(rec_name) if rec_name != "" else 0 for rec_name in self.recording_names.keys()]
+
+    @property
+    def locations(self):
+        # locations used in bpo features (holding current, threshold current)
+        # as such, they are implemented for MultiProtocols, but not for simple protocol
+        raise NotImplementedError
+
+    def _construct_efel_trace(self, responses):
+        """Construct trace that can be passed to eFEL"""
+
+        traces = []
+        if "" not in self.recording_names:
+            raise ValueError("eFELFeature: '' needs to be in recording_names")
+
+        for recording_name in self.recording_names_list:
+            if recording_name not in responses:
+                logger.debug(
+                    "Recording named %s not found in responses %s", recording_name, str(responses)
+                )
+                return None
+
+            if responses[recording_name] is None:
+                logger.debug("resp of %s is None", responses[recording_name])
+                return None
+
+            trace = {}
+            trace["T"] = responses[recording_name]["time"]
+            trace["V"] = responses[recording_name]["voltage"]
+            if callable(self.stim_start):
+                trace["stim_start"] = [self.stim_start()]
+            else:
+                trace["stim_start"] = [self.stim_start]
+
+            if callable(self.stim_end):
+                trace["stim_end"] = [self.stim_end()]
+            else:
+                trace["stim_end"] = [self.stim_end]
+            traces.append(trace)
+
+        return traces
+
+    def exp_decay(self, x, p):
+        return numpy.exp(-x / p) * self.ymult
+
+    def exp(self, x, p):
+        return numpy.exp(x / p) * self.ymult
+
+    def linear_fit(self, x, p):
+        return self.ymult + p * x
+
+    def fit(self, distances, values):
+        """Fit back propagation"""
+        guess = [50]
+        self.ymult = values[distances.index(0)]
+        if self.linear:
+            params, _ = opt.curve_fit(self.linear_fit, distances, values, p0=guess)
+        elif self.decay:
+            params, _ = opt.curve_fit(self.exp_decay, distances, values, p0=guess)
+        else:
+            params, _ = opt.curve_fit(self.exp, distances, values, p0=guess)
+
+        return params[0]
+
+    def get_distances_feature_values(self, responses, raise_warnings=False):
+        """Compute feature at each distance, and return distances and feature values."""
+        distances = []
+        feature_values_ = []
+        if self.efel_feature_name.startswith("bpo_"):
+            feature_names = [
+                f"{self.efel_feature_name}_{loc}" if loc != "soma" else self.efel_feature_name
+                for loc in self.locations
+            ]
+            feature_values_ = [
+                responses[fname]
+                for fname in feature_names
+                if fname in responses and responses[fname] is not None
+            ]
+            distances = [
+                d
+                for d, fname in zip(self.distances, feature_names)
+                if fname in responses and responses[fname] is not None
+            ]
+
+            # adjust soma value with holding current
+            if (
+                self.efel_feature_name == "bpo_threshold_current"
+                and distances[0] == 0
+                and "bpo_holding_current" in responses
+                and responses["bpo_holding_current"] is not None
+            ):
+                feature_values_[0] += responses["bpo_holding_current"]
+
+        else:
+            efel_traces = self._construct_efel_trace(responses)
+
+            if efel_traces is None:
+                feature_values_ = None
+            else:
+                self._setup_efel()
+                import efel
+
+                values = efel.getFeatureValues(
+                    efel_traces, [self.efel_feature_name], raise_warnings=raise_warnings
+                )
+                feature_values_ = [
+                    val[self.efel_feature_name][0]
+                    for val in values
+                    if val[self.efel_feature_name] is not None
+                ]
+                distances = [
+                    d
+                    for d, v in zip(self.distances, values)
+                    if v[self.efel_feature_name] is not None
+                ]
+
+                efel.reset()
+
+        return distances, feature_values_
+
+    def calculate_feature(self, responses, raise_warnings=False):
+        """Calculate feature value"""
+        distances, feature_values_ = self.get_distances_feature_values(responses, raise_warnings)
+
+        if distances and feature_values_:
+            if 0 in distances:
+                feature_values = numpy.array([self.fit(distances, feature_values_)])
+            else:
+                feature_values = None
+        else:
+            feature_values = None
+
+        logger.debug("Calculated values for %s: %s", self.name, str(feature_values))
+        return feature_values
+
+    def calculate_score(self, responses, trace_check=False):
+        """Calculate score. bpo and non-bpo feature should use calulate_feature"""
+        score = self.calulate_score_(responses)
+
+        if score is None or math.isnan(score):
+            return self.max_score
+
+        return score
+
+
+class DendFitMultiProtocolsFeature(DendFitFeature):
+    """Fit across apical dendrite using multiple protocols.
+
+    Attention! Since this feature depends on multiple protocols,
+    the stimulus_current passed can be wrong for some of them, and in such a case,
+    efel features depending on stimulus_current should not be used.
+
+    To use this class:
+        - have a protocol_name with distances in brackets in it
+            e.g. LocalInjectionIDrestapic[050,100,150,200]_100
+        - same with recording_name
+            e.g. apical[055,080,110,200,340].v
+        - have corresponding protocols with normal names under "protocols" in config
+            e.g. LocalInjectionIDrestapic050_100, LocalInjectionIDrestapic100_100, etc.
+        - have a soma protocol under "protocols" with same ecode in config
+            e.g. IDrest_100
+    """
+
+    @property
+    def recording_names_list(self):
+        return get_protocol_list_from_recording_name(self.recording_names[""])
+
+    @property
+    def distances(self):
+        return get_distances_from_recording_name(self.recording_names[""])
+
+    @property
+    def locations(self):
+        return get_locations_from_recording_name(self.recording_names[""])

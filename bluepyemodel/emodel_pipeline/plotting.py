@@ -33,10 +33,17 @@ from bluepyopt.ephys.stimuli import NrnSquarePulse
 from matplotlib import cm
 from matplotlib import colors
 
+from bluepyemodel.data.utils import read_dendritic_data
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
+from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
+from bluepyemodel.evaluation.utils import define_bAP_feature
+from bluepyemodel.evaluation.utils import define_bAP_protocol
+from bluepyemodel.evaluation.utils import define_EPSP_feature
+from bluepyemodel.evaluation.utils import define_EPSP_protocol
+from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
@@ -47,6 +54,15 @@ matplotlib.rcParams["pdf.fonttype"] = 42
 
 logger = logging.getLogger("__main__")
 logging.getLogger("matplotlib").setLevel(level=logging.ERROR)
+
+colours = {
+    "datapoint": "orangered",
+    "dataline": "red",
+    "modelpoint_apical": "cornflowerblue",
+    "modelline_apical": "darkblue",
+    "modelpoint_basal": "mediumseagreen",
+    "modelline_basal": "darkgreen",
+}
 
 
 def save_fig(figures_dir, figure_name):
@@ -90,7 +106,7 @@ def get_recording_names(protocol_config, stimuli):
     pre_prot_rec_names = {
         protocol.recordings[0].name
         for protocol in stimuli.values()
-        if protocol.name not in prot_names
+        if protocol.name not in prot_names and protocol.recordings
     }
     recording_names.update(pre_prot_rec_names)
 
@@ -406,6 +422,7 @@ def traces_title(model, threshold=None, holding=None, rmp=None, rin=None):
 
 def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures", write_fig=True):
     """Plot the traces of a model"""
+    # pylint: disable=too-many-nested-blocks
     make_dir(figures_dir)
 
     traces_names, threshold, holding, rmp, rin = get_traces_names_and_float_responses(
@@ -438,16 +455,33 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
             # Plot current
             basename = t.split(".")[0]
             if basename in stimuli:
-                if hasattr(stimuli[basename], "stimulus"):
-                    if (
-                        isinstance(stimuli[basename], ThresholdBasedProtocol)
-                        and threshold
-                        and holding
-                    ):
-                        stimuli[basename].stimulus.holding_current = holding
-                        stimuli[basename].stimulus.threshold_current = threshold
+                prot = stimuli[basename]
+                if hasattr(prot, "stimulus"):
+                    if isinstance(prot, ThresholdBasedProtocol) and threshold and holding:
+                        prot.stimulus.holding_current = holding
+                        prot.stimulus.threshold_current = threshold
+                        if (
+                            hasattr(prot, "dependencies")
+                            and prot.dependencies["stimulus.holding_current"][1]
+                            != "bpo_holding_current"
+                        ):
+                            resp_name = prot.dependencies["stimulus.holding_current"][1]
+                            if resp_name in responses:
+                                prot.stimulus.holding_current = responses[resp_name]
+                            else:
+                                continue
+                        if (
+                            hasattr(prot, "dependencies")
+                            and prot.dependencies["stimulus.threshold_current"][1]
+                            != "bpo_threshold_current"
+                        ):
+                            resp_name = prot.dependencies["stimulus.threshold_current"][1]
+                            if resp_name in responses:
+                                prot.stimulus.threshold_current = responses[resp_name]
+                            else:
+                                continue
 
-                    time, current = stimuli[basename].stimulus.generate()
+                    time, current = prot.stimulus.generate()
                     if len(time) > 0 and len(current) > 0:
                         axs_c.append(axs[idx, 0].twinx())
                         plot_traces_current(axs_c[-1], time, current)
@@ -463,6 +497,115 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
         save_fig(figures_dir, fname)
 
     return fig, axs
+
+
+def dendritic_feature_plot(
+    model, responses, feature, feature_name, figures_dir="./figures", write_fig=True
+):
+    """Plots a accross dendrites and compare it with experimental data.
+
+    Args:
+        model (bluepyopt.ephys.CellModel): cell model
+        responses (dict): responses of the cell model
+        feature (DendFitFeature): feature to plot
+        feature_name (str): which feature to plot. Can be either 'ISI_CV' or 'rheobase'.
+        figures_dir (str or Path): Where to save the figures.
+        write_fig (bool): whether to save the figure
+
+    Returns a figure and its single axe.
+    """
+    make_dir(figures_dir)
+
+    if feature_name == "ISI_CV":
+        exp_label = "exp. data (Shai et al. 2015)"
+        y_label = "ISI CV"
+        fig_title = "ISI CV along the apical dendrite main branch"
+    elif feature_name == "rheobase":
+        exp_label = "exp. data (Beaulieu-Laroche (2021))"
+        y_label = "rheobase (nA)"
+        fig_title = "rheobase along the apical dendrite main branch"
+    else:
+        raise ValueError(f"Expected 'ISI_CV' or 'rheobase' for feature_name. Got {feature_name}")
+
+    distances, feat_values = feature.get_distances_feature_values(responses)
+    exp_distances, exp_values = read_dendritic_data(feature_name)
+
+    min_dist = min((distances[0], exp_distances[0]))
+    max_dist = max((distances[-1], exp_distances[-1]))
+
+    # model fit
+    if 0 in distances:
+        slope = numpy.array([feature.fit(distances, feat_values)])
+        x_fit = numpy.linspace(min_dist, max_dist, num=20)
+        y_fit = feature.linear_fit(x_fit, slope)
+
+    # data fit
+    data_fit = numpy.polyfit(exp_distances, exp_values, 1)
+    x_data_fit = numpy.linspace(min_dist, max_dist, num=20)
+    y_data_fit = numpy.poly1d(data_fit)(x_data_fit)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ax.scatter(exp_distances, exp_values, c=colours["datapoint"], label=exp_label)
+    ax.plot(x_data_fit, y_data_fit, c=colours["dataline"], label="data fit")
+    ax.scatter(distances, feat_values, c=colours["modelpoint_apical"], label="emodel")
+    if 0 in distances:
+        ax.plot(x_fit, y_fit, "--", c=colours["modelline_apical"], label="emodel fit")
+    ax.set_xlabel(r"distance from soma ($\mu$m)")
+    ax.set_ylabel(y_label)
+    ax.legend(fontsize="x-small")
+
+    fig.suptitle(fig_title)
+
+    if write_fig:
+        fname = model.emodel_metadata.as_string(model.seed) + f"__{feature.name}.pdf"
+        save_fig(figures_dir, fname)
+
+    return fig, ax
+
+
+def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"):
+    """Calls dendritic_feature_plot for all features corresponding to feature_name.
+
+    Args:
+        mo (bluepyopt.ephys.CellModel): cell model
+        feature_name (str): which feature to plot. Can be either 'ISI_CV' or 'rheobase'.
+        dest_leaf (str): name of repo to use in output path. Usually either 'validated' or 'all'.
+        figures_dir (str or Path): base directory where to save the figures.
+    """
+    figures_dir = Path(figures_dir)
+    # translate feature_name into whatever name we expect to be present in fitness_calculator
+    if feature_name == "ISI_CV":
+        efeature_name = "ISI_CV_linear"
+    elif feature_name == "rheobase":
+        efeature_name = "bpo_threshold_current_linear"
+    else:
+        raise ValueError(f"Expected 'ISI_CV' or 'rheobase' for feature_name. Got {feature_name}")
+
+    figures_dir_dendritic = figures_dir / "dendritic" / dest_leaf
+    dend_feat_list = [
+        obj.features[0]
+        for obj in mo.evaluator.fitness_calculator.objectives
+        if efeature_name in obj.features[0].name
+    ]
+    if len(dend_feat_list) < 1:
+        logger.debug(
+            "Could not find any feature with %s feature name for emodel %s.",
+            efeature_name,
+            mo.emodel_metadata.emodel,
+        )
+    for feat in dend_feat_list:
+        # prevent stimulus current to be None if load_from_local is True
+        # it is not used in this feature computation, but can make the plot crash if None
+        if (
+            feat.stimulus_current is None
+            or callable(feat.stimulus_current)
+            and feat.stimulus_current() is None
+        ):
+            feat.stimulus_current = 0.0
+
+        dendritic_feature_plot(mo, mo.responses, feat, feature_name, figures_dir_dendritic)
 
 
 def _get_if_curve_from_evaluator(
@@ -635,6 +778,347 @@ def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", w
     return fig, axs
 
 
+def bAP_fit(feature, distances, values, npoints=20):
+    """Returns a x and y arrays, y being a exponential decay fit for bAP feature.
+
+    Args:
+        feature (DendFitFeature): bAP feature
+        distances (list): distances of the recordings
+        values (list): bAP values
+        npoints (int): number of items in the returned ndarrays
+    """
+    slope = numpy.array([feature.fit(distances, values)])
+    x_fit = numpy.linspace(distances[0], distances[-1], num=npoints)
+    y_fit = feature.exp_decay(x_fit, slope)
+    return x_fit, y_fit
+
+
+def EPSP_fit(feature, distances, values, npoints=20):
+    """Returns a x and y arrays, y being a exponential fit for EPSP feature.
+
+    Args:
+        feature (DendFitFeature): EPSP feature
+        distances (list): distances of the recordings
+        values (list): EPSP values
+        npoints (int): number of items in the returned ndarrays
+    """
+    slope = numpy.array([feature.fit(distances, values)])
+    x_fit = numpy.linspace(distances[0], distances[-1], num=npoints)
+    y_fit = feature.exp(x_fit, slope)
+    return x_fit, y_fit
+
+
+def plot_bAP(
+    model, responses, apical_feature, basal_feature, figures_dir="./figures", write_fig=True
+):
+    """Plot back-propagating action potential.
+
+    Args:
+        model (bluepyopt.ephys.CellModel): cell model
+        responses (dict): responses of the cell model
+        apical_feature (DendFitFeature): bAP feature with apical recs,
+        basal_feature (DendFitFeature): bAP feature with basal recs,
+        figures_dir (str or Path): directory where to save the figures
+        write_fig (bool): whether to save the figure
+    """
+    make_dir(figures_dir)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    apical_distances, apical_values = apical_feature.get_distances_feature_values(responses)
+    basal_distances, basal_values = basal_feature.get_distances_feature_values(responses)
+
+    if 0 in apical_distances:
+        apical_x_fit, apical_y_fit = bAP_fit(apical_feature, apical_distances, apical_values)
+    if 0 in basal_distances:
+        basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
+
+    ax.scatter(
+        apical_distances, apical_values, c=colours["modelpoint_apical"], label="model apical"
+    )
+    ax.scatter(basal_distances, basal_values, c=colours["modelpoint_basal"], label="model basal")
+    if 0 in apical_distances:
+        ax.plot(
+            apical_x_fit,
+            apical_y_fit,
+            "--",
+            c=colours["modelline_apical"],
+            label="model apical fit",
+        )
+    if 0 in basal_distances:
+        ax.plot(
+            basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit"
+        )
+    ax.set_xlabel(r"Distance from soma ($\mu$m)")
+    ax.set_ylabel("Amplitude (mV)")
+    ax.legend(fontsize="x-small")
+
+    fig.suptitle("Dendrite back-propagating action potential")
+
+    if write_fig:
+        fname = (
+            model.emodel_metadata.as_string(model.seed) + "__dendrite_backpropagation_fit_decay.pdf"
+        )
+        save_fig(figures_dir, fname)
+
+    return fig, ax
+
+
+def compute_attenuation(dendrec_feature, somarec_feature, responses):
+    """Returns EPSP attenuation and corresponding distances.
+
+    Args:
+        dendrec_feature (DendFitFeature): feature with recordings in the dendrite
+        somarec_feature (DendFitFeature): feature with recordings in the soma
+        responses (dict): responses to feed to the features
+    """
+    distances, dend_values = dendrec_feature.get_distances_feature_values(responses)
+    _, soma_values = somarec_feature.get_distances_feature_values(responses)
+    attenuation = numpy.asarray(dend_values) / numpy.asarray(soma_values)
+
+    return distances, attenuation
+
+
+def plot_EPSP(
+    model,
+    responses,
+    apical_apicrec_feat,
+    apical_somarec_feat,
+    basal_basalrec_feat,
+    basal_somarec_feat,
+    figures_dir="./figures",
+    write_fig=True,
+):
+    """Plot EPSP attenuation across dendrites.
+
+    Args:
+        model (bluepyopt.ephys.CellModel): cell model
+        responses (dict): responses of the cell model
+        apical_apicrec_feat (DendFitFeature): EPSP feature with apical stim and apical recs,
+        apical_somarec_feat (DendFitFeature): EPSP feature with apical stim and soma recs,
+        basal_basalrec_feat (DendFitFeature): EPSP feature with basal stim and basal recs,
+        basal_somarec_feat (DendFitFeature): EPSP feature with basal stim and soma recs,
+        figures_dir (str or Path): directory where to save the figures
+        write_fig (bool): whether to save the figure
+    """
+    make_dir(figures_dir)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    apical_distances, apical_attenuation = compute_attenuation(
+        apical_apicrec_feat, apical_somarec_feat, responses
+    )
+    basal_distances, basal_attenuation = compute_attenuation(
+        basal_basalrec_feat, basal_somarec_feat, responses
+    )
+
+    if 0 in apical_distances:
+        apical_x_fit, apical_y_fit = EPSP_fit(
+            apical_apicrec_feat, apical_distances, apical_attenuation
+        )
+    if 0 in basal_distances:
+        basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
+
+    ax.scatter(
+        apical_distances, apical_attenuation, c=colours["modelpoint_apical"], label="model apical"
+    )
+    ax.scatter(
+        basal_distances, basal_attenuation, c=colours["modelpoint_basal"], label="model basal"
+    )
+    if 0 in apical_distances:
+        ax.plot(
+            apical_x_fit,
+            apical_y_fit,
+            "--",
+            c=colours["modelline_apical"],
+            label="model apical fit",
+        )
+    if 0 in basal_distances:
+        ax.plot(
+            basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit"
+        )
+    ax.set_xlabel(r"Distance from soma ($\mu$m)")
+    ax.set_ylabel("Attenuation dendrite amplitude / soma amplitude")
+    ax.legend(fontsize="x-small")
+
+    fig.suptitle("EPSP attenuation")
+
+    if write_fig:
+        fname = model.emodel_metadata.as_string(model.seed) + "__dendrite_EPSP_attenuation_fit.pdf"
+        save_fig(figures_dir, fname)
+
+    return fig, ax
+
+
+def run_and_plot_bAP(
+    original_cell_evaluator,
+    access_point,
+    mapper,
+    seeds,
+    save_recordings,
+    load_from_local,
+    only_validated=False,
+    figures_dir="./figures",
+):
+    """Runs and plots ready-to-use bAP protocol for apical and basal dendrites.
+
+    Args:
+        original_cell_evaluator (CellEvaluator): original cell evaluator.
+            A copy will be modified and then used to compute the responses.
+        access_point (DataAccessPoint): data access point.
+        mapper (map): used to parallelize the evaluation of the
+            individual in the population.
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        save_recordings (bool): Whether to save the responses data under a folder
+            named `recordings`. Responses can then be loaded using load_from_local
+            instead of being re-run.
+        load_from_local (bool): True to load responses from locally saved recordings.
+            Responses are saved locally when save_recordings is True.
+        only_validated (bool): True to only plot validated models
+        figures_dir (str): path of the directory in which the figures should be saved.
+    """
+    figures_dir = Path(figures_dir)
+    cell_evaluator = copy.deepcopy(original_cell_evaluator)
+
+    # get basal and apical lengths
+    morph_path = cell_evaluator.cell_model.morphology.morphology_path
+    max_basal_length, max_apical_length = get_basal_and_apical_lengths(morph_path)
+    max_basal_length = int(max_basal_length)
+    max_apical_length = int(max_apical_length)
+
+    # remove protocols except for pre-protocols
+    old_prots = cell_evaluator.fitness_protocols["main_protocol"].protocols
+    new_prots = {}
+    for k, v in old_prots.items():
+        if k in PRE_PROTOCOLS:
+            new_prots[k] = v
+
+    bAP_prot = define_bAP_protocol(dist_end=max_apical_length, dist_end_basal=max_basal_length)
+    new_prots[bAP_prot.name] = bAP_prot
+
+    cell_evaluator.fitness_protocols["main_protocol"].protocols = new_prots
+    cell_evaluator.fitness_protocols["main_protocol"].execution_order = (
+        cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    )
+
+    apical_feature = define_bAP_feature("apical", dist_end=max_apical_length)
+    basal_feature = define_bAP_feature("basal", dist_end=max_basal_length)
+    # run emodel(s)
+    emodels = compute_responses(
+        access_point,
+        cell_evaluator,
+        mapper,
+        seeds,
+        store_responses=save_recordings,
+        load_from_local=load_from_local,
+    )
+
+    if only_validated:
+        emodels = [model for model in emodels if model.passed_validation]
+        dest_leaf = "validated"
+    else:
+        dest_leaf = "all"
+
+    # plot
+    for mo in emodels:
+        figures_dir_bAP = figures_dir / "dendritic" / dest_leaf
+        plot_bAP(mo, mo.responses, apical_feature, basal_feature, figures_dir_bAP)
+
+
+def run_and_plot_EPSP(
+    original_cell_evaluator,
+    access_point,
+    mapper,
+    seeds,
+    save_recordings,
+    load_from_local,
+    only_validated=False,
+    figures_dir="./figures",
+):
+    """Runs and plots ready-to-use EPSP protocol for apical and basal dendrites.
+
+    Args:
+        original_cell_evaluator (CellEvaluator): original cell evaluator.
+            A copy will be modified and then used to compute the responses.
+        access_point (DataAccessPoint): data access point.
+        mapper (map): used to parallelize the evaluation of the
+            individual in the population.
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        save_recordings (bool): Whether to save the responses data under a folder
+            named `recordings`. Responses can then be loaded using load_from_local
+            instead of being re-run.
+        load_from_local (bool): True to load responses from locally saved recordings.
+            Responses are saved locally when save_recordings is True.
+        only_validated (bool): True to only plot validated models
+        figures_dir (str): path of the directory in which the figures should be saved.
+    """
+    figures_dir = Path(figures_dir)
+    cell_evaluator = copy.deepcopy(original_cell_evaluator)
+
+    # get basal and apical lengths
+    morph_path = cell_evaluator.cell_model.morphology.morphology_path
+    max_basal_length, max_apical_length = get_basal_and_apical_lengths(morph_path)
+    max_basal_length = int(max_basal_length)
+    max_apical_length = int(max_apical_length)
+
+    # remove protocols except for pre-protocols
+    apical_prots = define_EPSP_protocol(
+        "apical", dist_end=max_apical_length, dist_start=100, dist_step=100
+    )
+    basal_prots = define_EPSP_protocol(
+        "basal", dist_end=max_basal_length, dist_start=30, dist_step=30
+    )
+    EPSP_prots = {**apical_prots, **basal_prots}
+
+    cell_evaluator.fitness_protocols["main_protocol"].protocols = EPSP_prots
+    cell_evaluator.fitness_protocols["main_protocol"].execution_order = (
+        cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    )
+
+    apical_apicrec_feat = define_EPSP_feature(
+        "apical", "dend", dist_end=max_apical_length, dist_start=100, dist_step=100
+    )
+    apical_somarec_feat = define_EPSP_feature(
+        "apical", "soma", dist_end=max_apical_length, dist_start=100, dist_step=100
+    )
+    basal_basalrec_feat = define_EPSP_feature(
+        "basal", "dend", dist_end=max_basal_length, dist_start=30, dist_step=30
+    )
+    basal_somarec_feat = define_EPSP_feature(
+        "basal", "soma", dist_end=max_basal_length, dist_start=30, dist_step=30
+    )
+    # run emodel(s)
+    emodels = compute_responses(
+        access_point,
+        cell_evaluator,
+        mapper,
+        seeds,
+        store_responses=save_recordings,
+        load_from_local=load_from_local,
+    )
+
+    if only_validated:
+        emodels = [model for model in emodels if model.passed_validation]
+        dest_leaf = "validated"
+    else:
+        dest_leaf = "all"
+
+    # plot
+    for mo in emodels:
+        figures_dir_EPSP = figures_dir / "dendritic" / dest_leaf
+        plot_EPSP(
+            mo,
+            mo.responses,
+            apical_apicrec_feat,
+            apical_somarec_feat,
+            basal_basalrec_feat,
+            basal_somarec_feat,
+            figures_dir_EPSP,
+        )
+
+
 def plot_models(
     access_point,
     mapper,
@@ -645,6 +1129,9 @@ def plot_models(
     plot_traces=True,
     plot_currentscape=False,
     plot_if_curve=False,
+    plot_dendritic_ISI_CV=True,
+    plot_dendritic_rheobase=True,
+    plot_bAP_EPSP=False,
     only_validated=False,
     save_recordings=False,
     load_from_local=False,
@@ -664,6 +1151,10 @@ def plot_models(
         plot_traces (bool): True to plot the traces
         plot_currentscape (bool): True to plot the currentscapes
         plot_if_curve (bool): True to plot the current / frequency curve
+        plot_dendritic_ISI_CV (bool): True to plot dendritic ISI CV (if present)
+        plot_dendritic_rheobase (bool): True to plot dendritic rheobase (if present)
+        plot_bAP_EPSP (bool): True to plot bAP and EPSP protocol.
+            Only use this on model having apical dendrites.
         only_validated (bool): True to only plot validated models
         save_recordings (bool): Whether to save the responses data under a folder
             named `recordings`. Responses can then be loaded using load_from_local
@@ -675,6 +1166,7 @@ def plot_models(
     Returns:
         emodels (list): list of emodels.
     """
+    # pylint: disable=too-many-arguments, too-many-locals
 
     figures_dir = Path(figures_dir)
 
@@ -697,7 +1189,7 @@ def plot_models(
             use_fixed_dt_recordings=False,
         )
 
-    if plot_traces or plot_currentscape:
+    if plot_traces or plot_currentscape or plot_dendritic_ISI_CV or plot_dendritic_rheobase:
         emodels = compute_responses(
             access_point,
             cell_evaluator,
@@ -756,6 +1248,12 @@ def plot_models(
             )
             traces(mo, mo.responses, recording_names, stimuli, figures_dir_traces)
 
+        if plot_dendritic_ISI_CV:
+            dendritic_feature_plots(mo, "ISI_CV", dest_leaf, figures_dir)
+
+        if plot_dendritic_rheobase:
+            dendritic_feature_plots(mo, "rheobase", dest_leaf, figures_dir)
+
         if plot_currentscape:
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
@@ -776,6 +1274,28 @@ def plot_models(
             IF_curve(
                 mo, mo.responses, copy.deepcopy(cell_evaluator), figures_dir=figures_dir_traces
             )
+
+    if plot_bAP_EPSP:
+        run_and_plot_bAP(
+            cell_evaluator,
+            access_point,
+            mapper,
+            seeds,
+            save_recordings,
+            load_from_local,
+            only_validated,
+            figures_dir,
+        )
+        run_and_plot_EPSP(
+            cell_evaluator,
+            access_point,
+            mapper,
+            seeds,
+            save_recordings,
+            load_from_local,
+            only_validated,
+            figures_dir,
+        )
 
     return emodels
 
@@ -820,8 +1340,10 @@ def get_ordered_currentscape_keys(keys):
         if len(n) == 4 and n[1].isdigit():
             n = [".".join(n[:2]), n[2], n[3]]
         prot_name = n[0]
-        if prot_name not in to_skip:
-            assert len(n) == 3
+        # prot_name can be e.g. RMPProtocol, or RMPProtocol_apical055
+        if not any(to_skip_ in prot_name for to_skip_ in to_skip):
+            if len(n) != 3:
+                raise ValueError(f"Expected 3 elements in {n}")
             loc_name = n[1]
             curr_name = n[2]
 
