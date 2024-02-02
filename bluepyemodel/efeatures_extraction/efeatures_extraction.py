@@ -233,7 +233,7 @@ def extract_save_features_protocols(access_point, mapper=map):
         threshold_efeature_std=access_point.pipeline_settings.threshold_efeature_std,
     )
 
-    if access_point.pipeline_settings.interpolate_RMP:
+    if access_point.pipeline_settings.interpolate_RMP_extraction:
         interpolate_RMP(fitness_calculator_config)
 
     fitness_calculator_config = update_minimum_protocols_delay(
