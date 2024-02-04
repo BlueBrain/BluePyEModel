@@ -67,7 +67,7 @@ setup(
         "tqdm",
         "pyyaml",
         "gitpython",
-        "bluepyopt>=1.12.12",
+        "bluepyopt>=1.14.8",
         "bluepyefe>=2.2.0",
         "neurom>=3.0,<4.0",
         "efel>=3.1",
