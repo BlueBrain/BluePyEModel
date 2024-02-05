@@ -269,6 +269,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
             string_settings=string_settings,
             decay=decay,
             linear=linear,
+            weight=feature_config.weight,
         )
     # protocol name contains list of location, e.g. 'apic[050,100,150]'
     elif "[" in feature_config.recording_name_for_instantiation[""]:
@@ -290,6 +291,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
             string_settings=string_settings,
             decay=decay,
             linear=linear,
+            weight=feature_config.weight,
         )
     else:
         efeature = eFELFeatureBPEM(
@@ -306,6 +308,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
             double_settings=double_settings,
             int_settings=int_settings,
             string_settings=string_settings,
+            weight=feature_config.weight,
         )
 
     return efeature

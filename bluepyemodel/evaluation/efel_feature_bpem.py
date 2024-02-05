@@ -61,6 +61,7 @@ class eFELFeatureBPEM(eFELFeature):
         double_settings=None,
         int_settings=None,
         string_settings=None,
+        weight=1.0,
     ):
         """Constructor
 
@@ -76,6 +77,8 @@ class eFELFeatureBPEM(eFELFeature):
             exp_std(float): experimental standard deviation of this eFeature
             threshold(float): spike detection threshold (mV)
             comment (str): comment
+            weight (float): weight of the efeature.
+                Basically multiplies the score of the efeature by this value.
         """
 
         super().__init__(
@@ -95,6 +98,7 @@ class eFELFeatureBPEM(eFELFeature):
             string_settings,
             max_score=250.0,
         )
+        self.weight = weight  # used in objective
 
     def calculate_bpo_feature(self, responses):
         """Return internal feature which is directly passed as a response"""
