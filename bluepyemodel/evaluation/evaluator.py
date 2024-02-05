@@ -25,7 +25,7 @@ from bluepyopt.ephys.evaluators import CellEvaluator
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
 from bluepyopt.ephys.locations import NrnSomaDistanceCompLocation
 from bluepyopt.ephys.locations import NrnTrunkSomaDistanceCompLocation
-from bluepyopt.ephys.objectives import SingletonObjective
+from bluepyopt.ephys.objectives import SingletonWeightObjective
 from bluepyopt.ephys.objectivescalculators import ObjectivesCalculator
 from bluepyopt.ephys.simulators import NrnSimulator
 
@@ -854,7 +854,7 @@ def define_fitness_calculator(features):
         ObjectivesCalculator
     """
 
-    objectives = [SingletonObjective(feat.name, feat) for feat in features]
+    objectives = [SingletonWeightObjective(feat.name, feat, feat.weight) for feat in features]
 
     return ObjectivesCalculator(objectives)
 

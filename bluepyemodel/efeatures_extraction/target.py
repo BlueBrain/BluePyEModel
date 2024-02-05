@@ -32,6 +32,7 @@ class Target:
         tolerance,
         efeature_name=None,
         efel_settings=None,
+        weight=1.0,
     ):
         """Constructor
 
@@ -50,6 +51,8 @@ class Target:
             efeature_name (str): given name for this specific target. Can be different
                 from the efel efeature name.
             efel_settings (dict): target specific efel settings.
+            weight (float): weight of the efeature.
+                Basically multiplies the score of the efeature by this value.
         """
 
         self.efeature = efeature
@@ -59,6 +62,8 @@ class Target:
         self.tolerance = tolerance
 
         self.efeature_name = efeature_name
+
+        self.weight = weight
 
         if efel_settings is None:
             self.efel_settings = {"strict_stiminterval": True}

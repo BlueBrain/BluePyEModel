@@ -219,6 +219,24 @@ def extract_save_features_protocols(access_point, mapper=map):
         targets_configuration.protocols_mapping,
     )
 
+    # correct for any weight present in features
+    for target in targets_configuration.targets:
+        if target.weight != 1.0:
+            try:
+                feat = next(
+                    feat
+                    for feat in fitness_calculator_config.efeatures
+                    if feat.efel_feature_name == target.efeature
+                    and feat.protocol_name == f"{target.protocol}_{target.amplitude}"
+                )
+                feat.weight = target.weight
+            except StopIteration:
+                logger.debug(
+                    "Could not find efeature with name %s and protocol %s",
+                    target.efeature,
+                    target.protocol,
+                )
+
     if access_point.pipeline_settings.bound_max_std:
         threshold_efeatures_std(
             fitness_calculator_config, access_point.pipeline_settings.default_std_value

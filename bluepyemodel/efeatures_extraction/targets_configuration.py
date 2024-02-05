@@ -75,6 +75,7 @@ class TargetsConfiguration:
                         "protocol": "IDRest",
                         "amplitude": 150.,
                         "tolerance": 10.,
+                        "weight": 1.0,  # optional
                         "efel_settings": {
                             'stim_start': 200.,
                             'stim_end': 500.,
