@@ -44,6 +44,7 @@ class eFELFeatureBPEM(eFELFeature):
         "threshold",
         "comment",
     )
+    # pylint: disable=too-many-arguments
 
     def __init__(
         self,
@@ -274,6 +275,7 @@ class DendFitFeature(eFELFeatureBPEM):
         string_settings=None,
         decay=None,
         linear=None,
+        weight=1.0,
     ):
         """Constructor"""
         # pylint: disable=too-many-arguments
@@ -292,6 +294,7 @@ class DendFitFeature(eFELFeatureBPEM):
             double_settings,
             int_settings,
             string_settings,
+            weight,
         )
         self.decay = decay
         self.linear = linear
