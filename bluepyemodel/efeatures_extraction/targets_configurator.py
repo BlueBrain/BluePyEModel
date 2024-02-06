@@ -57,13 +57,13 @@ class TargetsConfigurator:
         available_efeatures = self.access_point.get_available_efeatures()
 
         self.configuration = TargetsConfiguration(
-            files,
-            targets,
-            protocols_rheobase,
-            available_traces,
-            available_efeatures,
-            auto_targets,
-            protocols_mapping,
+            files=files,
+            targets=targets,
+            protocols_rheobase=protocols_rheobase,
+            available_traces=available_traces,
+            available_efeatures=available_efeatures,
+            auto_targets=auto_targets,
+            protocols_mapping=protocols_mapping,
         )
 
     def load_configuration(self):
