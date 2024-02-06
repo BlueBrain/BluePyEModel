@@ -45,6 +45,12 @@ EXTRA_DOC = [
     "sphinx-bluebrain-theme",
 ]
 
+EXTRA_NEXUS = [
+    # "icselector",
+    # "nexusforge>=0.7.1",
+    # "entity_management>=1.2",
+    # "pyJWT>=2.1.0",
+]
 
 setup(
     name="bluepyemodel",
@@ -81,9 +87,10 @@ setup(
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,
-        "all": EXTRA_LUIGI + EXTRA_TEST,
+        "all": EXTRA_LUIGI + EXTRA_TEST + EXTRA_NEXUS,
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
+        "nexus": EXTRA_NEXUS,
     },
     packages=find_packages(exclude=('tests',)),
     include_package_data=True,

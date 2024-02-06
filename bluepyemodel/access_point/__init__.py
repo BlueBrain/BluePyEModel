@@ -70,12 +70,7 @@ def get_access_point(access_point, emodel, **kwargs):
     brain_region = brain_region.replace("__", " ") if brain_region else None
 
     if access_point == "nexus":
-        try:
-            from bluepyemodelnexus.nexus import NexusAccessPoint
-        except ImportError as exc:
-            raise ImportError(
-                "The internal bluepyemodelnexus package is required to use the Nexus access point."
-            ) from exc
+        from bluepyemodel.access_point.nexus import NexusAccessPoint
 
         return NexusAccessPoint(
             emodel=emodel,

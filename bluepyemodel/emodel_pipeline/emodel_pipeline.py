@@ -59,6 +59,11 @@ class EModel_pipeline:
         use_ipyparallel=None,
         use_multiprocessing=None,
         data_access_point=None,
+        nexus_endpoint="staging",
+        forge_path=None,
+        forge_ontology_path=None,
+        nexus_organisation=None,
+        nexus_project=None,
     ):
         """Initializes the EModel_pipeline.
 
@@ -95,6 +100,16 @@ class EModel_pipeline:
             synapse_class (str): name of the synapse class of the e-model, has to be "EXC", "INH".
                 Not used at the moment.
             layer (str): layer of the e-model. To be depracted.
+            forge_path (str): path to the .yml used to connect to Nexus Forge. This is only needed
+                if you wish to customize the connection to Nexus. If not provided,
+                a default .yml file will be used.
+            forge_ontology_path (str): path to the .yml used for the ontology in Nexus Forge
+                if not provided, forge_path will be used.
+            nexus_organisation (str): name of the Nexus organisation in which the project is
+                located.
+            nexus_project (str): name of the Nexus project to which the forge will connect to
+                retrieve the data.
+            nexus_endpoint (str): Nexus endpoint ("prod" or "staging").
             recipes_path (str): path of the recipes.json configuration file.This configuration
                 file is the main file required when using the access point of type "local". It
                 is expected to be a json file containing a dictionary whose keys are the names
@@ -105,7 +120,9 @@ class EModel_pipeline:
                 the e-model building pipeline be based on ipyparallel.
             use_multiprocessing (bool): should the parallelization map used for the different steps
                 of the e-model building pipeline be based on multiprocessing.
-            data_access_point (str): Used for legacy purposes only
+            data_access_point (str): name of the access_point used to access the data,
+                can be "nexus" or "local".
+
         """
 
         # pylint: disable=too-many-arguments
@@ -123,12 +140,10 @@ class EModel_pipeline:
             self.mapper = map
 
         endpoint = None
-
-        if data_access_point is not None and data_access_point != "local":
-            raise ValueError(
-                "Attempted to set a legacy variable. "
-                "This variable should not be modified in new code."
-            )
+        if nexus_endpoint == "prod":
+            endpoint = "https://bbp.epfl.ch/nexus/v1"
+        elif nexus_endpoint == "staging":
+            endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
 
         self.access_point = get_access_point(
             emodel=emodel,
@@ -144,7 +159,12 @@ class EModel_pipeline:
             access_point="local",
             recipes_path=recipes_path,
             final_path="final.json",
+            organisation=nexus_organisation,
+            project=nexus_project,
             endpoint=endpoint,
+            access_point=data_access_point,
+            forge_path=forge_path,
+            forge_ontology_path=forge_ontology_path,
         )
 
     def configure_model(
