@@ -33,6 +33,7 @@ class EFeatureConfiguration:
         std=None,
         sample_size=None,
         default_std_value=1e-3,
+        weight=1.0,
     ):
         """Init.
 
@@ -57,6 +58,8 @@ class EFeatureConfiguration:
                 the mean of the features value (optional).
             sample_size (float): number of data point that were used to compute the present
                 average and standard deviation.
+            weight (float): weight of the efeature.
+                Basically multiplies the score of the efeature by this value.
         """
 
         self.efel_feature_name = efel_feature_name
@@ -70,6 +73,7 @@ class EFeatureConfiguration:
         self.sample_size = sample_size
 
         self.efeature_name = efeature_name
+        self.weight = weight
 
         if efel_settings is None:
             self.efel_settings = {"strict_stiminterval": True}

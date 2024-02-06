@@ -114,6 +114,7 @@ class FitnessCalculatorConfiguration:
                             "mean": 6.026,
                             "original_std": 4.016,
                             "efeature_name": "Spikecount",
+                            "weight": 1.0,  # optional
                             "efel_settings": {
                                 "strict_stiminterval": true,
                                 "Threshold": -30.0,
