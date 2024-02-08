@@ -1,0 +1,5 @@
+# E-Model Building Pipeline with Luigi and Nexus for NCMv3
+
+This example uses a detailed morphology and genetic mechanisms, resulting in a longer optimisation time compared to the MMB example. However, all the steps to run the pipeline remain the same as those outlined in the [MMB example](../mmb/README.md/).
+
+In this example, we provide a set of notebooks to help users understand how to edit some of the resources created by the pipeline. The first, [edit_fitness_calculator_configuration.ipynb](./edit_fitness_calculator_configuration.ipynb) explains how to edit an existing neuron model configuration on Nexus in order to add a new e-feature or protocol. The second notebook, [edit_neuron_model_configuration.ipynb](./edit_neuron_model_configuration.ipynb), explains how to load an already existing neuron model configuration from Nexus, edit it, and store it back on Nexus. A third notebook [exploit_model.ipynb](./exploit_model.ipynb) explains how to run other protocols on a model or investigate the final model yourself.
