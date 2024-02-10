@@ -451,7 +451,7 @@ class LocalAccessPoint(DataAccessPoint):
             protocols_rheobase=config_dict["protocols_rheobase"],
             additional_fitness_efeatures=config_dict.get("additional_fitness_efeatures", None),
             additional_fitness_protocols=config_dict.get("additional_fitness_protocols", None),
-            protocols_mapping=config_dict["protocols_mapping"],
+            protocols_mapping=config_dict.get("protocols_mapping", None)
         )
 
         return configuration
