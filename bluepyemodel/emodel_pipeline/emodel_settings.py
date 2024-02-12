@@ -41,7 +41,7 @@ class EModelPipelineSettings:
         extract_absolute_amplitudes=False,
         rheobase_strategy_extraction="absolute",
         rheobase_settings_extraction=None,
-        interpolate_RMP_extraction=True,
+        interpolate_RMP_extraction=False,
         default_std_value=1e-3,
         bound_max_std=False,
         efel_settings=None,
