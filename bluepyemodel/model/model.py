@@ -215,6 +215,7 @@ def define_morphology(
     nseg_frequency=40,
     morph_modifiers=None,
     morph_modifiers_hoc=None,
+    morph_modifiers_dir=None,
 ):
     """Define a morphology object from a morphology file
 
@@ -229,6 +230,7 @@ def define_morphology(
         morph_modifiers_hoc (list): list of hoc strings corresponding
                 to morph_modifiers, each modifier can be a function, or a list of a path
                 to a .py and the name of the function to use in this file
+        morph_modifiers_dir (str): path to the directory containing the morph_modifiers_hoc
 
     Returns:
         bluepyopt.ephys.morphologies.NrnFileMorphology: a morphology object
@@ -243,7 +245,15 @@ def define_morphology(
             morph_modifiers = [morph_modifiers]
         for i, morph_modifier in enumerate(morph_modifiers):
             if isinstance(morph_modifier, list):
-                modifier_module = importlib.import_module(morph_modifier[0])
+                import importlib
+                if morph_modifiers_dir is None:
+                    modifier_module = importlib.import_module(morph_modifier[0])
+                else:
+                    import importlib.util
+                    print(morph_modifiers_dir, morph_modifier[0], str((Path(morph_modifiers_dir) / morph_modifier[0]).with_suffix(".py")))
+                    module_spec = importlib.util.spec_from_file_location(morph_modifier[0], str((Path(morph_modifiers_dir) / morph_modifier[0]).with_suffix(".py")))
+                    modifier_module = importlib.util.module_from_spec(module_spec)
+                    module_spec.loader.exec_module(modifier_module)
                 morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
             elif isinstance(morph_modifier, str):
                 morph_modifiers[i] = getattr(modifiers, morph_modifier)
@@ -270,6 +280,7 @@ def create_cell_model(
     seclist_names=None,
     secarray_names=None,
     nseg_frequency=40,
+    morph_modifiers_dir=None,
 ):
     """Create a cell model based on a morphology, mechanisms and parameters
 
@@ -291,6 +302,7 @@ def create_cell_model(
         nseg_frequency=nseg_frequency,
         morph_modifiers=morph_modifiers,
         morph_modifiers_hoc=morph_modifiers_hoc,
+        morph_modifiers_dir=morph_modifiers_dir,
     )
 
     if seclist_names is None:
@@ -301,7 +313,7 @@ def create_cell_model(
     mechanisms = define_mechanisms(
         model_configuration.mechanisms, model_configuration.mapping_multilocation
     )
-    distributions = define_distributions(model_configuration.distributions, morph)
+    distributions = define_distributions(model_configuration.distributions)
     parameters = define_parameters(
         model_configuration.parameters, distributions, model_configuration.mapping_multilocation
     )

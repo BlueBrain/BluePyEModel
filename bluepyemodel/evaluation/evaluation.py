@@ -274,6 +274,7 @@ def get_evaluator_from_access_point(
         name=access_point.emodel_metadata.emodel,
         model_configuration=model_configuration,
         morph_modifiers=morph_modifiers,
+        morph_modifiers_dir =  getattr(access_point, "emodel_dir", None),
     )
 
     mechanisms_directory = access_point.get_mechanisms_directory()
