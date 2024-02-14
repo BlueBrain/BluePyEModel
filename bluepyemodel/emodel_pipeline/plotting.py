@@ -560,6 +560,10 @@ def dendritic_feature_plot(
 
     if write_fig:
         fname = model.emodel_metadata.as_string(model.seed) + f"__{feature.name}.pdf"
+        # can have '[', ']' and ',' in feature name. Replace those characters
+        fname = fname.replace("[", "_")
+        fname = fname.replace("]", "_")
+        fname = fname.replace(",", "_")
         save_fig(figures_dir, fname)
 
     return fig, ax

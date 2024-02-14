@@ -61,6 +61,7 @@ class EModelPipelineSettings:
         validation_function="max_score",
         validation_threshold=5.0,
         plot_optimisation=True,
+        use_ProbAMPANMDA_EMS=False,
         compile_mechanisms=False,
         n_model=3,
         optimisation_batch_size=5,
@@ -204,6 +205,8 @@ class EModelPipelineSettings:
                 building task done. Only used by the Luigi workflow.
             plot_optimisation (bool): should the e-models scores and traces be plotted. Only used
                 by the Luigi workflow.
+            use_ProbAMPANMDA_EMS (bool): True to link ProbAMPANMDA_EMS in EMC on nexus,
+                and download ProbAMPANMDA from nexus along with other mechanisms.
             compile_mechanisms (bool): should the mod files be copied in the local
                 mechanisms_dir directory. Only used by the Luigi workflow.
             path_extract_config (str): specify the path to the .json file containing the targets
@@ -357,6 +360,9 @@ class EModelPipelineSettings:
         self.protocols_rheobase = protocols_rheobase
         self.auto_targets = auto_targets
         self.auto_targets_presets = auto_targets_presets
+
+        # Settings used with nexus
+        self.use_ProbAMPANMDA_EMS = use_ProbAMPANMDA_EMS
 
     def as_dict(self):
         return vars(self)

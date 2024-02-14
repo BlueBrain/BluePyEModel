@@ -52,6 +52,7 @@ class NeuronModelConfiguration:
         available_mechanisms=None,
         available_morphologies=None,
         morph_modifiers=None,
+        extra_mech_ids=None,
     ):
         """Creates a model configuration, which includes the model parameters, distributions,
         mechanisms and a morphology.
@@ -89,6 +90,16 @@ class NeuronModelConfiguration:
                     .. code-block::
 
                         morph_modifiers = [["path_to_module", "name_of_function"], ...].
+            extra_mech_ids (list of 2-d tuples): extra nexus ids and types to add to
+                related nexus ids. Must have shape:
+
+                    .. code-block::
+
+                        extra_mech_ids = [
+                            ("id1", "type1"),
+                            ("id2", "type2"),
+                            ...
+                        ]
         """
 
         if isinstance(parameters, dict):
@@ -130,6 +141,7 @@ class NeuronModelConfiguration:
         self.available_morphologies = available_morphologies
 
         self.morph_modifiers = morph_modifiers
+        self.extra_mech_ids = extra_mech_ids
 
     @property
     def mechanism_names(self):
@@ -573,6 +585,12 @@ class NeuronModelConfiguration:
             if m.id and m.id not in mechs_ids:
                 uses.append({"id": m.id, "type": "SubCellularModelScript"})
                 mechs_ids.add(m.id)
+
+        if self.extra_mech_ids is not None:
+            for mech_id, mech_type in self.extra_mech_ids:
+                if mech_id not in mechs_ids:
+                    uses.append({"id": mech_id, "type": mech_type})
+                    mechs_ids.add(mech_id)
 
         return {"uses": uses}
 

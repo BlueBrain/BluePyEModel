@@ -180,6 +180,9 @@ class EModelMetadata:
         if seed not in [None, "None"]:
             s += f"seed={seed}__"
 
+        # can have ':' in mtype. Replace this character.
+        s = s.replace(":", "_")
+
         return s[:-2]
 
     def check_emodel_name(self):
