@@ -520,3 +520,199 @@ proc replace_axon(){
     }
 }
 """
+
+
+def replace_axon_olfactory_bulb(sim=None, icell=None):
+    """Replace axon used in olfactory bulb models."""
+    L_target = 60  # length of stub axon
+    nseg0 = 5  # number of segments for each of the two axon sections
+
+    nseg_total = nseg0 * 2
+    chunkSize = L_target / nseg_total
+
+    diams = []
+    lens = []
+
+    count = 0
+    for section in icell.axonal:
+        L = section.L
+        nseg = 1 + int(L / chunkSize / 2.0) * 2  # nseg to get diameter
+        section.nseg = nseg
+
+        for seg in section:
+            count = count + 1
+            diams.append(seg.diam)
+            lens.append(L / nseg)
+            if count == nseg_total:
+                break
+        if count == nseg_total:
+            break
+
+    for section in icell.axonal:
+        sim.neuron.h.delete_section(sec=section)
+    
+    sim.neuron.h.execute("create hillock", icell)
+    sim.neuron.h.execute("create initialseg", icell)
+    sim.neuron.h.execute("create node[5]", icell)
+    sim.neuron.h.execute("create myelin[5]", icell)
+
+    section = icell.hillock
+    section.nseg = 3
+    section.L = 5
+    for seg in section:
+        seg.diam = 10.0925
+    icell.all.append(sec=section)
+    icell.axonal.append(sec=section)
+
+    section = icell.initialseg
+    section.nseg = 3
+    section.L = 30
+    for seg in section:
+        seg.diam = 1.5
+    icell.all.append(sec=section)
+    icell.axonal.append(sec=section)
+
+    for _, section in enumerate(icell.node):
+        section.L = 1
+        for seg in section:
+            seg.diam = 1
+
+        icell.all.append(sec=section)
+        icell.axonal.append(sec=section)
+
+    for _, section in enumerate(icell.myelin):
+        section.L = 1000
+        for seg in section:
+            seg.diam = 1.5
+
+        icell.all.append(sec=section)
+        icell.myelinated.append(sec=section)
+
+    icell.hillock.connect(icell.soma[0], 0.0, 0.0)
+    icell.initialseg.connect(icell.hillock, 1.0, 0.0)
+
+    icell.myelin[0].connect(icell.initialseg, 1.0, 0.0)
+    icell.node[0].connect(icell.myelin[0], 1.0, 0.0)
+    icell.myelin[1].connect(icell.node[0], 1.0, 0.0)
+    icell.node[1].connect(icell.myelin[1], 1.0, 0.0)
+    icell.myelin[2].connect(icell.node[1], 1.0, 0.0)
+    icell.node[2].connect(icell.myelin[2], 1.0, 0.0)
+    icell.myelin[3].connect(icell.node[2], 1.0, 0.0)
+    icell.node[3].connect(icell.myelin[3], 1.0, 0.0)
+    icell.myelin[4].connect(icell.node[3], 1.0, 0.0)
+    icell.node[4].connect(icell.myelin[4], 1.0, 0.0)
+
+
+replace_axon_olfactory_bulb_hoc = """
+proc replace_axon(){ local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSize, L_real localobj diams, lens
+
+	L_target = 60  // length of stub axon
+	nseg0 = 5  // number of segments for each of the two axon sections
+
+	nseg_total = nseg0 * 2
+	chunkSize = L_target/nseg_total
+
+	nSec = 0
+	forsec axonal{nSec = nSec + 1}
+
+	// Try to grab info from original axon
+	if(nSec < 1){ //At least two axon sections have to be present!
+
+		execerror("Less than two axon sections are present! Add an axon to the morphology and try again!")
+
+	} else {
+
+		diams = new Vector()
+		lens = new Vector()
+
+		access axon[0]
+		i1 = v(0.0001) // used when serializing sections prior to sim start
+
+		access axon[1]
+		i2 = v(0.0001) // used when serializing sections prior to sim start
+
+		count = 0
+
+		forsec axonal{ // loop through all axon sections
+
+			nseg = 1 + int(L/chunkSize/2.)*2  //nseg to get diameter
+
+		for (x) {
+			if (x > 0 && x < 1) {
+				count = count + 1
+				diams.resize(count)
+				diams.x[count-1] = diam(x)
+				lens.resize(count)
+				lens.x[count-1] = L/nseg
+				if( count == nseg_total ){
+					break
+				}
+			}
+		}
+		if( count == nseg_total ){
+			break
+		}
+	}
+
+		forsec axonal{delete_section()}
+		execute1("create hillock", CellRef)
+		execute1("create initialseg", CellRef)
+		execute1("create node[5]", CellRef)
+		execute1("create myelin[5]", CellRef)
+
+
+		access hillock
+		nseg = 3
+		L=5
+		diam = 10.0925
+		v(0.0001) = i1
+		nseg=3
+		all.append
+		axonal.append
+		access initialseg
+		nseg = 3
+		L=30
+		diam=1.5
+		v(0.0001) = i2
+		nseg=3
+		all.append
+		axonal.append
+
+		index = i2
+		for i=0,4{
+			access node[i]
+			index += 1
+			L=1
+			diam=1
+			v(0.0001) = index
+			all.append()
+			axonal.append()
+		}
+		for i=0,4{
+			access myelin[i]
+			index += 1
+			v(0.0001) = index
+			L=1000
+			diam=1.5
+			v(0.0001) = i2
+			all.append()
+			myelinated.append()
+		}
+
+		nSecAxonal = 12
+		connect hillock(0), soma(0)
+		connect initialseg(0), hillock(1)
+
+		connect myelin[0](0), initialseg(1)
+		connect node[0](0), myelin[0](1)
+		connect myelin[1](0), node[0](1)
+		connect node[1](0), myelin[1](1)
+		connect myelin[2](0), node[1](1)
+		connect node[2](0), myelin[2](1)
+		connect myelin[3](0), node[2](1)
+		connect node[3](0), myelin[3](1)
+		connect myelin[4](0), node[3](1)
+		connect node[4](0), myelin[4](1)
+	}
+}
+"""
