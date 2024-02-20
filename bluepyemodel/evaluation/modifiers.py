@@ -550,7 +550,7 @@ def replace_axon_olfactory_bulb(sim=None, icell=None):
 
     for section in icell.axonal:
         sim.neuron.h.delete_section(sec=section)
-    
+
     sim.neuron.h.execute("create hillock", icell)
     sim.neuron.h.execute("create initialseg", icell)
     sim.neuron.h.execute("create node[5]", icell)
@@ -606,113 +606,113 @@ def replace_axon_olfactory_bulb(sim=None, icell=None):
 replace_axon_olfactory_bulb_hoc = """
 proc replace_axon(){ local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSize, L_real localobj diams, lens
 
-	L_target = 60  // length of stub axon
-	nseg0 = 5  // number of segments for each of the two axon sections
+    L_target = 60  // length of stub axon
+    nseg0 = 5  // number of segments for each of the two axon sections
 
-	nseg_total = nseg0 * 2
-	chunkSize = L_target/nseg_total
+    nseg_total = nseg0 * 2
+    chunkSize = L_target/nseg_total
 
-	nSec = 0
-	forsec axonal{nSec = nSec + 1}
+    nSec = 0
+    forsec axonal{nSec = nSec + 1}
 
-	// Try to grab info from original axon
-	if(nSec < 1){ //At least two axon sections have to be present!
+    // Try to grab info from original axon
+    if(nSec < 1){ //At least two axon sections have to be present!
 
-		execerror("Less than two axon sections are present! Add an axon to the morphology and try again!")
+        execerror("Less than two axon sections are present! Add an axon to the morphology and try again!")
 
-	} else {
+    } else {
 
-		diams = new Vector()
-		lens = new Vector()
+        diams = new Vector()
+        lens = new Vector()
 
-		access axon[0]
-		i1 = v(0.0001) // used when serializing sections prior to sim start
+        access axon[0]
+        i1 = v(0.0001) // used when serializing sections prior to sim start
 
-		access axon[1]
-		i2 = v(0.0001) // used when serializing sections prior to sim start
+        access axon[1]
+        i2 = v(0.0001) // used when serializing sections prior to sim start
 
-		count = 0
+        count = 0
 
-		forsec axonal{ // loop through all axon sections
+        forsec axonal{ // loop through all axon sections
 
-			nseg = 1 + int(L/chunkSize/2.)*2  //nseg to get diameter
+            nseg = 1 + int(L/chunkSize/2.)*2  //nseg to get diameter
 
-		for (x) {
-			if (x > 0 && x < 1) {
-				count = count + 1
-				diams.resize(count)
-				diams.x[count-1] = diam(x)
-				lens.resize(count)
-				lens.x[count-1] = L/nseg
-				if( count == nseg_total ){
-					break
-				}
-			}
-		}
-		if( count == nseg_total ){
-			break
-		}
-	}
+        for (x) {
+            if (x > 0 && x < 1) {
+                count = count + 1
+                diams.resize(count)
+                diams.x[count-1] = diam(x)
+                lens.resize(count)
+                lens.x[count-1] = L/nseg
+                if( count == nseg_total ){
+                    break
+                }
+            }
+        }
+        if( count == nseg_total ){
+            break
+        }
+    }
 
-		forsec axonal{delete_section()}
-		execute1("create hillock", CellRef)
-		execute1("create initialseg", CellRef)
-		execute1("create node[5]", CellRef)
-		execute1("create myelin[5]", CellRef)
+    forsec axonal{delete_section()}
+    execute1("create hillock", CellRef)
+    execute1("create initialseg", CellRef)
+    execute1("create node[5]", CellRef)
+    execute1("create myelin[5]", CellRef)
 
 
-		access hillock
-		nseg = 3
-		L=5
-		diam = 10.0925
-		v(0.0001) = i1
-		nseg=3
-		all.append
-		axonal.append
-		access initialseg
-		nseg = 3
-		L=30
-		diam=1.5
-		v(0.0001) = i2
-		nseg=3
-		all.append
-		axonal.append
+    access hillock
+    nseg = 3
+    L=5
+    diam = 10.0925
+    v(0.0001) = i1
+    nseg=3
+    all.append
+    axonal.append
+    access initialseg
+    nseg = 3
+    L=30
+    diam=1.5
+    v(0.0001) = i2
+    nseg=3
+    all.append
+    axonal.append
 
-		index = i2
-		for i=0,4{
-			access node[i]
-			index += 1
-			L=1
-			diam=1
-			v(0.0001) = index
-			all.append()
-			axonal.append()
-		}
-		for i=0,4{
-			access myelin[i]
-			index += 1
-			v(0.0001) = index
-			L=1000
-			diam=1.5
-			v(0.0001) = i2
-			all.append()
-			myelinated.append()
-		}
+    index = i2
+    for i=0,4{
+        access node[i]
+        index += 1
+        L=1
+        diam=1
+        v(0.0001) = index
+        all.append()
+        axonal.append()
+    }
+    for i=0,4{
+        access myelin[i]
+        index += 1
+        v(0.0001) = index
+        L=1000
+        diam=1.5
+        v(0.0001) = i2
+        all.append()
+        myelinated.append()
+    }
 
-		nSecAxonal = 12
-		connect hillock(0), soma(0)
-		connect initialseg(0), hillock(1)
+    nSecAxonal = 12
+    connect hillock(0), soma(0)
+    connect initialseg(0), hillock(1)
 
-		connect myelin[0](0), initialseg(1)
-		connect node[0](0), myelin[0](1)
-		connect myelin[1](0), node[0](1)
-		connect node[1](0), myelin[1](1)
-		connect myelin[2](0), node[1](1)
-		connect node[2](0), myelin[2](1)
-		connect myelin[3](0), node[2](1)
-		connect node[3](0), myelin[3](1)
-		connect myelin[4](0), node[3](1)
-		connect node[4](0), myelin[4](1)
-	}
+    connect myelin[0](0), initialseg(1)
+    connect node[0](0), myelin[0](1)
+    connect myelin[1](0), node[0](1)
+    connect node[1](0), myelin[1](1)
+    connect myelin[2](0), node[1](1)
+    connect node[2](0), myelin[2](1)
+    connect myelin[3](0), node[2](1)
+    connect node[3](0), myelin[3](1)
+    connect myelin[4](0), node[3](1)
+    connect node[4](0), myelin[4](1)
+    }
 }
 """
