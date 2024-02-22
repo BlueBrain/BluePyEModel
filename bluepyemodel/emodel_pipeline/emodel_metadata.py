@@ -138,7 +138,8 @@ class EModelMetadata:
         metadata = {}
 
         for k, v in vars(self).items():
-            if v and v != "None":
+            # we do not want allen_notation in resource metadata
+            if v and v != "None" and k != "allen_notation":
                 # rename species into subject and brain_region into brainLocation
                 if k == "species":
                     metadata["subject"] = v
