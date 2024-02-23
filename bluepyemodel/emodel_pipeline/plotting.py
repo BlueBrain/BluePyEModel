@@ -421,9 +421,7 @@ def traces_title(model, threshold=None, holding=None, rmp=None, rin=None):
     return title
 
 
-def thumbnail(
-    model, responses, recording_names, figures_dir="./figures", write_fig=True, dpi=300
-):
+def thumbnail(model, responses, recording_names, figures_dir="./figures", write_fig=True, dpi=300):
     """Plot the trace figure to use as thumbnail."""
     make_dir(figures_dir)
 
@@ -1220,7 +1218,13 @@ def plot_models(
             use_fixed_dt_recordings=False,
         )
 
-    if plot_traces or plot_currentscape or plot_dendritic_ISI_CV or plot_dendritic_rheobase or plot_thumbnail:
+    if (
+        plot_traces
+        or plot_currentscape
+        or plot_dendritic_ISI_CV
+        or plot_dendritic_rheobase
+        or plot_thumbnail
+    ):
         emodels = compute_responses(
             access_point,
             cell_evaluator,
