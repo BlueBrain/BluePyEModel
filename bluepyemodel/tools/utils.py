@@ -22,6 +22,9 @@ from pathlib import Path
 
 import numpy
 
+from bluepyemodel.ecode import eCodes
+from bluepyemodel.ecode import IDrest
+
 logger = logging.getLogger("__main__")
 
 
@@ -207,3 +210,41 @@ def get_mapped_protocol_name(protocol_name, protocols_mapping):
             if protocol_name.lower() in p.lower():
                 return protocols_mapping[p]
     return protocol_name
+
+
+def select_rec_for_thumbnail(rec_names, additional_step_prots=None):
+    """Select a recording for thumbnail.
+    
+    Select the step protocol with lowest positive amplitude, so that delay is visible if present.
+
+    Args:
+        rec_names (list): the names of the recordings, following this naming convention:
+            protocol_name_amplitude.location.variable
+        additional_step_prots (list): step protocol names to look for (other than defaults ones)
+    """
+    selected_rec = ""
+    selected_amp = numpy.inf
+    step_prots = [prot_name for prot_name, prot in eCodes.items() if prot is IDrest]
+    if additional_step_prots:
+        step_prots = step_prots + additional_step_prots
+
+    for rec_name in rec_names:
+        if any(step_prot.lower() in rec_name.lower() for step_prot in step_prots):
+            prot_name = rec_name.split(".")[0]
+            try:
+                _, rec_amp = format_protocol_name_to_list(prot_name)
+                if rec_amp > 0 and rec_amp < selected_amp:
+                    selected_rec = rec_name
+                    selected_amp = rec_amp
+            except (TypeError, ValueError):
+                logger.warning("Could not find amplitude in %s, skipping it.", prot_name)
+
+    if selected_rec == "":
+        if len(rec_names) < 1:
+            raise ValueError("No recording in recording_names. Can not plot thumbnail.")
+        logger.warning("Could not find any step protocol in recording. Will take the first one.")
+        return rec_names[0]
+    
+    logger.debug("Selected %s for thumbnail", selected_rec)
+
+    return selected_rec

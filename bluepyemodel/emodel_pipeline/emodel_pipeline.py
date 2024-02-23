@@ -288,6 +288,7 @@ class EModel_pipeline:
             plot_distributions=True,
             plot_scores=True,
             plot_traces=True,
+            plot_thumbnail=True,
             plot_currentscape=self.access_point.pipeline_settings.plot_currentscape,
             plot_bAP_EPSP=self.access_point.pipeline_settings.plot_bAP_EPSP,
             plot_dendritic_ISI_CV=True,

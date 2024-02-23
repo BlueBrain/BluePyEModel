@@ -47,6 +47,7 @@ from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
+from bluepyemodel.tools.utils import select_rec_for_thumbnail
 
 # pylint: disable=W0612,W0102,C0209
 
@@ -65,10 +66,10 @@ colours = {
 }
 
 
-def save_fig(figures_dir, figure_name):
+def save_fig(figures_dir, figure_name, dpi=100):
     """Save a matplotlib figure"""
     p = Path(figures_dir) / figure_name
-    plt.savefig(str(p), dpi=100, bbox_inches="tight")
+    plt.savefig(str(p), dpi=dpi, bbox_inches="tight")
     plt.close("all")
     plt.clf()
 
@@ -418,6 +419,30 @@ def traces_title(model, threshold=None, holding=None, rmp=None, rin=None):
         title += " ; Input Resistance = {:.2f} MOhm".format(rin)
 
     return title
+
+
+def thumbnail(
+    model, responses, recording_names, figures_dir="./figures", write_fig=True, dpi=300
+):
+    """Plot the trace figure to use as thumbnail."""
+    make_dir(figures_dir)
+
+    trace_name = select_rec_for_thumbnail(recording_names)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ylabel = get_traces_ylabel(var=trace_name.split(".")[-1])
+    ax.plot(responses[trace_name]["time"], responses[trace_name]["voltage"], color="black")
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel(ylabel)
+
+    fname = model.emodel_metadata.as_string(model.seed) + "__thumbnail.png"
+
+    if write_fig:
+        save_fig(figures_dir, fname, dpi=dpi)
+
+    return fig, ax
 
 
 def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures", write_fig=True):
@@ -1131,6 +1156,7 @@ def plot_models(
     plot_distributions=True,
     plot_scores=True,
     plot_traces=True,
+    plot_thumbnail=True,
     plot_currentscape=False,
     plot_if_curve=False,
     plot_dendritic_ISI_CV=True,
@@ -1153,6 +1179,7 @@ def plot_models(
         plot_distributions (bool): True to plot the parameters distributions
         plot_scores (bool): True to plot the scores
         plot_traces (bool): True to plot the traces
+        plot_thumbnail (bool): True to plot a trace used as thumbnail
         plot_currentscape (bool): True to plot the currentscapes
         plot_if_curve (bool): True to plot the current / frequency curve
         plot_dendritic_ISI_CV (bool): True to plot dendritic ISI CV (if present)
@@ -1193,7 +1220,7 @@ def plot_models(
             use_fixed_dt_recordings=False,
         )
 
-    if plot_traces or plot_currentscape or plot_dendritic_ISI_CV or plot_dendritic_rheobase:
+    if plot_traces or plot_currentscape or plot_dendritic_ISI_CV or plot_dendritic_rheobase or plot_thumbnail:
         emodels = compute_responses(
             access_point,
             cell_evaluator,
@@ -1251,6 +1278,14 @@ def plot_models(
                 stimuli,
             )
             traces(mo, mo.responses, recording_names, stimuli, figures_dir_traces)
+
+        if plot_thumbnail:
+            figures_dir_thumbnail = figures_dir / "thumbnail" / dest_leaf
+            recording_names = get_recording_names(
+                access_point.get_fitness_calculator_configuration().protocols,
+                stimuli,
+            )
+            thumbnail(mo, mo.responses, recording_names, figures_dir_thumbnail)
 
         if plot_dendritic_ISI_CV:
             dendritic_feature_plots(mo, "ISI_CV", dest_leaf, figures_dir)
