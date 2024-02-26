@@ -77,9 +77,9 @@ def search_figure_efeatures(emodel, protocol_name, efeature):
 def figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the convergence of the optimisation"""
 
-    fname = f"{emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)}.pdf"
+    fname = f"{emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)}__optimisation.pdf"
 
-    return Path("./figures") / emodel_metadata.emodel / fname
+    return Path("./figures") / emodel_metadata.emodel / "optimisation" / fname
 
 
 def search_figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True):
@@ -130,6 +130,28 @@ def search_figure_emodel_score(emodel_metadata, seed, use_allen_notation=True):
     """Search for the pdf representing the scores of an emodel"""
 
     pathname, pathname_val = figure_emodel_score(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
+
+
+def figure_emodel_thumbnail(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdf representing the thumbnail of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__thumbnail.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "thumbnail" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "thumbnail" / "validated" / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_thumbnail(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdf representing the thumbnail of an emodel"""
+
+    pathname, pathname_val = figure_emodel_thumbnail(
         emodel_metadata, seed, use_allen_notation=use_allen_notation
     )
 
@@ -246,6 +268,51 @@ def search_figure_emodel_parameters(emodel_metadata, use_allen_notation=True):
     )
 
     return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
+
+
+def figure_emodel_parameters_evolution(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdf representing the evolution of the parameters of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__evo_parameter_density.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "parameter_evolution" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "parameter_evolution" / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_parameters_evolution(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdf representing the evolution of the parameters of an emodel"""
+
+    pathname, pathname_val = figure_emodel_parameters(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
+
+
+def figure_emodel_currentscapes(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdfs representing the currentscapes of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__currentscape*.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "currentscape" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "currentscape" / "validated"
+    pathname_val = pathname_val / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_currentscapes(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdfs representing the currentscapes of an emodel"""
+
+    pathname, pathname_val = figure_emodel_currentscapes(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return list(search_figure_paths(str(pathname))) + list(search_figure_paths(str(pathname_val)))
 
 
 def copy_emodel_pdf_dependency_to_new_path(old_path, new_path):

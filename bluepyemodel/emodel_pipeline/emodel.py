@@ -127,9 +127,25 @@ class EModel:
         if scores_pdf:
             pdfs += [p for p in scores_pdf if p]
 
+        thumbnail_pdf = search_pdfs.search_figure_emodel_thumbnail(self.emodel_metadata, seed)
+        if thumbnail_pdf:
+            pdfs += [p for p in thumbnail_pdf if p]
+
         parameters_pdf = search_pdfs.search_figure_emodel_parameters(self.emodel_metadata)
         if parameters_pdf:
             pdfs += [p for p in parameters_pdf if p]
+
+        parameters_evo_pdf = search_pdfs.search_figure_emodel_parameters_evolution(
+            self.emodel_metadata, seed
+        )
+        if parameters_evo_pdf:
+            pdfs += [p for p in parameters_evo_pdf if p]
+
+        currentscape_pdfs = search_pdfs.search_figure_emodel_currentscapes(
+            self.emodel_metadata, seed
+        )
+        if currentscape_pdfs:
+            pdfs += [p for p in currentscape_pdfs if p]
 
         bAP_pdf = search_pdfs.search_figure_emodel_bAP(self.emodel_metadata, seed)
         if bAP_pdf:
