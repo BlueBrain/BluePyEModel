@@ -140,7 +140,7 @@ def figure_emodel_thumbnail(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the thumbnail of an emodel"""
 
     metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
-    fname = f"{metadata_str}__thumbnail.pdf"
+    fname = f"{metadata_str}__thumbnail.png"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "thumbnail" / "all" / fname
     pathname_val = Path("./figures") / emodel_metadata.emodel / "thumbnail" / "validated" / fname
@@ -285,7 +285,7 @@ def figure_emodel_parameters_evolution(emodel_metadata, seed, use_allen_notation
 def search_figure_emodel_parameters_evolution(emodel_metadata, seed, use_allen_notation=True):
     """Search for the pdf representing the evolution of the parameters of an emodel"""
 
-    pathname, pathname_val = figure_emodel_parameters(
+    pathname, pathname_val = figure_emodel_parameters_evolution(
         emodel_metadata, seed, use_allen_notation=use_allen_notation
     )
 
