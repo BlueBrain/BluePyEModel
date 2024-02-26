@@ -172,10 +172,17 @@ class NeuronModelConfiguration:
 
         return locations
 
-    def init_from_dict(self, configuration_dict, auto_mechanism=False):
+    def init_from_dict(self, configuration_dict, morphology, auto_mechanism=False):
         """Instantiate the object from its dictionary form"""
 
         if "distributions" in configuration_dict:
+            # empty the list of distributions
+            if self.distributions and configuration_dict["distributions"]:
+                # remove default uniform distribution if added at
+                # https://github.com/BlueBrain/BluePyEModel/blob/
+                # 15b8dd2824453a8bf097b2ede13dd7ecf5d07d05/bluepyemodel/access_point/local.py#L399
+                logger.warning("Removing %s pre-existing distribution(s)", len(self.distributions))
+                self.distributions = []
             for distribution in configuration_dict["distributions"]:
                 self.add_distribution(
                     distribution["name"],
@@ -206,7 +213,8 @@ class NeuronModelConfiguration:
                     mechanism.get("ljp_corrected", None),
                 )
 
-        self.morphology = MorphologyConfiguration(**configuration_dict["morphology"])
+        morphology_params = {**configuration_dict["morphology"], **morphology}
+        self.morphology = MorphologyConfiguration(**morphology_params)
 
     def init_from_legacy_dict(self, parameters, morphology):
         """Instantiate the object from its legacy dictionary form"""
