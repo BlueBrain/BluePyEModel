@@ -202,7 +202,7 @@ def optimisation(
     p = Path(checkpoint_path)
 
     figure_name = p.stem
-    figure_name += ".pdf"
+    figure_name += "__optimisation.pdf"
 
     plt.tight_layout()
 
@@ -265,7 +265,7 @@ def _create_figure_parameter_histograms(
     p = Path(checkpoint_path)
 
     figure_name = p.stem
-    figure_name += "_evo_parameter_density.pdf"
+    figure_name += "__evo_parameter_density.pdf"
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.92)
@@ -421,11 +421,19 @@ def traces_title(model, threshold=None, holding=None, rmp=None, rin=None):
     return title
 
 
-def thumbnail(model, responses, recording_names, figures_dir="./figures", write_fig=True, dpi=300):
+def thumbnail(
+    model,
+    responses,
+    recording_names,
+    figures_dir="./figures",
+    write_fig=True,
+    dpi=300,
+    thumbnail_rec=None,
+):
     """Plot the trace figure to use as thumbnail."""
     make_dir(figures_dir)
 
-    trace_name = select_rec_for_thumbnail(recording_names)
+    trace_name = select_rec_for_thumbnail(recording_names, thumbnail_rec=thumbnail_rec)
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -1505,7 +1513,7 @@ def currentscape(
                     key_dict, output_dir
                 )
 
-            name = ".".join((metadata_str, prot, loc))
+            name = ".".join((f"{metadata_str}__currentscape", prot, loc))
 
             # adapt config
             if current_subset and key_dict["current_names"]:

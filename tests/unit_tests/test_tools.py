@@ -124,3 +124,14 @@ def test_select_rec_for_thumbnail():
     assert select_rec_for_thumbnail(
         rec_names, additional_step_prots=other_step_prot_names
     ) == "MyStep_100.soma.v"
+
+    # thumbnail_rec case
+    rec_names = ["IDrest_130.soma.v", "sAHP_40.soma.v"]
+    assert select_rec_for_thumbnail(rec_names, thumbnail_rec="sAHP_40.soma.v") == "sAHP_40.soma.v"
+
+    # thumbnail_rec not in rec_names:
+    rec_names = ["sAHP_40.soma.v", "IDrest_130.soma.v"]
+    assert select_rec_for_thumbnail(
+        rec_names, thumbnail_rec="sAHP_20.soma.v"
+    ) == "IDrest_130.soma.v"
+

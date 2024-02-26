@@ -212,7 +212,7 @@ def get_mapped_protocol_name(protocol_name, protocols_mapping):
     return protocol_name
 
 
-def select_rec_for_thumbnail(rec_names, additional_step_prots=None):
+def select_rec_for_thumbnail(rec_names, additional_step_prots=None, thumbnail_rec=None):
     """Select a recording for thumbnail.
 
     Select the step protocol with lowest positive amplitude, so that delay is visible if present.
@@ -221,7 +221,15 @@ def select_rec_for_thumbnail(rec_names, additional_step_prots=None):
         rec_names (list): the names of the recordings, following this naming convention:
             protocol_name_amplitude.location.variable
         additional_step_prots (list): step protocol names to look for (other than defaults ones)
+        thumbnail_rec (str): recording name to use for thumbnail if present
     """
+    if thumbnail_rec is not None:
+        if thumbnail_rec in rec_names:
+            return thumbnail_rec
+        logger.warning(
+            "Could not find %s in recording names. Will use another recording for thumbnail plot.",
+            thumbnail_rec
+        )
     selected_rec = ""
     selected_amp = numpy.inf
     step_prots = [prot_name for prot_name, prot in eCodes.items() if prot is IDrest]
