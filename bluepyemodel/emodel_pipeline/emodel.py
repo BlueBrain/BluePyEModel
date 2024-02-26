@@ -190,6 +190,6 @@ class EModel:
             "features": features_resource,
             "scoreValidation": scores_validation_resource,
             "passedValidation": self.passed_validation,
-            "nexus_distributions": pdf_dependencies,
+            "nexus_images": pdf_dependencies,
             "seed": self.seed,
         }
