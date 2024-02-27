@@ -203,17 +203,9 @@ class LocalAccessPoint(DataAccessPoint):
 
     def _config_to_final(self, config):
         """Convert the configuration stored in EM_*.json to the format used for final.json."""
-        metadata = self.emodel_metadata
         return {
-            metadata.emodel: {
-                "iteration": metadata.iteration,
-                "emodel": metadata.emodel,
-                "etype": metadata.etype,
-                "ttype": metadata.ttype,
-                "mtype": metadata.mtype,
-                "species": metadata.species,
-                "brain_region": metadata.brain_region,
-                "synapse_class": metadata.synapse_class,
+            self.emodel_metadata.emodel: {
+                **vars(self.emodel_metadata),
                 "score": config["fitness"],  # float
                 "parameters": config["parameter"],  # list[dict]
                 "fitness": config["score"],  # list[dict]
