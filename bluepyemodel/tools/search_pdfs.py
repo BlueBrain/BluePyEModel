@@ -77,7 +77,8 @@ def search_figure_efeatures(emodel, protocol_name, efeature):
 def figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the convergence of the optimisation"""
 
-    fname = f"{emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)}__optimisation.pdf"
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__optimisation.pdf"
 
     return Path("./figures") / emodel_metadata.emodel / "optimisation" / fname
 
@@ -323,6 +324,8 @@ def copy_emodel_pdf_dependency_to_new_path(old_path, new_path):
 
 def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
     """Copy dependencies to new path using allen notation"""
+    # pylint: disable=too-many-locals
+    # TODO: refactor this function
     old_opt_path = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=False)
     new_opt_path = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True)
     copy_emodel_pdf_dependency_to_new_path(old_opt_path, new_opt_path)
@@ -363,7 +366,6 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
     copy_emodel_pdf_dependency_to_new_path(old_thumbnail_path, new_thumbnail_path)
     copy_emodel_pdf_dependency_to_new_path(old_thumbnail_path_val, new_thumbnail_path_val)
 
-
     old_evo_path = figure_emodel_parameters_evolution(
         emodel_metadata, seed, use_allen_notation=False
     )
@@ -381,7 +383,7 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
         emodel_metadata, seed, use_allen_notation=True
     )
     for old_path in old_currentscape_path:
-        prot = str(Path(old_path).stem).split("currentscape")[-1]
+        prot = str(Path(old_path).stem).rsplit("currentscape", maxsplit=1)[-1]
         if "/validated/" in str(old_path):
             new_path = str(new_currentscape_path_val).replace("*", prot)
         else:

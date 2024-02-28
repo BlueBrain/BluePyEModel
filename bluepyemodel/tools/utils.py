@@ -228,7 +228,7 @@ def select_rec_for_thumbnail(rec_names, additional_step_prots=None, thumbnail_re
             return thumbnail_rec
         logger.warning(
             "Could not find %s in recording names. Will use another recording for thumbnail plot.",
-            thumbnail_rec
+            thumbnail_rec,
         )
     selected_rec = ""
     selected_amp = numpy.inf

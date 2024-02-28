@@ -1314,8 +1314,6 @@ def plot_models(
                 metadata_str=mo.emodel_metadata.as_string(mo.seed),
                 figures_dir=figures_dir_currentscape,
                 emodel=mo.emodel_metadata.emodel,
-                iteration_tag=mo.emodel_metadata.iteration,
-                seed=mo.seed,
             )
             # reset rcParams which are modified by currentscape
             matplotlib.rcParams.update(matplotlib.rcParamsDefault)
@@ -1448,8 +1446,6 @@ def currentscape(
     metadata_str="",
     figures_dir="./figures",
     emodel="",
-    seed=None,
-    iteration_tag=None,
 ):
     """Plot the currentscapes for all protocols.
 
@@ -1464,7 +1460,8 @@ def currentscape(
         iteration_tag (str): githash
         seed (int): random seed number
     """
-    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-branches, too-many-statements
+    # TODO: refactor this a little
     if responses is None and output_dir is None:
         raise TypeError("Responses or output directory must be set.")
 
@@ -1481,6 +1478,10 @@ def currentscape(
         updated_config["ions"] = {}
     if "output" not in updated_config:
         updated_config["output"] = {}
+    if "legend" not in updated_config:
+        updated_config["legend"] = {}
+    if "show" not in updated_config:
+        updated_config["show"] = {}
 
     current_subset = None
     if "names" in updated_config["current"]:
@@ -1538,9 +1539,17 @@ def currentscape(
             updated_config["output"]["fname"] = name
             if "dir" not in updated_config["output"]:
                 updated_config["output"]["dir"] = figures_dir
-            if "title" not in updated_config and emodel:
-                title = get_title(emodel, iteration_tag, seed)
+            if "title" not in config and emodel:
+                # check config because we want to change this for each plot
+                title = f"{emodel}  {prot}"
                 updated_config["title"] = title
+            # resizing
+            if "figsize" not in updated_config:
+                updated_config["figsize"] = (4.5, 6)
+            if "textsize" not in updated_config:
+                updated_config["textsize"] = 8
+            if "textsize" not in updated_config["legend"]:
+                updated_config["legend"]["textsize"] = 5
 
             if len(voltage) == 0 or len(currents) == 0:
                 logger.warning(
