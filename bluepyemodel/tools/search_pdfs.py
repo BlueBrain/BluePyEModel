@@ -277,19 +277,18 @@ def figure_emodel_parameters_evolution(emodel_metadata, seed, use_allen_notation
     fname = f"{metadata_str}__evo_parameter_density.pdf"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "parameter_evolution" / fname
-    pathname_val = Path("./figures") / emodel_metadata.emodel / "parameter_evolution" / fname
 
-    return pathname, pathname_val
+    return pathname
 
 
 def search_figure_emodel_parameters_evolution(emodel_metadata, seed, use_allen_notation=True):
     """Search for the pdf representing the evolution of the parameters of an emodel"""
 
-    pathname, pathname_val = figure_emodel_parameters_evolution(
+    pathname = figure_emodel_parameters_evolution(
         emodel_metadata, seed, use_allen_notation=use_allen_notation
     )
 
-    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
+    return search_figure_path(str(pathname))
 
 
 def figure_emodel_currentscapes(emodel_metadata, seed, use_allen_notation=True):
@@ -354,3 +353,37 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
     )
     copy_emodel_pdf_dependency_to_new_path(old_params_path, new_params_path)
     copy_emodel_pdf_dependency_to_new_path(old_params_path_val, new_params_path_val)
+
+    old_thumbnail_path, old_thumbnail_path_val = figure_emodel_thumbnail(
+        emodel_metadata, seed, use_allen_notation=False
+    )
+    new_thumbnail_path, new_thumbnail_path_val = figure_emodel_thumbnail(
+        emodel_metadata, seed, use_allen_notation=True
+    )
+    copy_emodel_pdf_dependency_to_new_path(old_thumbnail_path, new_thumbnail_path)
+    copy_emodel_pdf_dependency_to_new_path(old_thumbnail_path_val, new_thumbnail_path_val)
+
+
+    old_evo_path = figure_emodel_parameters_evolution(
+        emodel_metadata, seed, use_allen_notation=False
+    )
+    new_evo_path = figure_emodel_parameters_evolution(
+        emodel_metadata, seed, use_allen_notation=True
+    )
+    copy_emodel_pdf_dependency_to_new_path(old_evo_path, new_evo_path)
+
+    # take into account that we have to search for currentscape plots
+    # because we do not know a priori the protocols and locations
+    old_currentscape_path = search_figure_emodel_currentscapes(
+        emodel_metadata, seed, use_allen_notation=False
+    )
+    new_currentscape_path, new_currentscape_path_val = figure_emodel_currentscapes(
+        emodel_metadata, seed, use_allen_notation=True
+    )
+    for old_path in old_currentscape_path:
+        prot = str(Path(old_path).stem).split("currentscape")[-1]
+        if "/validated/" in str(old_path):
+            new_path = str(new_currentscape_path_val).replace("*", prot)
+        else:
+            new_path = str(new_currentscape_path).replace("*", prot)
+        copy_emodel_pdf_dependency_to_new_path(Path(old_path), Path(new_path))
