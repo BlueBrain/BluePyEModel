@@ -1,5 +1,5 @@
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2024, EPFL/Blue Brain Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,39 +23,36 @@ from pandas.testing import assert_frame_equal
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 
 
-def test_protocols(db, tmp_path):
+def test_protocols(db_from_nexus, tmp_path):
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
 
-    params = db.get_emodel().parameters
-    evaluator = get_evaluator_from_access_point(access_point=db)
+    params = db_from_nexus.get_emodel().parameters
+    evaluator = get_evaluator_from_access_point(access_point=db_from_nexus)
 
     responses = evaluator.run_protocols(
         protocols=evaluator.fitness_protocols.values(), param_values=params
     )
 
-    assert_allclose(responses["bpo_rmp"], -77.232155, rtol=1e-06)
-    assert_allclose(responses["bpo_holding_current"], -0.146875, rtol=1e-06)
-    assert_allclose(responses["bpo_rin"], 37.32179555, rtol=1e-06)
-    assert_allclose(responses["bpo_threshold_current"], 0.4765729735, rtol=1e-06)
+    # FIXME: remove print after clarifying the different result when executing the test alone
+    print(responses)
+    assert_allclose(responses["bpo_rmp"], -82.61402706564716, rtol=1e-06)
+    assert_allclose(responses["bpo_holding_current"], -0.05, rtol=1e-06)
+    assert_allclose(responses["bpo_rin"], 41.13626022273351, rtol=1e-06)
+    assert_allclose(responses["bpo_threshold_current"], 0.3757011543411314, rtol=1e-06)
 
     for prot_name in [
-        "RMPProtocol.soma.v",
-        "RinProtocol.soma.v",
-        "bAP.soma.v",
-        "bAP.dend1.v",
-        "bAP.dend2.v",
-        "bAP.ca_prox_apic.cai",
-        "bAP.ca_prox_basal.cai",
-        "bAP.ca_soma.cai",
-        "bAP.ca_ais.cai",
-        "Step_200.soma.v",
-        "Step_280.soma.v",
-        "APWaveform_320.soma.v",
+        "APWaveform_280.soma.v",
+        "IDrest_150.soma.v",
+        "IDrest_250.soma.v",
         "IV_-100.soma.v",
-        "SpikeRec_600.soma.v",
+        "RinProtocol.soma.v",
+        "RMPProtocol.soma.v",
+        "SearchHoldingCurrent.soma.v",
+        "SearchThresholdCurrent.soma.v",
     ]:
-        responses[prot_name].response.to_csv(f"{tmp_path}/test_{prot_name}.csv", index=False)
-        expected_df = pd.read_csv(f"{tmp_path}/test_{prot_name}.csv")
+        output_path = f"{tmp_path}/test_{prot_name}.csv"
+        responses[prot_name].response.to_csv(output_path, index=False)
+        expected_df = pd.read_csv(output_path)
         response = responses[prot_name].response
         assert_frame_equal(response, expected_df)
