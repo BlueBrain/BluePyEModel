@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
 import bluepyopt.ephys as ephys
 
 from bluepyemodel.model import model
-from bluepyemodel.model.parameter_configuration import ParameterConfiguration
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
+from bluepyemodel.model.parameter_configuration import ParameterConfiguration
+
 
 def test_multi_locations():
 

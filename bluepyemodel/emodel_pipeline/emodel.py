@@ -67,7 +67,7 @@ class EModel:
             passedValidation (bool or None): did the model go through validation and if yes,
                 did it pass it successfully (None: no validation, True: passed, False: didn't pass)
             seed (str): seed used during optimisation for this emodel.
-            emodel_metadata (str): metadata of the model (emodel name, etype, ttype, ...)
+            emodel_metadata (EModelMetadata): metadata of the model (emodel name, etype, ttype, ...)
         """
 
         self.emodel_metadata = emodel_metadata

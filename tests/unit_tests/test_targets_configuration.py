@@ -18,6 +18,7 @@ import pytest
 
 from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
 
+
 @pytest.fixture
 def config_dict():
 
@@ -38,6 +39,7 @@ def config_dict():
     }
 
     return config_dict
+
 
 def test_init(config_dict):
 

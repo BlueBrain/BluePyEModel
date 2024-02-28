@@ -20,7 +20,6 @@ import pytest
 
 from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 
-
 metadata_args = {
     "emodel": "L5_TPC",
     "etype": "cAC",

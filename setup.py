@@ -16,13 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import imp
-import sys
-
-from setuptools import setup, find_packages
-
-if sys.version_info < (3, 7):
-    sys.exit("Sorry, Python < 3.7 is not supported")
+from setuptools import find_packages, setup
 
 # Read the contents of the README file
 with open("README.rst", encoding="utf-8") as f:
@@ -59,6 +53,7 @@ setup(
     long_description=README,
     long_description_content_type="text/x-rst",
     license="Apache-2.0",
+    python_requires=">=3.8",
     install_requires=[
         "numpy",
         "scipy",
