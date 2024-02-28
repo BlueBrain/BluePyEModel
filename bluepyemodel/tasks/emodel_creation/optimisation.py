@@ -931,8 +931,7 @@ class EModelCreation(WorkflowTask):
             if EmodelAPIConfig().api == "nexus":
                 self.access_point.check_mettypes()
             # do this instead of just func(self) because of the yield in EModelCreation
-            for x in func(self):
-                yield x
+            yield from func(self)
 
         return inner
 

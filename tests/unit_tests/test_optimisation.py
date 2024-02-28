@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
-
 from bluepyemodel.tools.utils import get_checkpoint_path
 from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
+
 
 def test_get_checkpoint_path():
     metadata = EModelMetadata(emodel="L5PC", ttype="t type", iteration_tag="test")
