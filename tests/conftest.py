@@ -1,5 +1,5 @@
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2024, EPFL/Blue Brain Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@ def emodel_dir(workspace):
     """Copy the required files to workspace/emodel."""
     dirs = ["config", "mechanisms", "morphology", "ephys_data"]
     files = ["final.json"]
-    emodel_dir = workspace / "emodel"
+    dst = workspace / "emodel"
     for name in dirs:
-        shutil.copytree(DATA / name, emodel_dir / name)
+        shutil.copytree(DATA / name, dst / name)
     for name in files:
-        shutil.copyfile(DATA / name, emodel_dir / name)
-    yield emodel_dir
+        shutil.copyfile(DATA / name, dst / name)
+    yield dst
 
 
 @pytest.fixture
