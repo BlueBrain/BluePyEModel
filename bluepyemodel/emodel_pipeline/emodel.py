@@ -106,9 +106,11 @@ class EModel:
         self.responses = {}
         self.evaluator = None
 
-    def copy_pdf_dependencies_to_new_path(self, seed):
+    def copy_pdf_dependencies_to_new_path(self, seed, overwrite=False):
         """Copy pdf dependencies to new path using allen notation"""
-        search_pdfs.copy_emodel_pdf_dependencies_to_new_path(self.emodel_metadata, seed)
+        search_pdfs.copy_emodel_pdf_dependencies_to_new_path(
+            self.emodel_metadata, seed, overwrite=overwrite
+        )
 
     def build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
@@ -139,7 +141,13 @@ class EModel:
             self.emodel_metadata, seed
         )
         if parameters_evo_pdf:
-            pdfs += [p for p in parameters_evo_pdf if p]
+            pdfs.append(parameters_evo_pdf)
+
+        all_parameters_evo_pdf = search_pdfs.search_figure_emodel_parameters_evolution(
+            self.emodel_metadata, seed=None
+        )
+        if all_parameters_evo_pdf:
+            pdfs.append(all_parameters_evo_pdf)
 
         currentscape_pdfs = search_pdfs.search_figure_emodel_currentscapes(
             self.emodel_metadata, seed
