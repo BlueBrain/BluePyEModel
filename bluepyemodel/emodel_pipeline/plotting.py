@@ -1541,7 +1541,7 @@ def currentscape(
                 updated_config["output"]["dir"] = figures_dir
             if "title" not in config and emodel:
                 # check config because we want to change this for each plot
-                title = f"{emodel}  {prot}"
+                title = f"{emodel}\n{prot}"
                 updated_config["title"] = title
             # resizing
             if "figsize" not in updated_config:
