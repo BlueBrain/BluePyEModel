@@ -34,8 +34,6 @@ def test_protocols(db_from_nexus, tmp_path):
         protocols=evaluator.fitness_protocols.values(), param_values=params
     )
 
-    # FIXME: remove print after clarifying the different result when executing the test alone
-    print(responses)
     assert_allclose(responses["bpo_rmp"], -82.61402706564716, rtol=1e-06)
     assert_allclose(responses["bpo_holding_current"], -0.05, rtol=1e-06)
     assert_allclose(responses["bpo_rin"], 41.151498, rtol=1e-06)
