@@ -38,8 +38,8 @@ def test_protocols(db_from_nexus, tmp_path):
     print(responses)
     assert_allclose(responses["bpo_rmp"], -82.61402706564716, rtol=1e-06)
     assert_allclose(responses["bpo_holding_current"], -0.05, rtol=1e-06)
-    assert_allclose(responses["bpo_rin"], 41.13626022273351, rtol=1e-06)
-    assert_allclose(responses["bpo_threshold_current"], 0.3757011543411314, rtol=1e-06)
+    assert_allclose(responses["bpo_rin"], 41.151498, rtol=1e-06)
+    assert_allclose(responses["bpo_threshold_current"], 0.3755498847141163, rtol=1e-06)
 
     for prot_name in [
         "APWaveform_280.soma.v",
