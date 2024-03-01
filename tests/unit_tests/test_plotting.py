@@ -14,11 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from pathlib import Path
 
-from bluepyemodel.access_point import get_access_point
-from bluepyemodel.emodel_pipeline.plotting import get_ordered_currentscape_keys
-from bluepyemodel.emodel_pipeline.plotting import get_recording_names
+from bluepyemodel.emodel_pipeline.plotting import get_ordered_currentscape_keys, get_recording_names
 from bluepyemodel.evaluation.evaluator import define_threshold_based_optimisation_protocol
 
 
@@ -38,16 +35,8 @@ def test_get_ordered_currentscape_keys():
     ordered_keys = get_ordered_currentscape_keys(keys)
     assert ordered_keys == expected_keys
 
-def test_recording_names():
-    TEST_ROOT = Path(__file__).parents[1]
-    DATA = TEST_ROOT / "test_data"
-    api_config = {
-        "emodel": "cADpyr_L5TPC",
-        "emodel_dir": DATA,
-        "recipes_path": DATA / "config/recipes.json",
-    }
-    db = get_access_point("local", **api_config)
 
+def test_recording_names(db):
     fitness_calculator_configuration = db.get_fitness_calculator_configuration(
         record_ions_and_currents=True
     )

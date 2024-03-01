@@ -266,8 +266,7 @@ class DataAccessPoint:
         if optimiser == "IBEA":
             gen = cp["generation"]
             stopping_criteria = [MaxNGen(ngen)]
-            # to check if next gen is over max generation
-            stopping_params = {"gen": gen + 1}
+            stopping_params = {"gen": gen}
             run_complete = _check_stopping_criteria(stopping_criteria, stopping_params)
             if run_complete:
                 return OptimisationState.COMPLETED

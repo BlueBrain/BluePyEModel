@@ -16,14 +16,9 @@ limitations under the License.
 
 import pytest
 
-from bluepyemodel.model import model
-
 from bluepyemodel.evaluation.evaluator import get_simulator
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
-
-from tests.unit_tests.test_local_access_point import api_config
-from tests.unit_tests.test_local_access_point import db
-from tests.unit_tests.test_local_access_point import DATA
+from bluepyemodel.model import model
 
 
 @pytest.fixture

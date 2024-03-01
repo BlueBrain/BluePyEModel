@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
-from bluepyemodel.validation import validation_functions
 from bluepyemodel.emodel_pipeline.emodel import EModel
+from bluepyemodel.validation import validation_functions
+
 
 def test_validate_max_score():
 

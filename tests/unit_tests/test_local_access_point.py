@@ -14,29 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
-from pathlib import Path
 import json
+from pathlib import Path
 
-from bluepyemodel.access_point import get_access_point
 from dictdiffer import diff
 
-TEST_ROOT = Path(__file__).parents[1]
-DATA = TEST_ROOT / "test_data"
-
-
-@pytest.fixture
-def api_config():
-    return {
-        "emodel": "cADpyr_L5TPC",
-        "emodel_dir": DATA,
-        "recipes_path": DATA / "config/recipes.json",
-    }
-
-
-@pytest.fixture
-def db(api_config):
-    return get_access_point("local", **api_config)
+from tests.utils import DATA
 
 
 def test_get_morphologies(db):

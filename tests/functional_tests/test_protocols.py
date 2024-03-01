@@ -14,46 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import os
-from pathlib import Path
-import pytest
 import logging
 
 import pandas as pd
 from numpy.testing import assert_allclose
 from pandas.testing import assert_frame_equal
 
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
-from bluepyemodel.access_point import get_access_point
 
-TEST_ROOT = Path(__file__).parents[1]
-DATA = TEST_ROOT / "test_data"
-
-
-@pytest.fixture
-def api_config():
-    return {
-        "emodel": "cADpyr_L5TPC",
-        "emodel_dir": DATA,
-        "recipes_path": DATA / "config/recipes.json",
-    }
-
-
-@pytest.fixture
-def db(api_config):
-    return get_access_point("local", **api_config)
-
-
-@pytest.fixture
-def evaluator(db):
-
-    os.popen(f"nrnivmodl {DATA}/mechanisms").read()
-
-    db.get_mechanisms_directory = lambda: None
-    return get_evaluator_from_access_point(access_point=db)
-
-
-def test_protocols(db, evaluator):
+def test_protocols(db, evaluator, tmp_path):
 
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
@@ -85,7 +53,7 @@ def test_protocols(db, evaluator):
         "IV_-100.soma.v",
         "SpikeRec_600.soma.v",
     ]:
-        responses[prot_name].response.to_csv(f"{DATA}/test_{prot_name}.csv", index=False)
-        expected_df = pd.read_csv(f"{DATA}/test_{prot_name}.csv")
+        responses[prot_name].response.to_csv(f"{tmp_path}/test_{prot_name}.csv", index=False)
+        expected_df = pd.read_csv(f"{tmp_path}/test_{prot_name}.csv")
         response = responses[prot_name].response
         assert_frame_equal(response, expected_df)

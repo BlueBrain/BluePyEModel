@@ -17,17 +17,11 @@ limitations under the License.
 """
 
 import numpy
-
 import pytest
+from bluepyopt.ephys.locations import NrnSeclistCompLocation
+from bluepyopt.ephys.simulators import NrnSimulator
 
 from bluepyemodel.ecode import *
-
-from bluepyopt.ephys.locations import (
-    NrnSeclistCompLocation,
-    NrnSomaDistanceCompLocation,
-    NrnSecSomaDistanceCompLocation,
-)
-from bluepyopt.ephys.simulators import NrnSimulator
 from tests.test_models import dummycells
 
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)

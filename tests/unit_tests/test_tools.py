@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from pathlib import Path
 
 import pytest
 
@@ -22,9 +21,7 @@ from bluepyemodel.tools.mechanisms import get_mechanism_currents
 from bluepyemodel.tools.utils import are_same_protocol
 from bluepyemodel.tools.utils import format_protocol_name_to_list
 from bluepyemodel.tools.utils import select_rec_for_thumbnail
-
-TEST_ROOT = Path(__file__).parents[1]
-DATA = TEST_ROOT / "test_data"
+from tests.utils import DATA
 
 
 def test_get_mechanism_currents():
