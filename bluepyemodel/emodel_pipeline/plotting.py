@@ -435,11 +435,21 @@ def thumbnail(
 
     trace_name = select_rec_for_thumbnail(recording_names, thumbnail_rec=thumbnail_rec)
 
+    # in case e.g. the run fails during preprotocols
+    try:
+        time = responses[trace_name]["time"]
+        voltage = responses[trace_name]["voltage"]
+    except KeyError:
+        logger.warning(
+            f"Could not find protocol {trace_name} in respsonses. Skipping thumbnail plotting."
+        )
+        return None, None
+
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
 
     ylabel = get_traces_ylabel(var=trace_name.split(".")[-1])
-    ax.plot(responses[trace_name]["time"], responses[trace_name]["voltage"], color="black")
+    ax.plot(time, voltage, color="black")
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel(ylabel)
 

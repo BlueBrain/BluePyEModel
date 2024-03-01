@@ -238,7 +238,9 @@ def select_rec_for_thumbnail(rec_names, additional_step_prots=None, thumbnail_re
 
     for rec_name in rec_names:
         # TODO: have a more proper way to remove non somatic injections
-        if not "LocalInjection" in rec_name and any(step_prot.lower() in rec_name.lower() for step_prot in step_prots):
+        if not "LocalInjection" in rec_name and any(
+            step_prot.lower() in rec_name.lower() for step_prot in step_prots
+        ):
             prot_name = rec_name.split(".")[0]
             try:
                 _, rec_amp = format_protocol_name_to_list(prot_name)
