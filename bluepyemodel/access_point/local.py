@@ -19,6 +19,7 @@ limitations under the License.
 import glob
 import json
 import logging
+from functools import cached_property
 from itertools import chain
 from pathlib import Path
 
@@ -49,6 +50,8 @@ seclist_to_sec = {
     "axonal": "axon",
     "myelinated": "myelin",
 }
+
+SUPPORTED_MORPHOLOGY_EXTENSIONS = (".asc", ".swc")
 
 
 class LocalAccessPoint(DataAccessPoint):
@@ -124,8 +127,6 @@ class LocalAccessPoint(DataAccessPoint):
         self.legacy_dir_structure = legacy_dir_structure
         self.with_seeds = with_seeds
 
-        self.morph_path = None
-
         if final_path is None:
             self.final_path = self.emodel_dir / "final.json"
         else:
@@ -141,6 +142,43 @@ class LocalAccessPoint(DataAccessPoint):
         self.pipeline_settings = self.load_pipeline_settings()
         self.unfrozen_params = None
 
+    @cached_property
+    def morph_dir(self):
+        """Return the morphology directory as read from the recipes, or fallback to 'morphology'."""
+        recipes = self.get_recipes()
+        return Path(self.emodel_dir, recipes.get("morph_path", "morphology"))
+
+    @cached_property
+    def morph_path(self):
+        """Return the path to the morphology file as read from the recipes."""
+        recipes = self.get_recipes()
+
+        morph_file = None
+        if isinstance(recipes["morphology"], str):
+            morph_file = recipes["morphology"]
+        else:
+            for _, morph_file in recipes["morphology"]:
+                if morph_file.endswith(SUPPORTED_MORPHOLOGY_EXTENSIONS):
+                    break
+
+        if not morph_file or not morph_file.endswith(SUPPORTED_MORPHOLOGY_EXTENSIONS):
+            raise FileNotFoundError(f"Morphology file not defined or not supported: {morph_file}")
+
+        morph_path = self.morph_dir / morph_file
+
+        if not morph_path.is_file():
+            raise FileNotFoundError(f"Morphology file not found: {morph_path}")
+        if str(Path.cwd()) not in str(morph_path.resolve()) and self.emodel_metadata.iteration:
+            raise FileNotFoundError(
+                "When using a githash or iteration tag, the path to the morphology must be local"
+                " otherwise it cannot be archived during the creation of the githash. To solve"
+                " this issue, you can copy the morphology from "
+                f"{morph_path.resolve()} to {Path.cwd() / 'morphologies'} and update your "
+                "recipes."
+            )
+
+        return morph_path
+
     def set_emodel(self, emodel):
         """Setter for the name of the emodel, check it exists (with or without seed) in recipe."""
         _emodel = "_".join(emodel.split("_")[:2]) if self.with_seeds else emodel
@@ -154,13 +192,39 @@ class LocalAccessPoint(DataAccessPoint):
 
     def load_pipeline_settings(self):
         """ """
-
-        settings = self.get_recipes().get("pipeline_settings", {})
-
+        recipes = self.get_recipes()
+        settings = recipes.get("pipeline_settings", {})
+        if isinstance(settings, str):
+            # read the pipeline settings from file
+            settings = self.get_json("pipeline_settings")
         if "morph_modifiers" not in settings:
-            settings["morph_modifiers"] = self.get_recipes().get("morph_modifiers", None)
-
+            settings["morph_modifiers"] = recipes.get("morph_modifiers", None)
         return EModelPipelineSettings(**settings)
+
+    def _config_to_final(self, config):
+        """Convert the configuration stored in EM_*.json to the format used for final.json."""
+        return {
+            self.emodel_metadata.emodel: {
+                **vars(self.emodel_metadata),
+                "score": config["fitness"],  # float
+                "parameters": config["parameter"],  # list[dict]
+                "fitness": config["score"],  # list[dict]
+                "features": config["features"],  # list[dict]
+                "validation_fitness": config["scoreValidation"],  # list[dict]
+                "validated": config["passedValidation"],  # bool
+                "seed": config["seed"],  # int
+            }
+        }
+
+    def get_final_content(self, lock_file=True):
+        """Return the final content from recipes if available, or fallback to final.json"""
+        recipes = self.get_recipes()
+        if "final" in recipes:
+            if self.final_path and self.final_path.is_file():
+                logger.warning("Ignored %s, using file from recipes", self.final_path)
+            data = self.get_json("final")
+            return self._config_to_final(data)
+        return self.get_final(lock_file=lock_file)
 
     def get_final(self, lock_file=True):
         """Get emodel dictionary from final.json."""
@@ -380,18 +444,13 @@ class LocalAccessPoint(DataAccessPoint):
 
     def get_available_morphologies(self):
         """Get the list of names of available morphologies"""
-
-        names = []
-
-        morph_dir = self.emodel_dir / "morphology"
+        morph_dir = self.morph_dir
 
         if not morph_dir.is_dir():
             return None
 
-        for morph_file in glob.glob(str(morph_dir / "*.asc")) + glob.glob(str(morph_dir / "*.swc")):
-            names.append(Path(morph_file).stem)
-
-        return set(names)
+        patterns = ["*" + ext for ext in SUPPORTED_MORPHOLOGY_EXTENSIONS]
+        return {morph_file.stem for pattern in patterns for morph_file in morph_dir.glob(pattern)}
 
     def get_model_configuration(self):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
@@ -415,7 +474,7 @@ class LocalAccessPoint(DataAccessPoint):
         if isinstance(parameters["mechanisms"], dict):
             configuration.init_from_legacy_dict(parameters, self.get_morphologies())
         else:
-            configuration.init_from_dict(parameters)
+            configuration.init_from_dict(parameters, self.get_morphologies())
 
         configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
 
@@ -555,28 +614,6 @@ class LocalAccessPoint(DataAccessPoint):
         """
 
         recipes = self.get_recipes()
-
-        if isinstance(recipes["morphology"], str):
-            morph_file = recipes["morphology"]
-        else:
-            morph_file = recipes["morphology"][0][1]
-
-        if self.morph_path is None:
-            self.morph_path = Path(recipes["morph_path"]) / morph_file
-            if not self.morph_path.is_absolute():
-                self.morph_path = Path(self.emodel_dir) / self.morph_path
-        else:
-            self.morph_path = Path(self.morph_path)
-
-        if str(Path.cwd()) not in str(self.morph_path.resolve()) and self.emodel_metadata.iteration:
-            raise FileNotFoundError(
-                "When using a githash or iteration tag, the path to the morphology must be local"
-                " otherwise it cannot be archived during the creation of the githash. To solve"
-                " this issue, you can copy the morphology from "
-                f"{self.morph_path.resolve()} to {Path.cwd() / 'morphologies'} and update your "
-                "recipes."
-            )
-
         morphology_definition = {
             "name": self.morph_path.stem,
             "path": str(self.morph_path),
@@ -628,7 +665,7 @@ class LocalAccessPoint(DataAccessPoint):
     def get_emodel(self, lock_file=True):
         """Get dict with parameter of single emodel (including seed if any)"""
 
-        final = self.get_final(lock_file=lock_file)
+        final = self.get_final_content(lock_file=lock_file)
 
         if self.emodel_metadata.emodel in final:
             return self.format_emodel_data(final[self.emodel_metadata.emodel])
@@ -648,7 +685,7 @@ class LocalAccessPoint(DataAccessPoint):
             emodels = [self.emodel_metadata.emodel]
 
         models = []
-        for mod_data in self.get_final().values():
+        for mod_data in self.get_final_content().values():
             if mod_data["emodel"] in emodels:
                 models.append(self.format_emodel_data(mod_data))
 
@@ -692,7 +729,7 @@ class LocalAccessPoint(DataAccessPoint):
         return Path(recipes["params"]).is_file()
 
     def get_emodel_etype_map(self):
-        final = self.get_final()
+        final = self.get_final_content()
         return {emodel: emodel.split("_")[0] for emodel in final}
 
     def get_emodel_names(self):
@@ -702,14 +739,14 @@ class LocalAccessPoint(DataAccessPoint):
             dict: keys are emodel names with seed, values are names without seed.
         """
 
-        final = self.get_final()
+        final = self.get_final_content()
 
         return {mod_name: mod.get("emodel", mod_name) for mod_name, mod in final.items()}
 
     def has_best_model(self, seed):
         """Check if the best model has been stored."""
 
-        final = self.get_final()
+        final = self.get_final_content()
 
         model_name = self.get_model_name_for_final(seed)
 
@@ -718,7 +755,7 @@ class LocalAccessPoint(DataAccessPoint):
     def is_checked_by_validation(self, seed):
         """Check if the emodel with a given seed has been checked by Validation task."""
 
-        final = self.get_final()
+        final = self.get_final_content()
 
         model_name = self.get_model_name_for_final(seed)
 
@@ -732,7 +769,7 @@ class LocalAccessPoint(DataAccessPoint):
         """Check if enough models have been validated."""
 
         n_validated = 0
-        final = self.get_final()
+        final = self.get_final_content()
 
         for _, entry in final.items():
             if (

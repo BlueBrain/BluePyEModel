@@ -24,6 +24,15 @@ from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from tests.utils import DATA, cwd
 
 
+@pytest.fixture(scope="session")
+def nrnivmodl(tmp_path_factory):
+    """Compile the mechanisms only once per session."""
+    path = tmp_path_factory.mktemp("nrnivmodl_dir")
+    with cwd(path):
+        os.popen(f"nrnivmodl {DATA}/mechanisms").read()
+    return path
+
+
 @pytest.fixture
 def workspace(tmp_path):
     """Change the working directory to tmp_path.
@@ -35,7 +44,7 @@ def workspace(tmp_path):
 
 
 @pytest.fixture
-def emodel_dir(workspace):
+def emodel_dir(workspace, nrnivmodl):
     """Copy the required files to workspace/emodel."""
     dirs = ["config", "mechanisms", "morphology", "ephys_data"]
     files = ["final.json"]
@@ -44,6 +53,7 @@ def emodel_dir(workspace):
         shutil.copytree(DATA / name, dst / name)
     for name in files:
         shutil.copyfile(DATA / name, dst / name)
+    shutil.copytree(nrnivmodl / "x86_64", workspace / "x86_64")
     yield dst
 
 
@@ -72,7 +82,10 @@ def db_restart(emodel_dir):
 
 
 @pytest.fixture
-def evaluator(db, emodel_dir):
-    os.popen(f"nrnivmodl {emodel_dir}/mechanisms").read()
-    db.get_mechanisms_directory = lambda: None
-    return get_evaluator_from_access_point(access_point=db)
+def db_from_nexus(emodel_dir):
+    return get_access_point(
+        "local",
+        emodel="L5PC",
+        emodel_dir=emodel_dir,
+        recipes_path=emodel_dir / "config/recipes_nexus.json",
+    )

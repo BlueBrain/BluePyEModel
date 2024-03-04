@@ -914,3 +914,14 @@ class ProtocolRunner(ephys.protocols.Protocol):
 
         cell_model.unfreeze(param_values.keys())
         return responses
+
+    def __str__(self):
+        """String representation"""
+
+        content = f"Sequence protocol {self.name}:\n"
+
+        content += f"{len(self.protocols)} subprotocols:\n"
+        for protocol in self.protocols:
+            content += f"{protocol}\n"
+
+        return content

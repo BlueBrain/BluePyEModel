@@ -1,0 +1,840 @@
+{
+  "efeatures": [
+    {
+      "efel_feature_name": "Spikecount",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 10.25,
+      "original_std": 2.8613807855648994,
+      "sample_size": 4,
+      "efeature_name": "Spikecount",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "mean_frequency",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 5.604467279505482,
+      "original_std": 1.1744570388537756,
+      "sample_size": 4,
+      "efeature_name": "mean_frequency",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "time_to_first_spike",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 30.62499999960926,
+      "original_std": 4.887803698999843,
+      "sample_size": 4,
+      "efeature_name": "time_to_first_spike",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "time_to_last_spike",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 1798.0000000047048,
+      "original_std": 153.4539833310668,
+      "sample_size": 4,
+      "efeature_name": "time_to_last_spike",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_time_to_first_spike",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 33.48946564816112,
+      "original_std": 5.2623679014984965,
+      "sample_size": 4,
+      "efeature_name": "inv_time_to_first_spike",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_first_ISI",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 6.848761634886355,
+      "original_std": 1.0498435670034043,
+      "sample_size": 4,
+      "efeature_name": "inv_first_ISI",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_second_ISI",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 5.773614073436429,
+      "original_std": 0.9727599474383865,
+      "sample_size": 4,
+      "efeature_name": "inv_second_ISI",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_third_ISI",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 4.951203923401405,
+      "original_std": 1.3227789803475907,
+      "sample_size": 4,
+      "efeature_name": "inv_third_ISI",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_last_ISI",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 5.098217326184602,
+      "original_std": 1.2103481998372232,
+      "sample_size": 4,
+      "efeature_name": "inv_last_ISI",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "AHP_depth",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 10.635529561928397,
+      "original_std": 0.3988957892428203,
+      "sample_size": 4,
+      "efeature_name": "AHP_depth",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "AHP_time_from_peak",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 30.186512445968763,
+      "original_std": 1.674292515812361,
+      "sample_size": 4,
+      "efeature_name": "AHP_time_from_peak",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "min_AHP_values",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -74.71276615599231,
+      "original_std": 0.47443121506895136,
+      "sample_size": 4,
+      "efeature_name": "min_AHP_values",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "depol_block_bool",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 0.5,
+      "original_std": 0.5,
+      "sample_size": 4,
+      "efeature_name": "depol_block_bool",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "voltage_base",
+      "protocol_name": "IDrest_150",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -85.3482957179207,
+      "original_std": 0.3247129346842365,
+      "sample_size": 4,
+      "efeature_name": "voltage_base",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "Spikecount",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 23.0,
+      "original_std": 2.1213203435596424,
+      "sample_size": 4,
+      "efeature_name": "Spikecount",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "mean_frequency",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 11.734819514318126,
+      "original_std": 0.9132325239381061,
+      "sample_size": 4,
+      "efeature_name": "mean_frequency",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "time_to_first_spike",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 13.312499999625004,
+      "original_std": 1.109264959330169,
+      "sample_size": 4,
+      "efeature_name": "time_to_first_spike",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "time_to_last_spike",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 1957.8125000052862,
+      "original_std": 31.62691446785914,
+      "sample_size": 4,
+      "efeature_name": "time_to_last_spike",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_time_to_first_spike",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 75.6263616579313,
+      "original_std": 6.122728754416209,
+      "sample_size": 4,
+      "efeature_name": "inv_time_to_first_spike",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_first_ISI",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 21.905299784313108,
+      "original_std": 1.9463908402945282,
+      "sample_size": 4,
+      "efeature_name": "inv_first_ISI",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_second_ISI",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 11.585060042821176,
+      "original_std": 0.8475928580854186,
+      "sample_size": 4,
+      "efeature_name": "inv_second_ISI",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_third_ISI",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 10.842911569617055,
+      "original_std": 0.8771309324098986,
+      "sample_size": 4,
+      "efeature_name": "inv_third_ISI",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "inv_last_ISI",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 11.181785300456339,
+      "original_std": 0.960880230420604,
+      "sample_size": 4,
+      "efeature_name": "inv_last_ISI",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "AHP_depth",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 14.65928505460855,
+      "original_std": 0.40907679984590156,
+      "sample_size": 4,
+      "efeature_name": "AHP_depth",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "AHP_time_from_peak",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 22.910710474376955,
+      "original_std": 0.3014409809798328,
+      "sample_size": 4,
+      "efeature_name": "AHP_time_from_peak",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "min_AHP_values",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -70.21595795897821,
+      "original_std": 0.3938297800235492,
+      "sample_size": 4,
+      "efeature_name": "min_AHP_values",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "depol_block_bool",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 0.0,
+      "original_std": 0.01,
+      "sample_size": 4,
+      "efeature_name": "depol_block_bool",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "voltage_base",
+      "protocol_name": "IDrest_250",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -84.87524301358675,
+      "original_std": 0.37610776234519244,
+      "sample_size": 4,
+      "efeature_name": "voltage_base",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "steady_state_voltage_stimend",
+      "protocol_name": "RMPProtocol",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -84.17305524849598,
+      "original_std": 0.2861156361984797,
+      "sample_size": 7,
+      "efeature_name": "voltage_base",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "steady_state_voltage_stimend",
+      "protocol_name": "SearchHoldingCurrent",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -84.56752332522545,
+      "original_std": 0.2724992053861328,
+      "sample_size": 5,
+      "efeature_name": "voltage_base",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "ohmic_input_resistance_vb_ssse",
+      "protocol_name": "RinProtocol",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 50.527473523677365,
+      "original_std": 11.023083170297625,
+      "sample_size": 5,
+      "efeature_name": "ohmic_input_resistance_vb_ssse",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "voltage_base",
+      "protocol_name": "IV_-100",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -84.40562008045337,
+      "original_std": 0.32873929592346396,
+      "sample_size": 6,
+      "efeature_name": "voltage_base",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "ohmic_input_resistance_vb_ssse",
+      "protocol_name": "IV_-100",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 46.6061413427208,
+      "original_std": 1.5622076373540625,
+      "sample_size": 6,
+      "efeature_name": "ohmic_input_resistance_vb_ssse",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "AP_amplitude",
+      "protocol_name": "APWaveform_280",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 85.07656351726156,
+      "original_std": 0.24349240769058497,
+      "sample_size": 3,
+      "efeature_name": "AP_amplitude",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "AP1_amp",
+      "protocol_name": "APWaveform_280",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 87.79791959126591,
+      "original_std": 0.565468702271776,
+      "sample_size": 3,
+      "efeature_name": "AP1_amp",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "AP_duration_half_width",
+      "protocol_name": "APWaveform_280",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 1.4749999999999164,
+      "original_std": 0.02041241452319235,
+      "sample_size": 3,
+      "efeature_name": "AP_duration_half_width",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "AHP_depth",
+      "protocol_name": "APWaveform_280",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 22.279999923706082,
+      "original_std": 0.21355936561674232,
+      "sample_size": 3,
+      "efeature_name": "AHP_depth",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "mean_frequency",
+      "protocol_name": "sAHP_220",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 5.835156819842703,
+      "original_std": 0.01,
+      "sample_size": 1,
+      "efeature_name": "mean_frequency",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "voltage_base",
+      "protocol_name": "sAHP_220",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -81.9409971237184,
+      "original_std": 0.01,
+      "sample_size": 1,
+      "efeature_name": "voltage_base",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "depol_block_bool",
+      "protocol_name": "sAHP_220",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 1.0,
+      "original_std": 0.01,
+      "sample_size": 1,
+      "efeature_name": "depol_block_bool",
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true,
+        "Threshold": -20.0,
+        "interp_step": 0.025
+      }
+    },
+    {
+      "efel_feature_name": "bpo_holding_current",
+      "protocol_name": "SearchHoldingCurrent",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": -0.02340625027533282,
+      "original_std": 0.01,
+      "sample_size": null,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efel_feature_name": "bpo_threshold_current",
+      "protocol_name": "SearchThresholdCurrent",
+      "recording_name": "soma.v",
+      "threshold_efeature_std": null,
+      "default_std_value": 0.01,
+      "mean": 0.179062495008111,
+      "original_std": 0.01,
+      "sample_size": null,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    }
+  ],
+  "protocols": [
+    {
+      "name": "IDrest_150",
+      "stimuli": [
+        {
+          "delay": 700.0000000000001,
+          "amp": 0.27664062613621354,
+          "thresh_perc": 154.49389673905893,
+          "duration": 2000.0,
+          "totduration": 3000.0,
+          "holding_current": -0.02679687598720193
+        }
+      ],
+      "recordings_from_config": [
+        {
+          "type": "CompRecording",
+          "name": "IDrest_150.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": false,
+      "protocol_type": "ThresholdBasedProtocol",
+      "stochasticity": false
+    },
+    {
+      "name": "IDrest_250",
+      "stimuli": [
+        {
+          "delay": 700.0000000000001,
+          "amp": 0.45898438291624194,
+          "thresh_perc": 256.3263640973233,
+          "duration": 2000.0,
+          "totduration": 3000.0,
+          "holding_current": -0.025390625465661287
+        }
+      ],
+      "recordings_from_config": [
+        {
+          "type": "CompRecording",
+          "name": "IDrest_250.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": false,
+      "protocol_type": "ThresholdBasedProtocol",
+      "stochasticity": false
+    },
+    {
+      "name": "IV_-100",
+      "stimuli": [
+        {
+          "delay": 20.0,
+          "amp": -0.17802083678543568,
+          "thresh_perc": -99.41827113342292,
+          "duration": 1000.0,
+          "totduration": 1320.0,
+          "holding_current": -0.025468749925494194
+        }
+      ],
+      "recordings_from_config": [
+        {
+          "type": "CompRecording",
+          "name": "IV_-100.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": false,
+      "protocol_type": "ThresholdBasedProtocol",
+      "stochasticity": false
+    },
+    {
+      "name": "APWaveform_280",
+      "stimuli": [
+        {
+          "delay": 5.0,
+          "amp": 0.5091145721574625,
+          "thresh_perc": 284.32228208056694,
+          "duration": 50.00000000000001,
+          "totduration": 59.99,
+          "holding_current": -0.02437500034769376
+        }
+      ],
+      "recordings_from_config": [
+        {
+          "type": "CompRecording",
+          "name": "APWaveform_280.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": false,
+      "protocol_type": "ThresholdBasedProtocol",
+      "stochasticity": false
+    },
+    {
+      "name": "sAHP_220",
+      "stimuli": [
+        {
+          "delay": 25.0,
+          "tmid": 520.0,
+          "tmid2": 720.0,
+          "toff": 2720.0,
+          "amp": 0.40656252205371857,
+          "long_amp": 0.09843749552965164,
+          "thresh_perc": 227.0506294661551,
+          "duration": 200.0,
+          "totduration": 2740.0,
+          "holding_current": 0.024062499403953552
+        }
+      ],
+      "recordings_from_config": [
+        {
+          "type": "CompRecording",
+          "name": "sAHP_220.soma.v",
+          "location": "soma",
+          "variable": "v"
+        }
+      ],
+      "validation": true,
+      "protocol_type": "ThresholdBasedProtocol",
+      "stochasticity": false
+    }
+  ]
+}
