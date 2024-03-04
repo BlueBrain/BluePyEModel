@@ -77,9 +77,10 @@ def search_figure_efeatures(emodel, protocol_name, efeature):
 def figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the convergence of the optimisation"""
 
-    fname = f"{emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)}.pdf"
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__optimisation.pdf"
 
-    return Path("./figures") / emodel_metadata.emodel / fname
+    return Path("./figures") / emodel_metadata.emodel / "optimisation" / fname
 
 
 def search_figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True):
@@ -130,6 +131,28 @@ def search_figure_emodel_score(emodel_metadata, seed, use_allen_notation=True):
     """Search for the pdf representing the scores of an emodel"""
 
     pathname, pathname_val = figure_emodel_score(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
+
+
+def figure_emodel_thumbnail(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdf representing the thumbnail of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__thumbnail.png"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "thumbnail" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "thumbnail" / "validated" / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_thumbnail(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdf representing the thumbnail of an emodel"""
+
+    pathname, pathname_val = figure_emodel_thumbnail(
         emodel_metadata, seed, use_allen_notation=use_allen_notation
     )
 
@@ -248,18 +271,68 @@ def search_figure_emodel_parameters(emodel_metadata, use_allen_notation=True):
     return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
 
 
-def copy_emodel_pdf_dependency_to_new_path(old_path, new_path):
+def figure_emodel_parameters_evolution(emodel_metadata, seed=None, use_allen_notation=True):
+    """Get path for the pdf representing the evolution of the parameters of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    if seed is None:
+        fname = f"{metadata_str}__all_seeds__evo_parameter_density.pdf"
+    else:
+        fname = f"{metadata_str}__evo_parameter_density.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "parameter_evolution" / fname
+
+    return pathname
+
+
+def search_figure_emodel_parameters_evolution(emodel_metadata, seed=None, use_allen_notation=True):
+    """Search for the pdf representing the evolution of the parameters of an emodel"""
+
+    pathname = figure_emodel_parameters_evolution(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return search_figure_path(str(pathname))
+
+
+def figure_emodel_currentscapes(emodel_metadata, seed, use_allen_notation=True):
+    """Get path for the pdfs representing the currentscapes of an emodel"""
+
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
+    fname = f"{metadata_str}__currentscape*.pdf"
+
+    pathname = Path("./figures") / emodel_metadata.emodel / "currentscape" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "currentscape" / "validated"
+    pathname_val = pathname_val / fname
+
+    return pathname, pathname_val
+
+
+def search_figure_emodel_currentscapes(emodel_metadata, seed, use_allen_notation=True):
+    """Search for the pdfs representing the currentscapes of an emodel"""
+
+    pathname, pathname_val = figure_emodel_currentscapes(
+        emodel_metadata, seed, use_allen_notation=use_allen_notation
+    )
+
+    return list(search_figure_paths(str(pathname))) + list(search_figure_paths(str(pathname_val)))
+
+
+def copy_emodel_pdf_dependency_to_new_path(old_path, new_path, overwrite=False):
     """Copy a pdf dependency to new path using allen notation"""
-    if old_path.is_file() and not new_path.is_file():
-        new_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(old_path, new_path)
+    if old_path.is_file():
+        if not new_path.is_file() or overwrite:
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(old_path, new_path)
 
 
-def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
+def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed, overwrite=False):
     """Copy dependencies to new path using allen notation"""
+    # pylint: disable=too-many-locals
+    # TODO: refactor this function
     old_opt_path = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=False)
     new_opt_path = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True)
-    copy_emodel_pdf_dependency_to_new_path(old_opt_path, new_opt_path)
+    copy_emodel_pdf_dependency_to_new_path(old_opt_path, new_opt_path, overwrite=overwrite)
 
     old_traces_path, old_traces_path_val = figure_emodel_traces(
         emodel_metadata, seed, use_allen_notation=False
@@ -267,8 +340,10 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
     new_traces_path, new_traces_path_val = figure_emodel_traces(
         emodel_metadata, seed, use_allen_notation=True
     )
-    copy_emodel_pdf_dependency_to_new_path(old_traces_path, new_traces_path)
-    copy_emodel_pdf_dependency_to_new_path(old_traces_path_val, new_traces_path_val)
+    copy_emodel_pdf_dependency_to_new_path(old_traces_path, new_traces_path, overwrite=overwrite)
+    copy_emodel_pdf_dependency_to_new_path(
+        old_traces_path_val, new_traces_path_val, overwrite=overwrite
+    )
 
     old_score_path, old_score_path_val = figure_emodel_score(
         emodel_metadata, seed, use_allen_notation=False
@@ -276,8 +351,10 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
     new_score_path, new_score_path_val = figure_emodel_score(
         emodel_metadata, seed, use_allen_notation=True
     )
-    copy_emodel_pdf_dependency_to_new_path(old_score_path, new_score_path)
-    copy_emodel_pdf_dependency_to_new_path(old_score_path_val, new_score_path_val)
+    copy_emodel_pdf_dependency_to_new_path(old_score_path, new_score_path, overwrite=overwrite)
+    copy_emodel_pdf_dependency_to_new_path(
+        old_score_path_val, new_score_path_val, overwrite=overwrite
+    )
 
     old_params_path, old_params_path_val = figure_emodel_parameters(
         emodel_metadata, use_allen_notation=False
@@ -285,5 +362,52 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed):
     new_params_path, new_params_path_val = figure_emodel_parameters(
         emodel_metadata, use_allen_notation=True
     )
-    copy_emodel_pdf_dependency_to_new_path(old_params_path, new_params_path)
-    copy_emodel_pdf_dependency_to_new_path(old_params_path_val, new_params_path_val)
+    copy_emodel_pdf_dependency_to_new_path(old_params_path, new_params_path, overwrite=overwrite)
+    copy_emodel_pdf_dependency_to_new_path(
+        old_params_path_val, new_params_path_val, overwrite=overwrite
+    )
+
+    old_thumbnail_path, old_thumbnail_path_val = figure_emodel_thumbnail(
+        emodel_metadata, seed, use_allen_notation=False
+    )
+    new_thumbnail_path, new_thumbnail_path_val = figure_emodel_thumbnail(
+        emodel_metadata, seed, use_allen_notation=True
+    )
+    copy_emodel_pdf_dependency_to_new_path(
+        old_thumbnail_path, new_thumbnail_path, overwrite=overwrite
+    )
+    copy_emodel_pdf_dependency_to_new_path(
+        old_thumbnail_path_val, new_thumbnail_path_val, overwrite=overwrite
+    )
+
+    old_evo_path = figure_emodel_parameters_evolution(
+        emodel_metadata, seed, use_allen_notation=False
+    )
+    new_evo_path = figure_emodel_parameters_evolution(
+        emodel_metadata, seed, use_allen_notation=True
+    )
+    copy_emodel_pdf_dependency_to_new_path(old_evo_path, new_evo_path, overwrite=overwrite)
+
+    old_all_evo_path = figure_emodel_parameters_evolution(
+        emodel_metadata, seed=None, use_allen_notation=False
+    )
+    new_all_evo_path = figure_emodel_parameters_evolution(
+        emodel_metadata, seed=None, use_allen_notation=True
+    )
+    copy_emodel_pdf_dependency_to_new_path(old_all_evo_path, new_all_evo_path, overwrite=overwrite)
+
+    # take into account that we have to search for currentscape plots
+    # because we do not know a priori the protocols and locations
+    old_currentscape_path = search_figure_emodel_currentscapes(
+        emodel_metadata, seed, use_allen_notation=False
+    )
+    new_currentscape_path, new_currentscape_path_val = figure_emodel_currentscapes(
+        emodel_metadata, seed, use_allen_notation=True
+    )
+    for old_path in old_currentscape_path:
+        prot = str(Path(old_path).stem).rsplit("currentscape", maxsplit=1)[-1]
+        if "/validated/" in str(old_path):
+            new_path = str(new_currentscape_path_val).replace("*", prot)
+        else:
+            new_path = str(new_currentscape_path).replace("*", prot)
+        copy_emodel_pdf_dependency_to_new_path(Path(old_path), Path(new_path), overwrite=overwrite)

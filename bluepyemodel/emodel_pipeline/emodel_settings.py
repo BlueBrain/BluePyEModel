@@ -71,7 +71,7 @@ class EModelPipelineSettings:
         name_rmp_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
-        plot_currentscape=False,
+        plot_currentscape=True,
         plot_parameter_evolution=True,
         plot_bAP_EPSP=False,
         currentscape_config=None,
