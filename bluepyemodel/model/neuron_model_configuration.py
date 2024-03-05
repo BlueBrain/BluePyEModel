@@ -205,13 +205,13 @@ class NeuronModelConfiguration:
         if "mechanisms" in configuration_dict:
             for mechanism in configuration_dict["mechanisms"]:
                 self.add_mechanism(
-                    mechanism["name"],
-                    mechanism["location"],
-                    mechanism.get("stochastic", None),
-                    mechanism.get("version", None),
-                    mechanism.get("temperature", None),
-                    mechanism.get("ljp_corrected", None),
-                    mechanism.get("id", None),
+                    mechanism_name=mechanism["name"],
+                    locations=mechanism["location"],
+                    stochastic=mechanism.get("stochastic", None),
+                    version=mechanism.get("version", None),
+                    temperature=mechanism.get("temperature", None),
+                    ljp_corrected=mechanism.get("ljp_corrected", None),
+                    id=mechanism.get("id", None),
                 )
 
         morphology_params = {**configuration_dict["morphology"], **morphology}
