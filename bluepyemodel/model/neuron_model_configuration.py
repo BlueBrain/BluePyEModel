@@ -211,6 +211,7 @@ class NeuronModelConfiguration:
                     mechanism.get("version", None),
                     mechanism.get("temperature", None),
                     mechanism.get("ljp_corrected", None),
+                    mechanism.get("id", None),
                 )
 
         morphology_params = {**configuration_dict["morphology"], **morphology}

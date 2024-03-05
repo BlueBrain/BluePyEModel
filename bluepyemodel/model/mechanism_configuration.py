@@ -39,7 +39,7 @@ class MechanismConfiguration:
         """Init
 
         Args:
-             name (str): name of the mechanism.
+             name (str): name of the mechanism. Should be the SUFFIX from the mod file.
              locations (str or list of str): sections of the neuron on which this mechanism
                  will be instantiated.
              stochastic (bool): Can the mechanisms behave stochastically (optional).
