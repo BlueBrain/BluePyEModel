@@ -205,12 +205,13 @@ class NeuronModelConfiguration:
         if "mechanisms" in configuration_dict:
             for mechanism in configuration_dict["mechanisms"]:
                 self.add_mechanism(
-                    mechanism["name"],
-                    mechanism["location"],
-                    mechanism.get("stochastic", None),
-                    mechanism.get("version", None),
-                    mechanism.get("temperature", None),
-                    mechanism.get("ljp_corrected", None),
+                    mechanism_name=mechanism["name"],
+                    locations=mechanism["location"],
+                    stochastic=mechanism.get("stochastic", None),
+                    version=mechanism.get("version", None),
+                    temperature=mechanism.get("temperature", None),
+                    ljp_corrected=mechanism.get("ljp_corrected", None),
+                    id=mechanism.get("id", None),
                 )
 
         morphology_params = {**configuration_dict["morphology"], **morphology}
@@ -393,6 +394,7 @@ class NeuronModelConfiguration:
         temperature=None,
         ljp_corrected=None,
         auto_parameter=False,
+        id=None,
     ):
         """Add a mechanism to the configuration. This function should rarely be called directly as
         mechanisms are added automatically when using add_parameters. But it might be needed if a
@@ -408,6 +410,7 @@ class NeuronModelConfiguration:
             ljp_corrected (bool): whether the mechanims is ljp corrected
             auto_parameter (bool): if True, will automatically add the parameters of the mechanism
             if they are known.
+            id (str): Nexus ID of the mechanism.
         """
 
         locations = self._format_locations(locations)
@@ -439,6 +442,7 @@ class NeuronModelConfiguration:
                 temperature=temperature,
                 ljp_corrected=ljp_corrected,
                 parameters=mechanism_parameters,
+                id=id,
             )
 
             # Check if mech is not already part of the configuration
