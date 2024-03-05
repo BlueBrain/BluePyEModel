@@ -394,6 +394,7 @@ class NeuronModelConfiguration:
         temperature=None,
         ljp_corrected=None,
         auto_parameter=False,
+        id=None,
     ):
         """Add a mechanism to the configuration. This function should rarely be called directly as
         mechanisms are added automatically when using add_parameters. But it might be needed if a
@@ -409,6 +410,7 @@ class NeuronModelConfiguration:
             ljp_corrected (bool): whether the mechanims is ljp corrected
             auto_parameter (bool): if True, will automatically add the parameters of the mechanism
             if they are known.
+            id (str): Nexus ID of the mechanism.
         """
 
         locations = self._format_locations(locations)
@@ -440,6 +442,7 @@ class NeuronModelConfiguration:
                 temperature=temperature,
                 ljp_corrected=ljp_corrected,
                 parameters=mechanism_parameters,
+                id=id,
             )
 
             # Check if mech is not already part of the configuration
