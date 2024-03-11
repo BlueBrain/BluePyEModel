@@ -14,7 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../../.'))
 
-from pkg_resources import get_distribution
+from importlib.metadata import version
 
 
 # -- Project information -----------------------------------------------------
@@ -23,7 +23,7 @@ project = "BluePyEModel"
 author = 'Blue Brain Project/EPFL'
 
 # The short X.Y version
-version = get_distribution("bluepyemodel").version
+version = version("bluepyemodel")
 
 # The full version, including alpha/beta/rc tags
 release = version
