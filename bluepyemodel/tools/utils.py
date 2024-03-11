@@ -218,7 +218,7 @@ def select_rec_for_thumbnail(rec_names, additional_step_prots=None, thumbnail_re
     Select the step protocol with lowest positive amplitude, so that delay is visible if present.
 
     Args:
-        rec_names (list): the names of the recordings, following this naming convention:
+        rec_names (set): the names of the recordings, following this naming convention:
             protocol_name_amplitude.location.variable
         additional_step_prots (list): step protocol names to look for (other than defaults ones)
         thumbnail_rec (str): recording name to use for thumbnail if present
