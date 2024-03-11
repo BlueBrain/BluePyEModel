@@ -51,7 +51,7 @@ seclist_to_sec = {
     "myelinated": "myelin",
 }
 
-SUPPORTED_MORPHOLOGY_EXTENSIONS = (".asc", ".swc")
+SUPPORTED_MORPHOLOGY_EXTENSIONS = (".asc", ".swc", ".ASC", ".SWC")
 
 
 class LocalAccessPoint(DataAccessPoint):
