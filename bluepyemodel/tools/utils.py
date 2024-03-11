@@ -254,7 +254,7 @@ def select_rec_for_thumbnail(rec_names, additional_step_prots=None, thumbnail_re
         if len(rec_names) < 1:
             raise ValueError("No recording in recording_names. Can not plot thumbnail.")
         logger.warning("Could not find any step protocol in recording. Will take the first one.")
-        return list(rec_names)[0]
+        return next(iter(rec_names))
 
     logger.debug("Selected %s for thumbnail", selected_rec)
 
