@@ -158,21 +158,16 @@ class LocalAccessPoint(DataAccessPoint):
             morph_file = recipes["morphology"]
         else:
             for _, morph_file in recipes["morphology"]:
-                if morph_file.lower().endswith(SUPPORTED_MORPHOLOGY_EXTENSIONS):
+                if morph_file.endswith(SUPPORTED_MORPHOLOGY_EXTENSIONS):
                     break
 
-        if not morph_file or not morph_file.lower().endswith(SUPPORTED_MORPHOLOGY_EXTENSIONS):
+        if not morph_file or not morph_file.endswith(SUPPORTED_MORPHOLOGY_EXTENSIONS):
             raise FileNotFoundError(f"Morphology file not defined or not supported: {morph_file}")
 
-        matching_files = [
-            file for file in self.morph_dir.iterdir() if file.name.lower() == morph_file.lower()
-        ]
+        morph_path = self.morph_dir / morph_file
 
-        if not matching_files[0]:
+        if not morph_path.is_file():
             raise FileNotFoundError(f"Morphology file not found: {morph_path}")
-
-        morph_path = self.morph_dir / matching_files[0]
-
         if str(Path.cwd()) not in str(morph_path.resolve()) and self.emodel_metadata.iteration:
             raise FileNotFoundError(
                 "When using a githash or iteration tag, the path to the morphology must be local"
@@ -454,13 +449,8 @@ class LocalAccessPoint(DataAccessPoint):
         if not morph_dir.is_dir():
             return None
 
-        matching_files = {
-            morph_file.stem
-            for morph_file in morph_dir.iterdir()
-            if morph_file.is_file() and morph_file.suffix.lower() in SUPPORTED_MORPHOLOGY_EXTENSIONS
-        }
-
-        return matching_files
+        patterns = ["*" + ext for ext in SUPPORTED_MORPHOLOGY_EXTENSIONS]
+        return {morph_file.stem for pattern in patterns for morph_file in morph_dir.glob(pattern)}
 
     def get_model_configuration(self):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
