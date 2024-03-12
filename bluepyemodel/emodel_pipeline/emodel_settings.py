@@ -139,6 +139,9 @@ class EModelPipelineSettings:
                 function. E.g: morph_modifiers = ``[["path_to_module", "name_of_function"], ...]``.
                 If ``None``, the default modifier will replace the axon with a tappered axon initial
                 segment. If you do not wish to use any modifier, set the present argument to ``[]``.
+                if ``["bluepyopt_replace_axon"]``, the replace_axon function from
+                bluepyopt.ephys.morphologies.NrnFileMorphology will be used
+                and no other morph modifiers will be used.
             threshold_based_evaluator (bool): not used. To be deprecated.
             start_from_emodel (dict): If informed, the optimisation for the present e-model will
                 be instantiated using as values for the model parameters the ones from the

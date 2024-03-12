@@ -225,22 +225,31 @@ def define_morphology(
         nseg_frequency (float): frequency of nseg
         morph_modifiers (list): list of functions to modify the icell
                 with (sim, icell) as arguments,
-                if None, evaluation.modifiers.replace_axon_with_taper will be used
+                if None, evaluation.modifiers.replace_axon_with_taper will be used,
+                if ``["bluepyopt_replace_axon"]``, the replace_axon function from
+                bluepyopt.ephys.morphologies.NrnFileMorphology will be used
         morph_modifiers_hoc (list): list of hoc strings corresponding
                 to morph_modifiers, each modifier can be a function, or a list of a path
-                to a .py and the name of the function to use in this file
+                to a .py and the name of the function to use in this file.
+                No need to inform them if morph_modifiers is None or "bluepyopt_replace_axon"
 
     Returns:
         bluepyopt.ephys.morphologies.NrnFileMorphology: a morphology object
     """
+    do_replace_axon = False
+
+    if isinstance(morph_modifiers, str):
+        morph_modifiers = [morph_modifiers]
 
     if morph_modifiers is None or morph_modifiers == [None]:
         morph_modifiers = [replace_axon_with_taper]
         morph_modifiers_hoc = [replace_axon_hoc]  # TODO: check the hoc is correct
         logger.debug("No morphology modifiers provided, replace_axon_with_taper will be used.")
+    elif morph_modifiers == ["bluepyopt_replace_axon"]:
+        morph_modifiers = None
+        morph_modifiers_hoc = None
+        do_replace_axon = True
     else:
-        if isinstance(morph_modifiers, str):
-            morph_modifiers = [morph_modifiers]
         for i, morph_modifier in enumerate(morph_modifiers):
             if isinstance(morph_modifier, list):
                 modifier_module = importlib.import_module(morph_modifier[0])
@@ -254,7 +263,7 @@ def define_morphology(
 
     return NrnFileMorphology(
         morphology_path=model_configuration.morphology.path,
-        do_replace_axon=False,
+        do_replace_axon=do_replace_axon,
         do_set_nseg=do_set_nseg,
         nseg_frequency=nseg_frequency,
         morph_modifiers=morph_modifiers,
