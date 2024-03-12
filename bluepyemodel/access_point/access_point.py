@@ -161,7 +161,7 @@ class DataAccessPoint:
     def store_distribution(self, distribution):
         """Store a channel distribution as a resource of type EModelChannelDistribution"""
 
-    def get_model_configuration(self):
+    def get_model_configuration(self, skip_get_available_morph=True):
         """Get the configuration of the model, including parameters, mechanisms and distributions"""
 
     def store_fitness_calculator_configuration(self, configuration):
