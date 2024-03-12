@@ -452,9 +452,9 @@ class LocalAccessPoint(DataAccessPoint):
         patterns = ["*" + ext for ext in SUPPORTED_MORPHOLOGY_EXTENSIONS]
         return {morph_file.stem for pattern in patterns for morph_file in morph_dir.glob(pattern)}
 
-    def get_model_configuration(self, skip_get_available_morph=True):
+    def get_model_configuration(self, skip_get_available_morph=False):
         """Get the configuration of the model, including parameters, mechanisms and distributions
-        
+
         Args:
             skip_get_available_morph (bool): only used in nexus access point.
         """
