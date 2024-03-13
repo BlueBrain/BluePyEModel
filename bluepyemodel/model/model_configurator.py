@@ -52,9 +52,7 @@ class ModelConfigurator:
             self.configuration = NeuronModelConfiguration(
                 distributions=self.access_point.get_distributions(),
                 available_mechanisms=self.access_point.get_available_mechanisms(),
-                available_morphologies=self.access_point.get_available_morphologies(
-                    skip_get_available_morph=False
-                ),
+                available_morphologies=self.access_point.get_available_morphologies(),
             )
 
     def load_configuration(self):
