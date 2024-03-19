@@ -481,7 +481,7 @@ class LocalAccessPoint(DataAccessPoint):
             configuration.init_from_dict(parameters, self.get_morphologies())
 
         configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
-
+        configuration.morph_modifiers = self.get_recipes().get("morph_modifiers", None)
         return configuration
 
     def store_targets_configuration(self, configuration):

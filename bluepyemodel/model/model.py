@@ -250,12 +250,43 @@ def define_morphology(
         morph_modifiers_hoc = None
         do_replace_axon = True
     else:
+        morph_modifiers_hoc = [None] * len(morph_modifiers)
         for i, morph_modifier in enumerate(morph_modifiers):
             if isinstance(morph_modifier, list):
-                modifier_module = importlib.import_module(morph_modifier[0])
-                morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
+                try:
+                    modifier_module = importlib.import_module(morph_modifier[0])
+                    morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
+                    if len(morph_modifier) > 2:
+                        morph_modifiers_hoc[i] = getattr(modifier_module, morph_modifier[2])
+                    else:
+                        morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier[1] + "_hoc")
+                except AttributeError:
+                    logger.warning(
+                        "Cannot import %s or %s from %s. Please inform the hoc string in "
+                        "morph_modifiers if you want to export the emodel to hoc.",
+                        morph_modifier[1],
+                        morph_modifier[1] + "_hoc",
+                        morph_modifier[0],
+                    )
+                except IndexError as exc:
+                    raise ValueError(
+                        "a morph_modifier should be a list of the form "
+                        "['path_to_module', 'name_of_function', "
+                        f"'optional_hoc_string'], got {morph_modifier}"
+                    ) from exc
+
             elif isinstance(morph_modifier, str):
-                morph_modifiers[i] = getattr(modifiers, morph_modifier)
+                try:
+                    morph_modifiers[i] = getattr(modifiers, morph_modifier)
+                    morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier + "_hoc")
+                except AttributeError:
+                    logger.warning(
+                        "Cannot import %s or %s from bluepyemodel.evaluation.modifiers."
+                        "Please inform the hoc string in morph_modifiers if you want "
+                        "to export the emodel to hoc.",
+                        morph_modifier,
+                        morph_modifier + "_hoc",
+                    )
             elif not callable(morph_modifier):
                 raise TypeError(
                     "A morph modifier is not callable nor a string nor a list of two str"
