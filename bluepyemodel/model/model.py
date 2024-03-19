@@ -257,7 +257,7 @@ def define_morphology(
                     modifier_module = importlib.import_module(morph_modifier[0])
                     morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
                     if len(morph_modifier) > 2:
-                        morph_modifiers_hoc[i] = morph_modifier[2]
+                        morph_modifiers_hoc[i] = getattr(modifier_module, morph_modifier[2])
                     else:
                         morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier[1] + "_hoc")
                 except AttributeError:
