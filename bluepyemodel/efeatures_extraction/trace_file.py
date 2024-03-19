@@ -64,7 +64,7 @@ class TraceFile:
         id=None,
     ):
         """Constructor.
-        
+
         Args:
             cell_name (str): cell name
             filename (str): file name
