@@ -89,7 +89,7 @@ class NeuronModelConfiguration:
 
                     .. code-block::
 
-                        morph_modifiers = [["path_to_module", "name_of_function", "hoc_string"], ...].
+                        morph_modifiers = [["path_to_module", "name_of_function", "hoc_string"],]
             extra_mech_ids (list of 2-d tuples): extra nexus ids and types to add to
                 related nexus ids. Must have shape:
 

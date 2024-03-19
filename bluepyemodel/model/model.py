@@ -259,18 +259,30 @@ def define_morphology(
                     if len(morph_modifier) > 2:
                         morph_modifiers_hoc[i] = morph_modifier[2]
                     else:
-                        morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier[1]+'_hoc')
-                except AttributeError:
-                    raise ImportError(f"Cannot import {morph_modifier[1]} or/and {morph_modifier[1]+'_hoc'} from {morph_modifier[0]}")
-                except IndexError:
-                    raise ValueError(f"a morph_modifier should be a list of the form ['path_to_module', 'name_of_function', 'optional_hoc_string'], got {morph_modifier}")
+                        morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier[1] + "_hoc")
+                except AttributeError as exc:
+                    raise ImportError(
+                        f"Cannot import {morph_modifier[1]} or/and "
+                        "{morph_modifier[1] + '_hoc'} "
+                        "from {morph_modifier[0]}"
+                    ) from exc
+                except IndexError as exc:
+                    raise ValueError(
+                        "a morph_modifier should be a list of the form "
+                        "['path_to_module', 'name_of_function', "
+                        f"'optional_hoc_string'], got {morph_modifier}"
+                    ) from exc
 
             elif isinstance(morph_modifier, str):
                 try:
                     morph_modifiers[i] = getattr(modifiers, morph_modifier)
-                    morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier+'_hoc')
-                except AttributeError:
-                    raise ImportError(f"Cannot import {morph_modifier} or/and {morph_modifier+'_hoc'} from bluepyemodel.evaluation.modifiers")
+                    morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier + "_hoc")
+                except AttributeError as exc:
+                    raise ImportError(
+                        f"Cannot import {morph_modifier} or / "
+                        " and {morph_modifier + '_hoc'} from "
+                        "bluepyemodel.evaluation.modifiers"
+                    ) from exc
             elif not callable(morph_modifier):
                 raise TypeError(
                     "A morph modifier is not callable nor a string nor a list of two str"
