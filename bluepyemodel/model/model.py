@@ -281,7 +281,9 @@ def define_morphology(
                     morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier + "_hoc")
                 except AttributeError:
                     logger.warning(
-                        "Cannot import %s or %s from bluepyemodel.evaluation.modifiers",
+                        "Cannot import %s or %s from bluepyemodel.evaluation.modifiers."
+                        "Please inform the hoc string in morph_modifiers if you want "
+                        "to export the emodel to hoc.",
                         morph_modifier,
                         morph_modifier + "_hoc",
                     )
