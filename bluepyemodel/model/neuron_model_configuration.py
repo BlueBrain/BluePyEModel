@@ -641,4 +641,11 @@ class NeuronModelConfiguration:
         str_form += "Morphology:\n"
         str_form += f"   {self.morphology.as_dict()}\n"
 
+        str_form += "Morphology modifiers:\n"
+        if isinstance(self.morph_modifiers, list):
+            for morph_modifier in self.morph_modifiers:
+                str_form += f"   {morph_modifier}\n"
+        else:
+            str_form += f"   {self.morph_modifiers}\n"
+
         return str_form
