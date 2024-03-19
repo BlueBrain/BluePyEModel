@@ -262,7 +262,8 @@ def define_morphology(
                         morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier[1] + "_hoc")
                 except AttributeError:
                     logger.warning(
-                        "Cannot import %s or %s from %s",
+                        "Cannot import %s or %s from %s. Please inform the hoc string in "
+                        "morph_modifiers if you want to export the emodel to hoc.",
                         morph_modifier[1],
                         morph_modifier[1] + "_hoc",
                         morph_modifier[0],
