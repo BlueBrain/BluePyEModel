@@ -260,12 +260,13 @@ def define_morphology(
                         morph_modifiers_hoc[i] = morph_modifier[2]
                     else:
                         morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier[1] + "_hoc")
-                except AttributeError as exc:
-                    raise ImportError(
-                        f"Cannot import {morph_modifier[1]} or/and "
-                        "{morph_modifier[1] + '_hoc'} "
-                        "from {morph_modifier[0]}"
-                    ) from exc
+                except AttributeError:
+                    logger.warning(
+                        "Cannot import %s or %s from %s",
+                        morph_modifier[1],
+                        morph_modifier[1] + "_hoc",
+                        morph_modifier[0],
+                    )
                 except IndexError as exc:
                     raise ValueError(
                         "a morph_modifier should be a list of the form "
@@ -277,12 +278,12 @@ def define_morphology(
                 try:
                     morph_modifiers[i] = getattr(modifiers, morph_modifier)
                     morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier + "_hoc")
-                except AttributeError as exc:
-                    raise ImportError(
-                        f"Cannot import {morph_modifier} or / "
-                        " and {morph_modifier + '_hoc'} from "
-                        "bluepyemodel.evaluation.modifiers"
-                    ) from exc
+                except AttributeError:
+                    logger.warning(
+                        "Cannot import %s or %s from bluepyemodel.evaluation.modifiers",
+                        morph_modifier,
+                        morph_modifier + "_hoc",
+                    )
             elif not callable(morph_modifier):
                 raise TypeError(
                     "A morph modifier is not callable nor a string nor a list of two str"
