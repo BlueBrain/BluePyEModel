@@ -84,12 +84,12 @@ class NeuronModelConfiguration:
                 the ``./morphology`` directory for the local access point or on Nexus for the
                 Nexus access point.
             morph_modifiers (list): List of morphology modifiers. Each modifier has to be
-                informed by the path the file containing the modifier and the name of the
-                function. E.g:
+                informed by the path the file containing the modifier, the name of the
+                function and the hoc string. E.g:
 
                     .. code-block::
 
-                        morph_modifiers = [["path_to_module", "name_of_function"], ...].
+                        morph_modifiers = [["path_to_module", "name_of_function", "hoc_string"], ...].
             extra_mech_ids (list of 2-d tuples): extra nexus ids and types to add to
                 related nexus ids. Must have shape:
 
