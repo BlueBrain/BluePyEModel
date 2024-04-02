@@ -129,18 +129,23 @@ def test_annotation_list(metadata):
     assert annotation_list_2[0]["hasBody"]["label"] == "245_L5 PT CTX"
 
 
-def test_get_metadata_dict(metadata):
-    """Test get_metadata_dict method."""
+def test_as_dict_for_resource(metadata):
+    """Test as_dict_for_resource method."""
     metadata_dict = metadata_args.copy()
     metadata_dict["subject"] = metadata_dict.pop("species")
     metadata_dict["brainLocation"] = metadata_dict.pop("brain_region")
     metadata_dict["iteration"] = metadata_dict.pop("iteration_tag")
+    metadata_dict["eModel"] = metadata_dict.pop("emodel")
+    metadata_dict["eType"] = metadata_dict.pop("etype")
+    metadata_dict["tType"] = metadata_dict.pop("ttype")
+    metadata_dict["mType"] = metadata_dict.pop("mtype")
+    metadata_dict["synapseClass"] = metadata_dict.pop("synapse_class")
 
-    assert metadata.get_metadata_dict() == metadata_dict
+    assert metadata.as_dict_for_resource() == metadata_dict
 
     # with None values
     metadata = EModelMetadata(emodel="test")
-    assert metadata.get_metadata_dict() == {"emodel": "test"}
+    assert metadata.as_dict_for_resource() == {"eModel": "test"}
 
 
 def test_filters_for_resource(metadata):
@@ -149,12 +154,17 @@ def test_filters_for_resource(metadata):
     metadata_dict["subject"] = metadata_dict.pop("species")
     metadata_dict["brainLocation"] = metadata_dict.pop("brain_region")
     metadata_dict["iteration"] = metadata_dict.pop("iteration_tag")
+    metadata_dict["eModel"] = metadata_dict.pop("emodel")
+    metadata_dict["eType"] = metadata_dict.pop("etype")
+    metadata_dict["tType"] = metadata_dict.pop("ttype")
+    metadata_dict["mType"] = metadata_dict.pop("mtype")
+    metadata_dict["synapseClass"] = metadata_dict.pop("synapse_class")
 
-    assert metadata.get_metadata_dict() == metadata_dict
+    assert metadata.filters_for_resource() == metadata_dict
 
     # with None values
     metadata = EModelMetadata(emodel="test")
-    assert metadata.get_metadata_dict() == {"emodel": "test"}
+    assert metadata.filters_for_resource() == {"eModel": "test"}
 
 
 def test_for_resource(metadata):
@@ -164,14 +174,19 @@ def test_for_resource(metadata):
     metadata_dict["brainLocation"] = metadata_dict.pop("brain_region")
     metadata_dict["iteration"] = metadata_dict.pop("iteration_tag")
     metadata_dict["annotation"] = metadata.annotation_list()
+    metadata_dict["eModel"] = metadata_dict.pop("emodel")
+    metadata_dict["eType"] = metadata_dict.pop("etype")
+    metadata_dict["tType"] = metadata_dict.pop("ttype")
+    metadata_dict["mType"] = metadata_dict.pop("mtype")
+    metadata_dict["synapseClass"] = metadata_dict.pop("synapse_class")
 
     assert metadata.for_resource() == metadata_dict
 
     # with None values
     metadata = EModelMetadata(emodel="test", mtype="mtype_test")
     assert metadata.for_resource() == {
-        "emodel": "test",
-        "mtype": "mtype_test",
+        "eModel": "test",
+        "mType": "mtype_test",
         "annotation": [
             {
                 "type": [
