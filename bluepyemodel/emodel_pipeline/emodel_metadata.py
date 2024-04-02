@@ -19,6 +19,12 @@ limitations under the License.
 import string
 
 
+def update_metadata_dict(metadata_dict, var, new_key):
+    """Update metadata dict with new key and variable if not None."""
+    if var is not None and var != "None":
+        metadata_dict[new_key] = var
+
+
 class EModelMetadata:
     """Contains the metadata of an emodel such as its e-model name or its brain region. These
     metadata can be understood as a unique identifier of an e-model.
@@ -132,27 +138,27 @@ class EModelMetadata:
 
         return annotation_list
 
-    def get_metadata_dict(self):
+    def as_dict_for_resource(self):
         """Metadata as a dict, with keys consistent with nexus."""
 
-        metadata = {}
+        metadata_dict = {}
 
-        for k, v in vars(self).items():
-            # we do not want allen_notation in resource metadata
-            if v and v != "None" and k != "allen_notation":
-                # rename species into subject and brain_region into brainLocation
-                if k == "species":
-                    metadata["subject"] = v
-                elif k == "brain_region":
-                    metadata["brainLocation"] = v
-                else:
-                    metadata[k] = v
+        update_metadata_dict(metadata_dict, self.emodel, "eModel")
+        update_metadata_dict(metadata_dict, self.etype, "eType")
+        update_metadata_dict(metadata_dict, self.ttype, "tType")
+        update_metadata_dict(metadata_dict, self.mtype, "mType")
+        update_metadata_dict(metadata_dict, self.iteration, "iteration")
+        update_metadata_dict(metadata_dict, self.synapse_class, "synapseClass")
+        # rename species into subject and brain_region into brainLocation
+        update_metadata_dict(metadata_dict, self.species, "subject")
+        update_metadata_dict(metadata_dict, self.brain_region, "brainLocation")
+        # we do not want allen_notation in resource metadata
 
-        return metadata
+        return metadata_dict
 
     def filters_for_resource(self):
         """Metadata used for filtering, without the annotation list"""
-        return self.get_metadata_dict()
+        return self.as_dict_for_resource()
 
     def for_resource(self):
         """Metadata to add to a resource to register.
@@ -160,11 +166,15 @@ class EModelMetadata:
         DO NOT use for filtering. For filtering, use self.filters_for_resource() instead.
         """
 
-        metadata = self.get_metadata_dict()
+        metadata = self.as_dict_for_resource()
 
         metadata["annotation"] = self.annotation_list()
 
         return metadata
+    
+    def as_dict(self):
+        """Metadata as dict."""
+        return vars(self)
 
     def as_string(self, seed=None, use_allen_notation=True):
         s = ""

@@ -694,9 +694,9 @@ class LocalAccessPoint(DataAccessPoint):
                 models.append(self.format_emodel_data(mod_data))
 
         filtered_models = []
-        api_metadata = self.emodel_metadata.for_resource()
+        api_metadata = self.emodel_metadata.as_dict()
         for m in models:
-            model_metadata = m.emodel_metadata.for_resource()
+            model_metadata = m.emodel_metadata.as_dict()
             for f, v in api_metadata.items():
                 if f in model_metadata and v != model_metadata[f]:
                     break
