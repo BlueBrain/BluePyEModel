@@ -171,7 +171,7 @@ class EModelMetadata:
         metadata["annotation"] = self.annotation_list()
 
         return metadata
-    
+
     def as_dict(self):
         """Metadata as dict."""
         return vars(self)
