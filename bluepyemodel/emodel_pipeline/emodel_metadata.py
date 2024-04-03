@@ -156,9 +156,31 @@ class EModelMetadata:
 
         return metadata_dict
 
+    def as_dict_for_resource_legacy(self):
+        """Metadata as a dict, with keys consistent with legacy nexus."""
+
+        metadata_dict = {}
+
+        for k, v in vars(self).items():
+            # we do not want allen_notation in resource metadata
+            if v and v != "None" and k != "allen_notation":
+                # rename species into subject and brain_region into brainLocation
+                if k == "species":
+                    metadata_dict["subject"] = v
+                elif k == "brain_region":
+                    metadata_dict["brainLocation"] = v
+                else:
+                    metadata_dict[k] = v
+
+        return metadata_dict
+
     def filters_for_resource(self):
         """Metadata used for filtering, without the annotation list"""
         return self.as_dict_for_resource()
+
+    def filters_for_resource_legacy(self):
+        """Legacy metadata used for filtering, without the annotation list"""
+        return self.as_dict_for_resource_legacy()
 
     def for_resource(self):
         """Metadata to add to a resource to register.

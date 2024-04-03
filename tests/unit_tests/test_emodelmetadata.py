@@ -148,6 +148,25 @@ def test_as_dict_for_resource(metadata):
     assert metadata.as_dict_for_resource() == {"eModel": "test"}
 
 
+def test_as_dict_for_resource_legacy(metadata):
+    """Test as_dict_for_resource_legacy method."""
+    metadata_dict = metadata_args.copy()
+    metadata_dict["subject"] = metadata_dict.pop("species")
+    metadata_dict["brainLocation"] = metadata_dict.pop("brain_region")
+    metadata_dict["iteration"] = metadata_dict.pop("iteration_tag")
+    metadata_dict["emodel"] = metadata_dict.pop("emodel")
+    metadata_dict["etype"] = metadata_dict.pop("etype")
+    metadata_dict["ttype"] = metadata_dict.pop("ttype")
+    metadata_dict["mtype"] = metadata_dict.pop("mtype")
+    metadata_dict["synapse_class"] = metadata_dict.pop("synapse_class")
+
+    assert metadata.as_dict_for_resource_legacy() == metadata_dict
+
+    # with None values
+    metadata = EModelMetadata(emodel="test")
+    assert metadata.as_dict_for_resource_legacy() == {"emodel": "test"}
+
+
 def test_filters_for_resource(metadata):
     """Test filters_for_resource method."""
     metadata_dict = metadata_args.copy()
@@ -165,6 +184,25 @@ def test_filters_for_resource(metadata):
     # with None values
     metadata = EModelMetadata(emodel="test")
     assert metadata.filters_for_resource() == {"eModel": "test"}
+
+
+def test_filters_for_resource_legacy(metadata):
+    """Test filters_for_resource_legacy method."""
+    metadata_dict = metadata_args.copy()
+    metadata_dict["subject"] = metadata_dict.pop("species")
+    metadata_dict["brainLocation"] = metadata_dict.pop("brain_region")
+    metadata_dict["iteration"] = metadata_dict.pop("iteration_tag")
+    metadata_dict["emodel"] = metadata_dict.pop("emodel")
+    metadata_dict["etype"] = metadata_dict.pop("etype")
+    metadata_dict["ttype"] = metadata_dict.pop("ttype")
+    metadata_dict["mtype"] = metadata_dict.pop("mtype")
+    metadata_dict["synapse_class"] = metadata_dict.pop("synapse_class")
+
+    assert metadata.filters_for_resource_legacy() == metadata_dict
+
+    # with None values
+    metadata = EModelMetadata(emodel="test")
+    assert metadata.filters_for_resource_legacy() == {"emodel": "test"}
 
 
 def test_for_resource(metadata):
