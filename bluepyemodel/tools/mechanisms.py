@@ -155,7 +155,13 @@ def discriminate_by_temp(resources, temperatures):
         return resources
     new_temperatures = temperatures.copy()
     temp = new_temperatures.pop(0)
-    tmp_resources = [r for r in resources if r.temperature.value == temp]
+    tmp_resources = [
+        r
+        for r in resources
+        if hasattr(r, "temperature")
+        and hasattr(r.temperature, "value")
+        and r.temperature.value == temp
+    ]
     if len(tmp_resources) > 0 and len(tmp_resources) < len(resources):
         logger.warning(
             "Discriminating resources based on temperature. "
