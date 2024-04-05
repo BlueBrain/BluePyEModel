@@ -1045,9 +1045,9 @@ def run_and_plot_bAP(
     new_prots[bAP_prot.name] = bAP_prot
 
     cell_evaluator.fitness_protocols["main_protocol"].protocols = new_prots
-    cell_evaluator.fitness_protocols[
-        "main_protocol"
-    ].execution_order = cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    cell_evaluator.fitness_protocols["main_protocol"].execution_order = (
+        cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    )
 
     apical_feature = define_bAP_feature("apical", dist_end=max_apical_length)
     basal_feature = define_bAP_feature("basal", dist_end=max_basal_length)
@@ -1119,9 +1119,9 @@ def run_and_plot_EPSP(
     EPSP_prots = {**apical_prots, **basal_prots}
 
     cell_evaluator.fitness_protocols["main_protocol"].protocols = EPSP_prots
-    cell_evaluator.fitness_protocols[
-        "main_protocol"
-    ].execution_order = cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    cell_evaluator.fitness_protocols["main_protocol"].execution_order = (
+        cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    )
 
     apical_apicrec_feat = define_EPSP_feature(
         "apical", "dend", dist_end=max_apical_length, dist_start=100, dist_step=100
