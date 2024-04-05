@@ -661,7 +661,7 @@ def _get_if_curve_from_evaluator(
     stim_end = delay + length_step
 
     efel.reset()
-    efel.setIntSetting("strict_stiminterval", True)
+    efel.set_int_setting("strict_stiminterval", True)
 
     soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
     rec = CompRecording(name="Step1.soma.v", location=soma_loc, variable="v")
@@ -699,7 +699,7 @@ def _get_if_curve_from_evaluator(
             "stim_start": [delay],
             "stim_end": [stim_end],
         }
-        features = efel.getFeatureValues(
+        features = efel.get_feature_values(
             [efel_trace], ["Spikecount", "mean_frequency"], raise_warnings=False
         )[0]
         spike_freq_equivalent.append(1e3 * float(features["Spikecount"]) / length_step)
