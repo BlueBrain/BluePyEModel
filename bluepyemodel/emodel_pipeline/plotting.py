@@ -661,7 +661,7 @@ def _get_if_curve_from_evaluator(
     stim_end = delay + length_step
 
     efel.reset()
-    efel.setIntSetting("strict_stiminterval", True)
+    efel.set_int_settings("strict_stiminterval", True)
 
     soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
     rec = CompRecording(name="Step1.soma.v", location=soma_loc, variable="v")
@@ -699,7 +699,7 @@ def _get_if_curve_from_evaluator(
             "stim_start": [delay],
             "stim_end": [stim_end],
         }
-        features = efel.getFeatureValues(
+        features = efel.get_feature_values(
             [efel_trace], ["Spikecount", "mean_frequency"], raise_warnings=False
         )[0]
         spike_freq_equivalent.append(1e3 * float(features["Spikecount"]) / length_step)
@@ -1045,9 +1045,9 @@ def run_and_plot_bAP(
     new_prots[bAP_prot.name] = bAP_prot
 
     cell_evaluator.fitness_protocols["main_protocol"].protocols = new_prots
-    cell_evaluator.fitness_protocols["main_protocol"].execution_order = (
-        cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
-    )
+    cell_evaluator.fitness_protocols[
+        "main_protocol"
+    ].execution_order = cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
 
     apical_feature = define_bAP_feature("apical", dist_end=max_apical_length)
     basal_feature = define_bAP_feature("basal", dist_end=max_basal_length)
@@ -1119,9 +1119,9 @@ def run_and_plot_EPSP(
     EPSP_prots = {**apical_prots, **basal_prots}
 
     cell_evaluator.fitness_protocols["main_protocol"].protocols = EPSP_prots
-    cell_evaluator.fitness_protocols["main_protocol"].execution_order = (
-        cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
-    )
+    cell_evaluator.fitness_protocols[
+        "main_protocol"
+    ].execution_order = cell_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
 
     apical_apicrec_feat = define_EPSP_feature(
         "apical", "dend", dist_end=max_apical_length, dist_start=100, dist_step=100

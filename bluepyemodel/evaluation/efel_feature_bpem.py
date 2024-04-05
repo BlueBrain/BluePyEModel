@@ -162,28 +162,28 @@ class eFELFeatureBPEM(eFELFeature):
         efel.reset()
 
         if self.threshold is not None:
-            efel.setThreshold(self.threshold)
+            efel.set_threshold(self.threshold)
 
         if self.stimulus_current is not None:
             if callable(self.stimulus_current):
-                efel.setDoubleSetting("stimulus_current", self.stimulus_current())
+                efel.set_double_setting("stimulus_current", self.stimulus_current())
             else:
-                efel.setDoubleSetting("stimulus_current", self.stimulus_current)
+                efel.set_double_setting("stimulus_current", self.stimulus_current)
 
         if self.interp_step is not None:
-            efel.setDoubleSetting("interp_step", self.interp_step)
+            efel.set_double_setting("interp_step", self.interp_step)
 
         if self.double_settings is not None:
             for setting_name, setting_value in self.double_settings.items():
-                efel.setDoubleSetting(setting_name, setting_value)
+                efel.set_double_setting(setting_name, setting_value)
 
         if self.int_settings is not None:
             for setting_name, setting_value in self.int_settings.items():
-                efel.setIntSetting(setting_name, setting_value)
+                efel.set_int_setting(setting_name, setting_value)
 
         if self.string_settings is not None:
             for setting_name, setting_value in self.string_settings.items():
-                efel.setStrSetting(setting_name, setting_value)
+                efel.set_str_setting(setting_name, setting_value)
 
     def calculate_feature(self, responses, raise_warnings=False):
         """Calculate feature value"""
@@ -200,7 +200,7 @@ class eFELFeatureBPEM(eFELFeature):
                 logger.debug("Amplitude for %s: %s", self.name, self.stimulus_current)
                 import efel
 
-                values = efel.getFeatureValues(
+                values = efel.get_feature_values(
                     [efel_trace], [self.efel_feature_name], raise_warnings=raise_warnings
                 )
 
@@ -409,7 +409,7 @@ class DendFitFeature(eFELFeatureBPEM):
                 self._setup_efel()
                 import efel
 
-                values = efel.getFeatureValues(
+                values = efel.get_feature_values(
                     efel_traces, [self.efel_feature_name], raise_warnings=raise_warnings
                 )
                 feature_values_ = [

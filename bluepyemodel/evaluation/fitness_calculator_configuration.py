@@ -410,9 +410,9 @@ class FitnessCalculatorConfiguration:
         if "extra_recordings" in protocol:
             for protocol_def in protocol["extra_recordings"]:
                 recordings.append(protocol_def)
-                protocol_def["name"] = (
-                    f"{protocol_name}.{protocol_def['name']}.{protocol_def['var']}"
-                )
+                protocol_def[
+                    "name"
+                ] = f"{protocol_name}.{protocol_def['name']}.{protocol_def['var']}"
 
         stimulus = deepcopy(protocol["stimuli"]["step"])
         if "holding" in protocol["stimuli"]:

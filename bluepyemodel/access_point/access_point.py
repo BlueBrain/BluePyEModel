@@ -133,7 +133,7 @@ class DataAccessPoint:
     def get_available_efeatures(self, cleaned=True):
         """Returns a curated list of available eFEL features"""
 
-        efel_features = efel.getFeatureNames()
+        efel_features = efel.get_feature_names()
 
         if not cleaned:
             return efel_features
