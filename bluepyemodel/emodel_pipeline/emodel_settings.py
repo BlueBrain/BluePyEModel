@@ -78,6 +78,7 @@ class EModelPipelineSettings:
         save_recordings=False,
         neuron_dt=None,
         cvode_minstep=0.0,
+        use_params_for_seed=True,
         max_threshold_voltage=-30,
         strict_holding_bounds=True,
         max_depth_holding_search=7,
@@ -249,6 +250,8 @@ class EModelPipelineSettings:
                 named `recordings`.
             neuron_dt (float): time step of the NEURON simulator. If ``None``, cvode will be used.
             cvode_minstep (float): minimum time step allowed when using cvode.
+            use_params_for_seed (bool): use a hashed version of the parameter
+                dictionary as a seed for the simulator
             max_threshold_voltage (float): upper bound for the voltage during the
                 search for the threshold or rheobase current (see SearchThresholdProtocol).
             strict_holding_bounds (bool): if True, the minimum and maximum values for the current
@@ -294,6 +297,7 @@ class EModelPipelineSettings:
         self.stochasticity = stochasticity
         self.neuron_dt = neuron_dt
         self.cvode_minstep = cvode_minstep
+        self.use_params_for_seed = use_params_for_seed
 
         # Settings related to the optimisation
         self.start_from_emodel = start_from_emodel

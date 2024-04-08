@@ -992,7 +992,7 @@ def create_evaluator(
         fitness_protocols=fitness_protocols,
         fitness_calculator=fitness_calculator,
         sim=simulator,
-        use_params_for_seed=True,
+        use_params_for_seed=pipeline_settings.use_params_for_seed,  # True
         timeout=timeout,
     )
     cell_eval.prefix = cell_model.name
