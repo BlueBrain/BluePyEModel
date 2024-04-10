@@ -39,11 +39,13 @@ from .spikerec import SpikeRecMultiSpikes
 from .subwhitenoise import SubWhiteNoise
 from .thresholdaddition import ThresholdAddition
 from .whitenoise import WhiteNoise
+from .square import Square
 
 # The ecode names have to be lower case only, to avoid having to
 # define duplicates.
 eCodes = {
     "spontaneous": IDrest,
+    "step": Square,
     "idrest": IDrest,
     "idthres": IDrest,
     "idthresh": IDrest,
