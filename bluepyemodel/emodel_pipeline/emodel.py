@@ -80,7 +80,9 @@ class EModel:
         if isinstance(parameter, dict):
             self.parameters = parameter
         else:
-            self.parameters = {p["name"]: p["value"] for p in parameter} if parameter else {}
+            self.parameters = (
+                {p["name"]: p["value"] for p in parameter} if parameter else {}
+            )
 
         if isinstance(score, dict):
             self.scores = score
@@ -91,7 +93,10 @@ class EModel:
             self.features = features
         else:
             self.features = (
-                {p["name"]: (p["value"] if "value" in p else numpy.nan) for p in features}
+                {
+                    p["name"]: (p["value"] if "value" in p else numpy.nan)
+                    for p in features
+                }
                 if features
                 else {}
             )
@@ -100,7 +105,9 @@ class EModel:
             self.scores_validation = scoreValidation
         else:
             self.scores_validation = (
-                {p["name"]: p["value"] for p in scoreValidation} if scoreValidation else {}
+                {p["name"]: p["value"] for p in scoreValidation}
+                if scoreValidation
+                else {}
             )
 
         self.responses = {}
@@ -117,7 +124,9 @@ class EModel:
 
         pdfs = []
 
-        opt_pdf = search_pdfs.search_figure_emodel_optimisation(self.emodel_metadata, seed)
+        opt_pdf = search_pdfs.search_figure_emodel_optimisation(
+            self.emodel_metadata, seed
+        )
         if opt_pdf:
             pdfs.append(opt_pdf)
 
@@ -129,11 +138,15 @@ class EModel:
         if scores_pdf:
             pdfs += [p for p in scores_pdf if p]
 
-        thumbnail_pdf = search_pdfs.search_figure_emodel_thumbnail(self.emodel_metadata, seed)
+        thumbnail_pdf = search_pdfs.search_figure_emodel_thumbnail(
+            self.emodel_metadata, seed
+        )
         if thumbnail_pdf:
             pdfs += [p for p in thumbnail_pdf if p]
 
-        parameters_pdf = search_pdfs.search_figure_emodel_parameters(self.emodel_metadata)
+        parameters_pdf = search_pdfs.search_figure_emodel_parameters(
+            self.emodel_metadata
+        )
         if parameters_pdf:
             pdfs += [p for p in parameters_pdf if p]
 
@@ -167,7 +180,9 @@ class EModel:
         if ISI_CV_pdf:
             pdfs += [p for p in ISI_CV_pdf if p]
 
-        rheobase_pdf = search_pdfs.search_figure_emodel_rheobase(self.emodel_metadata, seed)
+        rheobase_pdf = search_pdfs.search_figure_emodel_rheobase(
+            self.emodel_metadata, seed
+        )
         if rheobase_pdf:
             pdfs += [p for p in rheobase_pdf if p]
 
@@ -179,7 +194,10 @@ class EModel:
                 "type": "Generation",
                 "activity": {
                     "type": "Activity",
-                    "followedWorkflow": {"type": "EModelWorkflow", "id": self.workflow_id},
+                    "followedWorkflow": {
+                        "type": "EModelWorkflow",
+                        "id": self.workflow_id,
+                    },
                 },
             }
         }

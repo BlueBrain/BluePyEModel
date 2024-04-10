@@ -68,7 +68,9 @@ def _write_node_file(emodel, model_template_path, node_file_path, morphology_pat
         if all(key in emodel.responses for key in threshold_keys):
             dynamics_params = population.create_group("dynamics_params")
             dynamics_params["holding_current"] = emodel.responses["bpo_holding_current"]
-            dynamics_params["threshold_current"] = emodel.responses["bpo_threshold_current"]
+            dynamics_params["threshold_current"] = emodel.responses[
+                "bpo_threshold_current"
+            ]
 
 
 def _write_hoc_file(
@@ -106,10 +108,14 @@ def _export_model_sonata(cell_model, emodel, output_dir=None, new_emodel_name=No
     if new_emodel_name is not None:
         emodel.emodel_metadata.emodel = new_emodel_name
 
-    output_path = get_output_path(emodel, output_dir, output_base_dir="export_emodels_sonata")
+    output_path = get_output_path(
+        emodel, output_dir, output_base_dir="export_emodels_sonata"
+    )
     hoc_file_path = get_hoc_file_path(output_path)
     node_file_path = str(output_path / "nodes.h5")
-    morphology_path = str(output_path / pathlib.Path(cell_model.morphology.morphology_path).name)
+    morphology_path = str(
+        output_path / pathlib.Path(cell_model.morphology.morphology_path).name
+    )
 
     # Copy the morphology
     shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)
@@ -142,7 +148,8 @@ def export_emodels_sonata(
     new_metadata=None,
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will
-    contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model."""
+    contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model.
+    """
 
     cell_evaluator = get_evaluator_from_access_point(
         access_point, include_validation_protocols=True
@@ -177,7 +184,9 @@ def export_emodels_sonata(
             mo.emodel_metadata = new_metadata
         if not cell_model.morphology.morph_modifiers:  # Turn [] into None
             cell_model.morphology.morph_modifiers = None
-        _export_model_sonata(cell_model, mo, output_dir=None, new_emodel_name=new_emodel_name)
+        _export_model_sonata(
+            cell_model, mo, output_dir=None, new_emodel_name=new_emodel_name
+        )
 
 
 def _export_emodel_hoc(cell_model, mo, output_dir=None, new_emodel_name=None):
@@ -189,7 +198,9 @@ def _export_emodel_hoc(cell_model, mo, output_dir=None, new_emodel_name=None):
 
     output_path = get_output_path(mo, output_dir, output_base_dir="export_emodels_hoc")
     hoc_file_path = get_hoc_file_path(output_path)
-    morphology_path = str(output_path / pathlib.Path(cell_model.morphology.morphology_path).name)
+    morphology_path = str(
+        output_path / pathlib.Path(cell_model.morphology.morphology_path).name
+    )
 
     # Copy the morphology
     shutil.copyfile(cell_model.morphology.morphology_path, morphology_path)
@@ -230,7 +241,9 @@ def export_emodels_hoc(
         iteration=access_point.emodel_metadata.iteration,
     )
     if not emodels:
-        logger.warning("No emodels were selected in export_emodels_hoc. Stopping hoc export here.")
+        logger.warning(
+            "No emodels were selected in export_emodels_hoc. Stopping hoc export here."
+        )
         return
 
     cell_model = cell_evaluator.cell_model
@@ -240,4 +253,6 @@ def export_emodels_hoc(
             mo.emodel_metadata = new_metadata
         if not cell_model.morphology.morph_modifiers:  # Turn [] into None
             cell_model.morphology.morph_modifiers = None
-        _export_emodel_hoc(cell_model, mo, output_dir=None, new_emodel_name=new_emodel_name)
+        _export_emodel_hoc(
+            cell_model, mo, output_dir=None, new_emodel_name=new_emodel_name
+        )

@@ -56,7 +56,9 @@ class FactoryCustom(object):
     """CustomFromFile Worker Scheduler Factory class."""
 
     def create_local_scheduler(self):
-        return luigi.scheduler.Scheduler(prune_on_get_work=True, record_task_history=False)
+        return luigi.scheduler.Scheduler(
+            prune_on_get_work=True, record_task_history=False
+        )
 
     def create_remote_scheduler(self, url):
         return luigi.rpc.RemoteScheduler(url)

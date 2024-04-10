@@ -25,7 +25,9 @@ import luigi
 try:
     from bbp_workflow.task import IPyParallelExclusive
 except ImportError as exc:
-    raise ImportError("The internal bbp-workflow package is required to use Luigi.") from exc
+    raise ImportError(
+        "The internal bbp-workflow package is required to use Luigi."
+    ) from exc
 from luigi.parameter import MissingParameterException
 from luigi.parameter import _no_value
 from luigi_tools.task import _no_default_value
@@ -40,7 +42,9 @@ logger = logging.getLogger(__name__)
 class WorkflowTask(luigi.Task):
     """Workflow task with loaded data access point."""
 
-    backend = luigi.Parameter(default=None, config_path={"section": "parallel", "name": "backend"})
+    backend = luigi.Parameter(
+        default=None, config_path={"section": "parallel", "name": "backend"}
+    )
 
     emodel = luigi.Parameter()
     etype = luigi.Parameter(default=None)
@@ -98,7 +102,16 @@ class WorkflowTarget(luigi.Target, ABC):
     """Workflow target with loaded access_point."""
 
     def __init__(
-        self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, *args, **kwargs
+        self,
+        emodel,
+        etype,
+        ttype,
+        mtype,
+        species,
+        brain_region,
+        iteration_tag,
+        *args,
+        **kwargs
     ):
         """ """
         super().__init__(*args, **kwargs)
@@ -140,19 +153,29 @@ class IPyParallelTask(IPyParallelExclusive):
                 # luigi stores dicts as luigi.freezing.FrozenOrderedDict
                 # that are not json serializable,
                 # so turn them into dict, and then into json strings
-                elif isinstance(getattr(self, attr), (dict, luigi.freezing.FrozenOrderedDict)):
+                elif isinstance(
+                    getattr(self, attr), (dict, luigi.freezing.FrozenOrderedDict)
+                ):
                     setattr(self, attr, json.dumps(dict(getattr(self, attr))))
 
                 if getattr(self, attr) is True:
-                    self.args = " ".join([self.args, "--" + attr])  # pylint:disable=W0201
-                elif getattr(self, attr) is not False and getattr(self, attr) is not None:
+                    self.args = " ".join(
+                        [self.args, "--" + attr]
+                    )  # pylint:disable=W0201
+                elif (
+                    getattr(self, attr) is not False and getattr(self, attr) is not None
+                ):
                     # be sure that lists and dicts are inside ' '
                     # so that argparse detect them as one argument
                     # have to change ' to '\\'' because args would already be
                     # inside quotes (') in command from bbp-workflow
                     # single quotes would mess that up
                     self.args = " ".join(  # pylint:disable=W0201
-                        [self.args, "--" + attr, "'\\''" + str(getattr(self, attr)) + "'\\''"]
+                        [
+                            self.args,
+                            "--" + attr,
+                            "'\\''" + str(getattr(self, attr)) + "'\\''",
+                        ]
                     )
 
         # append API-related arguments

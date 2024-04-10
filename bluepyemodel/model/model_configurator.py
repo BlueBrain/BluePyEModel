@@ -106,8 +106,8 @@ class ModelConfigurator:
         ic_map_path = self.access_point.load_ic_map()
 
         selector = icselector.ICSelector(ic_map_path, gene_map_path)
-        parameters, mechanisms, distributions, nexus_keys = selector.get_cell_config_from_ttype(
-            self.access_point.emodel_metadata.ttype
+        parameters, mechanisms, distributions, nexus_keys = (
+            selector.get_cell_config_from_ttype(self.access_point.emodel_metadata.ttype)
         )
 
         return parameters, mechanisms, distributions, nexus_keys
@@ -129,7 +129,10 @@ class ModelConfigurator:
                 continue
             function = d["function"] if "function" in d else d["fun"]
             self.configuration.add_distribution(
-                d["name"], function, d.get("parameters", None), d.get("soma_ref_location", 0.5)
+                d["name"],
+                function,
+                d.get("parameters", None),
+                d.get("soma_ref_location", 0.5),
             )
 
         for p in params:
@@ -144,7 +147,9 @@ class ModelConfigurator:
             version = None
             for k in nexus_keys:
                 if k["name"] == m["name"]:
-                    version = k.get("modelid") if "modelid" in k else k.get("modelId", None)
+                    version = (
+                        k.get("modelid") if "modelid" in k else k.get("modelId", None)
+                    )
 
             temp_entry = m.get("temperature", None)
             if isinstance(temp_entry, dict) and "value" in temp_entry:

@@ -37,11 +37,12 @@ class Square(NrnSquarePulse):
         """
 
         super().__init__(
-                 step_amplitude=kwargs.get("amp", None),
-                 step_delay=kwargs.get("delay", 250.0),
-                 step_duration=kwargs.get("duration", 1350.0),
-                 total_duration= kwargs.get("totduration", 1850.0),
-                 location=location)
+            step_amplitude=kwargs.get("amp", None),
+            step_delay=kwargs.get("delay", 250.0),
+            step_duration=kwargs.get("duration", 1350.0),
+            total_duration=kwargs.get("totduration", 1850.0),
+            location=location,
+        )
 
         self.holding_current = kwargs.get("holding_current", None)
         self.holding_iclamp = None
@@ -81,7 +82,9 @@ class Square(NrnSquarePulse):
 
     def generate(self, dt=0.1):
         """Return current time series"""
-        holding_current = self.holding_current if self.holding_current is not None else 0
+        holding_current = (
+            self.holding_current if self.holding_current is not None else 0
+        )
 
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, holding_current, dtype="float64")

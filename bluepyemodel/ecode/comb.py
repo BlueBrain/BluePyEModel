@@ -68,7 +68,9 @@ class Comb(BPEM_stimulus):
         self.delay = kwargs.get("delay", 200.0)
         self.duration = kwargs.get("duration", 0.5)
         self.total_duration = kwargs.get("totduration", 350.0)
-        self.holding = 0.0  # hardcoded holding for now (holding_current is modified externally)
+        self.holding = (
+            0.0  # hardcoded holding for now (holding_current is modified externally)
+        )
 
         if self.stim_end > self.total_duration:
             raise ValueError(

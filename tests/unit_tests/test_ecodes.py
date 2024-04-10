@@ -24,7 +24,9 @@ from bluepyopt.ephys.simulators import NrnSimulator
 from bluepyemodel.ecode import *
 from tests.test_models import dummycells
 
-soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
+soma_loc = NrnSeclistCompLocation(
+    name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5
+)
 
 
 def run_stim_on_dummy_cell(stimulus):
@@ -62,7 +64,14 @@ def get_idrest_stimulus():
     prot_def = {"amp": 0.2, "holding_current": -0.001}
     stimulus = eCodes["idrest"](location=soma_loc, **prot_def)
 
-    return stimulus, delay, duration, total_duration, prot_def["amp"], prot_def["holding_current"]
+    return (
+        stimulus,
+        delay,
+        duration,
+        total_duration,
+        prot_def["amp"],
+        prot_def["holding_current"],
+    )
 
 
 def get_apwaveform_stimulus():
@@ -76,7 +85,14 @@ def get_apwaveform_stimulus():
     prot_def = {"amp": 0.2, "holding_current": -0.001}
     stimulus = eCodes["apwaveform"](location=soma_loc, **prot_def)
 
-    return stimulus, delay, duration, total_duration, prot_def["amp"], prot_def["holding_current"]
+    return (
+        stimulus,
+        delay,
+        duration,
+        total_duration,
+        prot_def["amp"],
+        prot_def["holding_current"],
+    )
 
 
 def get_firepattern_stimulus():
@@ -90,7 +106,14 @@ def get_firepattern_stimulus():
     prot_def = {"amp": 0.2, "holding_current": -0.001}
     stimulus = eCodes["firepattern"](location=soma_loc, **prot_def)
 
-    return stimulus, delay, duration, total_duration, prot_def["amp"], prot_def["holding_current"]
+    return (
+        stimulus,
+        delay,
+        duration,
+        total_duration,
+        prot_def["amp"],
+        prot_def["holding_current"],
+    )
 
 
 def get_iv_stimulus():
@@ -104,7 +127,14 @@ def get_iv_stimulus():
     prot_def = {"amp": 0.2, "holding_current": -0.001}
     stimulus = eCodes["iv"](location=soma_loc, **prot_def)
 
-    return stimulus, delay, duration, total_duration, prot_def["amp"], prot_def["holding_current"]
+    return (
+        stimulus,
+        delay,
+        duration,
+        total_duration,
+        prot_def["amp"],
+        prot_def["holding_current"],
+    )
 
 
 def get_dehyperpol_stimulus():
@@ -166,7 +196,14 @@ def get_ramp_stimulus():
     prot_def = {"amp": 0.2, "holding_current": -0.001}
     stimulus = eCodes["ramp"](location=soma_loc, **prot_def)
 
-    return stimulus, delay, duration, total_duration, prot_def["amp"], prot_def["holding_current"]
+    return (
+        stimulus,
+        delay,
+        duration,
+        total_duration,
+        prot_def["amp"],
+        prot_def["holding_current"],
+    )
 
 
 def get_sahp_stimulus():
@@ -218,6 +255,7 @@ def get_poscheops_stimulus():
         prot_def["holding_current"],
     )
 
+
 def get_negcheops_stimulus():
     """Return NegCheops stimulus and stim properties."""
     # default values
@@ -245,6 +283,7 @@ def get_negcheops_stimulus():
         holding_current,
     )
 
+
 def get_sinespec_stimulus():
     """Return SineSpec stimulus and stim properties."""
     # default values
@@ -252,15 +291,26 @@ def get_sinespec_stimulus():
 
     # custom values, to check edge case (delay > 0)
     delay = 100.0
-    total_duration = 5100.0 # delay + duration
+    total_duration = 5100.0  # delay + duration
 
     # generate stimulus
     prot_def = {
-        "amp": 0.2, "holding_current": -0.001, "delay": delay, "totduration": total_duration
+        "amp": 0.2,
+        "holding_current": -0.001,
+        "delay": delay,
+        "totduration": total_duration,
     }
     stimulus = eCodes["sinespec"](location=soma_loc, **prot_def)
 
-    return stimulus, delay, duration, total_duration, prot_def["amp"], prot_def["holding_current"]
+    return (
+        stimulus,
+        delay,
+        duration,
+        total_duration,
+        prot_def["amp"],
+        prot_def["holding_current"],
+    )
+
 
 def get_spikerecmultispikes_stimulus():
     """Return SpikeRecMultiSpikes stimulus and stim properties."""
@@ -275,7 +325,16 @@ def get_spikerecmultispikes_stimulus():
     prot_def = {"amp": 0.2, "holding_current": -0.001}
     stimulus = eCodes["spikerecmultispikes"](location=soma_loc, **prot_def)
 
-    return stimulus, delay, n_spikes, spike_duration, delta, total_duration, prot_def["amp"], prot_def["holding_current"]
+    return (
+        stimulus,
+        delay,
+        n_spikes,
+        spike_duration,
+        delta,
+        total_duration,
+        prot_def["amp"],
+        prot_def["holding_current"],
+    )
 
 
 def check_ramp(time, current, ton, duration, holding_current, amp, ramp_up=True):
@@ -288,7 +347,9 @@ def check_ramp(time, current, ton, duration, holding_current, amp, ramp_up=True)
         theoretical_current_ramp = holding_current + amp * (time_ramp - ton) / duration
     # ramp going down case
     else:
-        theoretical_current_ramp = holding_current + amp * (1.0 - (time_ramp - ton) / duration)
+        theoretical_current_ramp = holding_current + amp * (
+            1.0 - (time_ramp - ton) / duration
+        )
     assert numpy.all(current_ramp == pytest.approx(theoretical_current_ramp))
 
 
@@ -310,6 +371,7 @@ def test_subwhitenoise():
     assert stimulus.total_duration == 5099.8
     assert len(i) == 50999
 
+
 def test_whitenoise():
 
     prot_def = {"amp": 0.2, "mu": 1}
@@ -327,6 +389,7 @@ def test_whitenoise():
     assert stimulus.name == "WhiteNoise"
     assert stimulus.total_duration == 60099.9
     assert len(i) == 601000
+
 
 def test_noiseou3():
 
@@ -347,14 +410,18 @@ def test_noiseou3():
     assert len(i) == 601000
 
 
-def check_idrest_stim(time, current, delay, duration, total_duration, holding_current, amp):
+def check_idrest_stim(
+    time, current, delay, duration, total_duration, holding_current, amp
+):
     """Assert IDrest stimulus behaves as expected."""
     # before stimulus
     current_before = current[numpy.where((0 <= time) & (time < delay))]
     assert numpy.all(current_before == holding_current)
 
     # after stimulus
-    current_after = current[numpy.where((delay + duration < time) & (time <= total_duration))]
+    current_after = current[
+        numpy.where((delay + duration < time) & (time <= total_duration))
+    ]
     assert numpy.all(current_after == holding_current)
 
     # during stimulus
@@ -389,7 +456,9 @@ def test_idrest_instantiate():
 
 def test_apwaveform():
     """Test APWaveform generate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = get_apwaveform_stimulus()
+    stimulus, delay, duration, total_duration, amp, holding_curr = (
+        get_apwaveform_stimulus()
+    )
     time, current = stimulus.generate()
 
     # test
@@ -404,7 +473,9 @@ def test_apwaveform():
 
 def test_apwaveform_instantiate():
     """Test APWaveform instantiate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = get_apwaveform_stimulus()
+    stimulus, delay, duration, total_duration, amp, holding_curr = (
+        get_apwaveform_stimulus()
+    )
     time, current = run_stim_on_dummy_cell(stimulus)
     check_idrest_stim(time, current, delay, duration, total_duration, holding_curr, amp)
 
@@ -415,7 +486,9 @@ def test_apwaveform_instantiate():
 
 def test_firepattern():
     """Test FirePattern generate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = get_firepattern_stimulus()
+    stimulus, delay, duration, total_duration, amp, holding_curr = (
+        get_firepattern_stimulus()
+    )
     time, current = stimulus.generate()
 
     # test
@@ -430,7 +503,9 @@ def test_firepattern():
 
 def test_firepattern_instantiate():
     """Test FirePattern instantiate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = get_firepattern_stimulus()
+    stimulus, delay, duration, total_duration, amp, holding_curr = (
+        get_firepattern_stimulus()
+    )
     time, current = run_stim_on_dummy_cell(stimulus)
     check_idrest_stim(time, current, delay, duration, total_duration, holding_curr, amp)
 
@@ -504,7 +579,15 @@ def test_dehyperpol():
     assert stimulus.name == "DeHyperpol"
     assert stimulus.total_duration == total_duration
     check_dehyperpol_stim(
-        time, current, delay, tmid, toff, total_duration, holding_curr, depol_amp, hyper_amp
+        time,
+        current,
+        delay,
+        tmid,
+        toff,
+        total_duration,
+        holding_curr,
+        depol_amp,
+        hyper_amp,
     )
 
     stimulus.holding_current = None
@@ -528,7 +611,15 @@ def test_dehyperpol_instantiate():
     ) = get_dehyperpol_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
     check_dehyperpol_stim(
-        time, current, delay, tmid, toff, total_duration, holding_curr, depol_amp, hyper_amp
+        time,
+        current,
+        delay,
+        tmid,
+        toff,
+        total_duration,
+        holding_curr,
+        depol_amp,
+        hyper_amp,
     )
 
     stimulus.holding_current = None
@@ -556,7 +647,15 @@ def test_hyperdepol():
     assert stimulus.name == "HyperDepol"
     assert stimulus.total_duration == total_duration
     check_dehyperpol_stim(
-        time, current, delay, tmid, toff, total_duration, holding_curr, hyper_amp, depol_amp
+        time,
+        current,
+        delay,
+        tmid,
+        toff,
+        total_duration,
+        holding_curr,
+        hyper_amp,
+        depol_amp,
     )
 
     stimulus.holding_current = None
@@ -580,7 +679,15 @@ def test_hyperdepol_instantiate():
     ) = get_hyperdepol_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
     check_dehyperpol_stim(
-        time, current, delay, tmid, toff, total_duration, holding_curr, hyper_amp, depol_amp
+        time,
+        current,
+        delay,
+        tmid,
+        toff,
+        total_duration,
+        holding_curr,
+        hyper_amp,
+        depol_amp,
     )
 
     stimulus.holding_current = None
@@ -590,14 +697,18 @@ def test_hyperdepol_instantiate():
     )
 
 
-def check_ramp_stim(time, current, delay, duration, total_duration, holding_current, amp):
+def check_ramp_stim(
+    time, current, delay, duration, total_duration, holding_current, amp
+):
     """Assert Ramp stimulus behaves as expected."""
     # before stimulus
     current_before = current[numpy.where((0 <= time) & (time < delay))]
     assert numpy.all(current_before == holding_current)
 
     # after stimulus
-    current_after = current[numpy.where((delay + duration < time) & (time <= total_duration))]
+    current_after = current[
+        numpy.where((delay + duration < time) & (time <= total_duration))
+    ]
     assert numpy.all(current_after == holding_current)
 
     # during stimulus
@@ -630,7 +741,16 @@ def test_ramp_instantiate():
 
 
 def check_sahp_stim(
-    time, current, delay, tmid, tmid2, toff, total_duration, holding_current, long_amp, amp
+    time,
+    current,
+    delay,
+    tmid,
+    tmid2,
+    toff,
+    total_duration,
+    holding_current,
+    long_amp,
+    amp,
 ):
     """Assert SAHP stimulus behaves as expected."""
     # before stimulus
@@ -673,7 +793,16 @@ def test_sahp():
     assert stimulus.name == "sAHP"
     assert stimulus.total_duration == total_duration
     check_sahp_stim(
-        time, current, delay, tmid, tmid2, toff, total_duration, holding_curr, long_amp, amp
+        time,
+        current,
+        delay,
+        tmid,
+        tmid2,
+        toff,
+        total_duration,
+        holding_curr,
+        long_amp,
+        amp,
     )
 
     stimulus.holding_current = None
@@ -698,7 +827,16 @@ def test_sahp_instantiate():
     ) = get_sahp_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
     check_sahp_stim(
-        time, current, delay, tmid, tmid2, toff, total_duration, holding_curr, long_amp, amp
+        time,
+        current,
+        delay,
+        tmid,
+        tmid2,
+        toff,
+        total_duration,
+        holding_curr,
+        long_amp,
+        amp,
     )
 
     stimulus.holding_current = None
@@ -728,7 +866,13 @@ def check_poscheops_stim(
     check_ramp(time, current, delay, ramp1_duration, holding_current, amp, ramp_up=True)
     # during ramp1 down
     check_ramp(
-        time, current, delay + ramp1_duration, ramp1_duration, holding_current, amp, ramp_up=False
+        time,
+        current,
+        delay + ramp1_duration,
+        ramp1_duration,
+        holding_current,
+        amp,
+        ramp_up=False,
     )
 
     # during ramp2 up
@@ -736,7 +880,13 @@ def check_poscheops_stim(
     check_ramp(time, current, ton2, ramp2_duration, holding_current, amp, ramp_up=True)
     # during ramp2 down
     check_ramp(
-        time, current, ton2 + ramp2_duration, ramp2_duration, holding_current, amp, ramp_up=False
+        time,
+        current,
+        ton2 + ramp2_duration,
+        ramp2_duration,
+        holding_current,
+        amp,
+        ramp_up=False,
     )
 
     # during ramp3 up
@@ -744,7 +894,13 @@ def check_poscheops_stim(
     check_ramp(time, current, ton3, ramp3_duration, holding_current, amp, ramp_up=True)
     # during ramp3 down
     check_ramp(
-        time, current, ton3 + ramp3_duration, ramp3_duration, holding_current, amp, ramp_up=False
+        time,
+        current,
+        ton3 + ramp3_duration,
+        ramp3_duration,
+        holding_current,
+        amp,
+        ramp_up=False,
     )
 
     # after stimulus
@@ -859,7 +1015,13 @@ def check_negcheops_stim(
     check_ramp(time, current, delay, ramp1_duration, holding_current, amp, ramp_up=True)
     # during ramp1 down
     check_ramp(
-        time, current, delay + ramp1_duration, ramp1_duration, holding_current, amp, ramp_up=False
+        time,
+        current,
+        delay + ramp1_duration,
+        ramp1_duration,
+        holding_current,
+        amp,
+        ramp_up=False,
     )
 
     # during ramp2 up
@@ -867,7 +1029,13 @@ def check_negcheops_stim(
     check_ramp(time, current, ton2, ramp2_duration, holding_current, amp, ramp_up=True)
     # during ramp2 down
     check_ramp(
-        time, current, ton2 + ramp2_duration, ramp2_duration, holding_current, amp, ramp_up=False
+        time,
+        current,
+        ton2 + ramp2_duration,
+        ramp2_duration,
+        holding_current,
+        amp,
+        ramp_up=False,
     )
 
     # during ramp3 up
@@ -875,7 +1043,13 @@ def check_negcheops_stim(
     check_ramp(time, current, ton3, ramp3_duration, holding_current, amp, ramp_up=True)
     # during ramp3 down
     check_ramp(
-        time, current, ton3 + ramp3_duration, ramp3_duration, holding_current, amp, ramp_up=False
+        time,
+        current,
+        ton3 + ramp3_duration,
+        ramp3_duration,
+        holding_current,
+        amp,
+        ramp_up=False,
     )
 
     # after stimulus
@@ -973,7 +1147,9 @@ def test_negcheops_instantiate():
     )
 
 
-def check_sinespec_stim(time, current, delay, duration, total_duration, holding_current, amp):
+def check_sinespec_stim(
+    time, current, delay, duration, total_duration, holding_current, amp
+):
     """Assert SineSpec stimulus behaves as expected."""
     if delay > 0:
         # before stimulus
@@ -991,9 +1167,14 @@ def check_sinespec_stim(time, current, delay, duration, total_duration, holding_
     current_during = current[numpy.where((delay < time) & (time < delay + duration))]
     # timesteps can be variable
     # also change time from ms to s
-    time_during = (time[numpy.where((delay < time) & (time < delay + duration))] - delay) / 1e3
+    time_during = (
+        time[numpy.where((delay < time) & (time < delay + duration))] - delay
+    ) / 1e3
     theoretical_current_during = holding_current + amp * numpy.sin(
-        2.0 * numpy.pi * (1.0 + (1.0 / (5.15 - (time_during - 0.1)))) * (time_during - 0.1)
+        2.0
+        * numpy.pi
+        * (1.0 + (1.0 / (5.15 - (time_during - 0.1))))
+        * (time_during - 0.1)
     )
     # for some reasons, the last values of current after the run are 0, so I removed them.
     # also the run current needs a lower precision threshold than the generated current.
@@ -1005,12 +1186,16 @@ def check_sinespec_stim(time, current, delay, duration, total_duration, holding_
 
 def test_sinespec():
     """Test SineSpec generate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = get_sinespec_stimulus()
+    stimulus, delay, duration, total_duration, amp, holding_curr = (
+        get_sinespec_stimulus()
+    )
     time, current = stimulus.generate()
 
     assert stimulus.name == "SineSpec"
     assert stimulus.total_duration == total_duration
-    check_sinespec_stim(time, current, delay, duration, total_duration, holding_curr, amp)
+    check_sinespec_stim(
+        time, current, delay, duration, total_duration, holding_curr, amp
+    )
 
     stimulus.holding_current = None
     time, current = stimulus.generate()
@@ -1019,9 +1204,13 @@ def test_sinespec():
 
 def test_sinespec_instantiate():
     """Test SineSpec instantiate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = get_sinespec_stimulus()
+    stimulus, delay, duration, total_duration, amp, holding_curr = (
+        get_sinespec_stimulus()
+    )
     time, current = run_stim_on_dummy_cell(stimulus)
-    check_sinespec_stim(time, current, delay, duration, total_duration, holding_curr, amp)
+    check_sinespec_stim(
+        time, current, delay, duration, total_duration, holding_curr, amp
+    )
 
     stimulus.holding_current = None
     time, current = run_stim_on_dummy_cell(stimulus)
@@ -1029,7 +1218,15 @@ def test_sinespec_instantiate():
 
 
 def check_spikerecmultispikes_stim(
-    time, current, delay, n_spikes, spike_duration, delta, total_duration, holding_current, amp
+    time,
+    current,
+    delay,
+    n_spikes,
+    spike_duration,
+    delta,
+    total_duration,
+    holding_current,
+    amp,
 ):
     """Assert SpikeRecMultiSpikes stimulus behaves as expected."""
     # before stimulus
@@ -1060,24 +1257,66 @@ def check_spikerecmultispikes_stim(
 
 def test_spikerecmultispikes():
     """Test SpikeRecMultiSpikes generate."""
-    stimulus, delay, n_spikes, spike_duration, delta, total_duration, amp, holding_curr = get_spikerecmultispikes_stimulus()
+    (
+        stimulus,
+        delay,
+        n_spikes,
+        spike_duration,
+        delta,
+        total_duration,
+        amp,
+        holding_curr,
+    ) = get_spikerecmultispikes_stimulus()
     time, current = stimulus.generate()
 
     assert stimulus.name == "SpikeRecMultiSpikes"
     assert stimulus.total_duration == total_duration
-    check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duration, delta, total_duration, holding_curr, amp)
+    check_spikerecmultispikes_stim(
+        time,
+        current,
+        delay,
+        n_spikes,
+        spike_duration,
+        delta,
+        total_duration,
+        holding_curr,
+        amp,
+    )
 
     stimulus.holding_current = None
     time, current = stimulus.generate()
-    check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duration, delta, total_duration, 0.0, amp)
+    check_spikerecmultispikes_stim(
+        time, current, delay, n_spikes, spike_duration, delta, total_duration, 0.0, amp
+    )
 
 
 def test_spikerecmultispikes_instantiate():
     """Test SpikeRecMultiSpikes instantiate."""
-    stimulus, delay, n_spikes, spike_duration, delta, total_duration, amp, holding_curr = get_spikerecmultispikes_stimulus()
+    (
+        stimulus,
+        delay,
+        n_spikes,
+        spike_duration,
+        delta,
+        total_duration,
+        amp,
+        holding_curr,
+    ) = get_spikerecmultispikes_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
-    check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duration, delta, total_duration, holding_curr, amp)
+    check_spikerecmultispikes_stim(
+        time,
+        current,
+        delay,
+        n_spikes,
+        spike_duration,
+        delta,
+        total_duration,
+        holding_curr,
+        amp,
+    )
 
     stimulus.holding_current = None
     time, current = run_stim_on_dummy_cell(stimulus)
-    check_spikerecmultispikes_stim(time, current, delay, n_spikes, spike_duration, delta, total_duration, 0.0, amp)
+    check_spikerecmultispikes_stim(
+        time, current, delay, n_spikes, spike_duration, delta, total_duration, 0.0, amp
+    )

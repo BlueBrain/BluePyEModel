@@ -81,7 +81,9 @@ class SpikeRecMultiSpikes(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise TypeError(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
+            raise TypeError(
+                f"In stimulus {self.name}, amp and thresh_perc cannot be both None."
+            )
 
         self.delay = kwargs.get("delay", 10.0)
         self.n_spikes = kwargs.get("n_spikes", 2)
@@ -99,7 +101,11 @@ class SpikeRecMultiSpikes(BPEM_stimulus):
 
     @property
     def stim_end(self):
-        return self.delay + self.n_spikes * self.spike_duration + (self.n_spikes - 1) * self.delta
+        return (
+            self.delay
+            + self.n_spikes * self.spike_duration
+            + (self.n_spikes - 1) * self.delta
+        )
 
     @property
     def amplitude(self):
@@ -108,7 +114,10 @@ class SpikeRecMultiSpikes(BPEM_stimulus):
         return self.threshold_current * (float(self.amp_rel) / 100.0)
 
     def multi_stim_start(self):
-        return [self.delay + i * (self.spike_duration + self.delta) for i in range(self.n_spikes)]
+        return [
+            self.delay + i * (self.spike_duration + self.delta)
+            for i in range(self.n_spikes)
+        ]
 
     def multi_stim_end(self):
         return [ss + self.spike_duration for ss in self.multi_stim_start()]
@@ -116,7 +125,9 @@ class SpikeRecMultiSpikes(BPEM_stimulus):
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
 
-        holding_current = self.holding_current if self.holding_current is not None else 0
+        holding_current = (
+            self.holding_current if self.holding_current is not None else 0
+        )
 
         icomp = self.location.instantiate(sim=sim, icell=icell)
 
@@ -173,7 +184,9 @@ class SpikeRecMultiSpikes(BPEM_stimulus):
 
     def generate(self, dt=0.1):
         """Return current time series"""
-        holding_current = self.holding_current if self.holding_current is not None else 0
+        holding_current = (
+            self.holding_current if self.holding_current is not None else 0
+        )
 
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, holding_current, dtype="float64")

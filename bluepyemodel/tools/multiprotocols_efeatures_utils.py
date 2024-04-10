@@ -68,8 +68,12 @@ def split_protocol_name_with_location_list(prot_name):
 
 def get_protocol_list_from_protocol_name(prot_name):
     """Reconstruct protocol list from protocol name"""
-    prot_name, isolate_list, amplitude = split_protocol_name_with_location_list(prot_name)
-    prot_list = [f"{prot_name}{distance}_{amplitude}" for distance in isolate_list.split(",")]
+    prot_name, isolate_list, amplitude = split_protocol_name_with_location_list(
+        prot_name
+    )
+    prot_list = [
+        f"{prot_name}{distance}_{amplitude}" for distance in isolate_list.split(",")
+    ]
 
     prot_list.insert(0, get_soma_protocol_from_protocol_name(prot_name, amplitude))
 

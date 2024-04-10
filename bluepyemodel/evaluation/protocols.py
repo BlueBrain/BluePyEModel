@@ -34,7 +34,12 @@ class BPEMProtocol(ephys.protocols.SweepProtocol):
     """Base protocol"""
 
     def __init__(
-        self, name=None, stimulus=None, recordings=None, cvode_active=None, stochasticity=False
+        self,
+        name=None,
+        stimulus=None,
+        recordings=None,
+        cvode_active=None,
+        stochasticity=False,
     ):
         """Constructor
 
@@ -78,7 +83,13 @@ class BPEMProtocol(ephys.protocols.SweepProtocol):
         return self.stimulus.amplitude
 
     def run(  # pylint: disable=arguments-differ, arguments-renamed
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         """Run protocol"""
 
@@ -130,12 +141,24 @@ class ResponseDependencies:
         return True
 
     def _run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         raise NotImplementedError("The run code of the sub-classes goes here!")
 
     def run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         """Run protocol"""
 
@@ -178,9 +201,17 @@ class ProtocolWithDependencies(BPEMProtocol, ResponseDependencies):
         )
 
     def _run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
-        return BPEMProtocol.run(self, cell_model, param_values, sim, isolate, timeout, responses)
+        return BPEMProtocol.run(
+            self, cell_model, param_values, sim, isolate, timeout, responses
+        )
 
 
 class ThresholdBasedProtocol(ProtocolWithDependencies):
@@ -222,7 +253,13 @@ class ThresholdBasedProtocol(ProtocolWithDependencies):
         return {k.name: None for k in self.recordings}
 
     def run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         return ResponseDependencies.run(
             self, cell_model, param_values, sim, isolate, timeout, responses
@@ -233,7 +270,12 @@ class RMPProtocol(BPEMProtocol):
     """Protocol consisting of a step of amplitude zero"""
 
     def __init__(
-        self, name, location, target_voltage, stimulus_duration=500.0, output_key="bpo_rmp"
+        self,
+        name,
+        location,
+        target_voltage,
+        stimulus_duration=500.0,
+        output_key="bpo_rmp",
     ):
         """Constructor"""
 
@@ -249,7 +291,9 @@ class RMPProtocol(BPEMProtocol):
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
-            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
+            LooseDtRecordingCustom(
+                name=self.recording_name, location=location, variable="v"
+            )
         ]
         self.output_key = output_key
 
@@ -270,7 +314,13 @@ class RMPProtocol(BPEMProtocol):
         self.target_voltage.stimulus_current = 0.0
 
     def run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         """Compute the RMP"""
 
@@ -322,7 +372,9 @@ class RinProtocol(ProtocolWithDependencies):
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
-            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
+            LooseDtRecordingCustom(
+                name=self.recording_name, location=location, variable="v"
+            )
         ]
         self.output_key = output_key
 
@@ -347,7 +399,13 @@ class RinProtocol(ProtocolWithDependencies):
         return {self.recording_name: None, self.output_key: None}
 
     def run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         """Compute the Rin"""
 
@@ -379,7 +437,13 @@ class NoHoldingCurrent(ephys.protocols.Protocol):
         self.recordings = {}
 
     def run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         # pylint: disable=unused-argument
         return {self.output_key: 0}
@@ -431,7 +495,9 @@ class SearchHoldingCurrent(BPEMProtocol):
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
-            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
+            LooseDtRecordingCustom(
+                name=self.recording_name, location=location, variable="v"
+            )
         ]
         self.output_key = output_key
 
@@ -492,7 +558,13 @@ class SearchHoldingCurrent(BPEMProtocol):
         return voltage_base[0]
 
     def run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         """Run protocol"""
         if not self.strict_bounds:
@@ -547,7 +619,12 @@ class SearchHoldingCurrent(BPEMProtocol):
 
         response.update(
             BPEMProtocol.run(
-                self, cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
+                self,
+                cell_model,
+                param_values,
+                sim=sim,
+                isolate=isolate,
+                timeout=timeout,
             )
         )
 
@@ -582,7 +659,10 @@ class SearchHoldingCurrent(BPEMProtocol):
             )
             return lower_bound
 
-        if voltage is not None and abs(voltage - self.holding_voltage) < self.voltage_precision:
+        if (
+            voltage is not None
+            and abs(voltage - self.holding_voltage) < self.voltage_precision
+        ):
             logger.debug("Depth of holding search: %s", depth)
             return mid_bound
 
@@ -677,7 +757,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
-            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
+            LooseDtRecordingCustom(
+                name=self.recording_name, location=location, variable="v"
+            )
         ]
         self.output_key = output_key
         self.hold_key = hold_key
@@ -728,13 +810,22 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
             timeout=self.spikecount_timeout,
         )
         if response[self.recording_name] is None:
-            logger.debug("Trace computation for threshold timed out at %s", self.spikecount_timeout)
+            logger.debug(
+                "Trace computation for threshold timed out at %s",
+                self.spikecount_timeout,
+            )
             return 2
 
         return self.spike_feature.calculate_feature(response)
 
     def run(
-        self, cell_model, param_values=None, sim=None, isolate=None, timeout=None, responses=None
+        self,
+        cell_model,
+        param_values=None,
+        sim=None,
+        isolate=None,
+        timeout=None,
+        responses=None,
     ):
         """Run protocol"""
         if not self.set_dependencies(responses):
@@ -763,7 +854,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
         self.stimulus.amp = threshold
         response.update(
-            self._run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
+            self._run(
+                cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
+            )
         )
 
         return response
@@ -779,13 +872,17 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         """Define the bounds and check their validity"""
 
         upper_bound = self.max_threshold_current()
-        spikecount = self._get_spikecount(upper_bound, cell_model, param_values, sim, isolate)
+        spikecount = self._get_spikecount(
+            upper_bound, cell_model, param_values, sim, isolate
+        )
         if spikecount == 0:
             logger.debug("No spikes at upper bound during threshold search")
             return None, None
 
         lower_bound = responses[self.hold_key]
-        spikecount = self._get_spikecount(lower_bound, cell_model, param_values, sim, isolate)
+        spikecount = self._get_spikecount(
+            lower_bound, cell_model, param_values, sim, isolate
+        )
 
         if spikecount > 0:
             if self.no_spikes:
@@ -812,7 +909,9 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
     ):
         """Do bisection search to find threshold current."""
         mid_bound = (upper_bound + lower_bound) * 0.5
-        spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
+        spikecount = self._get_spikecount(
+            mid_bound, cell_model, param_values, sim, isolate
+        )
         if abs(lower_bound - upper_bound) < self.current_precision:
             logger.debug("Depth of threshold search: %s", depth)
             return upper_bound

@@ -28,8 +28,8 @@ def pipeline():
         emodel="cADpyr_L5TPC",
         recipes_path=DATA / "config/recipes.json",
         ttype="test",
-        species='mouse',
-        brain_region='SSCX'
+        species="mouse",
+        brain_region="SSCX",
     )
 
     pipe.access_point.emodel_dir = DATA
@@ -42,13 +42,13 @@ def test_init(pipeline):
     with pytest.raises(
         ValueError,
         match="Attempted to set a legacy variable. "
-        "This variable should not be modified in new code."
+        "This variable should not be modified in new code.",
     ):
         _ = EModel_pipeline(
             emodel="cADpyr_L5TPC",
             recipes_path=DATA / "config/recipes.json",
             ttype="test",
-            species='mouse',
-            brain_region='SSCX',
-            data_access_point="nexus"
+            species="mouse",
+            brain_region="SSCX",
+            data_access_point="nexus",
         )

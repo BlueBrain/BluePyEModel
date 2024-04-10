@@ -248,12 +248,16 @@ def select_rec_for_thumbnail(rec_names, additional_step_prots=None, thumbnail_re
                     selected_rec = rec_name
                     selected_amp = rec_amp
             except (TypeError, ValueError):
-                logger.warning("Could not find amplitude in %s, skipping it.", prot_name)
+                logger.warning(
+                    "Could not find amplitude in %s, skipping it.", prot_name
+                )
 
     if selected_rec == "":
         if len(rec_names) < 1:
             raise ValueError("No recording in recording_names. Can not plot thumbnail.")
-        logger.warning("Could not find any step protocol in recording. Will take the first one.")
+        logger.warning(
+            "Could not find any step protocol in recording. Will take the first one."
+        )
         return next(iter(rec_names))
 
     logger.debug("Selected %s for thumbnail", selected_rec)

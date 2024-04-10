@@ -23,19 +23,23 @@ from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfi
 def config_dict():
 
     config_dict = {
-        "files": [{
-            "cell_name": "test_cell",
-            "filename": "test_file",
-            "ecodes": {"IDRest": {}}
-        }],
-        "targets": [{
+        "files": [
+            {
+                "cell_name": "test_cell",
+                "filename": "test_file",
+                "ecodes": {"IDRest": {}},
+            }
+        ],
+        "targets": [
+            {
                 "efeature": "Spikecount",
                 "protocol": "IDRest",
-                "amplitude": 150.,
-                "tolerance": 10.,
-                "efel_settings": {"interp_step": 0.01}
-            }],
-        "protocols_rheobase": ["IDRest"]
+                "amplitude": 150.0,
+                "tolerance": 10.0,
+                "efel_settings": {"interp_step": 0.01},
+            }
+        ],
+        "protocols_rheobase": ["IDRest"],
     }
 
     return config_dict
@@ -46,7 +50,7 @@ def test_init(config_dict):
     config = TargetsConfiguration(
         files=config_dict["files"],
         targets=config_dict["targets"],
-        protocols_rheobase=config_dict["protocols_rheobase"]
+        protocols_rheobase=config_dict["protocols_rheobase"],
     )
 
     assert len(config.files) == 1

@@ -118,7 +118,9 @@ class HyperDepol(BPEM_stimulus):
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
 
-        holding_current = self.holding_current if self.holding_current is not None else 0
+        holding_current = (
+            self.holding_current if self.holding_current is not None else 0
+        )
 
         icomp = self.location.instantiate(sim=sim, icell=icell)
 
@@ -164,7 +166,9 @@ class HyperDepol(BPEM_stimulus):
         """Return current time series
 
         WARNING: do not offset ! This is on-top of a holding stimulus."""
-        holding_current = self.holding_current if self.holding_current is not None else 0
+        holding_current = (
+            self.holding_current if self.holding_current is not None else 0
+        )
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, holding_current, dtype="float64")
 

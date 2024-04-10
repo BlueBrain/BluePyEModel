@@ -53,13 +53,17 @@ def _set_morphology_dependent_locations(recording, cell):
 
     elif recording["type"] == "terminal_sections":
         # all terminal sections
-        for sec_id, section in enumerate(getattr(cell.icell, recording["seclist_name"])):
+        for sec_id, section in enumerate(
+            getattr(cell.icell, recording["seclist_name"])
+        ):
             if len(section.subtree()) == 1:
                 new_recs.append(_get_rec(recording, sec_id))
 
     elif recording["type"] == "all_sections":
         # all section of given type
-        for sec_id, section in enumerate(getattr(cell.icell, recording["seclist_name"])):
+        for sec_id, section in enumerate(
+            getattr(cell.icell, recording["seclist_name"])
+        ):
             new_recs.append(_get_rec(recording, sec_id))
 
     else:
@@ -216,9 +220,14 @@ class FitnessCalculatorConfiguration:
         """Initialise protocols from the FitnessCalculatorConfiguration format."""
         if protocols is None:
             return []
-        return [ProtocolConfiguration(**p, ion_variables=self.ion_variables) for p in protocols]
+        return [
+            ProtocolConfiguration(**p, ion_variables=self.ion_variables)
+            for p in protocols
+        ]
 
-    def initialise_efeatures(self, efeatures, threshold_efeature_std=None, default_std_value=1e-3):
+    def initialise_efeatures(
+        self, efeatures, threshold_efeature_std=None, default_std_value=1e-3
+    ):
         """Initialise efeatures from the FitnessCalculatorConfiguration format."""
         if efeatures is None:
             return []
@@ -230,7 +239,9 @@ class FitnessCalculatorConfiguration:
             configured_efeatures.append(
                 EFeatureConfiguration(
                     **f_dict,
-                    threshold_efeature_std=f.get("threshold_efeature_std", threshold_efeature_std),
+                    threshold_efeature_std=f.get(
+                        "threshold_efeature_std", threshold_efeature_std
+                    ),
                     default_std_value=f.get("default_std_value", default_std_value),
                 )
             )
@@ -261,7 +272,9 @@ class FitnessCalculatorConfiguration:
         stimulus = deepcopy(protocol["step"])
         stimulus["holding_current"] = protocol["holding"]["amp"]
 
-        validation = any(are_same_protocol(protocol_name, p) for p in self.validation_protocols)
+        validation = any(
+            are_same_protocol(protocol_name, p) for p in self.validation_protocols
+        )
         stochasticity = self.check_stochasticity(protocol_name)
 
         protocol_type = "Protocol"
@@ -280,7 +293,9 @@ class FitnessCalculatorConfiguration:
 
         self.protocols.append(tmp_protocol)
 
-    def _add_bluepyefe_efeature(self, feature, protocol_name, recording, threshold_efeature_std):
+    def _add_bluepyefe_efeature(
+        self, feature, protocol_name, recording, threshold_efeature_std
+    ):
         """"""
 
         recording_name = "soma.v" if recording == "soma" else recording
@@ -316,7 +331,9 @@ class FitnessCalculatorConfiguration:
         ):
             tmp_feature.protocol_name = "RinProtocol"
 
-        if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(protocol_name):
+        if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(
+            protocol_name
+        ):
             raise ValueError(
                 f"Trying to register efeatures for protocol {protocol_name},"
                 " but this protocol does not exist"
@@ -353,7 +370,8 @@ class FitnessCalculatorConfiguration:
         self.efeatures = []
 
         self.validation_protocols = [
-            get_mapped_protocol_name(vp, protocols_mapping) for vp in self.validation_protocols
+            get_mapped_protocol_name(vp, protocols_mapping)
+            for vp in self.validation_protocols
         ]
 
         for protocol_name, protocol in protocols.items():
@@ -364,7 +382,9 @@ class FitnessCalculatorConfiguration:
             for recording in efeatures[protocol_name]:
                 for feature in efeatures[protocol_name][recording]:
                     p_name = get_mapped_protocol_name(protocol_name, protocols_mapping)
-                    self._add_bluepyefe_efeature(feature, p_name, recording, threshold_efeature_std)
+                    self._add_bluepyefe_efeature(
+                        feature, p_name, recording, threshold_efeature_std
+                    )
 
         # Add the current related features
         if currents and self.name_rmp_protocol and self.name_rin_protocol:
@@ -420,7 +440,9 @@ class FitnessCalculatorConfiguration:
         else:
             stimulus["holding_current"] = None
 
-        validation = any(are_same_protocol(protocol_name, p) for p in self.validation_protocols)
+        validation = any(
+            are_same_protocol(protocol_name, p) for p in self.validation_protocols
+        )
         stochasticity = self.check_stochasticity(protocol_name)
 
         protocol_type = "Protocol"
@@ -439,7 +461,9 @@ class FitnessCalculatorConfiguration:
 
         self.protocols.append(tmp_protocol)
 
-    def _add_legacy_efeature(self, feature, protocol_name, recording, threshold_efeature_std):
+    def _add_legacy_efeature(
+        self, feature, protocol_name, recording, threshold_efeature_std
+    ):
         """"""
 
         recording_name = "soma.v" if recording == "soma" else recording
@@ -480,7 +504,9 @@ class FitnessCalculatorConfiguration:
         if protocol_name == "Threshold":
             tmp_feature.protocol_name = "SearchThresholdCurrent"
 
-        if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(protocol_name):
+        if protocol_name not in PRE_PROTOCOLS and not self.protocol_exist(
+            protocol_name
+        ):
             raise ValueError(
                 f"Trying to register efeatures for protocol {protocol_name},"
                 " but this protocol does not exist"
@@ -521,15 +547,15 @@ class FitnessCalculatorConfiguration:
                 self.rin_step_amp = protocol["stimuli"]["step"]["amp"]
                 self.rin_totduration = protocol["stimuli"]["step"]["totduration"]
             if protocol_name == "ThresholdDetection":
-                self.search_threshold_step_delay = protocol["step_template"]["stimuli"]["step"][
-                    "delay"
-                ]
-                self.search_threshold_step_duration = protocol["step_template"]["stimuli"]["step"][
-                    "duration"
-                ]
-                self.search_threshold_totduration = protocol["step_template"]["stimuli"]["step"][
-                    "totduration"
-                ]
+                self.search_threshold_step_delay = protocol["step_template"]["stimuli"][
+                    "step"
+                ]["delay"]
+                self.search_threshold_step_duration = protocol["step_template"][
+                    "stimuli"
+                ]["step"]["duration"]
+                self.search_threshold_totduration = protocol["step_template"][
+                    "stimuli"
+                ]["step"]["totduration"]
 
             if protocol_name in PRE_PROTOCOLS + LEGACY_PRE_PROTOCOLS:
                 continue
@@ -611,14 +637,18 @@ class FitnessCalculatorConfiguration:
                 loc_name, rec_name = efeature.recording_name.split(".")
                 if loc_name[-1] == "*":
                     to_remove.append(i)
-                    protocol = next(p for p in self.protocols if p.name == efeature.protocol_name)
+                    protocol = next(
+                        p for p in self.protocols if p.name == efeature.protocol_name
+                    )
                     for rec in protocol.recordings:
                         base_rec_name = rec["name"].split(".")[1]
                         if base_rec_name.startswith(loc_name[:-1]):
                             efeatures.append(deepcopy(efeature))
                             efeatures[-1].recording_name = f"{base_rec_name}.{rec_name}"
 
-        self.efeatures = [f for i, f in enumerate(self.efeatures) if i not in to_remove] + efeatures
+        self.efeatures = [
+            f for i, f in enumerate(self.efeatures) if i not in to_remove
+        ] + efeatures
 
     def get_related_nexus_ids(self):
         return {

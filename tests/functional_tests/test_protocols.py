@@ -55,7 +55,9 @@ def test_protocols(db, tmp_path):
         "IV_-100.soma.v",
         "SpikeRec_600.soma.v",
     ]:
-        responses[prot_name].response.to_csv(f"{tmp_path}/test_{prot_name}.csv", index=False)
+        responses[prot_name].response.to_csv(
+            f"{tmp_path}/test_{prot_name}.csv", index=False
+        )
         expected_df = pd.read_csv(f"{tmp_path}/test_{prot_name}.csv")
         response = responses[prot_name].response
         assert_frame_equal(response, expected_df)

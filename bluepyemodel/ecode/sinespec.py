@@ -43,7 +43,9 @@ class SineSpec(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise TypeError("In stimulus {self.name}, amp and thresh_perc cannot be both None.")
+            raise TypeError(
+                "In stimulus {self.name}, amp and thresh_perc cannot be both None."
+            )
 
         self.delay = kwargs.get("delay", 0.0)
         self.duration = kwargs.get("duration", 5000.0)
@@ -69,7 +71,9 @@ class SineSpec(BPEM_stimulus):
 
     def generate(self, dt=0.1):
         """Return current time series"""
-        holding_current = self.holding_current if self.holding_current is not None else 0
+        holding_current = (
+            self.holding_current if self.holding_current is not None else 0
+        )
 
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, holding_current, dtype="float64")

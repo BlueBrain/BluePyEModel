@@ -49,7 +49,9 @@ def add_dendritic_recordings(
             "seclist_name": dend_type,
         }
         new_loc = define_location(rec_dict)
-        rec = LooseDtRecordingCustom(name=rec_dict["name"], location=new_loc, variable="v")
+        rec = LooseDtRecordingCustom(
+            name=rec_dict["name"], location=new_loc, variable="v"
+        )
         recordings.append(rec)
 
 
@@ -74,9 +76,15 @@ def define_bAP_protocol(dist_start=10, dist_end=600, dist_step=10, dist_end_basa
     }
     stimulus = eCodes["idrest"](location=soma_loc, **stim)
 
-    recordings = [LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v")]
-    add_dendritic_recordings(recordings, name, "apical", dist_start, dist_end, dist_step)
-    add_dendritic_recordings(recordings, name, "basal", dist_start, dist_end_basal, dist_step)
+    recordings = [
+        LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v")
+    ]
+    add_dendritic_recordings(
+        recordings, name, "apical", dist_start, dist_end, dist_step
+    )
+    add_dendritic_recordings(
+        recordings, name, "basal", dist_start, dist_end_basal, dist_step
+    )
 
     return protocol_type_to_class["ThresholdBasedProtocol"](
         name=name,
@@ -145,7 +153,9 @@ def define_EPSP_protocol(dend_type, dist_start=100, dist_end=600, dist_step=100)
     # create a protocol injecting at soma location to have a datapoint at 0 distance
     name = "ProbAMPANMDA_EMS_0"
     stimulus = eCodes["probampanmda_ems"](location=soma_loc, **stim)
-    recordings = [LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v")]
+    recordings = [
+        LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v")
+    ]
     prot = protocol_type_to_class["Protocol"](
         name=name,
         stimulus=stimulus,
@@ -170,8 +180,12 @@ def define_EPSP_protocol(dend_type, dist_start=100, dist_end=600, dist_step=100)
         stimulus = eCodes["probampanmda_ems"](location=loc, **stim)
 
         recordings = [
-            LooseDtRecordingCustom(name=f"{name}.{loc_name}.v", location=loc, variable="v"),
-            LooseDtRecordingCustom(name=f"{name}.soma.v", location=soma_loc, variable="v"),
+            LooseDtRecordingCustom(
+                name=f"{name}.{loc_name}.v", location=loc, variable="v"
+            ),
+            LooseDtRecordingCustom(
+                name=f"{name}.soma.v", location=soma_loc, variable="v"
+            ),
         ]
 
         prot = protocol_type_to_class["Protocol"](

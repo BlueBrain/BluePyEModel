@@ -28,10 +28,7 @@ EXTRA_LUIGI = [
     "luigi-tools>=0.0.12",
 ]
 
-EXTRA_TEST = [
-    "pytest>=6.2",
-    "dictdiffer>=0.8"
-]
+EXTRA_TEST = ["pytest>=6.2", "dictdiffer>=0.8"]
 
 EXTRA_DOC = [
     "graphviz",
@@ -43,10 +40,10 @@ EXTRA_DOC = [
 setup(
     name="bluepyemodel",
     use_scm_version={
-        'version_scheme': 'python-simplified-semver',
-        'local_scheme': 'no-local-version'
+        "version_scheme": "python-simplified-semver",
+        "local_scheme": "no-local-version",
     },
-    setup_requires=['setuptools_scm'],
+    setup_requires=["setuptools_scm"],
     author="Blue Brain Project, EPFL",
     author_email="",
     description="Blue Brain Python Electrical Modeling Pipeline",
@@ -72,7 +69,7 @@ setup(
         "morphio",
         "fasteners>=0.16",
         "jinja2>=3.0.3",
-        "currentscape>=0.0.11"
+        "currentscape>=0.0.11",
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,
@@ -80,22 +77,23 @@ setup(
         "docs": EXTRA_DOC + EXTRA_LUIGI,
         "test": EXTRA_TEST,
     },
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=("tests",)),
     include_package_data=True,
     keywords=[
-        'computational neuroscience',
-        'simulation',
-        'analysis',
-        'parameters',
-        'Blue Brain Project'],
+        "computational neuroscience",
+        "simulation",
+        "analysis",
+        "parameters",
+        "Blue Brain Project",
+    ],
     url="https://github.com/BlueBrain/BluePyEModel",
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: POSIX',
-        'Topic :: Scientific/Engineering',
-        'Programming Language :: Python :: 3',
-        'Topic :: Utilities',
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: POSIX",
+        "Topic :: Scientific/Engineering",
+        "Programming Language :: Python :: 3",
+        "Topic :: Utilities",
     ],
 )

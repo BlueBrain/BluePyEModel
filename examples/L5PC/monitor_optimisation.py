@@ -20,9 +20,10 @@ import numpy
 from bluepyemodel.access_point.access_point import OptimisationState
 from bluepyemodel.access_point.local import LocalAccessPoint
 
+
 def monitor_optimisation():
 
-    #IMPORTANT: Please populate the following parameters with the relevant values utilized:
+    # IMPORTANT: Please populate the following parameters with the relevant values utilized:
     githash = "YOUR_GITHASH_HERE"
     emodel = "L5PC"
     species = "rat"
@@ -41,11 +42,11 @@ def monitor_optimisation():
     access_point = LocalAccessPoint(
         emodel=emodel,
         final_path="./final.json",
-        species = species,
-        brain_region = brain_region,
+        species=species,
+        brain_region=brain_region,
         emodel_dir=emodel_dir,
         iteration_tag=githash,
-        recipes_path='./config/recipes.json',
+        recipes_path="./config/recipes.json",
     )
 
     best_fitness = []
@@ -69,15 +70,22 @@ def monitor_optimisation():
         elif opt_state == OptimisationState.IN_PROGRESS:
             status = "in progress"
         elif opt_state == OptimisationState.EMPTY:
-            print(f"No checkpoint found for species: {species}, brain_region: {brain_region}")
+            print(
+                f"No checkpoint found for species: {species}, brain_region: {brain_region}"
+            )
             continue
         else:
             status = "unknown"
-        print(f"Seed: {seed}, Generation: {generation}, Status: {status}, Score: {best_score}")
+        print(
+            f"Seed: {seed}, Generation: {generation}, Status: {status}, Score: {best_score}"
+        )
         best_fitness.append(best_score)
 
     if best_fitness:
-        print(f"Best fitness: {min(best_fitness)} from checkpoint {paths[numpy.argmin(best_fitness)]}")
+        print(
+            f"Best fitness: {min(best_fitness)} from checkpoint {paths[numpy.argmin(best_fitness)]}"
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     monitor_optimisation()

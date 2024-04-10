@@ -21,7 +21,9 @@ import logging
 import pathlib
 
 from bluepyemodel.access_point import get_access_point
-from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
+from bluepyemodel.efeatures_extraction.efeatures_extraction import (
+    extract_save_features_protocols,
+)
 from bluepyemodel.emodel_pipeline import plotting
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
@@ -148,7 +150,11 @@ class EModel_pipeline:
         )
 
     def configure_model(
-        self, morphology_name, morphology_path=None, morphology_format=None, use_gene_data=False
+        self,
+        morphology_name,
+        morphology_path=None,
+        morphology_format=None,
+        use_gene_data=False,
     ):
         """To be deprecated"""
 
@@ -163,7 +169,9 @@ class EModel_pipeline:
     def extract_efeatures(self):
         """Extract the e-features related to the current e-model."""
 
-        return extract_save_features_protocols(access_point=self.access_point, mapper=self.mapper)
+        return extract_save_features_protocols(
+            access_point=self.access_point, mapper=self.mapper
+        )
 
     def optimise(self, seed=1):
         """Optimise the e-model.
@@ -195,7 +203,9 @@ class EModel_pipeline:
             store_best_model(access_point=self.access_point, seed=seed)
 
         else:
-            checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
+            checkpoint_path = get_checkpoint_path(
+                self.access_point.emodel_metadata, seed=1
+            )
             checkpoint_list = glob.glob(checkpoint_path.replace("seed=1", "*"))
             if not checkpoint_list:
                 checkpoint_list = glob.glob(
@@ -205,7 +215,9 @@ class EModel_pipeline:
             for chkp_path in checkpoint_list:
                 file_name = pathlib.Path(chkp_path).stem
                 tmp_seed = next(
-                    int(e.replace("seed=", "")) for e in file_name.split("__") if "seed=" in e
+                    int(e.replace("seed=", ""))
+                    for e in file_name.split("__")
+                    if "seed=" in e
                 )
 
                 store_best_model(
@@ -243,7 +255,9 @@ class EModel_pipeline:
 
         chkp_paths = glob.glob("./checkpoints/**/*.pkl", recursive=True)
         if not chkp_paths:
-            raise ValueError("The checkpoints directory is empty, or there are no .pkl files.")
+            raise ValueError(
+                "The checkpoints directory is empty, or there are no .pkl files."
+            )
 
         # Filter the checkpoints to plot
         checkpoint_paths = []
@@ -284,7 +298,8 @@ class EModel_pipeline:
             access_point=self.access_point,
             mapper=self.mapper,
             seeds=None,
-            figures_dir=pathlib.Path("./figures") / self.access_point.emodel_metadata.emodel,
+            figures_dir=pathlib.Path("./figures")
+            / self.access_point.emodel_metadata.emodel,
             plot_distributions=True,
             plot_scores=True,
             plot_traces=True,
@@ -335,7 +350,14 @@ def sanitize_gitignore():
 
     lines = " ".join(line for line in lines)
 
-    to_add = ["run/", "checkpoints/", "figures/", "logs/", ".ipython/", ".ipynb_checkpoints/"]
+    to_add = [
+        "run/",
+        "checkpoints/",
+        "figures/",
+        "logs/",
+        ".ipython/",
+        ".ipynb_checkpoints/",
+    ]
 
     with open(str(path_gitignore), "a") as f:
         for a in to_add:

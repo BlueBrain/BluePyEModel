@@ -49,10 +49,19 @@ from .recordings import LooseDtRecordingCustom
 
 logger = logging.getLogger(__name__)
 
-soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
-ais_loc = NrnSeclistCompLocation(name="ais", seclist_name="axonal", sec_index=0, comp_x=0.5)
+soma_loc = NrnSeclistCompLocation(
+    name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5
+)
+ais_loc = NrnSeclistCompLocation(
+    name="ais", seclist_name="axonal", sec_index=0, comp_x=0.5
+)
 
-PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
+PRE_PROTOCOLS = [
+    "SearchHoldingCurrent",
+    "SearchThresholdCurrent",
+    "RMPProtocol",
+    "RinProtocol",
+]
 LEGACY_PRE_PROTOCOLS = ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]
 
 seclist_to_sec = {
@@ -246,7 +255,9 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
         else:
             efel_settings["multi_stim_start"] = [stim_start]
             efel_settings["multi_stim_end"] = [stim_end]
-    double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, (float, list))}
+    double_settings = {
+        k: v for k, v in efel_settings.items() if isinstance(v, (float, list))
+    }
     int_settings = {k: v for k, v in efel_settings.items() if isinstance(v, int)}
     string_settings = {k: v for k, v in efel_settings.items() if isinstance(v, str)}
 
@@ -332,7 +343,9 @@ def define_RMP_protocol(
         ):
             if recording_name is not None:
                 target_voltage = copy.deepcopy(f)
-                target_voltage.recording_names = {"": f"{rmp_prot_name}.{recording_name}"}
+                target_voltage.recording_names = {
+                    "": f"{rmp_prot_name}.{recording_name}"
+                }
             else:
                 target_voltage = f
             break
@@ -435,7 +448,9 @@ def define_holding_protocol(
         ):
             if recording_name is not None:
                 target_voltage = copy.deepcopy(f)
-                target_voltage.recording_names = {"": f"{hold_prot_name}.{recording_name}"}
+                target_voltage.recording_names = {
+                    "": f"{hold_prot_name}.{recording_name}"
+                }
             else:
                 target_voltage = f
             break
@@ -482,7 +497,10 @@ def define_threshold_protocol(
 
     target_current = []
     for f in efeatures:
-        if thres_prot_name in f.recording_names[""] and f.efel_feature_name == output_key:
+        if (
+            thres_prot_name in f.recording_names[""]
+            and f.efel_feature_name == output_key
+        ):
             target_current.append(f)
 
     if not target_current:
@@ -531,7 +549,10 @@ def define_protocols(
 
 
 def define_efeatures(
-    fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+    fitness_calculator_configuration,
+    include_validation_protocols,
+    protocols,
+    efel_settings,
 ):
     """Instantiate several Protocols"""
 
@@ -552,7 +573,9 @@ def define_efeatures(
             and feature_def.protocol_name.split("_")[0] not in PRE_PROTOCOLS
         ):
             if "[" in feature_def.protocol_name:
-                prot_names = get_protocol_list_from_protocol_name(feature_def.protocol_name)
+                prot_names = get_protocol_list_from_protocol_name(
+                    feature_def.protocol_name
+                )
             else:
                 prot_names = [feature_def.protocol_name]
             for prot_name in prot_names:
@@ -560,7 +583,9 @@ def define_efeatures(
                 # have the same stim_start and stim_end, and also that
                 # we will not use any feature depending on protocol stimulus current.
                 # As such, we can pass any protocol matching any item in prot_names.
-                protocol = next((p for p in protocols.values() if p.name == prot_name), None)
+                protocol = next(
+                    (p for p in protocols.values() if p.name == prot_name), None
+                )
                 if protocol is None:
                     raise ValueError(f"Could not find protocol named {prot_name}")
 
@@ -601,7 +626,10 @@ def define_optimisation_protocol(
     )
 
     efeatures = define_efeatures(
-        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        protocols,
+        efel_settings,
     )
 
     protocol_runner = ProtocolRunner(protocols)
@@ -756,7 +784,10 @@ def define_threshold_based_optimisation_protocol(
     )
 
     efeatures = define_efeatures(
-        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        protocols,
+        efel_settings,
     )
 
     # Create the special protocols for local stimulation
@@ -824,7 +855,10 @@ def define_threshold_based_optimisation_protocol(
                     )
 
             # Create the special protocols for soma stimulation
-            if prot.protocol_type == "ThresholdBasedProtocol" and "RMPProtocol" not in protocols:
+            if (
+                prot.protocol_type == "ThresholdBasedProtocol"
+                and "RMPProtocol" not in protocols
+            ):
                 location = ais_loc if ais_recording else soma_loc
                 protocols.update(
                     define_preprotocols(
@@ -857,12 +891,16 @@ def define_fitness_calculator(features):
         ObjectivesCalculator
     """
 
-    objectives = [SingletonWeightObjective(feat.name, feat, feat.weight) for feat in features]
+    objectives = [
+        SingletonWeightObjective(feat.name, feat, feat.weight) for feat in features
+    ]
 
     return ObjectivesCalculator(objectives)
 
 
-def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None, cvode_minstep=0.0):
+def get_simulator(
+    stochasticity, cell_model, dt=None, mechanisms_directory=None, cvode_minstep=0.0
+):
     """Get NrnSimulator
 
     Args:
@@ -888,7 +926,9 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None,
         for mechanism in cell_model.mechanisms:
             if not mechanism.deterministic:
                 return NrnSimulator(
-                    dt=dt or 0.025, cvode_active=False, mechanisms_directory=mechs_parent_dir
+                    dt=dt or 0.025,
+                    cvode_active=False,
+                    mechanisms_directory=mechs_parent_dir,
                 )
 
         logger.warning(
@@ -897,9 +937,13 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None,
         )
 
     if dt is None:
-        return NrnSimulator(mechanisms_directory=mechs_parent_dir, cvode_minstep=cvode_minstep)
+        return NrnSimulator(
+            mechanisms_directory=mechs_parent_dir, cvode_minstep=cvode_minstep
+        )
 
-    return NrnSimulator(dt=dt, cvode_active=False, mechanisms_directory=mechs_parent_dir)
+    return NrnSimulator(
+        dt=dt, cvode_active=False, mechanisms_directory=mechs_parent_dir
+    )
 
 
 def create_evaluator(
@@ -933,7 +977,9 @@ def create_evaluator(
         CellEvaluator
     """
 
-    stochasticity = pipeline_settings.stochasticity if stochasticity is None else stochasticity
+    stochasticity = (
+        pipeline_settings.stochasticity if stochasticity is None else stochasticity
+    )
     timeout = pipeline_settings.optimisation_timeout if timeout is None else timeout
 
     simulator = get_simulator(
@@ -944,7 +990,9 @@ def create_evaluator(
         cvode_minstep=pipeline_settings.cvode_minstep,
     )
 
-    fitness_calculator_configuration.configure_morphology_dependent_locations(cell_model, simulator)
+    fitness_calculator_configuration.configure_morphology_dependent_locations(
+        cell_model, simulator
+    )
 
     if any(
         p.protocol_type
@@ -984,7 +1032,9 @@ def create_evaluator(
     fitness_calculator = define_fitness_calculator(features)
     fitness_protocols = {"main_protocol": main_protocol}
 
-    param_names = [param.name for param in cell_model.params.values() if not param.frozen]
+    param_names = [
+        param.name for param in cell_model.params.values() if not param.frozen
+    ]
 
     cell_eval = CellEvaluator(
         cell_model=cell_model,
@@ -1016,7 +1066,11 @@ def add_recordings_to_evaluator(cell_evaluator, vars, use_fixed_dt_recordings=Fa
                 # FixedDtRecordingCustom for fixed time steps.
                 # Use LooseDtRecordingCustom for variable time steps
                 if use_fixed_dt_recordings:
-                    new_rec = FixedDtRecordingCustom(name=name, location=location, variable=var)
+                    new_rec = FixedDtRecordingCustom(
+                        name=name, location=location, variable=var
+                    )
                 else:
-                    new_rec = LooseDtRecordingCustom(name=name, location=location, variable=var)
+                    new_rec = LooseDtRecordingCustom(
+                        name=name, location=location, variable=var
+                    )
                 prot.recordings.append(new_rec)
