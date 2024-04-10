@@ -74,9 +74,7 @@ class EModelWorkflow:
 
     def get_related_nexus_ids(self):
         emodels_ids = [{"id": id_, "type": "EModel"} for id_ in self.emodels]
-        emodel_scripts_ids = [
-            {"id": id_, "type": "EModelScript"} for id_ in self.emodel_scripts_id
-        ]
+        emodel_scripts_ids = [{"id": id_, "type": "EModelScript"} for id_ in self.emodel_scripts_id]
         generates = emodels_ids + emodel_scripts_ids
         if self.fitness_configuration_id:
             generates.append(
@@ -95,13 +93,9 @@ class EModelWorkflow:
                 }
             )
         if self.pipeline_settings_id:
-            has_part.append(
-                {"id": self.pipeline_settings_id, "type": "EModelPipelineSettings"}
-            )
+            has_part.append({"id": self.pipeline_settings_id, "type": "EModelPipelineSettings"})
         if self.emodel_configuration_id:
-            has_part.append(
-                {"id": self.emodel_configuration_id, "type": "EModelConfiguration"}
-            )
+            has_part.append({"id": self.emodel_configuration_id, "type": "EModelConfiguration"})
 
         ids = {}
         if generates:

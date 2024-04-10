@@ -140,8 +140,7 @@ def setup_and_run_optimisation(
     opt_params = access_point.pipeline_settings.optimisation_params
     if "centroids" in opt_params and isinstance(opt_params["centroids"][0], dict):
         opt_params["centroids"][0] = [
-            opt_params["centroids"][0][name]
-            for name in list(cell_evaluator.param_names)
+            opt_params["centroids"][0][name] for name in list(cell_evaluator.param_names)
         ]
 
     opt_params["seed"] = seed
@@ -156,9 +155,7 @@ def setup_and_run_optimisation(
 
     checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed)
 
-    optimisation_checkpoint_period = (
-        access_point.pipeline_settings.optimisation_checkpoint_period
-    )
+    optimisation_checkpoint_period = access_point.pipeline_settings.optimisation_checkpoint_period
     run_optimisation(
         optimiser=opt,
         checkpoint_path=checkpoint_path,

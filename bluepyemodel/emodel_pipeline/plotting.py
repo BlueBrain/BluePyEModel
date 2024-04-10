@@ -96,9 +96,7 @@ def get_recording_names(protocol_config, stimuli):
     """
     # recordings from fitness calculator
     recording_names = {
-        recording["name"]
-        for prot in protocol_config
-        for recording in prot.recordings_from_config
+        recording["name"] for prot in protocol_config for recording in prot.recordings_from_config
     }
 
     # expects recording names to have prot_name.location_name.variable structure
@@ -360,9 +358,7 @@ def evolution_parameters_density(
     # Plot the figure with the sums of all histograms
     fig, axs = None, None
     if sum_histograms:
-        sum_histograms = {
-            idx: h / len(checkpoint_path) for idx, h in sum_histograms.items()
-        }
+        sum_histograms = {idx: h / len(checkpoint_path) for idx, h in sum_histograms.items()}
         dummy_path = checkpoint_paths[0].partition("__seed=")[0] + "__all_seeds.pkl"
         fig, axs = _create_figure_parameter_histograms(
             sum_histograms,
@@ -394,9 +390,7 @@ def scores(model, figures_dir="./figures", write_fig=True):
 
     for p, s in zip(pos, score):
         if s > SCORE_THRESHOLD:
-            axs[0, 0].text(
-                5.15, p - 0.25, s="{:.1f}".format(s), color="red", fontsize=8
-            )
+            axs[0, 0].text(5.15, p - 0.25, s="{:.1f}".format(s), color="red", fontsize=8)
 
     axs[0, 0].set_xlabel("z-score")
 
@@ -406,9 +400,7 @@ def scores(model, figures_dir="./figures", write_fig=True):
     axs[0, 0].set_xlim(0, 5)
     axs[0, 0].set_ylim(-0.5, len(pos) - 0.5)
 
-    title = get_title(
-        model.emodel_metadata.emodel, model.emodel_metadata.iteration, model.seed
-    )
+    title = get_title(model.emodel_metadata.emodel, model.emodel_metadata.iteration, model.seed)
     # tweak size and placement so that title does not overcross figure
     fig.suptitle(title, size="medium", y=0.99)
 
@@ -528,9 +520,7 @@ def traces(
             ylabel = get_traces_ylabel(var=t.split(".")[-1])
 
             # Plot responses (voltage, current, etc.)
-            axs[idx, 0].plot(
-                responses[t]["time"], responses[t]["voltage"], color="black"
-            )
+            axs[idx, 0].plot(responses[t]["time"], responses[t]["voltage"], color="black")
             axs[idx, 0].set_xlabel("Time (ms)")
             axs[idx, 0].set_ylabel(ylabel)
 
@@ -539,11 +529,7 @@ def traces(
             if basename in stimuli:
                 prot = stimuli[basename]
                 if hasattr(prot, "stimulus"):
-                    if (
-                        isinstance(prot, ThresholdBasedProtocol)
-                        and threshold
-                        and holding
-                    ):
+                    if isinstance(prot, ThresholdBasedProtocol) and threshold and holding:
                         prot.stimulus.holding_current = holding
                         prot.stimulus.threshold_current = threshold
                         if (
@@ -561,9 +547,7 @@ def traces(
                             and prot.dependencies["stimulus.threshold_current"][1]
                             != "bpo_threshold_current"
                         ):
-                            resp_name = prot.dependencies["stimulus.threshold_current"][
-                                1
-                            ]
+                            resp_name = prot.dependencies["stimulus.threshold_current"][1]
                             if resp_name in responses:
                                 prot.stimulus.threshold_current = responses[resp_name]
                             else:
@@ -613,9 +597,7 @@ def dendritic_feature_plot(
         y_label = "rheobase (nA)"
         fig_title = "rheobase along the apical dendrite main branch"
     else:
-        raise ValueError(
-            f"Expected 'ISI_CV' or 'rheobase' for feature_name. Got {feature_name}"
-        )
+        raise ValueError(f"Expected 'ISI_CV' or 'rheobase' for feature_name. Got {feature_name}")
 
     distances, feat_values = feature.get_distances_feature_values(responses)
     exp_distances, exp_values = read_dendritic_data(feature_name)
@@ -675,9 +657,7 @@ def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"
     elif feature_name == "rheobase":
         efeature_name = "bpo_threshold_current_linear"
     else:
-        raise ValueError(
-            f"Expected 'ISI_CV' or 'rheobase' for feature_name. Got {feature_name}"
-        )
+        raise ValueError(f"Expected 'ISI_CV' or 'rheobase' for feature_name. Got {feature_name}")
 
     figures_dir_dendritic = figures_dir / "dendritic" / dest_leaf
     dend_feat_list = [
@@ -701,9 +681,7 @@ def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"
         ):
             feat.stimulus_current = 0.0
 
-        dendritic_feature_plot(
-            mo, mo.responses, feat, feature_name, figures_dir_dendritic
-        )
+        dendritic_feature_plot(mo, mo.responses, feat, feature_name, figures_dir_dendritic)
 
 
 def _get_if_curve_from_evaluator(
@@ -722,9 +700,7 @@ def _get_if_curve_from_evaluator(
     efel.reset()
     efel.set_int_setting("strict_stiminterval", True)
 
-    soma_loc = NrnSeclistCompLocation(
-        name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5
-    )
+    soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
     rec = CompRecording(name="Step1.soma.v", location=soma_loc, variable="v")
 
     holding_pulse = NrnSquarePulse(
@@ -826,9 +802,7 @@ def IF_curve(
     return fig, [ax, ax2]
 
 
-def parameters_distribution(
-    models, lbounds, ubounds, figures_dir="./figures", write_fig=True
-):
+def parameters_distribution(models, lbounds, ubounds, figures_dir="./figures", write_fig=True):
     """Plot the distribution of the parameters across several models"""
     make_dir(figures_dir)
 
@@ -867,23 +841,13 @@ def parameters_distribution(
 
     # Guides for the eye
     for p in range(len(ubounds)):
-        axs[0, 0].plot(
-            [-1, 1], [p + 1, p + 1], c="black", ls="dotted", alpha=0.7, lw=0.7, zorder=1
-        )
-    axs[0, 0].plot(
-        [-1, -1], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1
-    )
-    axs[0, 0].plot(
-        [0, 0], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1
-    )
-    axs[0, 0].plot(
-        [1, 1], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1
-    )
+        axs[0, 0].plot([-1, 1], [p + 1, p + 1], c="black", ls="dotted", alpha=0.7, lw=0.7, zorder=1)
+    axs[0, 0].plot([-1, -1], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1)
+    axs[0, 0].plot([0, 0], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1)
+    axs[0, 0].plot([1, 1], [0, 1 + len(ubounds)], c="black", ls="--", alpha=0.8, zorder=1)
 
     axs[0, 0].set_xticks(ticks=[-1, 0, 1])
-    axs[0, 0].set_xticklabels(
-        labels=["Lower bounds", "50%", "Upper bounds"], rotation=90
-    )
+    axs[0, 0].set_xticklabels(labels=["Lower bounds", "50%", "Upper bounds"], rotation=90)
 
     axs[0, 0].set_ylim(0, 1 + len(ubounds))
     axs[0, 0].set_xlim(-1.05, 1.05)
@@ -958,17 +922,11 @@ def plot_bAP(
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
 
-    apical_distances, apical_values = apical_feature.get_distances_feature_values(
-        responses
-    )
-    basal_distances, basal_values = basal_feature.get_distances_feature_values(
-        responses
-    )
+    apical_distances, apical_values = apical_feature.get_distances_feature_values(responses)
+    basal_distances, basal_values = basal_feature.get_distances_feature_values(responses)
 
     if 0 in apical_distances:
-        apical_x_fit, apical_y_fit = bAP_fit(
-            apical_feature, apical_distances, apical_values
-        )
+        apical_x_fit, apical_y_fit = bAP_fit(apical_feature, apical_distances, apical_values)
     if 0 in basal_distances:
         basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
 
@@ -1008,8 +966,7 @@ def plot_bAP(
 
     if write_fig:
         fname = (
-            model.emodel_metadata.as_string(model.seed)
-            + "__dendrite_backpropagation_fit_decay.pdf"
+            model.emodel_metadata.as_string(model.seed) + "__dendrite_backpropagation_fit_decay.pdf"
         )
         save_fig(figures_dir, fname)
 
@@ -1070,9 +1027,7 @@ def plot_EPSP(
             apical_apicrec_feat, apical_distances, apical_attenuation
         )
     if 0 in basal_distances:
-        basal_x_fit, basal_y_fit = EPSP_fit(
-            basal_basalrec_feat, basal_distances, basal_attenuation
-        )
+        basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
 
     ax.scatter(
         apical_distances,
@@ -1109,10 +1064,7 @@ def plot_EPSP(
     fig.suptitle("EPSP attenuation")
 
     if write_fig:
-        fname = (
-            model.emodel_metadata.as_string(model.seed)
-            + "__dendrite_EPSP_attenuation_fit.pdf"
-        )
+        fname = model.emodel_metadata.as_string(model.seed) + "__dendrite_EPSP_attenuation_fit.pdf"
         save_fig(figures_dir, fname)
 
     return fig, ax
@@ -1161,9 +1113,7 @@ def run_and_plot_bAP(
         if k in PRE_PROTOCOLS:
             new_prots[k] = v
 
-    bAP_prot = define_bAP_protocol(
-        dist_end=max_apical_length, dist_end_basal=max_basal_length
-    )
+    bAP_prot = define_bAP_protocol(dist_end=max_apical_length, dist_end_basal=max_basal_length)
     new_prots[bAP_prot.name] = bAP_prot
 
     cell_evaluator.fitness_protocols["main_protocol"].protocols = new_prots
@@ -1388,9 +1338,7 @@ def plot_models(
         dest_leaf = "all"
 
     if not emodels:
-        logger.warning(
-            "In plot_models, no emodel for %s", access_point.emodel_metadata.emodel
-        )
+        logger.warning("In plot_models, no emodel for %s", access_point.emodel_metadata.emodel)
         return []
 
     if plot_distributions:
@@ -1564,8 +1512,7 @@ def get_voltage_currents_from_files(key_dict, output_dir):
     voltage = numpy.loadtxt(v_path)[:, 1]
 
     curr_paths = [
-        Path(output_dir) / ".".join((curr_key, "dat"))
-        for curr_key in key_dict["current_keys"]
+        Path(output_dir) / ".".join((curr_key, "dat")) for curr_key in key_dict["current_keys"]
     ]
     currents = [numpy.loadtxt(curr_path)[:, 1] for curr_path in curr_paths]
 
@@ -1573,9 +1520,7 @@ def get_voltage_currents_from_files(key_dict, output_dir):
         Path(output_dir) / ".".join((ion_conc_key, "dat"))
         for ion_conc_key in key_dict["ion_conc_keys"]
     ]
-    ionic_concentrations = [
-        numpy.loadtxt(ion_conc_path)[:, 1] for ion_conc_path in ion_conc_paths
-    ]
+    ionic_concentrations = [numpy.loadtxt(ion_conc_path)[:, 1] for ion_conc_path in ion_conc_paths]
 
     return time, voltage, currents, ionic_concentrations
 
@@ -1634,8 +1579,7 @@ def currentscape(
         )
     else:
         fnames = [
-            str(Path(filepath).stem)
-            for filepath in glob.glob(str(Path(output_dir) / "*.dat"))
+            str(Path(filepath).stem) for filepath in glob.glob(str(Path(output_dir) / "*.dat"))
         ]
         ordered_keys = get_ordered_currentscape_keys(fnames)
 
@@ -1647,15 +1591,13 @@ def currentscape(
                 time = responses[key_dict["voltage_key"]]["time"]
                 voltage = responses[key_dict["voltage_key"]]["voltage"]
                 # current data has also voltage for a key
-                currents = [
-                    responses[key]["voltage"] for key in key_dict["current_keys"]
-                ]
+                currents = [responses[key]["voltage"] for key in key_dict["current_keys"]]
                 ionic_concentrations = [
                     responses[key]["voltage"] for key in key_dict["ion_conc_keys"]
                 ]
             else:
-                time, voltage, currents, ionic_concentrations = (
-                    get_voltage_currents_from_files(key_dict, output_dir)
+                time, voltage, currents, ionic_concentrations = get_voltage_currents_from_files(
+                    key_dict, output_dir
                 )
 
             name = ".".join((f"{metadata_str}__currentscape", prot, loc))
@@ -1664,8 +1606,7 @@ def currentscape(
             if current_subset and key_dict["current_names"]:
                 try:
                     currents_indices = [
-                        list(key_dict["current_names"]).index(c_name)
-                        for c_name in current_subset
+                        list(key_dict["current_names"]).index(c_name) for c_name in current_subset
                     ]
                     currents = numpy.array(currents)[currents_indices]
                     updated_config["current"]["names"] = current_subset
@@ -1703,9 +1644,7 @@ def currentscape(
                 )
             else:
                 try:
-                    from currentscape.currentscape import (
-                        plot_currentscape as plot_currentscape_fct,
-                    )
+                    from currentscape.currentscape import plot_currentscape as plot_currentscape_fct
 
                     logger.info("Plotting currentscape for %s", name)
                     fig = plot_currentscape_fct(
@@ -1717,6 +1656,4 @@ def currentscape(
                     )
                     plt.close(fig)
                 except ModuleNotFoundError:
-                    logger.warning(
-                        "Currentscape module not found. Skipping currentscape plotting."
-                    )
+                    logger.warning("Currentscape module not found. Skipping currentscape plotting.")

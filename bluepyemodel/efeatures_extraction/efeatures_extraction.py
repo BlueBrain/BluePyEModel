@@ -23,9 +23,7 @@ from importlib.machinery import SourceFileLoader
 import bluepyefe.extract
 import numpy
 
-from bluepyemodel.evaluation.fitness_calculator_configuration import (
-    FitnessCalculatorConfiguration,
-)
+from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.tools.search_pdfs import search_figure_efeatures
 
 logger = logging.getLogger(__name__)
@@ -57,13 +55,9 @@ def interpolate_RMP(fitness_calculator_configuration):
     if rin is None:
         raise TypeError("Impossible to interpolate the RMP as Rin is also missing")
     if holding_current is None:
-        raise TypeError(
-            "Impossible to interpolate the RMP as the holding current is also missing"
-        )
+        raise TypeError("Impossible to interpolate the RMP as the holding current is also missing")
     if not holding_voltages:
-        raise ValueError(
-            "Impossible to interpolate the RMP as no voltage base is available"
-        )
+        raise ValueError("Impossible to interpolate the RMP as no voltage base is available")
 
     holding_voltage = numpy.median(holding_voltages)
     rmp = holding_voltage - (rin * holding_current)
@@ -85,12 +79,8 @@ def threshold_efeatures_std(fitness_calculator_configuration, default_std_value)
     """Set std as the mean value if std is higher than mean value."""
     for i, f in enumerate(fitness_calculator_configuration.efeatures):
         if f.original_std > abs(1.0 * f.mean) and f.original_std != default_std_value:
-            logger.debug(
-                "Thresholding %s: %s -> %s", f.name, f.original_std, abs(1.0 * f.mean)
-            )
-            fitness_calculator_configuration.efeatures[i].original_std = abs(
-                1.0 * f.mean
-            )
+            logger.debug("Thresholding %s: %s -> %s", f.name, f.original_std, abs(1.0 * f.mean))
+            fitness_calculator_configuration.efeatures[i].original_std = abs(1.0 * f.mean)
 
 
 def define_extraction_reader_function(access_point):
@@ -113,9 +103,7 @@ def define_extraction_reader_function(access_point):
         extraction_reader = getattr(function_module, extraction_reader[1])
 
     elif not callable(extraction_reader):
-        raise TypeError(
-            "Extraction reader function is not callable nor a list of two strings"
-        )
+        raise TypeError("Extraction reader function is not callable nor a list of two strings")
 
     return extraction_reader
 
@@ -127,9 +115,7 @@ def attach_efeatures_pdf(emodel, efeatures):
         for efeat in efeatures[protocol]["soma"]:
             pdfs = {}
 
-            pdf_amp, pdf_amp_rel = search_figure_efeatures(
-                emodel, protocol, efeat["feature"]
-            )
+            pdf_amp, pdf_amp_rel = search_figure_efeatures(emodel, protocol, efeat["feature"])
 
             if pdf_amp:
                 pdfs["amp"] = pdf_amp
@@ -191,13 +177,9 @@ def extract_save_features_protocols(access_point, mapper=map):
 
     reader_function = define_extraction_reader_function(access_point)
 
-    threshold_nvalue_save = (
-        access_point.pipeline_settings.extraction_threshold_value_save
-    )
+    threshold_nvalue_save = access_point.pipeline_settings.extraction_threshold_value_save
     plot = access_point.pipeline_settings.plot_extraction
-    output_directory = (
-        f"./figures/{access_point.emodel_metadata.emodel}/efeatures_extraction/"
-    )
+    output_directory = f"./figures/{access_point.emodel_metadata.emodel}/efeatures_extraction/"
 
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
         output_directory=output_directory,
@@ -260,10 +242,8 @@ def extract_save_features_protocols(access_point, mapper=map):
             fitness_calculator_config, access_point.pipeline_settings.default_std_value
         )
 
-    fitness_calculator_config.protocols += (
-        fitness_calculator_config.initialise_protocols(
-            targets_configuration.additional_fitness_protocols
-        )
+    fitness_calculator_config.protocols += fitness_calculator_config.initialise_protocols(
+        targets_configuration.additional_fitness_protocols
     )
 
     fitness_calculator_config.efeatures += fitness_calculator_config.initialise_efeatures(

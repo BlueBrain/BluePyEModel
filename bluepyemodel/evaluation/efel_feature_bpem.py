@@ -23,15 +23,9 @@ import numpy
 from bluepyopt.ephys.efeatures import eFELFeature
 from scipy import optimize as opt
 
-from bluepyemodel.tools.multiprotocols_efeatures_utils import (
-    get_distances_from_recording_name,
-)
-from bluepyemodel.tools.multiprotocols_efeatures_utils import (
-    get_locations_from_recording_name,
-)
-from bluepyemodel.tools.multiprotocols_efeatures_utils import (
-    get_protocol_list_from_recording_name,
-)
+from bluepyemodel.tools.multiprotocols_efeatures_utils import get_distances_from_recording_name
+from bluepyemodel.tools.multiprotocols_efeatures_utils import get_locations_from_recording_name
+from bluepyemodel.tools.multiprotocols_efeatures_utils import get_protocol_list_from_recording_name
 
 logger = logging.getLogger(__name__)
 
@@ -145,10 +139,7 @@ class eFELFeatureBPEM(eFELFeature):
                 )
                 return None
 
-            if (
-                responses[self.recording_names[""]] is None
-                or responses[recording_name] is None
-            ):
+            if responses[self.recording_names[""]] is None or responses[recording_name] is None:
                 return None
             trace[f"T{postfix}"] = responses[self.recording_names[""]]["time"]
             trace[f"V{postfix}"] = responses[recording_name]["voltage"]
@@ -320,10 +311,7 @@ class DendFitFeature(eFELFeatureBPEM):
     @property
     def distances(self):
         # expects keys in recordings names to be distances from soma (e.g. "50") or "" if at soma
-        return [
-            int(rec_name) if rec_name != "" else 0
-            for rec_name in self.recording_names.keys()
-        ]
+        return [int(rec_name) if rec_name != "" else 0 for rec_name in self.recording_names.keys()]
 
     @property
     def locations(self):
@@ -395,11 +383,7 @@ class DendFitFeature(eFELFeatureBPEM):
         feature_values_ = []
         if self.efel_feature_name.startswith("bpo_"):
             feature_names = [
-                (
-                    f"{self.efel_feature_name}_{loc}"
-                    if loc != "soma"
-                    else self.efel_feature_name
-                )
+                (f"{self.efel_feature_name}_{loc}" if loc != "soma" else self.efel_feature_name)
                 for loc in self.locations
             ]
             feature_values_ = [
@@ -451,9 +435,7 @@ class DendFitFeature(eFELFeatureBPEM):
 
     def calculate_feature(self, responses, raise_warnings=False):
         """Calculate feature value"""
-        distances, feature_values_ = self.get_distances_feature_values(
-            responses, raise_warnings
-        )
+        distances, feature_values_ = self.get_distances_feature_values(responses, raise_warnings)
 
         if distances and feature_values_:
             if 0 in distances:

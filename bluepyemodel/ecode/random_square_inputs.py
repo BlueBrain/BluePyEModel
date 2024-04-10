@@ -60,9 +60,7 @@ class MultipleRandomStepInputs(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise TypeError(
-                f"In stimulus {self.name}, amp and thresh_perc cannot be both None."
-            )
+            raise TypeError(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         self.delay = kwargs.get("delay", 250.0)
         self.duration = kwargs.get("duration", 350.0)
@@ -72,8 +70,7 @@ class MultipleRandomStepInputs(BPEM_stimulus):
         self.inputs_duration = kwargs.get("inputs_duration", 20.0)
         self.sections = kwargs.get("sections", ["dend", "apic"])
         self.inputs_start = [
-            self.delay + numpy.random.random() * self.duration
-            for i in range(self.n_inputs)
+            self.delay + numpy.random.random() * self.duration for i in range(self.n_inputs)
         ]
 
         super().__init__(
@@ -99,9 +96,7 @@ class MultipleRandomStepInputs(BPEM_stimulus):
     def instantiate(self, sim=None, icell=None):
         """Run stimulus"""
 
-        holding_current = (
-            self.holding_current if self.holding_current is not None else 0
-        )
+        holding_current = self.holding_current if self.holding_current is not None else 0
 
         # Holding current
         icomp = self.location.instantiate(sim=sim, icell=icell)
@@ -134,9 +129,7 @@ class MultipleRandomStepInputs(BPEM_stimulus):
 
         self.dend_clamps = []
         for input_start in self.inputs_start:
-            dend_clamp = sim.neuron.h.IClamp(
-                0.5, sec=numpy.random.choice(input_sections)
-            )
+            dend_clamp = sim.neuron.h.IClamp(0.5, sec=numpy.random.choice(input_sections))
             dend_clamp.delay = input_start
             dend_clamp.dur = self.inputs_duration
             dend_clamp.amp = self.amplitude

@@ -24,9 +24,7 @@ from bluepyopt.ephys.simulators import NrnSimulator
 from bluepyemodel.ecode import *
 from tests.test_models import dummycells
 
-soma_loc = NrnSeclistCompLocation(
-    name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5
-)
+soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 
 
 def run_stim_on_dummy_cell(stimulus):
@@ -347,9 +345,7 @@ def check_ramp(time, current, ton, duration, holding_current, amp, ramp_up=True)
         theoretical_current_ramp = holding_current + amp * (time_ramp - ton) / duration
     # ramp going down case
     else:
-        theoretical_current_ramp = holding_current + amp * (
-            1.0 - (time_ramp - ton) / duration
-        )
+        theoretical_current_ramp = holding_current + amp * (1.0 - (time_ramp - ton) / duration)
     assert numpy.all(current_ramp == pytest.approx(theoretical_current_ramp))
 
 
@@ -410,18 +406,14 @@ def test_noiseou3():
     assert len(i) == 601000
 
 
-def check_idrest_stim(
-    time, current, delay, duration, total_duration, holding_current, amp
-):
+def check_idrest_stim(time, current, delay, duration, total_duration, holding_current, amp):
     """Assert IDrest stimulus behaves as expected."""
     # before stimulus
     current_before = current[numpy.where((0 <= time) & (time < delay))]
     assert numpy.all(current_before == holding_current)
 
     # after stimulus
-    current_after = current[
-        numpy.where((delay + duration < time) & (time <= total_duration))
-    ]
+    current_after = current[numpy.where((delay + duration < time) & (time <= total_duration))]
     assert numpy.all(current_after == holding_current)
 
     # during stimulus
@@ -456,9 +448,7 @@ def test_idrest_instantiate():
 
 def test_apwaveform():
     """Test APWaveform generate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = (
-        get_apwaveform_stimulus()
-    )
+    stimulus, delay, duration, total_duration, amp, holding_curr = get_apwaveform_stimulus()
     time, current = stimulus.generate()
 
     # test
@@ -473,9 +463,7 @@ def test_apwaveform():
 
 def test_apwaveform_instantiate():
     """Test APWaveform instantiate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = (
-        get_apwaveform_stimulus()
-    )
+    stimulus, delay, duration, total_duration, amp, holding_curr = get_apwaveform_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
     check_idrest_stim(time, current, delay, duration, total_duration, holding_curr, amp)
 
@@ -486,9 +474,7 @@ def test_apwaveform_instantiate():
 
 def test_firepattern():
     """Test FirePattern generate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = (
-        get_firepattern_stimulus()
-    )
+    stimulus, delay, duration, total_duration, amp, holding_curr = get_firepattern_stimulus()
     time, current = stimulus.generate()
 
     # test
@@ -503,9 +489,7 @@ def test_firepattern():
 
 def test_firepattern_instantiate():
     """Test FirePattern instantiate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = (
-        get_firepattern_stimulus()
-    )
+    stimulus, delay, duration, total_duration, amp, holding_curr = get_firepattern_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
     check_idrest_stim(time, current, delay, duration, total_duration, holding_curr, amp)
 
@@ -697,18 +681,14 @@ def test_hyperdepol_instantiate():
     )
 
 
-def check_ramp_stim(
-    time, current, delay, duration, total_duration, holding_current, amp
-):
+def check_ramp_stim(time, current, delay, duration, total_duration, holding_current, amp):
     """Assert Ramp stimulus behaves as expected."""
     # before stimulus
     current_before = current[numpy.where((0 <= time) & (time < delay))]
     assert numpy.all(current_before == holding_current)
 
     # after stimulus
-    current_after = current[
-        numpy.where((delay + duration < time) & (time <= total_duration))
-    ]
+    current_after = current[numpy.where((delay + duration < time) & (time <= total_duration))]
     assert numpy.all(current_after == holding_current)
 
     # during stimulus
@@ -807,9 +787,7 @@ def test_sahp():
 
     stimulus.holding_current = None
     time, current = stimulus.generate()
-    check_sahp_stim(
-        time, current, delay, tmid, tmid2, toff, total_duration, 0.0, long_amp, amp
-    )
+    check_sahp_stim(time, current, delay, tmid, tmid2, toff, total_duration, 0.0, long_amp, amp)
 
 
 def test_sahp_instantiate():
@@ -841,9 +819,7 @@ def test_sahp_instantiate():
 
     stimulus.holding_current = None
     time, current = run_stim_on_dummy_cell(stimulus)
-    check_sahp_stim(
-        time, current, delay, tmid, tmid2, toff, total_duration, 0.0, long_amp, amp
-    )
+    check_sahp_stim(time, current, delay, tmid, tmid2, toff, total_duration, 0.0, long_amp, amp)
 
 
 def check_poscheops_stim(
@@ -1147,9 +1123,7 @@ def test_negcheops_instantiate():
     )
 
 
-def check_sinespec_stim(
-    time, current, delay, duration, total_duration, holding_current, amp
-):
+def check_sinespec_stim(time, current, delay, duration, total_duration, holding_current, amp):
     """Assert SineSpec stimulus behaves as expected."""
     if delay > 0:
         # before stimulus
@@ -1158,23 +1132,16 @@ def check_sinespec_stim(
         assert numpy.all(current_before[:-2] == holding_current)
 
         # after stimulus
-        current_after = current[
-            numpy.where((delay + duration < time) & (time <= total_duration))
-        ]
+        current_after = current[numpy.where((delay + duration < time) & (time <= total_duration))]
         assert numpy.all(current_after == holding_current)
 
     # during stimulus
     current_during = current[numpy.where((delay < time) & (time < delay + duration))]
     # timesteps can be variable
     # also change time from ms to s
-    time_during = (
-        time[numpy.where((delay < time) & (time < delay + duration))] - delay
-    ) / 1e3
+    time_during = (time[numpy.where((delay < time) & (time < delay + duration))] - delay) / 1e3
     theoretical_current_during = holding_current + amp * numpy.sin(
-        2.0
-        * numpy.pi
-        * (1.0 + (1.0 / (5.15 - (time_during - 0.1))))
-        * (time_during - 0.1)
+        2.0 * numpy.pi * (1.0 + (1.0 / (5.15 - (time_during - 0.1)))) * (time_during - 0.1)
     )
     # for some reasons, the last values of current after the run are 0, so I removed them.
     # also the run current needs a lower precision threshold than the generated current.
@@ -1186,16 +1153,12 @@ def check_sinespec_stim(
 
 def test_sinespec():
     """Test SineSpec generate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = (
-        get_sinespec_stimulus()
-    )
+    stimulus, delay, duration, total_duration, amp, holding_curr = get_sinespec_stimulus()
     time, current = stimulus.generate()
 
     assert stimulus.name == "SineSpec"
     assert stimulus.total_duration == total_duration
-    check_sinespec_stim(
-        time, current, delay, duration, total_duration, holding_curr, amp
-    )
+    check_sinespec_stim(time, current, delay, duration, total_duration, holding_curr, amp)
 
     stimulus.holding_current = None
     time, current = stimulus.generate()
@@ -1204,13 +1167,9 @@ def test_sinespec():
 
 def test_sinespec_instantiate():
     """Test SineSpec instantiate."""
-    stimulus, delay, duration, total_duration, amp, holding_curr = (
-        get_sinespec_stimulus()
-    )
+    stimulus, delay, duration, total_duration, amp, holding_curr = get_sinespec_stimulus()
     time, current = run_stim_on_dummy_cell(stimulus)
-    check_sinespec_stim(
-        time, current, delay, duration, total_duration, holding_curr, amp
-    )
+    check_sinespec_stim(time, current, delay, duration, total_duration, holding_curr, amp)
 
     stimulus.holding_current = None
     time, current = run_stim_on_dummy_cell(stimulus)

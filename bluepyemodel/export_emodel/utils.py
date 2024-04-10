@@ -23,9 +23,7 @@ import shutil
 logger = logging.getLogger(__name__)
 
 
-def get_output_path_from_metadata(
-    output_base_dir, emodel_metadata, seed, use_allen_notation=True
-):
+def get_output_path_from_metadata(output_base_dir, emodel_metadata, seed, use_allen_notation=True):
     """Get the output path from the emodel_metadata.
 
     Args:
@@ -110,9 +108,7 @@ def select_emodels(
         return []
 
     if iteration:
-        emodels = [
-            model for model in emodels if model.emodel_metadata.iteration == iteration
-        ]
+        emodels = [model for model in emodels if model.emodel_metadata.iteration == iteration]
 
     if only_best:
         emodels = [sorted(emodels, key=lambda x: x.fitness)[0]]

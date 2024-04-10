@@ -35,9 +35,7 @@ class DendriticStep(IDrest):
             sec_name = kwargs.get("seclist_name", "apical")
 
             if sec_name != "apical":
-                raise ValueError(
-                    "With direction 'apical_trunk', sec_name must be apical"
-                )
+                raise ValueError("With direction 'apical_trunk', sec_name must be apical")
 
             location = NrnTrunkSomaDistanceCompLocation(
                 name="dend",

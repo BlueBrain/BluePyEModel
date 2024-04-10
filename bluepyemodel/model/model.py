@@ -138,9 +138,7 @@ def define_parameters(parameters_definition, distributions, mapping_multilocatio
         if "distribution_" in param_def.location:
             dist = distributions[param_def.location.split("distribution_")[1]]
         else:
-            seclist_locations = multi_locations(
-                param_def.location, mapping_multilocation
-            )
+            seclist_locations = multi_locations(param_def.location, mapping_multilocation)
 
         if dist:
             parameters.append(
@@ -246,9 +244,7 @@ def define_morphology(
     if morph_modifiers is None or morph_modifiers == [None]:
         morph_modifiers = [replace_axon_with_taper]
         morph_modifiers_hoc = [replace_axon_hoc]  # TODO: check the hoc is correct
-        logger.debug(
-            "No morphology modifiers provided, replace_axon_with_taper will be used."
-        )
+        logger.debug("No morphology modifiers provided, replace_axon_with_taper will be used.")
     elif morph_modifiers == ["bluepyopt_replace_axon"]:
         morph_modifiers = None
         morph_modifiers_hoc = None
@@ -261,13 +257,9 @@ def define_morphology(
                     modifier_module = importlib.import_module(morph_modifier[0])
                     morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
                     if len(morph_modifier) > 2:
-                        morph_modifiers_hoc[i] = getattr(
-                            modifier_module, morph_modifier[2]
-                        )
+                        morph_modifiers_hoc[i] = getattr(modifier_module, morph_modifier[2])
                     else:
-                        morph_modifiers_hoc[i] = getattr(
-                            modifiers, morph_modifier[1] + "_hoc"
-                        )
+                        morph_modifiers_hoc[i] = getattr(modifiers, morph_modifier[1] + "_hoc")
                 except AttributeError:
                     logger.warning(
                         "Cannot import %s or %s from %s. Please inform the hoc string in "

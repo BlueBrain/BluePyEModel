@@ -49,9 +49,7 @@ def test_recording_names(db):
     fitness_calculator_configuration = db.get_fitness_calculator_configuration(
         record_ions_and_currents=True
     )
-    prot_runner, _ = define_threshold_based_optimisation_protocol(
-        fitness_calculator_configuration
-    )
+    prot_runner, _ = define_threshold_based_optimisation_protocol(fitness_calculator_configuration)
     stimuli = prot_runner.protocols
     recording_names = get_recording_names(
         db.get_fitness_calculator_configuration().protocols,
@@ -81,9 +79,7 @@ def test_recording_names(db):
     fitness_calculator_configuration = db.get_fitness_calculator_configuration(
         record_ions_and_currents=False
     )
-    prot_runner, _ = define_threshold_based_optimisation_protocol(
-        fitness_calculator_configuration
-    )
+    prot_runner, _ = define_threshold_based_optimisation_protocol(fitness_calculator_configuration)
     stimuli = prot_runner.protocols
     recording_names_no_extra_rec = get_recording_names(
         db.get_fitness_calculator_configuration().protocols,

@@ -90,9 +90,7 @@ class EFeatureConfiguration:
     @property
     def recording_name_for_instantiation(self):
         if isinstance(self.recording_name, dict):
-            return {
-                k: f"{self.protocol_name}.{v}" for k, v in self.recording_name.items()
-            }
+            return {k: f"{self.protocol_name}.{v}" for k, v in self.recording_name.items()}
         return {"": f"{self.protocol_name}.{self.recording_name}"}
 
     @property

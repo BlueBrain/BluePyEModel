@@ -52,12 +52,8 @@ def test_define_parameters():
     ]
 
     distributions = [
-        DistributionConfiguration(
-            "exp", "(-0.8696 + 2.087*math.exp(({distance})*0.0031))*{value}"
-        ),
-        DistributionConfiguration(
-            "decay", "math.exp({distance}*{constant})*{value}", ["constant"]
-        ),
+        DistributionConfiguration("exp", "(-0.8696 + 2.087*math.exp(({distance})*0.0031))*{value}"),
+        DistributionConfiguration("decay", "math.exp({distance}*{constant})*{value}", ["constant"]),
     ]
 
     distributions = model.define_distributions(distributions)

@@ -37,9 +37,7 @@ def define_validation_function(access_point):
     validation_function = access_point.pipeline_settings.validation_function
 
     if validation_function is None or not validation_function:
-        logger.warning(
-            "Validation function not specified, will use validate_max_score."
-        )
+        logger.warning("Validation function not specified, will use validate_max_score.")
         return validation_functions.validate_max_score
 
     if isinstance(validation_function, str):
@@ -92,9 +90,7 @@ def validate(
     )
 
     if not emodels:
-        logger.warning(
-            "In compute_scores, no emodels for %s", access_point.emodel_metadata.emodel
-        )
+        logger.warning("In compute_scores, no emodels for %s", access_point.emodel_metadata.emodel)
         return []
 
     validation_function = define_validation_function(access_point)
@@ -103,14 +99,10 @@ def validate(
 
     for model in emodels:
         # turn features from arrays to float to be json serializable
-        model.features = model.evaluator.fitness_calculator.calculate_values(
-            model.responses
-        )
+        model.features = model.evaluator.fitness_calculator.calculate_values(model.responses)
         for key, value in model.features.items():
             if value is not None:
-                model.features[key] = float(
-                    numpy.nanmean([v for v in value if v is not None])
-                )
+                model.features[key] = float(numpy.nanmean([v for v in value if v is not None]))
 
         scores = model.evaluator.fitness_calculator.calculate_scores(model.responses)
         for feature_name in scores:

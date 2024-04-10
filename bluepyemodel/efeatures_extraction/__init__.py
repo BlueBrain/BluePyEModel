@@ -16,6 +16,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from bluepyemodel.efeatures_extraction.efeatures_extraction import (
-    extract_save_features_protocols,
-)
+from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols

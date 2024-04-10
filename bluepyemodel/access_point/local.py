@@ -34,9 +34,7 @@ from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
 from bluepyemodel.evaluation.evaluator import LEGACY_PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
-from bluepyemodel.evaluation.fitness_calculator_configuration import (
-    FitnessCalculatorConfiguration,
-)
+from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.export_emodel.utils import get_hoc_file_path
 from bluepyemodel.export_emodel.utils import get_output_path_from_metadata
 from bluepyemodel.model.mechanism_configuration import MechanismConfiguration
@@ -139,9 +137,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         Path(".tmp/").mkdir(exist_ok=True)
         self.rw_lock_final = fasteners.InterProcessReaderWriterLock(".tmp/final.lock")
-        self.rw_lock_final_tmp = fasteners.InterProcessReaderWriterLock(
-            ".tmp/final_tmp.lock"
-        )
+        self.rw_lock_final_tmp = fasteners.InterProcessReaderWriterLock(".tmp/final_tmp.lock")
 
         self.pipeline_settings = self.load_pipeline_settings()
         self.unfrozen_params = None
@@ -166,18 +162,13 @@ class LocalAccessPoint(DataAccessPoint):
                     break
 
         if not morph_file or not morph_file.endswith(SUPPORTED_MORPHOLOGY_EXTENSIONS):
-            raise FileNotFoundError(
-                f"Morphology file not defined or not supported: {morph_file}"
-            )
+            raise FileNotFoundError(f"Morphology file not defined or not supported: {morph_file}")
 
         morph_path = self.morph_dir / morph_file
 
         if not morph_path.is_file():
             raise FileNotFoundError(f"Morphology file not found: {morph_path}")
-        if (
-            str(Path.cwd()) not in str(morph_path.resolve())
-            and self.emodel_metadata.iteration
-        ):
+        if str(Path.cwd()) not in str(morph_path.resolve()) and self.emodel_metadata.iteration:
             raise FileNotFoundError(
                 "When using a githash or iteration tag, the path to the morphology must be local"
                 " otherwise it cannot be archived during the creation of the githash. To solve"
@@ -266,9 +257,7 @@ class LocalAccessPoint(DataAccessPoint):
                 if lock_file:
                     self.rw_lock_final_tmp.release_read_lock()
             except (json.decoder.JSONDecodeError, FileNotFoundError):
-                logger.error(
-                    "Cannot load final. final.json does not exist or is corrupted."
-                )
+                logger.error("Cannot load final. final.json does not exist or is corrupted.")
 
         return final
 
@@ -302,9 +291,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         if self.legacy_dir_structure:
             emodel = "_".join(self.emodel_metadata.emodel.split("_")[:2])
-            recipes_path = (
-                self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
-            )
+            recipes_path = self.emodel_dir / emodel / "config" / "recipes" / "recipes.json"
         else:
             recipes_path = self.emodel_dir / self.recipes_path
 
@@ -441,9 +428,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for mech_file in glob.glob(str(Path(mech_dir) / "*.mod")):
-            ion_currents, nonspecific_currents, ion_conc = get_mechanism_currents(
-                mech_file
-            )
+            ion_currents, nonspecific_currents, ion_conc = get_mechanism_currents(mech_file)
             name = get_mechanism_name(mech_file)
             available_mechanisms.append(
                 MechanismConfiguration(
@@ -465,11 +450,7 @@ class LocalAccessPoint(DataAccessPoint):
             return None
 
         patterns = ["*" + ext for ext in SUPPORTED_MORPHOLOGY_EXTENSIONS]
-        return {
-            morph_file.stem
-            for pattern in patterns
-            for morph_file in morph_dir.glob(pattern)
-        }
+        return {morph_file.stem for pattern in patterns for morph_file in morph_dir.glob(pattern)}
 
     def get_model_configuration(self, skip_get_available_morph=False):
         """Get the configuration of the model, including parameters, mechanisms and distributions
@@ -499,9 +480,7 @@ class LocalAccessPoint(DataAccessPoint):
         else:
             configuration.init_from_dict(parameters, self.get_morphologies())
 
-        configuration.mapping_multilocation = self.get_recipes().get(
-            "multiloc_map", None
-        )
+        configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
         configuration.morph_modifiers = self.get_recipes().get("morph_modifiers", None)
         return configuration
 
@@ -524,9 +503,7 @@ class LocalAccessPoint(DataAccessPoint):
     def get_targets_configuration(self):
         """Get the configuration of the targets (targets and ephys files used)"""
 
-        path_extract_config = (
-            self.emodel_dir / self.pipeline_settings.path_extract_config
-        )
+        path_extract_config = self.emodel_dir / self.pipeline_settings.path_extract_config
 
         with open(path_extract_config, "r") as f:
             config_dict = json.load(f)
@@ -535,12 +512,8 @@ class LocalAccessPoint(DataAccessPoint):
             files=config_dict["files"],
             targets=config_dict["targets"],
             protocols_rheobase=config_dict["protocols_rheobase"],
-            additional_fitness_efeatures=config_dict.get(
-                "additional_fitness_efeatures", None
-            ),
-            additional_fitness_protocols=config_dict.get(
-                "additional_fitness_protocols", None
-            ),
+            additional_fitness_efeatures=config_dict.get("additional_fitness_efeatures", None),
+            additional_fitness_protocols=config_dict.get("additional_fitness_protocols", None),
             protocols_mapping=config_dict.get("protocols_mapping", None),
         )
 
@@ -567,9 +540,7 @@ class LocalAccessPoint(DataAccessPoint):
         if record_ions_and_currents:
             ion_currents, ionic_concentrations = self.get_ion_currents_concentrations()
             if ion_currents is not None and ionic_concentrations is not None:
-                ion_variables = list(
-                    chain.from_iterable((ion_currents, ionic_concentrations))
-                )
+                ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
 
         if legacy:
             efeatures = self.get_json("features")
@@ -703,9 +674,7 @@ class LocalAccessPoint(DataAccessPoint):
         if self.emodel_metadata.emodel in final:
             return self.format_emodel_data(final[self.emodel_metadata.emodel])
 
-        logger.warning(
-            "Could not find models for emodel %s", self.emodel_metadata.emodel
-        )
+        logger.warning("Could not find models for emodel %s", self.emodel_metadata.emodel)
 
         return None
 
@@ -776,9 +745,7 @@ class LocalAccessPoint(DataAccessPoint):
 
         final = self.get_final_content()
 
-        return {
-            mod_name: mod.get("emodel", mod_name) for mod_name, mod in final.items()
-        }
+        return {mod_name: mod.get("emodel", mod_name) for mod_name, mod in final.items()}
 
     def has_best_model(self, seed):
         """Check if the best model has been stored."""

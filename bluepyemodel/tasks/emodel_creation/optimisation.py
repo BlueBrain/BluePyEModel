@@ -24,9 +24,7 @@ from pathlib import Path
 import luigi
 
 from bluepyemodel.access_point.access_point import OptimisationState
-from bluepyemodel.efeatures_extraction.efeatures_extraction import (
-    extract_save_features_protocols,
-)
+from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from bluepyemodel.emodel_pipeline.plotting import optimisation
 from bluepyemodel.emodel_pipeline.plotting import plot_models
@@ -57,9 +55,7 @@ def _reformat_ttype(ttype):
 class CreateTargetsConfigurationTarget(WorkflowTarget):
     """Luigi target to check if BPEM targets configuraiton for extraction exists."""
 
-    def __init__(
-        self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag
-    ):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag):
         """Constructor."""
         super().__init__(
             emodel=emodel,
@@ -102,9 +98,7 @@ class CreateTargetsConfiguration(WorkflowTask):
 class EfeaturesProtocolsTarget(WorkflowTarget):
     """Target to check if efeatures and protocols are present in the database."""
 
-    def __init__(
-        self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag
-    ):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag):
         """Constructor."""
         super().__init__(
             emodel=emodel,
@@ -131,9 +125,7 @@ class ExtractEFeatures(WorkflowTask):
 
         mapper = self.get_mapper()
 
-        _ = extract_save_features_protocols(
-            access_point=self.access_point, mapper=mapper
-        )
+        _ = extract_save_features_protocols(access_point=self.access_point, mapper=mapper)
 
     def output(self):
         """ """
@@ -174,9 +166,7 @@ class CompileMechanisms(WorkflowTaskRequiringMechanisms):
                 break
 
         for filepath in glob.glob(f"{str(mechanisms_directory)}/*.mod"):
-            compile_path = (
-                mechanisms_directory.parents[0] / arch_dir / f"{Path(filepath).stem}.o"
-            )
+            compile_path = mechanisms_directory.parents[0] / arch_dir / f"{Path(filepath).stem}.o"
             targets.append(luigi.LocalTarget(compile_path))
 
         return targets
@@ -219,9 +209,7 @@ class OptimisationTarget(WorkflowTarget):
 
     def exists(self):
         """Check if the model is completed."""
-        state = self.access_point.optimisation_state(
-            seed=self.seed, continue_opt=self.continue_opt
-        )
+        state = self.access_point.optimisation_state(seed=self.seed, continue_opt=self.continue_opt)
         if state == OptimisationState.COMPLETED:
             return True
 
@@ -371,9 +359,7 @@ class Optimise(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 class BestModelTarget(WorkflowTarget):
     """Check if the best model from optimisation is present in the database."""
 
-    def __init__(
-        self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed=1
-    ):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed=1):
         """Constructor.
 
         Args:
@@ -497,9 +483,7 @@ class ValidationTarget(WorkflowTarget):
         even if the model is not validated.
     """
 
-    def __init__(
-        self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed
-    ):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed):
         """Constructor.
 
         Args:
@@ -690,9 +674,7 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 class StoreHocTarget(WorkflowTarget):
     """Check if the hoc files have been stored."""
 
-    def __init__(
-        self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed
-    ):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag, seed):
         """Constructor.
 
         Args:
@@ -880,9 +862,7 @@ class ExportHoc(WorkflowTaskRequiringMechanisms, IPyParallelTask):
 class EModelCreationTarget(WorkflowTarget):
     """Check if the the model is validated for any seed."""
 
-    def __init__(
-        self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag
-    ):
+    def __init__(self, emodel, etype, ttype, mtype, species, brain_region, iteration_tag):
         """Constructor.
 
         Args:
@@ -963,9 +943,7 @@ class EModelCreation(WorkflowTask):
             emodel_workflow = self.access_point.create_emodel_workflow()
 
         # check
-        has_configuration = self.access_point.check_emodel_workflow_configurations(
-            emodel_workflow
-        )
+        has_configuration = self.access_point.check_emodel_workflow_configurations(emodel_workflow)
         if not has_configuration:
             raise ValueError(
                 "There are configuration files missing on nexus for the workflow."
@@ -1201,9 +1179,7 @@ class PlotOptimisation(WorkflowTask):
     def run(self):
         """ """
 
-        checkpoint_path = get_checkpoint_path(
-            self.access_point.emodel_metadata, seed=self.seed
-        )
+        checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
         if (
             not Path(checkpoint_path).is_file()
             and Path(get_legacy_checkpoint_path(checkpoint_path)).is_file()
@@ -1221,14 +1197,10 @@ class PlotOptimisation(WorkflowTask):
 
     def output(self):
         """ """
-        checkpoint_path = get_checkpoint_path(
-            self.access_point.emodel_metadata, seed=self.seed
-        )
+        checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
 
         fname = f"{Path(checkpoint_path).stem}.pdf"
-        return luigi.LocalTarget(
-            Path("./figures") / self.emodel / "optimisation" / fname
-        )
+        return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
 class PlotModels(WorkflowTaskRequiringMechanisms):

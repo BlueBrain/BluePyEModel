@@ -52,9 +52,7 @@ class NoiseMixin(BPEM_stimulus):
 
     def generate(self, dt=0.1):
         """Return current time series"""
-        holding_current = (
-            self.holding_current if self.holding_current is not None else 0
-        )
+        holding_current = self.holding_current if self.holding_current is not None else 0
 
         if dt != 0.1:
             raise ValueError(f"For eCode {self.name}, dt has to be 0.1ms.")

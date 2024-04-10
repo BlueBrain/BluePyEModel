@@ -41,11 +41,7 @@ def list_ecodes_per_traces(traces, threshold_count=0):
 
     for t in ecodes_per_traces.copy():
         ecodes_per_traces[t] = list(
-            set(
-                e
-                for e in ecodes_per_traces[t]
-                if e and count_ecodes[e] > threshold_count
-            )
+            set(e for e in ecodes_per_traces[t] if e and count_ecodes[e] > threshold_count)
         )
 
     return ecodes_per_traces
