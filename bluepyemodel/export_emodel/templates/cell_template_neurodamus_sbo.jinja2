@@ -144,6 +144,18 @@ proc load_morphology(/* morphology_dir, morphology_name */) {localobj morph, imp
   sscanf(morph_path, "%s", extension.s)
 
   sf.right(extension.s, sf.len(extension.s)-3)
+  if(strcmp(extension.s, "ASC") == 0 ){
+    extension.s = ".asc"
+    sf.left(morph_path, sf.len(morph_path)-3)
+    sprint(morph_path,"%s%s",morph_path,"asc")
+    print "USING LOWERCASE EXTENSION", morph_path
+  }
+  if(strcmp(extension.s, "SWC") == 0 ){
+    extension.s = ".swc"
+    sf.left(morph_path, sf.len(morph_path)-3)
+    sprint(morph_path,"%s%s",morph_path,"swc")
+    print "USING LOWERCASE EXTENSION", morph_path
+  }
   
   if( strcmp(extension.s, "asc") == 0 ) {
      morph = new Import3d_Neurolucida3()
