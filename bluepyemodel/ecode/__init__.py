@@ -49,7 +49,7 @@ eCodes = {
     "idrest": IDrest,
     "idthres": IDrest,
     "idthresh": IDrest,
-    "step": IDrest,
+    # "step": IDrest,
     "spontaps": IDrest,
     "sponnohold30": IDrest,
     "sponhold30": IDrest,
