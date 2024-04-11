@@ -431,9 +431,7 @@ def replace_axon_legacy(sim=None, icell=None):
 
 
 replace_axon_legacy_hoc = """
-proc replace_axon(){
-
-    local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSize, L_real localobj   diams, lens
+proc replace_axon(){local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSize, L_real localobj   diams, lens
 
     L_target = 60  // length of stub axon
     nseg0 = 5  // number of segments for each of the two axon sections
