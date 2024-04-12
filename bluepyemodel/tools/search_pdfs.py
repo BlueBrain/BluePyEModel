@@ -77,9 +77,7 @@ def search_figure_efeatures(emodel, protocol_name, efeature):
 def figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the convergence of the optimisation"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__optimisation.pdf"
 
     return Path("./figures") / emodel_metadata.emodel / "optimisation" / fname
@@ -98,15 +96,11 @@ def search_figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=
 def figure_emodel_traces(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the traces of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__traces.pdf"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "traces" / "all" / fname
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "traces" / "validated" / fname
-    )
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "traces" / "validated" / fname
 
     return pathname, pathname_val
 
@@ -124,15 +118,11 @@ def search_figure_emodel_traces(emodel_metadata, seed, use_allen_notation=True):
 def figure_emodel_score(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the scores of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__scores.pdf"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "scores" / "all" / fname
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "scores" / "validated" / fname
-    )
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "scores" / "validated" / fname
 
     return pathname, pathname_val
 
@@ -150,15 +140,11 @@ def search_figure_emodel_score(emodel_metadata, seed, use_allen_notation=True):
 def figure_emodel_thumbnail(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the thumbnail of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__thumbnail.png"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "thumbnail" / "all" / fname
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "thumbnail" / "validated" / fname
-    )
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "thumbnail" / "validated" / fname
 
     return pathname, pathname_val
 
@@ -176,15 +162,11 @@ def search_figure_emodel_thumbnail(emodel_metadata, seed, use_allen_notation=Tru
 def figure_emodel_bAP(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the bAP of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__dendrite_backpropagation_fit_decay.pdf"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "dendritic" / "all" / fname
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
-    )
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
 
     return pathname, pathname_val
 
@@ -202,15 +184,11 @@ def search_figure_emodel_bAP(emodel_metadata, seed, use_allen_notation=True):
 def figure_emodel_EPSP(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the EPSP of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__dendrite_EPSP_attenuation_fit.pdf"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "dendritic" / "all" / fname
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
-    )
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
 
     return pathname, pathname_val
 
@@ -228,15 +206,11 @@ def search_figure_emodel_EPSP(emodel_metadata, seed, use_allen_notation=True):
 def figure_emodel_ISI_CV(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the ISI_CV fit of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__*ISI_CV_linear.pdf"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "dendritic" / "all" / fname
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
-    )
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
 
     return pathname, pathname_val
 
@@ -248,23 +222,17 @@ def search_figure_emodel_ISI_CV(emodel_metadata, seed, use_allen_notation=True):
         emodel_metadata, seed, use_allen_notation=use_allen_notation
     )
 
-    return list(search_figure_paths(str(pathname))) + list(
-        search_figure_paths(str(pathname_val))
-    )
+    return list(search_figure_paths(str(pathname))) + list(search_figure_paths(str(pathname_val)))
 
 
 def figure_emodel_rheobase(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdf representing the rheobase fit of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__*bpo_threshold_current_linear.pdf"
 
     pathname = Path("./figures") / emodel_metadata.emodel / "dendritic" / "all" / fname
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
-    )
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "dendritic" / "validated" / fname
 
     return pathname, pathname_val
 
@@ -276,9 +244,7 @@ def search_figure_emodel_rheobase(emodel_metadata, seed, use_allen_notation=True
         emodel_metadata, seed, use_allen_notation=use_allen_notation
     )
 
-    return list(search_figure_paths(str(pathname))) + list(
-        search_figure_paths(str(pathname_val))
-    )
+    return list(search_figure_paths(str(pathname))) + list(search_figure_paths(str(pathname_val)))
 
 
 def figure_emodel_parameters(emodel_metadata, use_allen_notation=True):
@@ -287,12 +253,8 @@ def figure_emodel_parameters(emodel_metadata, use_allen_notation=True):
     metadata_str = emodel_metadata.as_string(use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__parameters_distribution.pdf"
 
-    pathname = (
-        Path("./figures") / emodel_metadata.emodel / "distributions" / "all" / fname
-    )
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "distributions" / "validated"
-    )
+    pathname = Path("./figures") / emodel_metadata.emodel / "distributions" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "distributions" / "validated"
     pathname_val = pathname_val / fname
 
     return pathname, pathname_val
@@ -309,29 +271,21 @@ def search_figure_emodel_parameters(emodel_metadata, use_allen_notation=True):
     return [search_figure_path(str(pathname)), search_figure_path(str(pathname_val))]
 
 
-def figure_emodel_parameters_evolution(
-    emodel_metadata, seed=None, use_allen_notation=True
-):
+def figure_emodel_parameters_evolution(emodel_metadata, seed=None, use_allen_notation=True):
     """Get path for the pdf representing the evolution of the parameters of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     if seed is None:
         fname = f"{metadata_str}__all_seeds__evo_parameter_density.pdf"
     else:
         fname = f"{metadata_str}__evo_parameter_density.pdf"
 
-    pathname = (
-        Path("./figures") / emodel_metadata.emodel / "parameter_evolution" / fname
-    )
+    pathname = Path("./figures") / emodel_metadata.emodel / "parameter_evolution" / fname
 
     return pathname
 
 
-def search_figure_emodel_parameters_evolution(
-    emodel_metadata, seed=None, use_allen_notation=True
-):
+def search_figure_emodel_parameters_evolution(emodel_metadata, seed=None, use_allen_notation=True):
     """Search for the pdf representing the evolution of the parameters of an emodel"""
 
     pathname = figure_emodel_parameters_evolution(
@@ -344,17 +298,11 @@ def search_figure_emodel_parameters_evolution(
 def figure_emodel_currentscapes(emodel_metadata, seed, use_allen_notation=True):
     """Get path for the pdfs representing the currentscapes of an emodel"""
 
-    metadata_str = emodel_metadata.as_string(
-        seed, use_allen_notation=use_allen_notation
-    )
+    metadata_str = emodel_metadata.as_string(seed, use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__currentscape*.pdf"
 
-    pathname = (
-        Path("./figures") / emodel_metadata.emodel / "currentscape" / "all" / fname
-    )
-    pathname_val = (
-        Path("./figures") / emodel_metadata.emodel / "currentscape" / "validated"
-    )
+    pathname = Path("./figures") / emodel_metadata.emodel / "currentscape" / "all" / fname
+    pathname_val = Path("./figures") / emodel_metadata.emodel / "currentscape" / "validated"
     pathname_val = pathname_val / fname
 
     return pathname, pathname_val
@@ -367,9 +315,7 @@ def search_figure_emodel_currentscapes(emodel_metadata, seed, use_allen_notation
         emodel_metadata, seed, use_allen_notation=use_allen_notation
     )
 
-    return list(search_figure_paths(str(pathname))) + list(
-        search_figure_paths(str(pathname_val))
-    )
+    return list(search_figure_paths(str(pathname))) + list(search_figure_paths(str(pathname_val)))
 
 
 def copy_emodel_pdf_dependency_to_new_path(old_path, new_path, overwrite=False):
@@ -384,15 +330,9 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed, overwrite=Fa
     """Copy dependencies to new path using allen notation"""
     # pylint: disable=too-many-locals
     # TODO: refactor this function
-    old_opt_path = figure_emodel_optimisation(
-        emodel_metadata, seed, use_allen_notation=False
-    )
-    new_opt_path = figure_emodel_optimisation(
-        emodel_metadata, seed, use_allen_notation=True
-    )
-    copy_emodel_pdf_dependency_to_new_path(
-        old_opt_path, new_opt_path, overwrite=overwrite
-    )
+    old_opt_path = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=False)
+    new_opt_path = figure_emodel_optimisation(emodel_metadata, seed, use_allen_notation=True)
+    copy_emodel_pdf_dependency_to_new_path(old_opt_path, new_opt_path, overwrite=overwrite)
 
     old_traces_path, old_traces_path_val = figure_emodel_traces(
         emodel_metadata, seed, use_allen_notation=False
@@ -400,9 +340,7 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed, overwrite=Fa
     new_traces_path, new_traces_path_val = figure_emodel_traces(
         emodel_metadata, seed, use_allen_notation=True
     )
-    copy_emodel_pdf_dependency_to_new_path(
-        old_traces_path, new_traces_path, overwrite=overwrite
-    )
+    copy_emodel_pdf_dependency_to_new_path(old_traces_path, new_traces_path, overwrite=overwrite)
     copy_emodel_pdf_dependency_to_new_path(
         old_traces_path_val, new_traces_path_val, overwrite=overwrite
     )
@@ -413,9 +351,7 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed, overwrite=Fa
     new_score_path, new_score_path_val = figure_emodel_score(
         emodel_metadata, seed, use_allen_notation=True
     )
-    copy_emodel_pdf_dependency_to_new_path(
-        old_score_path, new_score_path, overwrite=overwrite
-    )
+    copy_emodel_pdf_dependency_to_new_path(old_score_path, new_score_path, overwrite=overwrite)
     copy_emodel_pdf_dependency_to_new_path(
         old_score_path_val, new_score_path_val, overwrite=overwrite
     )
@@ -426,9 +362,7 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed, overwrite=Fa
     new_params_path, new_params_path_val = figure_emodel_parameters(
         emodel_metadata, use_allen_notation=True
     )
-    copy_emodel_pdf_dependency_to_new_path(
-        old_params_path, new_params_path, overwrite=overwrite
-    )
+    copy_emodel_pdf_dependency_to_new_path(old_params_path, new_params_path, overwrite=overwrite)
     copy_emodel_pdf_dependency_to_new_path(
         old_params_path_val, new_params_path_val, overwrite=overwrite
     )
@@ -452,9 +386,7 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed, overwrite=Fa
     new_evo_path = figure_emodel_parameters_evolution(
         emodel_metadata, seed, use_allen_notation=True
     )
-    copy_emodel_pdf_dependency_to_new_path(
-        old_evo_path, new_evo_path, overwrite=overwrite
-    )
+    copy_emodel_pdf_dependency_to_new_path(old_evo_path, new_evo_path, overwrite=overwrite)
 
     old_all_evo_path = figure_emodel_parameters_evolution(
         emodel_metadata, seed=None, use_allen_notation=False
@@ -462,9 +394,7 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed, overwrite=Fa
     new_all_evo_path = figure_emodel_parameters_evolution(
         emodel_metadata, seed=None, use_allen_notation=True
     )
-    copy_emodel_pdf_dependency_to_new_path(
-        old_all_evo_path, new_all_evo_path, overwrite=overwrite
-    )
+    copy_emodel_pdf_dependency_to_new_path(old_all_evo_path, new_all_evo_path, overwrite=overwrite)
 
     # take into account that we have to search for currentscape plots
     # because we do not know a priori the protocols and locations
@@ -480,6 +410,4 @@ def copy_emodel_pdf_dependencies_to_new_path(emodel_metadata, seed, overwrite=Fa
             new_path = str(new_currentscape_path_val).replace("*", prot)
         else:
             new_path = str(new_currentscape_path).replace("*", prot)
-        copy_emodel_pdf_dependency_to_new_path(
-            Path(old_path), Path(new_path), overwrite=overwrite
-        )
+        copy_emodel_pdf_dependency_to_new_path(Path(old_path), Path(new_path), overwrite=overwrite)

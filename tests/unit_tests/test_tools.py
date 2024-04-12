@@ -114,16 +114,10 @@ def test_select_rec_for_thumbnail():
         select_rec_for_thumbnail([])
 
     # no step protocols case: return 1st protocol
-    assert (
-        select_rec_for_thumbnail(["sAHP_40.soma.v", "sAHP_20.soma.v"])
-        == "sAHP_40.soma.v"
-    )
+    assert select_rec_for_thumbnail(["sAHP_40.soma.v", "sAHP_20.soma.v"]) == "sAHP_40.soma.v"
 
     # step protocol present but not positive case: return 1st protocol
-    assert (
-        select_rec_for_thumbnail(["sAHP_40.soma.v", "IDrest_-20.soma.v"])
-        == "sAHP_40.soma.v"
-    )
+    assert select_rec_for_thumbnail(["sAHP_40.soma.v", "IDrest_-20.soma.v"]) == "sAHP_40.soma.v"
 
     # additional step protocol names case
     rec_names = ["IDrest_200.soma.v", "MyStep_100.soma.v"]
@@ -135,14 +129,10 @@ def test_select_rec_for_thumbnail():
 
     # thumbnail_rec case
     rec_names = ["IDrest_130.soma.v", "sAHP_40.soma.v"]
-    assert (
-        select_rec_for_thumbnail(rec_names, thumbnail_rec="sAHP_40.soma.v")
-        == "sAHP_40.soma.v"
-    )
+    assert select_rec_for_thumbnail(rec_names, thumbnail_rec="sAHP_40.soma.v") == "sAHP_40.soma.v"
 
     # thumbnail_rec not in rec_names:
     rec_names = ["sAHP_40.soma.v", "IDrest_130.soma.v"]
     assert (
-        select_rec_for_thumbnail(rec_names, thumbnail_rec="sAHP_20.soma.v")
-        == "IDrest_130.soma.v"
+        select_rec_for_thumbnail(rec_names, thumbnail_rec="sAHP_20.soma.v") == "IDrest_130.soma.v"
     )

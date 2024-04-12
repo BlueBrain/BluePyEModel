@@ -48,9 +48,7 @@ def locally_store_responses(emodel):
         if not ("holding_current" in key or "threshold_current" in key or "bpo" in key):
             if resp["time"] is not None and resp["voltage"] is not None:
                 time = numpy.array(resp["time"])
-                data = numpy.array(
-                    resp["voltage"]
-                )  # even current will be named voltage here
+                data = numpy.array(resp["voltage"])  # even current will be named voltage here
 
                 numpy.savetxt(output_path, numpy.transpose(numpy.vstack((time, data))))
         else:
@@ -74,9 +72,7 @@ def check_local_responses_presence(emodels, cell_eval):
         if not all(
             (
                 (Path(output_dir) / ".".join((rec.name, "dat"))).is_file()
-                for prot in cell_eval.fitness_protocols[
-                    "main_protocol"
-                ].protocols.values()
+                for prot in cell_eval.fitness_protocols["main_protocol"].protocols.values()
                 for rec in prot.recordings
                 if rec.variable == "v"
             )
@@ -132,9 +128,7 @@ def get_responses(to_run):
 
     eva.cell_model.unfreeze(params)
 
-    responses = eva.run_protocols(
-        protocols=eva.fitness_protocols.values(), param_values=params
-    )
+    responses = eva.run_protocols(protocols=eva.fitness_protocols.values(), param_values=params)
     responses["evaluator"] = eva
 
     return responses
@@ -266,10 +260,8 @@ def get_evaluator_from_access_point(
     """
 
     model_configuration = access_point.get_model_configuration()
-    fitness_calculator_configuration = (
-        access_point.get_fitness_calculator_configuration(
-            record_ions_and_currents=record_ions_and_currents
-        )
+    fitness_calculator_configuration = access_point.get_fitness_calculator_configuration(
+        record_ions_and_currents=record_ions_and_currents
     )
 
     if model_configuration.morph_modifiers:
@@ -313,9 +305,7 @@ def get_evaluator_from_access_point(
     start_from_emodel = access_point.pipeline_settings.start_from_emodel
 
     if start_from_emodel is not None:
-        access_point_type = (
-            "local" if isinstance(access_point, LocalAccessPoint) else "nexus"
-        )
+        access_point_type = "local" if isinstance(access_point, LocalAccessPoint) else "nexus"
 
         seed = start_from_emodel.pop("seed", None)
 
@@ -326,9 +316,7 @@ def get_evaluator_from_access_point(
                 "recipes_path": access_point.recipes_path,
             }
         else:
-            raise NotImplementedError(
-                "start_from_emodel not implemented for Nexus access point"
-            )
+            raise NotImplementedError("start_from_emodel not implemented for Nexus access point")
 
         starting_access_point = get_access_point(
             access_point=access_point_type, **start_from_emodel, **kwargs

@@ -70,15 +70,11 @@ def monitor_optimisation():
         elif opt_state == OptimisationState.IN_PROGRESS:
             status = "in progress"
         elif opt_state == OptimisationState.EMPTY:
-            print(
-                f"No checkpoint found for species: {species}, brain_region: {brain_region}"
-            )
+            print(f"No checkpoint found for species: {species}, brain_region: {brain_region}")
             continue
         else:
             status = "unknown"
-        print(
-            f"Seed: {seed}, Generation: {generation}, Status: {status}, Score: {best_score}"
-        )
+        print(f"Seed: {seed}, Generation: {generation}, Status: {status}, Score: {best_score}")
         best_fitness.append(best_score)
 
     if best_fitness:

@@ -45,9 +45,7 @@ def synth_axon(sim=None, icell=None, params=None, scale=1.0):
 
     nseg_total = 10
     L_target = params[0]
-    diameters = taper_function(
-        np.linspace(0, L_target, nseg_total), *params[1:], scale=scale
-    )
+    diameters = taper_function(np.linspace(0, L_target, nseg_total), *params[1:], scale=scale)
     count = 0
     for section in icell.axon:
         section.nseg = nseg_total // 2

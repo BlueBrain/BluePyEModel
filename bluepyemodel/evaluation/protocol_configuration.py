@@ -118,9 +118,7 @@ class ProtocolConfiguration:
                     elif "var" in recording:
                         new_rec["var"] = ion
                     else:
-                        raise KeyError(
-                            "Expected 'var' or 'variable' in recording list."
-                        )
+                        raise KeyError("Expected 'var' or 'variable' in recording list.")
 
                     new_rec["name"] = ".".join(new_rec["name"].split(".")[:-1] + [ion])
 

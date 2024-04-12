@@ -209,9 +209,7 @@ class ProtocolWithDependencies(BPEMProtocol, ResponseDependencies):
         timeout=None,
         responses=None,
     ):
-        return BPEMProtocol.run(
-            self, cell_model, param_values, sim, isolate, timeout, responses
-        )
+        return BPEMProtocol.run(self, cell_model, param_values, sim, isolate, timeout, responses)
 
 
 class ThresholdBasedProtocol(ProtocolWithDependencies):
@@ -291,9 +289,7 @@ class RMPProtocol(BPEMProtocol):
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
-            LooseDtRecordingCustom(
-                name=self.recording_name, location=location, variable="v"
-            )
+            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
         ]
         self.output_key = output_key
 
@@ -372,9 +368,7 @@ class RinProtocol(ProtocolWithDependencies):
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
-            LooseDtRecordingCustom(
-                name=self.recording_name, location=location, variable="v"
-            )
+            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
         ]
         self.output_key = output_key
 
@@ -495,9 +489,7 @@ class SearchHoldingCurrent(BPEMProtocol):
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
-            LooseDtRecordingCustom(
-                name=self.recording_name, location=location, variable="v"
-            )
+            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
         ]
         self.output_key = output_key
 
@@ -659,10 +651,7 @@ class SearchHoldingCurrent(BPEMProtocol):
             )
             return lower_bound
 
-        if (
-            voltage is not None
-            and abs(voltage - self.holding_voltage) < self.voltage_precision
-        ):
+        if voltage is not None and abs(voltage - self.holding_voltage) < self.voltage_precision:
             logger.debug("Depth of holding search: %s", depth)
             return mid_bound
 
@@ -757,9 +746,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         self.recording_name = f"{name}.{location.name}.v"
         stimulus = eCodes["step"](location=location, **stimulus_definition)
         recordings = [
-            LooseDtRecordingCustom(
-                name=self.recording_name, location=location, variable="v"
-            )
+            LooseDtRecordingCustom(name=self.recording_name, location=location, variable="v")
         ]
         self.output_key = output_key
         self.hold_key = hold_key
@@ -854,9 +841,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
 
         self.stimulus.amp = threshold
         response.update(
-            self._run(
-                cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout
-            )
+            self._run(cell_model, param_values, sim=sim, isolate=isolate, timeout=timeout)
         )
 
         return response
@@ -872,17 +857,13 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         """Define the bounds and check their validity"""
 
         upper_bound = self.max_threshold_current()
-        spikecount = self._get_spikecount(
-            upper_bound, cell_model, param_values, sim, isolate
-        )
+        spikecount = self._get_spikecount(upper_bound, cell_model, param_values, sim, isolate)
         if spikecount == 0:
             logger.debug("No spikes at upper bound during threshold search")
             return None, None
 
         lower_bound = responses[self.hold_key]
-        spikecount = self._get_spikecount(
-            lower_bound, cell_model, param_values, sim, isolate
-        )
+        spikecount = self._get_spikecount(lower_bound, cell_model, param_values, sim, isolate)
 
         if spikecount > 0:
             if self.no_spikes:
@@ -909,9 +890,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
     ):
         """Do bisection search to find threshold current."""
         mid_bound = (upper_bound + lower_bound) * 0.5
-        spikecount = self._get_spikecount(
-            mid_bound, cell_model, param_values, sim, isolate
-        )
+        spikecount = self._get_spikecount(mid_bound, cell_model, param_values, sim, isolate)
         if abs(lower_bound - upper_bound) < self.current_precision:
             logger.debug("Depth of threshold search: %s", depth)
             return upper_bound

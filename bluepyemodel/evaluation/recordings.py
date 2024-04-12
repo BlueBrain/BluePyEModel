@@ -134,9 +134,7 @@ class LooseDtRecordingCustom(ephys.recordings.CompRecording):
 
     def instantiate(self, sim=None, icell=None):
         """Instantiate recording."""
-        logger.debug(
-            "Adding compartment recording of %s at %s", self.variable, self.location
-        )
+        logger.debug("Adding compartment recording of %s at %s", self.variable, self.location)
 
         self.varvector = sim.neuron.h.Vector()
         seg = self.location.instantiate(sim=sim, icell=icell)
@@ -176,9 +174,7 @@ class FixedDtRecordingCustom(LooseDtRecordingCustom):
 
     def instantiate(self, sim=None, icell=None):
         """Instantiate recording."""
-        logger.debug(
-            "Adding compartment recording of %s at %s", self.variable, self.location
-        )
+        logger.debug("Adding compartment recording of %s at %s", self.variable, self.location)
 
         self.varvector = sim.neuron.h.Vector()
         seg = self.location.instantiate(sim=sim, icell=icell)

@@ -55,18 +55,14 @@ class SubWhiteNoise(BPEM_stimulus):
         self.threshold_current = None
 
         if self.amp is None and self.amp_rel is None:
-            raise TypeError(
-                f"In stimulus {self.name}, amp and thresh_perc cannot be both None."
-            )
+            raise TypeError(f"In stimulus {self.name}, amp and thresh_perc cannot be both None.")
 
         data_filepath = kwargs.get("data_filepath", None)
 
         if data_filepath is not None:
             series = numpy.loadtxt(data_filepath)
         else:
-            series_file = pkg_resources.resource_filename(
-                __name__, "data/SubWhiteNoise.txt"
-            )
+            series_file = pkg_resources.resource_filename(__name__, "data/SubWhiteNoise.txt")
             series = numpy.loadtxt(series_file)
 
         self.current_series = series[:, 1]
@@ -96,9 +92,7 @@ class SubWhiteNoise(BPEM_stimulus):
 
     def generate(self, dt=0.1):
         """Return current time series"""
-        holding_current = (
-            self.holding_current if self.holding_current is not None else 0
-        )
+        holding_current = self.holding_current if self.holding_current is not None else 0
 
         if dt != 0.1:
             raise ValueError(f"For eCode {self.name}, dt has to be 0.1ms.")

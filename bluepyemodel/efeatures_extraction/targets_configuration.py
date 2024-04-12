@@ -187,9 +187,7 @@ class TargetsConfiguration:
             for f in files:
                 tmp_trace = TraceFile(**f)
                 if not self.is_trace_available(tmp_trace):
-                    raise ValueError(
-                        f"File named {tmp_trace.cell_name} is not present on Nexus"
-                    )
+                    raise ValueError(f"File named {tmp_trace.cell_name} is not present on Nexus")
                 self.files.append(tmp_trace)
 
         self.targets = []
@@ -198,9 +196,7 @@ class TargetsConfiguration:
             for t in targets:
                 tmp_target = Target(**t)
                 if not self.is_target_available(tmp_target):
-                    raise ValueError(
-                        f"Efeature name {tmp_target.efeature} does not exist"
-                    )
+                    raise ValueError(f"Efeature name {tmp_target.efeature} does not exist")
                 self.targets.append(tmp_target)
         if auto_targets is not None:
             self.auto_targets = auto_targets
@@ -240,13 +236,10 @@ class TargetsConfiguration:
         files_metadata = {}
 
         if self.targets:
-            used_protocols = set(
-                [t.protocol for t in self.targets] + self.protocols_rheobase
-            )
+            used_protocols = set([t.protocol for t in self.targets] + self.protocols_rheobase)
         elif self.auto_targets:
             used_protocols = set(
-                [p for t in self.auto_targets for p in t["protocols"]]
-                + self.protocols_rheobase
+                [p for t in self.auto_targets for p in t["protocols"]] + self.protocols_rheobase
             )
         else:
             raise TypeError("either targets or autotargets should be set.")
@@ -317,9 +310,7 @@ class TargetsConfiguration:
             return False
 
         ecodes = set(
-            itertools.chain(
-                *[file.ecodes for file in self.files if file.ecodes is not None]
-            )
+            itertools.chain(*[file.ecodes for file in self.files if file.ecodes is not None])
         )
 
         for target in self.targets:
@@ -380,9 +371,7 @@ class TargetsConfiguration:
             raise ValueError(error_message.format("voltage_base", name_Rin_protocol))
         if "ohmic_input_resistance_vb_ssse" not in efeatures_rin:
             raise ValueError(
-                error_message.format(
-                    "ohmic_input_resistance_vb_ssse", name_Rin_protocol
-                )
+                error_message.format("ohmic_input_resistance_vb_ssse", name_Rin_protocol)
             )
 
     def get_related_nexus_ids(self):

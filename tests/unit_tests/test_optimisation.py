@@ -24,14 +24,10 @@ def test_get_checkpoint_path():
     metadata = EModelMetadata(emodel="L5PC", ttype="t type", iteration_tag="test")
     path = get_checkpoint_path(metadata, seed=0)
     assert (
-        str(path)
-        == "./checkpoints/L5PC/test/emodel=L5PC__ttype=t type__iteration=test__seed=0.pkl"
+        str(path) == "./checkpoints/L5PC/test/emodel=L5PC__ttype=t type__iteration=test__seed=0.pkl"
     )
     path = get_legacy_checkpoint_path(path)
-    assert (
-        str(path)
-        == "./checkpoints/emodel=L5PC__ttype=t type__iteration=test__seed=0.pkl"
-    )
+    assert str(path) == "./checkpoints/emodel=L5PC__ttype=t type__iteration=test__seed=0.pkl"
 
 
 def test_parse_checkpoint_path():

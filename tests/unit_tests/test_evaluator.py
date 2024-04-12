@@ -115,7 +115,4 @@ def test_start_from_emodel(db, db_restart):
     assert len(eva.param_names) == 30
     assert eva.cell_model.params["constant.distribution_decay"].frozen is True
     assert eva.cell_model.params["constant.distribution_decay"].bounds is None
-    assert (
-        eva.cell_model.params["constant.distribution_decay"]._value
-        == -0.00453252486076784
-    )
+    assert eva.cell_model.params["constant.distribution_decay"]._value == -0.00453252486076784

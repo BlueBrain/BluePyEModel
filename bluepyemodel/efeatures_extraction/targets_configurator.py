@@ -112,9 +112,7 @@ class TargetsConfigurator:
 
         if not targets:
             auto_targets = self.access_point.pipeline_settings.auto_targets
-            auto_targets_presets = (
-                self.access_point.pipeline_settings.auto_targets_presets
-            )
+            auto_targets_presets = self.access_point.pipeline_settings.auto_targets_presets
             if not auto_targets:
                 if not auto_targets_presets:
                     raise TypeError(
@@ -123,7 +121,5 @@ class TargetsConfigurator:
                     )
                 auto_targets = get_auto_target_from_presets(auto_targets_presets)
 
-        self.new_configuration(
-            files, targets, protocols_rheobase, auto_targets, protocols_mapping
-        )
+        self.new_configuration(files, targets, protocols_rheobase, auto_targets, protocols_mapping)
         self.save_configuration()

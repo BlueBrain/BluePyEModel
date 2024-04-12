@@ -43,9 +43,7 @@ class EmodelAPIConfig(luigi.Config):
 
         if self.api == "local":
             if self.recipes_path is None:
-                raise ValueError(
-                    "recipes_path cannot be None when api is set to 'local'"
-                )
+                raise ValueError("recipes_path cannot be None when api is set to 'local'")
 
             self.api_args = {
                 "emodel_dir": self.emodel_dir,
@@ -58,9 +56,7 @@ class EmodelAPIConfig(luigi.Config):
             if self.forge_path is None:
                 raise ValueError("forge_path cannot be None when api is set to 'nexus'")
             if self.forge_ontology_path is None:
-                raise ValueError(
-                    "forge_ontology_path cannot be None when api is set to 'nexus'"
-                )
+                raise ValueError("forge_ontology_path cannot be None when api is set to 'nexus'")
 
             self.api_args = {
                 "forge_path": self.forge_path,

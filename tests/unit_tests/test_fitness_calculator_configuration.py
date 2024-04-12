@@ -287,9 +287,7 @@ def test_init_from_bpe2(config_dict, config_dict_from_bpe2):
     config_dict.pop("protocols")
 
     config = FitnessCalculatorConfiguration(**config_dict)
-    config.init_from_bluepyefe(
-        efeatures, protocols, currents, threshold_efeature_std=0.05
-    )
+    config.init_from_bluepyefe(efeatures, protocols, currents, threshold_efeature_std=0.05)
 
     assert len(config.protocols) == 1
     assert len(config.efeatures) == 6

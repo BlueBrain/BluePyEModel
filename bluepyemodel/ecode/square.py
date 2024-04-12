@@ -17,22 +17,40 @@ limitations under the License.
 """
 
 import logging
-import numpy
 
+import numpy
 from bluepyopt.ephys.stimuli import NrnSquarePulse
 
 logger = logging.getLogger(__name__)
 
 
-class Square(NrnSquarePulse):
-    """Abstract current stimulus"""
+class BPOSquarePulse(NrnSquarePulse):
+    """Abstract current stimulus based on BluePyOpt square stimulus.
+
+    Can be used to reproduce results using BluePyOpt's NrnSquarePulse.
+    
+    .. code-block:: none
+
+              holdi               holdi+amp                holdi
+                :                     :                      :
+                :                     :                      :
+                :           ______________________           :
+                :          |                      |          :
+                :          |                      |          :
+                :          |                      |          :
+                :          |                      |          :
+        |__________________|                      |______________________
+        ^                  ^                      ^                      ^
+        :                  :                      :                      :
+        :                  :                      :                      :
+        t=0                delay                  delay+duration         totduration
+    """
 
     name = ""
 
     def __init__(self, location, **kwargs):
         """Constructor
         Args:
-            total_duration (float): total duration of the stimulus in ms
             location(Location): location of stimulus
         """
 
@@ -70,10 +88,11 @@ class Square(NrnSquarePulse):
         self.iclamp.delay = self.step_delay
         self.iclamp.amp = self.step_amplitude
 
-        self.holding_iclamp = sim.neuron.h.IClamp(icomp.x, sec=icomp.sec)
-        self.holding_iclamp.dur = self.total_duration
-        self.holding_iclamp.delay = 0
-        self.holding_iclamp.amp = self.holding_current
+        if self.holding_current is not None:
+            self.holding_iclamp = sim.neuron.h.IClamp(icomp.x, sec=icomp.sec)
+            self.holding_iclamp.dur = self.total_duration
+            self.holding_iclamp.delay = 0
+            self.holding_iclamp.amp = self.holding_current
 
     def destroy(self, sim=None):  # pylint:disable=W0613
         """Destroy stimulus"""
@@ -82,9 +101,7 @@ class Square(NrnSquarePulse):
 
     def generate(self, dt=0.1):
         """Return current time series"""
-        holding_current = (
-            self.holding_current if self.holding_current is not None else 0
-        )
+        holding_current = self.holding_current if self.holding_current is not None else 0
 
         t = numpy.arange(0.0, self.total_duration, dt)
         current = numpy.full(t.shape, holding_current, dtype="float64")

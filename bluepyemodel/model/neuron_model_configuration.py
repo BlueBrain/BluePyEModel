@@ -122,9 +122,7 @@ class NeuronModelConfiguration:
             self.distributions = [DistributionConfiguration(**distributions)]
         elif isinstance(distributions, list):
             if isinstance(distributions[0], dict):
-                self.distributions = [
-                    DistributionConfiguration(**d) for d in distributions
-                ]
+                self.distributions = [DistributionConfiguration(**d) for d in distributions]
             elif isinstance(distributions[0], DistributionConfiguration):
                 self.distributions = distributions
 
@@ -183,9 +181,7 @@ class NeuronModelConfiguration:
                 # remove default uniform distribution if added at
                 # https://github.com/BlueBrain/BluePyEModel/blob/
                 # 15b8dd2824453a8bf097b2ede13dd7ecf5d07d05/bluepyemodel/access_point/local.py#L399
-                logger.warning(
-                    "Removing %s pre-existing distribution(s)", len(self.distributions)
-                )
+                logger.warning("Removing %s pre-existing distribution(s)", len(self.distributions))
                 self.distributions = []
             for distribution in configuration_dict["distributions"]:
                 self.add_distribution(
@@ -249,9 +245,7 @@ class NeuronModelConfiguration:
                     and "distribution" not in location
                     and "_ion" not in param["name"]
                 ):
-                    mechanism = next(
-                        (m for m in set_mechanisms if m in param["name"]), None
-                    )
+                    mechanism = next((m for m in set_mechanisms if m in param["name"]), None)
                     if mechanism is None:
                         raise ValueError(
                             f"Could not find mechanism associated to parameter {param['name']}"
@@ -383,9 +377,7 @@ class NeuronModelConfiguration:
         if self.available_mechanisms is not None:
             for mech in self.available_mechanisms:
                 if mechanism_name in mech.name:
-                    if version is None or (
-                        version is not None and version == mech.version
-                    ):
+                    if version is None or (version is not None and version == mech.version):
                         if temp_ljp_check(temperature, ljp_corrected, mech):
                             return True
 
@@ -423,11 +415,8 @@ class NeuronModelConfiguration:
 
         locations = self._format_locations(locations)
 
-        if (
-            mechanism_name not in NEURON_BUILTIN_MECHANISMS
-            and not self.is_mechanism_available(
-                mechanism_name, version, temperature, ljp_corrected
-            )
+        if mechanism_name not in NEURON_BUILTIN_MECHANISMS and not self.is_mechanism_available(
+            mechanism_name, version, temperature, ljp_corrected
         ):
             raise ValueError(
                 f"You are trying to add mechanism {mechanism_name} (version {version}) "
@@ -436,17 +425,11 @@ class NeuronModelConfiguration:
             )
 
         for loc in locations:
-            if (
-                self.available_mechanisms
-                and mechanism_name not in NEURON_BUILTIN_MECHANISMS
-            ):
+            if self.available_mechanisms and mechanism_name not in NEURON_BUILTIN_MECHANISMS:
                 mechanism_parameters = next(
                     m.parameters
                     for m in self.available_mechanisms
-                    if (
-                        m.name == mechanism_name
-                        and temp_ljp_check(temperature, ljp_corrected, m)
-                    )
+                    if (m.name == mechanism_name and temp_ljp_check(temperature, ljp_corrected, m))
                 )
             else:
                 mechanism_parameters = None
@@ -489,10 +472,7 @@ class NeuronModelConfiguration:
                     if m.name == tmp_mechanism.name and temp_ljp_check(
                         temperature, ljp_corrected, m
                     ):
-                        if (
-                            m.location in multiloc_map
-                            and loc in multiloc_map[m.location]
-                        ):
+                        if m.location in multiloc_map and loc in multiloc_map[m.location]:
                             return
 
                 self.mechanisms.append(tmp_mechanism)
@@ -512,9 +492,7 @@ class NeuronModelConfiguration:
         """Set the distribution of a parameter"""
 
         if not location:
-            raise ValueError(
-                "Cannot set a parameter's distribution without specifying a location."
-            )
+            raise ValueError("Cannot set a parameter's distribution without specifying a location.")
         locations = self._format_locations(location)
 
         for loc in locations:
@@ -526,9 +504,7 @@ class NeuronModelConfiguration:
         """Set the value of a parameter"""
 
         if not location:
-            raise ValueError(
-                "Cannot set a parameter's distribution without specifying a location."
-            )
+            raise ValueError("Cannot set a parameter's distribution without specifying a location.")
         locations = self._format_locations(location)
 
         for loc in locations:
@@ -609,9 +585,7 @@ class NeuronModelConfiguration:
             ]
         else:
             self.mechanisms = [m for m in self.mechanisms if m.name != mechanism_name]
-            self.parameters = [
-                p for p in self.parameters if p.mechanism != mechanism_name
-            ]
+            self.parameters = [p for p in self.parameters if p.mechanism != mechanism_name]
 
     def get_related_nexus_ids(self):
         uses = []
@@ -639,9 +613,7 @@ class NeuronModelConfiguration:
         return {
             "mechanisms": [m.as_dict() for m in self.mechanisms],
             "distributions": [
-                d.as_dict()
-                for d in self.distributions
-                if d.name in self.used_distribution_names
+                d.as_dict() for d in self.distributions if d.name in self.used_distribution_names
             ],
             "parameters": [p.as_dict() for p in self.parameters],
             "morphology": self.morphology.as_dict(),
