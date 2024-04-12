@@ -28,7 +28,7 @@ class BPOSquarePulse(NrnSquarePulse):
     """Abstract current stimulus based on BluePyOpt square stimulus.
 
     Can be used to reproduce results using BluePyOpt's NrnSquarePulse.
-    
+
     .. code-block:: none
 
               holdi               holdi+amp                holdi
