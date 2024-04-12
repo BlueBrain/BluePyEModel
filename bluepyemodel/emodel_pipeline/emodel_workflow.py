@@ -78,13 +78,19 @@ class EModelWorkflow:
         generates = emodels_ids + emodel_scripts_ids
         if self.fitness_configuration_id:
             generates.append(
-                {"id": self.fitness_configuration_id, "type": "FitnessCalculatorConfiguration"}
+                {
+                    "id": self.fitness_configuration_id,
+                    "type": "FitnessCalculatorConfiguration",
+                }
             )
 
         has_part = []
         if self.targets_configuration_id:
             has_part.append(
-                {"id": self.targets_configuration_id, "type": "ExtractionTargetsConfiguration"}
+                {
+                    "id": self.targets_configuration_id,
+                    "type": "ExtractionTargetsConfiguration",
+                }
             )
         if self.pipeline_settings_id:
             has_part.append({"id": self.pipeline_settings_id, "type": "EModelPipelineSettings"})

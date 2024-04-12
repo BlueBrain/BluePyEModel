@@ -265,4 +265,3 @@ def test_as_string(metadata):
     # with None values and slashes
     metadata = EModelMetadata(emodel="L5_TPC", etype="w/it/h_sla/she/s")
     assert metadata.as_string(seed="None") == "emodel=L5_TPC__etype=with_slashes"
-

@@ -74,7 +74,11 @@ def setup_optimiser(
 
 
 def run_optimisation(
-    optimiser, checkpoint_path, max_ngen, terminator=None, optimisation_checkpoint_period=None
+    optimiser,
+    checkpoint_path,
+    max_ngen,
+    terminator=None,
+    optimisation_checkpoint_period=None,
 ):
     """Run the optimisation.
 

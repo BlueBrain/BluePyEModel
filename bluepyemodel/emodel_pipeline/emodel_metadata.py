@@ -201,7 +201,15 @@ class EModelMetadata:
     def as_string(self, seed=None, use_allen_notation=True):
         s = ""
 
-        for k in ["emodel", "etype", "ttype", "mtype", "species", "brain_region", "iteration"]:
+        for k in [
+            "emodel",
+            "etype",
+            "ttype",
+            "mtype",
+            "species",
+            "brain_region",
+            "iteration",
+        ]:
             v = getattr(self, k)
             if use_allen_notation and k == "brain_region" and self.allen_notation:
                 v = self.allen_notation
@@ -220,7 +228,8 @@ class EModelMetadata:
 
     def check_emodel_name(self):
         """Check if name complies with requirements:
-        https://nrn.readthedocs.io/en/8.2.3/guide/hoc_chapter_11_old_reference.html#names"""
+        https://nrn.readthedocs.io/en/8.2.3/guide/hoc_chapter_11_old_reference.html#names
+        """
 
         allowed_chars = string.ascii_letters + string.digits + "_"
         translate_args = str.maketrans("", "", allowed_chars)

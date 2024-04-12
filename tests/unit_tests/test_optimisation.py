@@ -23,7 +23,9 @@ from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 def test_get_checkpoint_path():
     metadata = EModelMetadata(emodel="L5PC", ttype="t type", iteration_tag="test")
     path = get_checkpoint_path(metadata, seed=0)
-    assert str(path) == "./checkpoints/L5PC/test/emodel=L5PC__ttype=t type__iteration=test__seed=0.pkl"
+    assert (
+        str(path) == "./checkpoints/L5PC/test/emodel=L5PC__ttype=t type__iteration=test__seed=0.pkl"
+    )
     path = get_legacy_checkpoint_path(path)
     assert str(path) == "./checkpoints/emodel=L5PC__ttype=t type__iteration=test__seed=0.pkl"
 
@@ -37,7 +39,7 @@ def test_parse_checkpoint_path():
         "emodel": "L5PC",
         "seed": "0",
         "ttype": "t type",
-        "iteration": "test"
+        "iteration": "test",
     }.items():
         assert metadata[k] == v
 
@@ -49,6 +51,6 @@ def test_parse_checkpoint_path():
         "emodel": "L5PCpyr_ET1_dend",
         "seed": "6",
         "ttype": None,
-        "iteration": "b6f7190"
+        "iteration": "b6f7190",
     }.items():
         assert metadata[k] == v

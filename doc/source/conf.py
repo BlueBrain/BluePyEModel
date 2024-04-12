@@ -12,7 +12,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../.'))
+
+sys.path.insert(0, os.path.abspath("../../."))
 
 from pkg_resources import get_distribution
 
@@ -20,7 +21,7 @@ from pkg_resources import get_distribution
 # -- Project information -----------------------------------------------------
 
 project = "BluePyEModel"
-author = 'Blue Brain Project/EPFL'
+author = "Blue Brain Project/EPFL"
 
 # The short X.Y version
 version = get_distribution("bluepyemodel").version
@@ -35,11 +36,11 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
+    "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "sphinx.ext.autosummary"
+    "sphinx.ext.autosummary",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -63,9 +64,9 @@ html_theme = "sphinx-bluebrain-theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
 
-#html_theme_options = {
+# html_theme_options = {
 #    "metadata_distribution": "BluepyEModel",
-#}
+# }
 
 html_title = "BluePyEModel"
 
@@ -90,4 +91,4 @@ intersphinx_mapping = {
     "luigi": ("https://luigi.readthedocs.io/en/stable", None),
 }
 
-autodoc_mock_imports = ['bluepyemodel.tasks.luigi_tools']
+autodoc_mock_imports = ["bluepyemodel.tasks.luigi_tools"]

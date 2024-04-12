@@ -20,7 +20,6 @@ import bluepyopt.ephys as ephys
 
 
 class DummyCellModel1(ephys.models.Model):
-
     """Dummy cell model 1"""
 
     def __init__(self, name=None):
@@ -42,7 +41,6 @@ class DummyCellModel1(ephys.models.Model):
         """Instantiate cell in simulator"""
 
         class Cell(object):
-
             """Empty cell class"""
 
             def __init__(self):

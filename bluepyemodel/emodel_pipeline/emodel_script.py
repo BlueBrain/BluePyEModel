@@ -38,7 +38,10 @@ class EModelScript:
                 "type": "Generation",
                 "activity": {
                     "type": "Activity",
-                    "followedWorkflow": {"type": "EModelWorkflow", "id": self.workflow_id},
+                    "followedWorkflow": {
+                        "type": "EModelWorkflow",
+                        "id": self.workflow_id,
+                    },
                 },
             }
         }

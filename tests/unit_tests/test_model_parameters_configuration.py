@@ -27,20 +27,20 @@ def configuration():
     available_mechs = [
         MechanismConfiguration(name="test_mechanism", location=None),
         MechanismConfiguration(name="test_mechanism2", location=None),
-        MechanismConfiguration(name="test_mechanism3", location=None)
+        MechanismConfiguration(name="test_mechanism3", location=None),
     ]
 
     available_morphologies = ["C060114A5"]
     config = NeuronModelConfiguration(
         available_mechanisms=available_mechs,
-        available_morphologies=available_morphologies
+        available_morphologies=available_morphologies,
     )
 
     config.add_parameter(
         parameter_name="test_parameter",
-        locations='all',
+        locations="all",
         value=5,
-        mechanism='test_mechanism',
+        mechanism="test_mechanism",
         distribution_name=None,
         stochastic=None,
         auto_mechanism=True,
@@ -60,9 +60,9 @@ def configuration_with_distribution(configuration):
 
     configuration.add_parameter(
         parameter_name="gtest_parameter2",
-        locations='soma',
-        value=[1., 2.],
-        mechanism='test_mechanism2',
+        locations="soma",
+        value=[1.0, 2.0],
+        mechanism="test_mechanism2",
         distribution_name="not_constant",
         stochastic=None,
         auto_mechanism=True,
@@ -70,8 +70,8 @@ def configuration_with_distribution(configuration):
 
     configuration.add_parameter(
         parameter_name="dist_param1",
-        locations='distribution_not_constant',
-        value=[3., 10.],
+        locations="distribution_not_constant",
+        value=[3.0, 10.0],
         mechanism=None,
         distribution_name=None,
         stochastic=None,
@@ -83,7 +83,7 @@ def configuration_with_distribution(configuration):
 def test_add_parameter_mechanism(configuration):
     assert len(configuration.parameters) == 1
     assert len(configuration.mechanisms) == 1
-    assert configuration.mechanisms[0].location == 'all'
+    assert configuration.mechanisms[0].location == "all"
     assert configuration.mechanisms[0].stochastic is False
 
 
@@ -91,13 +91,13 @@ def test_remove_parameter(configuration):
 
     configuration.add_parameter(
         parameter_name="test_parameter2",
-        locations='axonal',
-        value=[1., 2.],
-        mechanism='test_mechanism2',
-        stochastic=None
+        locations="axonal",
+        value=[1.0, 2.0],
+        mechanism="test_mechanism2",
+        stochastic=None,
     )
 
-    configuration.remove_parameter("test_parameter2", ['somatic'])
+    configuration.remove_parameter("test_parameter2", ["somatic"])
     assert len(configuration.parameters) == 2
 
     configuration.remove_parameter("test_parameter2")
@@ -108,18 +108,18 @@ def test_remove_mechanisms(configuration):
 
     configuration.add_parameter(
         parameter_name="test_parameter2",
-        locations='somatic',
-        value=[1., 2.],
-        mechanism='test_mechanism2',
+        locations="somatic",
+        value=[1.0, 2.0],
+        mechanism="test_mechanism2",
         stochastic=None,
         auto_mechanism=True,
     )
 
     configuration.add_parameter(
         parameter_name="test_parameter3",
-        locations='all',
-        value=[1., 2.],
-        mechanism='test_mechanism3',
+        locations="all",
+        value=[1.0, 2.0],
+        mechanism="test_mechanism3",
         stochastic=None,
         auto_mechanism=True,
     )
@@ -136,11 +136,11 @@ def test_raise_distribution(configuration):
     with pytest.raises(Exception):
         configuration.add_parameter(
             parameter_name="test_parameter2",
-            locations='all',
-            value=[1., 2.],
-            mechanism='test_mechanism2',
+            locations="all",
+            value=[1.0, 2.0],
+            mechanism="test_mechanism2",
             distribution_name="not_constant",
-            stochastic=None
+            stochastic=None,
         )
 
 
@@ -153,18 +153,10 @@ def test_raise_morphology(configuration):
 
 def test_morphology_configuration():
     with pytest.raises(Exception):
-        morph_dict = {
-            "path": "./C060114A5.asc",
-            "format": "swc",
-            "name": "C060114A5"
-        }
+        morph_dict = {"path": "./C060114A5.asc", "format": "swc", "name": "C060114A5"}
         _ = MorphologyConfiguration(**morph_dict)
 
-    morph_dict = {
-        "path": "./C060114A5.asc",
-        "format": "asc",
-        "name": "C060114A5"
-    }
+    morph_dict = {"path": "./C060114A5.asc", "format": "asc", "name": "C060114A5"}
     morph = MorphologyConfiguration(**morph_dict)
     assert morph.format == "asc"
 

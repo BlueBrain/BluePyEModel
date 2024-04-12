@@ -36,6 +36,7 @@ from .random_square_inputs import MultipleRandomStepInputs
 from .sahp import sAHP
 from .sinespec import SineSpec
 from .spikerec import SpikeRecMultiSpikes
+from .square import BPOSquarePulse
 from .subwhitenoise import SubWhiteNoise
 from .thresholdaddition import ThresholdAddition
 from .whitenoise import WhiteNoise
@@ -44,10 +45,10 @@ from .whitenoise import WhiteNoise
 # define duplicates.
 eCodes = {
     "spontaneous": IDrest,
+    "step": IDrest,
     "idrest": IDrest,
     "idthres": IDrest,
     "idthresh": IDrest,
-    "step": IDrest,
     "spontaps": IDrest,
     "sponnohold30": IDrest,
     "sponhold30": IDrest,
@@ -83,6 +84,7 @@ eCodes = {
     "startnohold": IDrest,
     "thresholdaddition": ThresholdAddition,
     "probampanmda_ems": ProbAMPANMDA_EMS,
+    "bposquarepulse": BPOSquarePulse,
 }
 
 fixed_timestep_eCodes = ["probampanmda_ems"]

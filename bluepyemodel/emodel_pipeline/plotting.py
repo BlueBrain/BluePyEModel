@@ -213,7 +213,13 @@ def optimisation(
 
 
 def _create_figure_parameter_histograms(
-    histograms, evaluator, checkpoint_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+    histograms,
+    evaluator,
+    checkpoint_path,
+    max_n_gen,
+    gen_per_bin,
+    figures_dir,
+    write_fig,
 ):
     """Create figure and plot the data for the evolution of the density of parameters."""
 
@@ -226,7 +232,9 @@ def _create_figure_parameter_histograms(
     # Plot the histograms
     for param_index, param in enumerate(evaluator.params):
         axs[param_index].imshow(
-            100.0 * numpy.flip(histograms[param_index].T, 0), aspect="auto", interpolation="none"
+            100.0 * numpy.flip(histograms[param_index].T, 0),
+            aspect="auto",
+            interpolation="none",
         )
 
         axs[param_index].set_title(list(evaluator.param_names)[param_index])
@@ -321,7 +329,10 @@ def evolution_parameters_density(
 
             histo_range = [
                 [0, max_n_gen],
-                [evaluator.params[param_index].bounds[0], evaluator.params[param_index].bounds[1]],
+                [
+                    evaluator.params[param_index].bounds[0],
+                    evaluator.params[param_index].bounds[1],
+                ],
             ]
 
             h, _, _ = numpy.histogram2d(x, y, bins=histo_bins, range=histo_range)
@@ -335,7 +346,13 @@ def evolution_parameters_density(
 
         # Create the figure
         _ = _create_figure_parameter_histograms(
-            histograms, evaluator, checkpoint_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+            histograms,
+            evaluator,
+            checkpoint_path,
+            max_n_gen,
+            gen_per_bin,
+            figures_dir,
+            write_fig,
         )
 
     # Plot the figure with the sums of all histograms
@@ -344,7 +361,13 @@ def evolution_parameters_density(
         sum_histograms = {idx: h / len(checkpoint_path) for idx, h in sum_histograms.items()}
         dummy_path = checkpoint_paths[0].partition("__seed=")[0] + "__all_seeds.pkl"
         fig, axs = _create_figure_parameter_histograms(
-            sum_histograms, evaluator, dummy_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+            sum_histograms,
+            evaluator,
+            dummy_path,
+            max_n_gen,
+            gen_per_bin,
+            figures_dir,
+            write_fig,
         )
 
     return fig, axs
@@ -462,7 +485,14 @@ def thumbnail(
     return fig, ax
 
 
-def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures", write_fig=True):
+def traces(
+    model,
+    responses,
+    recording_names,
+    stimuli={},
+    figures_dir="./figures",
+    write_fig=True,
+):
     """Plot the traces of a model"""
     # pylint: disable=too-many-nested-blocks
     make_dir(figures_dir)
@@ -655,7 +685,14 @@ def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"
 
 
 def _get_if_curve_from_evaluator(
-    holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
+    holding,
+    threshold,
+    model,
+    evaluator,
+    delay,
+    length_step,
+    delta_current,
+    max_offset_current,
 ):
     total_duration = length_step + (2 * delay)
     stim_end = delay + length_step
@@ -690,7 +727,8 @@ def _get_if_curve_from_evaluator(
         evaluator.fitness_protocols = {"Step1": protocol}
 
         responses = evaluator.run_protocols(
-            protocols=evaluator.fitness_protocols.values(), param_values=model.parameters
+            protocols=evaluator.fitness_protocols.values(),
+            param_values=model.parameters,
         )
 
         efel_trace = {
@@ -731,7 +769,14 @@ def IF_curve(
         return fig, [ax, ax2]
 
     amps, frequencies, spike_freq_equivalent = _get_if_curve_from_evaluator(
-        holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
+        holding,
+        threshold,
+        model,
+        evaluator,
+        delay,
+        length_step,
+        delta_current,
+        max_offset_current,
     )
 
     ax.scatter(amps, frequencies, c="C0", alpha=0.6)
@@ -855,7 +900,12 @@ def EPSP_fit(feature, distances, values, npoints=20):
 
 
 def plot_bAP(
-    model, responses, apical_feature, basal_feature, figures_dir="./figures", write_fig=True
+    model,
+    responses,
+    apical_feature,
+    basal_feature,
+    figures_dir="./figures",
+    write_fig=True,
 ):
     """Plot back-propagating action potential.
 
@@ -881,9 +931,17 @@ def plot_bAP(
         basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
 
     ax.scatter(
-        apical_distances, apical_values, c=colours["modelpoint_apical"], label="model apical"
+        apical_distances,
+        apical_values,
+        c=colours["modelpoint_apical"],
+        label="model apical",
     )
-    ax.scatter(basal_distances, basal_values, c=colours["modelpoint_basal"], label="model basal")
+    ax.scatter(
+        basal_distances,
+        basal_values,
+        c=colours["modelpoint_basal"],
+        label="model basal",
+    )
     if 0 in apical_distances:
         ax.plot(
             apical_x_fit,
@@ -894,7 +952,11 @@ def plot_bAP(
         )
     if 0 in basal_distances:
         ax.plot(
-            basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit"
+            basal_x_fit,
+            basal_y_fit,
+            "--",
+            c=colours["modelline_basal"],
+            label="model basal fit",
         )
     ax.set_xlabel(r"Distance from soma ($\mu$m)")
     ax.set_ylabel("Amplitude (mV)")
@@ -968,10 +1030,16 @@ def plot_EPSP(
         basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
 
     ax.scatter(
-        apical_distances, apical_attenuation, c=colours["modelpoint_apical"], label="model apical"
+        apical_distances,
+        apical_attenuation,
+        c=colours["modelpoint_apical"],
+        label="model apical",
     )
     ax.scatter(
-        basal_distances, basal_attenuation, c=colours["modelpoint_basal"], label="model basal"
+        basal_distances,
+        basal_attenuation,
+        c=colours["modelpoint_basal"],
+        label="model basal",
     )
     if 0 in apical_distances:
         ax.plot(
@@ -983,7 +1051,11 @@ def plot_EPSP(
         )
     if 0 in basal_distances:
         ax.plot(
-            basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit"
+            basal_x_fit,
+            basal_y_fit,
+            "--",
+            c=colours["modelline_basal"],
+            label="model basal fit",
         )
     ax.set_xlabel(r"Distance from soma ($\mu$m)")
     ax.set_ylabel("Attenuation dendrite amplitude / soma amplitude")
@@ -1332,7 +1404,10 @@ def plot_models(
         if plot_if_curve:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             IF_curve(
-                mo, mo.responses, copy.deepcopy(cell_evaluator), figures_dir=figures_dir_traces
+                mo,
+                mo.responses,
+                copy.deepcopy(cell_evaluator),
+                figures_dir=figures_dir_traces,
             )
 
     if plot_bAP_EPSP:
@@ -1564,7 +1639,8 @@ def currentscape(
 
             if len(voltage) == 0 or len(currents) == 0:
                 logger.warning(
-                    "Could not plot currentscape for %s: voltage or currents is empty.", name
+                    "Could not plot currentscape for %s: voltage or currents is empty.",
+                    name,
                 )
             else:
                 try:
@@ -1572,7 +1648,11 @@ def currentscape(
 
                     logger.info("Plotting currentscape for %s", name)
                     fig = plot_currentscape_fct(
-                        voltage, currents, updated_config, ions_data=ionic_concentrations, time=time
+                        voltage,
+                        currents,
+                        updated_config,
+                        ions_data=ionic_concentrations,
+                        time=time,
                     )
                     plt.close(fig)
                 except ModuleNotFoundError:

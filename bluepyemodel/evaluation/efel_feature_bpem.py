@@ -133,7 +133,9 @@ class eFELFeatureBPEM(eFELFeature):
 
             if recording_name not in responses:
                 logger.debug(
-                    "Recording named %s not found in responses %s", recording_name, str(responses)
+                    "Recording named %s not found in responses %s",
+                    recording_name,
+                    str(responses),
                 )
                 return None
 
@@ -201,7 +203,9 @@ class eFELFeatureBPEM(eFELFeature):
                 import efel
 
                 values = efel.get_feature_values(
-                    [efel_trace], [self.efel_feature_name], raise_warnings=raise_warnings
+                    [efel_trace],
+                    [self.efel_feature_name],
+                    raise_warnings=raise_warnings,
                 )
 
                 feature_values = values[0][self.efel_feature_name]
@@ -325,7 +329,9 @@ class DendFitFeature(eFELFeatureBPEM):
         for recording_name in self.recording_names_list:
             if recording_name not in responses:
                 logger.debug(
-                    "Recording named %s not found in responses %s", recording_name, str(responses)
+                    "Recording named %s not found in responses %s",
+                    recording_name,
+                    str(responses),
                 )
                 return None
 
@@ -377,7 +383,7 @@ class DendFitFeature(eFELFeatureBPEM):
         feature_values_ = []
         if self.efel_feature_name.startswith("bpo_"):
             feature_names = [
-                f"{self.efel_feature_name}_{loc}" if loc != "soma" else self.efel_feature_name
+                (f"{self.efel_feature_name}_{loc}" if loc != "soma" else self.efel_feature_name)
                 for loc in self.locations
             ]
             feature_values_ = [

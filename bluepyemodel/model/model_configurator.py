@@ -129,7 +129,10 @@ class ModelConfigurator:
                 continue
             function = d["function"] if "function" in d else d["fun"]
             self.configuration.add_distribution(
-                d["name"], function, d.get("parameters", None), d.get("soma_ref_location", 0.5)
+                d["name"],
+                function,
+                d.get("parameters", None),
+                d.get("soma_ref_location", 0.5),
             )
 
         for p in params:

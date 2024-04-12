@@ -343,7 +343,9 @@ def create_cell_model(
     )
     distributions = define_distributions(model_configuration.distributions, morph)
     parameters = define_parameters(
-        model_configuration.parameters, distributions, model_configuration.mapping_multilocation
+        model_configuration.parameters,
+        distributions,
+        model_configuration.mapping_multilocation,
     )
 
     return ephys.models.CellModel(
