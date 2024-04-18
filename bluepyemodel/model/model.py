@@ -222,16 +222,31 @@ def define_morphology(
         do_set_nseg (float): set the length for the discretization
             of the segments
         nseg_frequency (float): frequency of nseg
-        morph_modifiers (list): List of morphology modifiers. Each modifier is represented by a
-                list that includes the path to the file containing the modifier,
-                the name of the function, and optionally, a "hoc_string".
-                E.g: morph_modifiers = [["path_to_module", "name_of_function", "hoc_string"], ...].
-                The "hoc_string" is optional. If not provided, it will default to
-                the name of the function followed by "_hoc".
+        morph_modifiers (str or list):
+                If str, name of the morph modifier to use from bluepyemodel.evaluation.modifiers.
+                If List of morphology modifiers. Each modifier is defined by a list
+                that includes the following elements:
+
+                1. The path to the file that contains the modifier.
+                2. The name of the function that applies the modifier.
+                3. Optionally, a "hoc_string" that represents the hoc code for the modifier.
+
+                For example, morph_modifiers could be defined as follows:
+
+                    .. code-block::
+
+                        morph_modifiers = [["path_to_module",
+                                            "name_of_function",
+                                            "hoc_string"], ...].
+
+                If the "hoc_string" is not provided, the system will search within
+                the specified module for a string that matches the function name appended
+                with "_hoc".
+
                 If ``None``, the default modifier will replace the axon with a tappered axon
                 initial segment. If you do not wish to use any modifier,
                 set the present argument to ``[]``.
-                if ``["bluepyopt_replace_axon"]``, the replace_axon function from
+                If ``["bluepyopt_replace_axon"]``, the replace_axon function from
                 bluepyopt.ephys.morphologies.NrnFileMorphology will be used
                 and no other morph modifiers will be used.
 
@@ -255,31 +270,22 @@ def define_morphology(
         morph_modifiers_hoc = [None] * len(morph_modifiers)
         for i, morph_modifier in enumerate(morph_modifiers):
             if isinstance(morph_modifier, list):
+                if len(morph_modifier) < 2 or len(morph_modifier) > 3:
+                    raise ValueError("Invalid morph_modifier structure.")
+
                 try:
                     modifier_module = importlib.import_module(morph_modifier[0])
-                    morph_modifiers[i] = getattr(modifier_module, morph_modifier[1])
-                    if len(morph_modifier) == 3:
-                        morph_modifiers_hoc[i] = getattr(modifier_module, morph_modifier[2])
-                    elif len(morph_modifier) == 2:
-                        morph_modifiers_hoc[i] = getattr(
-                            modifier_module, morph_modifier[1] + "_hoc"
-                        )
-                    else:
-                        raise AttributeError()
-                except AttributeError:
+                except ModuleNotFoundError:
                     logger.warning(
-                        "Cannot import %s or %s from %s. Please inform the hoc string in "
-                        "morph_modifiers if you want to export the emodel to hoc.",
-                        morph_modifier[1],
-                        morph_modifier[1] + "_hoc",
-                        morph_modifier[0],
+                        f"Module {morph_modifier[0]} not found.",
                     )
-                except IndexError as exc:
-                    raise ValueError(
-                        "a morph_modifier should be a list of the form "
-                        "['path_to_module', 'name_of_function', "
-                        f"'optional_hoc_string'], got {morph_modifier}"
-                    ) from exc
+
+                morph_modifiers[i] = _get_attribute(modifier_module, morph_modifier[1])
+                if len(morph_modifier) == 3:
+                    morph_modifiers_hoc[i] = _get_attribute(modifier_module, morph_modifier[2])
+                else:
+                    morph_modifiers_hoc[i] = _get_attribute(modifier_module, morph_modifier[1], default_hoc=True)
+
 
             elif isinstance(morph_modifier, str):
                 try:
@@ -327,18 +333,33 @@ def create_cell_model(
         morphology (dict): morphology from emodel api .get_morphologies()
         model_configuration (NeuronModelConfiguration): Configuration of the neuron model,
             containing the parameters their locations and the associated mechanisms.
-        morph_modifiers (list): List of morphology modifiers. Each modifier is represented by a
-                list that includes the path to the file containing the modifier,
-                the name of the function, and optionally, a "hoc_string".
-                E.g: morph_modifiers = [["path_to_module", "name_of_function", "hoc_string"], ...].
-                The "hoc_string" is optional. If not provided, it will default to
-                the name of the function followed by "_hoc".
-                If ``None``, the default modifier will replace the axon with a tappered axon
-                initial segment. If you do not wish to use any modifier,
-                set the present argument to ``[]``.
-                if ``["bluepyopt_replace_axon"]``, the replace_axon function from
-                bluepyopt.ephys.morphologies.NrnFileMorphology will be used
-                and no other morph modifiers will be used.
+        morph_modifiers (str or list):
+            If str, name of the morph modifier to use from bluepyemodel.evaluation.modifiers.
+            If List of morphology modifiers. Each modifier is defined by a list
+            that includes the following elements:
+
+            1. The path to the file that contains the modifier.
+            2. The name of the function that applies the modifier.
+            3. Optionally, a "hoc_string" that represents the hoc code for the modifier.
+
+            For example, morph_modifiers could be defined as follows:
+
+                .. code-block::
+
+                    morph_modifiers = [["path_to_module",
+                                        "name_of_function",
+                                        "hoc_string"], ...].
+
+            If the "hoc_string" is not provided, the system will search within
+            the specified module for a string that matches the function name appended
+            with "_hoc".
+
+            If ``None``, the default modifier will replace the axon with a tappered axon
+            initial segment. If you do not wish to use any modifier,
+            set the present argument to ``[]``.
+            If ``["bluepyopt_replace_axon"]``, the replace_axon function from
+            bluepyopt.ephys.morphologies.NrnFileMorphology will be used
+            and no other morph modifiers will be used.
 
     Returns:
         CellModel
@@ -374,3 +395,14 @@ def create_cell_model(
         seclist_names=seclist_names,
         secarray_names=secarray_names,
     )
+
+def _get_attribute(module, attribute_name, default_hoc=False):
+    if module:
+        attr = getattr(module, attribute_name, None)
+        if attr is None and default_hoc:
+            attr = getattr(module, attribute_name + "_hoc", None)
+            attribute_name += "_hoc"
+        if attr is None:
+            logger.warning(f"{attribute_name} not found in module {module}.")
+        return attr
+    return None
