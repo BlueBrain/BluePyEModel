@@ -135,14 +135,15 @@ class EModelPipelineSettings:
             stochasticity (bool or list of str): should channels behave stochastically if they can.
                 If True, the mechanisms will be stochastic for all protocols. If a list of protocol
                 names is provided, the mechanisms will be stochastic only for these protocols.
-            morph_modifiers (list): List of morphology modifiers. Each modifier is represented by a list
-                that includes the path to the file containing the modifier, the name of the function,
-                and optionally, a "hoc_string".
+            morph_modifiers (list): List of morphology modifiers. Each modifier is represented by a
+                list that includes the path to the file containing the modifier,
+                the name of the function, and optionally, a "hoc_string".
                 E.g: morph_modifiers = [["path_to_module", "name_of_function", "hoc_string"], ...].
                 The "hoc_string" is optional. If not provided, it will default to
                 the name of the function followed by "_hoc".
-                If ``None``, the default modifier will replace the axon with a tappered axon initial
-                segment. If you do not wish to use any modifier, set the present argument to ``[]``.
+                If ``None``, the default modifier will replace the axon with a tappered axon
+                initial segment. If you do not wish to use any modifier,
+                set the present argument to ``[]``.
                 if ``["bluepyopt_replace_axon"]``, the replace_axon function from
                 bluepyopt.ephys.morphologies.NrnFileMorphology will be used
                 and no other morph modifiers will be used.
