@@ -355,7 +355,7 @@ Sometimes, you may encounter issues with ipyparallel during optimisation. If thi
 
     python pipeline.py --use_multiprocessing --step='optimise' --emodel=${OPT_EMODEL} --seed=${OPT_SEED} --githash=${GITHASH}
 
-And remove the following line from the optimisation.sh script:
+And remove the following lines from the optimisation.sh script:
 
 .. code-block:: shell
 
