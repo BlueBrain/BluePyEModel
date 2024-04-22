@@ -453,7 +453,7 @@ proc replace_axon(){local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSiz
 
         access axon[0]
         i1 = v(0.0001) // used when serializing sections prior to sim start
-                        access axon[1]
+        access axon[1]
         i2 = v(0.0001) // used when serializing sections prior to sim start
 
         count = 0
