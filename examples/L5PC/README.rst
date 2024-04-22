@@ -346,3 +346,11 @@ To address this, you can include the following line in your sbatch files to set 
     export NEURON_MODULE_OPTIONS="-nogui"
 
 This line is intended to prevent NEURON from sending any GUI info. An alternative solution would be to disable X11 forwarding altogether in your SSH session.
+
+Issues with ipyparallel
+~~~~~~~~~~~~~~~~~~~~~~~
+Sometimes, you may encounter issues with ipyparallel during optimisation. If this happens, you can switch to using multiprocessing instead. To do this, modify the pipeline.py command in the optimisation.sbatch script as follows:
+
+.. code-block:: shell
+
+    python pipeline.py --use_multiprocessing --step='optimise' --emodel=${OPT_EMODEL} --seed=${OPT_SEED} --githash=${GITHASH}
