@@ -367,3 +367,15 @@ And remove the following lines:
     sleep 20
     srun ipengine --profile=${IPYTHON_PROFILE} --location=$(hostname) &
     sleep 20
+
+When using multiprocessing and you need all cores from a single node, replace:
+
+.. code-block:: shell
+    #SBATCH --ntasks=20
+
+with:
+
+.. code-block:: shell
+    #SBATCH -N 1
+
+Please note, this will allocate the entire node to the job, including all memory and cores.
