@@ -354,3 +354,16 @@ Sometimes, you may encounter issues with ipyparallel during optimisation. If thi
 .. code-block:: shell
 
     python pipeline.py --use_multiprocessing --step='optimise' --emodel=${OPT_EMODEL} --seed=${OPT_SEED} --githash=${GITHASH}
+
+And remove the following line from the optimisation.sh script:
+
+.. code-block:: shell
+
+    export IPYTHON_PROFILE=extract_${SLURM_JOB_ID}_$(hostname)
+    export USEIPYP=1
+    export IPYTHONDIR="`pwd`/.ipython"
+
+    ipcontroller --init --ip='*' --profile=${IPYTHON_PROFILE} &
+    sleep 20
+    srun ipengine --profile=${IPYTHON_PROFILE} --location=$(hostname) &
+    sleep 20
