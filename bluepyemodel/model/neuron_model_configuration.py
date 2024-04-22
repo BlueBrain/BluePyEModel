@@ -102,7 +102,7 @@ class NeuronModelConfiguration:
                 the specified module for a string that matches the function name appended
                 with "_hoc".
                 If ``None``, the default modifier will replace the axon with a tappered axon
-                initial segment. If you do not wish to use any modifier,
+                initial segment (replace_axon_with_taper). If you do not wish to use any modifier,
                 set the present argument to ``[]``.
                 If ``["bluepyopt_replace_axon"]``, the replace_axon function from
                 bluepyopt.ephys.morphologies.NrnFileMorphology will be used

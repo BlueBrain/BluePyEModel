@@ -346,3 +346,37 @@ To address this, you can include the following line in your sbatch files to set 
     export NEURON_MODULE_OPTIONS="-nogui"
 
 This line is intended to prevent NEURON from sending any GUI info. An alternative solution would be to disable X11 forwarding altogether in your SSH session.
+
+Issues with ipyparallel
+~~~~~~~~~~~~~~~~~~~~~~~
+Sometimes, you may encounter issues with ipyparallel during optimisation. If this happens, you can switch to using multiprocessing instead. To do this, modify the pipeline.py command in the optimisation.sbatch script as follows:
+
+.. code-block:: shell
+
+    python pipeline.py --use_multiprocessing --step='optimise' --emodel=${OPT_EMODEL} --seed=${OPT_SEED} --githash=${GITHASH}
+
+And remove the following lines:
+
+.. code-block:: shell
+
+    export IPYTHON_PROFILE=extract_${SLURM_JOB_ID}_$(hostname)
+    export USEIPYP=1
+    export IPYTHONDIR="`pwd`/.ipython"
+
+    ipcontroller --init --ip='*' --profile=${IPYTHON_PROFILE} &
+    sleep 20
+    srun ipengine --profile=${IPYTHON_PROFILE} --location=$(hostname) &
+    sleep 20
+
+
+If you're using multiprocessing and need all cores from a single node, replace:
+
+.. code-block:: shell
+    #SBATCH --ntasks=20
+
+with:
+
+.. code-block:: shell
+    #SBATCH -N 1
+
+This will allocate the entire node to the job, including all memory and cores. However, if you don't need the entire node, you can still specify the number of cores you need. For example, to use 20 cores, you can keep the original line.
