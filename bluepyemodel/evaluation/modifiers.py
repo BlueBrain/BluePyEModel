@@ -444,7 +444,7 @@ proc replace_axon(){local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSiz
 
     // Try to grab info from original axon
     //At least two axon sections have to be present!
-    if(nSec < 1){
+    if(nSec < 2){
         execerror("Less than two axon sections are present! Add an axon to the morphology and try again!")
     } else {
 
