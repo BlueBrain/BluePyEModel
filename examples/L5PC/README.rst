@@ -372,11 +372,13 @@ And remove the following lines:
 If you're using multiprocessing and need all cores from a single node, replace:
 
 .. code-block:: shell
+
     #SBATCH --ntasks=20
 
 with:
 
 .. code-block:: shell
+
     #SBATCH -N 1
 
 This will allocate the entire node to the job, including all memory and cores. However, if you don't need the entire node, you can still specify the number of cores you need. For example, to use 20 cores, you can keep the original line.
