@@ -28,7 +28,7 @@ set -e
 set -x
 
 RUNTIME=`date +%Y.%m.%d.%H.%M.%S`
-echo "${OPT_EMODEL},${SLURM_JOB_ID},${SLURM_NTASKS},${RUNTIME}" >> ${RUNLISTPATH}
+echo "${OPT_EMODEL},${SLURM_JOB_ID},${SLURM_JOB_NODELIST},${SLURM_NTASKS},${RUNTIME}" >> ${RUNLISTPATH}
 
 export IPYTHON_PROFILE=extract_${SLURM_JOB_ID}_$(hostname)
 export USEIPYP=1
