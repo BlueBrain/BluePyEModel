@@ -32,6 +32,7 @@ from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.stimuli import NrnSquarePulse
 from matplotlib import cm
 from matplotlib import colors
+import re
 
 from bluepyemodel.data.utils import read_dendritic_data
 from bluepyemodel.evaluation.evaluation import compute_responses
@@ -525,7 +526,7 @@ def traces(
             axs[idx, 0].set_ylabel(ylabel)
 
             # Plot current
-            basename = t.split(".")[0]
+            basename = re.split(r'\.(?=[a-zA-Z])', t, 1)[0]
             if basename in stimuli:
                 prot = stimuli[basename]
                 if hasattr(prot, "stimulus"):
