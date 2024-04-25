@@ -1,0 +1,3107 @@
+{
+  "emodel": "L5PC",
+  "ttype": null,
+  "files": [
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_369",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_369.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_369.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_338",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_338.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_338.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_303",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_303.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_303.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_330",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_330.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_330.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_268",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_268.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_268.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_308",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_308.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_308.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_266",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_266.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_266.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_365",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_365.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_365.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_290",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_290.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_290.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_295",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_295.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_295.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_349",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_349.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_349.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_381",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_381.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_381.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_282",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_282.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_282.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_333",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_333.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_333.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_367",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_367.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_367.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_301",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_301.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_301.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_277",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_277.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_277.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_sAHP_ch0_321",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "sAHP": {
+          "ljp": 14.0,
+          "ton": 25,
+          "tmid": 520,
+          "tmid2": 720,
+          "toff": 2720
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch0_321.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch1_321.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_351",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_351.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_351.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_270",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_270.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_270.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_293",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_293.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_293.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_318",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_318.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_318.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_273",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_273.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_273.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_373",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_373.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_373.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_372",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_372.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_372.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_357",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_357.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_357.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_296",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_296.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_296.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_317",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_317.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_317.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_292",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_292.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_292.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_354",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_354.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_354.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_288",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_288.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_288.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_289",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_289.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_289.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_326",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_326.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_326.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_379",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_379.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_379.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_328",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_328.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_328.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_341",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_341.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_341.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_378",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_378.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_378.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_370",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_370.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_370.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_356",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_356.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_356.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_284",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_284.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_284.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_271",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_271.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_271.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_340",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_340.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_340.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_309",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_309.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_309.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_334",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_334.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_334.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_385",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_385.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_385.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_279",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_279.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_279.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_302",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_302.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_302.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_336",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_336.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_336.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_sAHP_ch0_320",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "sAHP": {
+          "ljp": 14.0,
+          "ton": 25,
+          "tmid": 520,
+          "tmid2": 720,
+          "toff": 2720
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch0_320.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch1_320.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_332",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_332.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_332.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_300",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_300.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_300.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_297",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_297.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_297.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_298",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_298.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_298.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_278",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_278.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_278.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_275",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_275.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_275.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_286",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_286.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_286.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_311",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_311.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_311.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_291",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_291.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_291.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_364",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_364.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_364.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_294",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_294.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_294.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_337",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_337.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_337.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_280",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_280.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_280.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_331",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_331.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_331.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_386",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_386.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_386.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_313",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_313.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_313.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_274",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_274.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_274.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_sAHP_ch0_323",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "sAHP": {
+          "ljp": 14.0,
+          "ton": 25,
+          "tmid": 520,
+          "tmid2": 720,
+          "toff": 2720
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch0_323.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch1_323.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_269",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_269.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_269.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_353",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_353.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_353.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_310",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_310.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_310.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_380",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_380.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_380.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_375",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_375.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_375.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_283",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_283.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_283.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_sAHP_ch0_325",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "sAHP": {
+          "ljp": 14.0,
+          "ton": 25,
+          "tmid": 520,
+          "tmid2": 720,
+          "toff": 2720
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch0_325.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch1_325.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_371",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_371.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_371.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_376",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_376.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_376.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_316",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_316.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_316.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_304",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_304.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_304.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_362",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_362.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_362.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_314",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_314.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_314.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_305",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_305.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_305.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_352",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_352.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_352.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_276",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_276.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_276.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_355",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_355.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_355.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_327",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_327.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_327.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_366",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_366.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_366.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_307",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_307.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_307.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_267",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_267.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_267.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_sAHP_ch0_322",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "sAHP": {
+          "ljp": 14.0,
+          "ton": 25,
+          "tmid": 520,
+          "tmid2": 720,
+          "toff": 2720
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch0_322.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch1_322.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_312",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_312.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_312.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_319",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_319.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_319.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_363",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_363.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_363.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_350",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_350.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_350.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_285",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_285.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_285.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_306",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_306.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_306.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_272",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_272.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_272.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_329",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_329.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_329.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_sAHP_ch0_324",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "sAHP": {
+          "ljp": 14.0,
+          "ton": 25,
+          "tmid": 520,
+          "tmid2": 720,
+          "toff": 2720
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch0_324.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_sAHP_ch1_324.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_374",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_374.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_374.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDthresh_ch0_368",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDthresh": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch0_368.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDthresh_ch1_368.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_383",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_383.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_383.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_299",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_299.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_299.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_335",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_335.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_335.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_382",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_382.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_382.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_384",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_384.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_384.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_APWaveform_ch0_315",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "APWaveform": {
+          "ljp": 14.0,
+          "ton": 5,
+          "toff": 55
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch0_315.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_APWaveform_ch1_315.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_339",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_339.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_339.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IDrest_ch0_377",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IDrest": {
+          "ljp": 14.0,
+          "ton": 700,
+          "toff": 2700
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch0_377.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IDrest_ch1_377.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_287",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_287.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_287.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    },
+    {
+      "cell_name": "cell1",
+      "filename": "X_IV_ch0_281",
+      "filepath": null,
+      "resource_id": null,
+      "ecodes": {
+        "IV": {
+          "ljp": 14.0,
+          "ton": 20,
+          "toff": 1020
+        }
+      },
+      "other_metadata": {
+        "v_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch0_281.ibw",
+        "i_file": "./ephys_data/C060109A1-SR-C1/X_IV_ch1_281.ibw",
+        "i_unit": "A",
+        "v_unit": "V",
+        "t_unit": "s"
+      },
+      "species": null,
+      "brain_region": null,
+      "etype": null,
+      "id": null
+    }
+  ],
+  "targets": [
+    {
+      "efeature": "Spikecount",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "mean_frequency",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "time_to_first_spike",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "time_to_last_spike",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_time_to_first_spike",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_first_ISI",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_second_ISI",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_third_ISI",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_last_ISI",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AHP_depth",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AHP_time_from_peak",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "min_AHP_values",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "depol_block_bool",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "voltage_base",
+      "protocol": "IDrest",
+      "amplitude": 150,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "Spikecount",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "mean_frequency",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "time_to_first_spike",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "time_to_last_spike",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_time_to_first_spike",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_first_ISI",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_second_ISI",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_third_ISI",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "inv_last_ISI",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AHP_depth",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AHP_time_from_peak",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "min_AHP_values",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "depol_block_bool",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "voltage_base",
+      "protocol": "IDrest",
+      "amplitude": 250,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "voltage_base",
+      "protocol": "IV",
+      "amplitude": 0,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "voltage_base",
+      "protocol": "IV",
+      "amplitude": -20,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "ohmic_input_resistance_vb_ssse",
+      "protocol": "IV",
+      "amplitude": -20,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "voltage_base",
+      "protocol": "IV",
+      "amplitude": -100,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "ohmic_input_resistance_vb_ssse",
+      "protocol": "IV",
+      "amplitude": -100,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AP_amplitude",
+      "protocol": "APWaveform",
+      "amplitude": 280,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AP1_amp",
+      "protocol": "APWaveform",
+      "amplitude": 280,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AP_duration_half_width",
+      "protocol": "APWaveform",
+      "amplitude": 280,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "AHP_depth",
+      "protocol": "APWaveform",
+      "amplitude": 280,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "mean_frequency",
+      "protocol": "sAHP",
+      "amplitude": 220,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "voltage_base",
+      "protocol": "sAHP",
+      "amplitude": 220,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "depol_block_bool",
+      "protocol": "sAHP",
+      "amplitude": 220,
+      "tolerance": 20,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    }
+  ],
+  "protocols_rheobase": [
+    "IDthresh"
+  ],
+  "auto_targets": null,
+  "additional_fitness_efeatures": null,
+  "additional_fitness_protocols": null,
+  "protocols_mapping": null
+}
