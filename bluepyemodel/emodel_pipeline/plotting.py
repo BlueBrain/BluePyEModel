@@ -19,6 +19,7 @@ limitations under the License.
 import copy
 import glob
 import logging
+import re
 from pathlib import Path
 
 import efel
@@ -525,7 +526,7 @@ def traces(
             axs[idx, 0].set_ylabel(ylabel)
 
             # Plot current
-            basename = t.split(".")[0]
+            basename = re.split(r"\.(?=[a-zA-Z])", t, 1)[0]
             if basename in stimuli:
                 prot = stimuli[basename]
                 if hasattr(prot, "stimulus"):
