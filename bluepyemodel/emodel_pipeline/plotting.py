@@ -526,7 +526,7 @@ def traces(
             axs[idx, 0].set_ylabel(ylabel)
 
             # Plot current
-            basename = re.split(r'\.(?=[a-zA-Z])', t, 1)[0]
+            basename = re.split(r"\.(?=[a-zA-Z])", t, 1)[0]
             if basename in stimuli:
                 prot = stimuli[basename]
                 if hasattr(prot, "stimulus"):
