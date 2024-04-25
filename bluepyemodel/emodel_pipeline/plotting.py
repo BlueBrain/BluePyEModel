@@ -19,6 +19,7 @@ limitations under the License.
 import copy
 import glob
 import logging
+import re
 from pathlib import Path
 
 import efel
@@ -32,7 +33,6 @@ from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.stimuli import NrnSquarePulse
 from matplotlib import cm
 from matplotlib import colors
-import re
 
 from bluepyemodel.data.utils import read_dendritic_data
 from bluepyemodel.evaluation.evaluation import compute_responses
