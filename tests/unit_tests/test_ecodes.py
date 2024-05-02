@@ -262,7 +262,7 @@ def get_negcheops_stimulus():
     ramp2_duration = 1666.0
     ramp3_duration = 1111.0
     inter_delay = 2000.0
-    totduration = 18222.0
+    totduration = 18220.0
     holding_current = 0.0
 
     # generate stimulus
