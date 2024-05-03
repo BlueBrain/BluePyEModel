@@ -114,9 +114,7 @@ def define_bAP_feature(dend_type="apical", dist_start=10, dist_end=600, dist_ste
         stimulus_current=0.0,  # filler
         threshold=-30.0,
         interp_step=0.025,
-        double_settings={},
-        int_settings={"strict_stiminterval": 1},
-        string_settings={},
+        efel_settings={"strict_stiminterval": 1},
         decay=True,
         linear=False,
     )
@@ -223,9 +221,7 @@ def define_EPSP_feature(
         stimulus_current=0.0,  # filler
         threshold=-30.0,
         interp_step=0.025,
-        double_settings={},
-        int_settings={"strict_stiminterval": 1},
-        string_settings={},
+        efel_settings={"strict_stiminterval": 1},
         decay=False,
         linear=False,
     )

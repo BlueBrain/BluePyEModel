@@ -698,7 +698,7 @@ def _get_if_curve_from_evaluator(
     stim_end = delay + length_step
 
     efel.reset()
-    efel.set_int_setting("strict_stiminterval", True)
+    efel.set_setting("strict_stiminterval", True)
 
     soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
     rec = CompRecording(name="Step1.soma.v", location=soma_loc, variable="v")
