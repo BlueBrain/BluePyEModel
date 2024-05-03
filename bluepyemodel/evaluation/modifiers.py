@@ -444,7 +444,7 @@ proc replace_axon(){local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSiz
 
     // Try to grab info from original axon
     //At least two axon sections have to be present!
-    if(nSec < 1){
+    if(nSec < 2){
         execerror("Less than two axon sections are present! Add an axon to the morphology and try again!")
     } else {
 
@@ -453,7 +453,7 @@ proc replace_axon(){local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSiz
 
         access axon[0]
         i1 = v(0.0001) // used when serializing sections prior to sim start
-                        access axon[1]
+        access axon[1]
         i2 = v(0.0001) // used when serializing sections prior to sim start
 
         count = 0

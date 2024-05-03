@@ -135,12 +135,28 @@ class EModelPipelineSettings:
             stochasticity (bool or list of str): should channels behave stochastically if they can.
                 If True, the mechanisms will be stochastic for all protocols. If a list of protocol
                 names is provided, the mechanisms will be stochastic only for these protocols.
-            morph_modifiers (list): List of morphology modifiers. Each modifier has to be
-                informed by the path the file containing the modifier and the name of the
-                function. E.g: morph_modifiers = ``[["path_to_module", "name_of_function"], ...]``.
-                If ``None``, the default modifier will replace the axon with a tappered axon initial
-                segment. If you do not wish to use any modifier, set the present argument to ``[]``.
-                if ``["bluepyopt_replace_axon"]``, the replace_axon function from
+            morph_modifiers (list of str or list of list):
+                If str, name of the morph modifier to use from bluepyemodel.evaluation.modifiers.
+                If List of morphology modifiers. Each modifier is defined by a list
+                that includes the following elements:
+                1. The path to the file that contains the modifier.
+                2. The name of the function that applies the modifier.
+                3. Optionally, a "hoc_string" that represents the hoc code for the modifier.
+                For example, morph_modifiers could be defined as follows:
+
+                    .. code-block::
+
+                        morph_modifiers = [["path_to_module",
+                                            "name_of_function",
+                                            "hoc_string"], ...].
+
+                If the "hoc_string" is not provided, the system will search within
+                the specified module for a string that matches the function name appended
+                with "_hoc".
+                If ``None``, the default modifier will replace the axon with a tappered axon
+                initial segment (replace_axon_with_taper). If you do not wish to use any modifier,
+                set the present argument to ``[]``.
+                If ``["bluepyopt_replace_axon"]``, the replace_axon function from
                 bluepyopt.ephys.morphologies.NrnFileMorphology will be used
                 and no other morph modifiers will be used.
             threshold_based_evaluator (bool): not used. To be deprecated.
