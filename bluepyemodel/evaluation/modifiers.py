@@ -144,6 +144,13 @@ proc replace_axon(){ local count, i1, i2, L_target, strenght, taper_scale, termi
 
 def replace_axon_with_taper(sim=None, icell=None):
     """Replace axon with tappered axon initial segment"""
+    if len([sec for sec in icell.axonal]) < 3:
+        raise ValueError(
+            "Less than three axon sections are present! "
+            "The replace_axon_with_taper morph modifier cannot be applied to such a morphology. "
+            "Please use 'bluepyopt_replace_axon' instead to use "
+            "bluepyopt.ephys.morphologies.NrnFileMorphology default morph modifier."
+        )
 
     L_target = 60  # length of stub axon
     nseg0 = 5  # number of segments for each of the two axon sections
@@ -168,15 +175,6 @@ def replace_axon_with_taper(sim=None, icell=None):
                 break
         if count == nseg_total:
             break
-
-    # Work-around if axon is too short
-    lasti = -2  # Last diam. may be bigger if axon cut
-    if len(diams) < nseg_total:
-        default_diam = diams[lasti] if len(diams) >= 2 else 1.0
-        diams = diams + [default_diam] * (nseg_total - len(diams))
-        default_nseg = 1 + int(L_target / 2.0 / chunkSize / 2.0) * 2
-        default_len = lens[lasti] if len(lens) >= 2 else L_target / 2 / default_nseg
-        lens = lens + [default_len] * (nseg_total - len(lens))
 
     for section in icell.axonal:
         sim.neuron.h.delete_section(sec=section)
@@ -379,6 +377,13 @@ replace_axon_hoc = """
 
 def replace_axon_legacy(sim=None, icell=None):
     """Replace axon used in legacy thalamus project"""
+    if len([sec for sec in icell.axonal]) < 2:
+        raise ValueError(
+            "Less than two axon sections are present! "
+            "The replace_axon_legacy morph modifier cannot be applied to such a morphology. "
+            "Please use 'bluepyopt_replace_axon' instead to use "
+            "bluepyopt.ephys.morphologies.NrnFileMorphology default morph modifier."
+        )
 
     L_target = 60  # length of stub axon
     nseg0 = 5  # number of segments for each of the two axon sections
@@ -402,16 +407,6 @@ def replace_axon_legacy(sim=None, icell=None):
                 break
         if count == nseg_total:
             break
-
-    # Work-around if axon is too short
-    lasti = -2  # Last diam. may be bigger if axon cut
-
-    if len(diams) < nseg_total:
-        default_diam = diams[lasti] if len(diams) >= 2 else 1.0
-        diams = diams + [default_diam] * (nseg_total - len(diams))
-        default_nseg = 1 + int(L_target / 2.0 / chunkSize / 2.0) * 2
-        default_len = lens[lasti] if len(lens) >= 2 else L_target / 2 / default_nseg
-        lens = lens + [default_len] * (nseg_total - len(lens))
 
     for section in icell.axonal:
         sim.neuron.h.delete_section(sec=section)
