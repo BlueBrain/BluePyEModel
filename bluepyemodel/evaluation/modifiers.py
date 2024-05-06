@@ -144,12 +144,13 @@ proc replace_axon(){ local count, i1, i2, L_target, strenght, taper_scale, termi
 
 def replace_axon_with_taper(sim=None, icell=None):
     """Replace axon with tappered axon initial segment"""
-    if len([sec for sec in icell.axonal]) < 3:
+    if len(list(icell.axonal)) < 3:
         raise ValueError(
             "Less than three axon sections are present! "
             "The replace_axon_with_taper morph modifier cannot be applied to such a morphology. "
-            "Please use 'bluepyopt_replace_axon' instead to use "
-            "bluepyopt.ephys.morphologies.NrnFileMorphology default morph modifier."
+            "Please use 'bluepyopt_replace_axon' or other valid modifiers from "
+            "https://github.com/BlueBrain/BluePyEModel/blob/main/"
+            "bluepyemodel/evaluation/modifiers.py or a custom modifier."
         )
 
     L_target = 60  # length of stub axon
@@ -377,12 +378,13 @@ replace_axon_hoc = """
 
 def replace_axon_legacy(sim=None, icell=None):
     """Replace axon used in legacy thalamus project"""
-    if len([sec for sec in icell.axonal]) < 2:
+    if len(list(icell.axonal)) < 2:
         raise ValueError(
             "Less than two axon sections are present! "
             "The replace_axon_legacy morph modifier cannot be applied to such a morphology. "
-            "Please use 'bluepyopt_replace_axon' instead to use "
-            "bluepyopt.ephys.morphologies.NrnFileMorphology default morph modifier."
+            "Please use 'bluepyopt_replace_axon' or other valid modifiers from "
+            "https://github.com/BlueBrain/BluePyEModel/blob/main/"
+            "bluepyemodel/evaluation/modifiers.py or a custom modifier."
         )
 
     L_target = 60  # length of stub axon
