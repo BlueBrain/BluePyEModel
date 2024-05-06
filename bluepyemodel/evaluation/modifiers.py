@@ -522,30 +522,6 @@ proc replace_axon(){local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSiz
 
 def replace_axon_olfactory_bulb(sim=None, icell=None):
     """Replace axon used in olfactory bulb models."""
-    L_target = 60  # length of stub axon
-    nseg0 = 5  # number of segments for each of the two axon sections
-
-    nseg_total = nseg0 * 2
-    chunkSize = L_target / nseg_total
-
-    diams = []
-    lens = []
-
-    count = 0
-    for section in icell.axonal:
-        L = section.L
-        nseg = 1 + int(L / chunkSize / 2.0) * 2  # nseg to get diameter
-        section.nseg = nseg
-
-        for seg in section:
-            count = count + 1
-            diams.append(seg.diam)
-            lens.append(L / nseg)
-            if count == nseg_total:
-                break
-        if count == nseg_total:
-            break
-
     for section in icell.axonal:
         sim.neuron.h.delete_section(sec=section)
 
