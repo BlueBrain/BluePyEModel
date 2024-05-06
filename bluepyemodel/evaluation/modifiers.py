@@ -172,9 +172,9 @@ def replace_axon_with_taper(sim=None, icell=None):
     # Work-around if axon is too short
     lasti = -2  # Last diam. may be bigger if axon cut
     if len(diams) < nseg_total:
-        default_diam = diams[lasti] if len(diams) >= 2 else 1.
+        default_diam = diams[lasti] if len(diams) >= 2 else 1.0
         diams = diams + [default_diam] * (nseg_total - len(diams))
-        default_nseg = (1 + int(L_target / 2. / chunkSize / 2.) * 2)
+        default_nseg = 1 + int(L_target / 2.0 / chunkSize / 2.0) * 2
         default_len = lens[lasti] if len(lens) >= 2 else L_target / 2 / default_nseg
         lens = lens + [default_len] * (nseg_total - len(lens))
 
@@ -407,9 +407,9 @@ def replace_axon_legacy(sim=None, icell=None):
     lasti = -2  # Last diam. may be bigger if axon cut
 
     if len(diams) < nseg_total:
-        default_diam = diams[lasti] if len(diams) >= 2 else 1.
+        default_diam = diams[lasti] if len(diams) >= 2 else 1.0
         diams = diams + [default_diam] * (nseg_total - len(diams))
-        default_nseg = (1 + int(L_target / 2. / chunkSize / 2.) * 2)
+        default_nseg = 1 + int(L_target / 2.0 / chunkSize / 2.0) * 2
         default_len = lens[lasti] if len(lens) >= 2 else L_target / 2 / default_nseg
         lens = lens + [default_len] * (nseg_total - len(lens))
 
