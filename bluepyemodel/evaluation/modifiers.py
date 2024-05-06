@@ -169,6 +169,15 @@ def replace_axon_with_taper(sim=None, icell=None):
         if count == nseg_total:
             break
 
+    # Work-around if axon is too short
+    lasti = -2  # Last diam. may be bigger if axon cut
+    if len(diams) < nseg_total:
+        default_diam = diams[lasti] if len(diams) >= 2 else 1.
+        diams = diams + [default_diam] * (nseg_total - len(diams))
+        default_nseg = (1 + int(L_target / 2. / chunkSize / 2.) * 2)
+        default_len = lens[lasti] if len(lens) >= 2 else L_target / 2 / default_nseg
+        lens = lens + [default_len] * (nseg_total - len(lens))
+
     for section in icell.axonal:
         sim.neuron.h.delete_section(sec=section)
 
@@ -398,10 +407,11 @@ def replace_axon_legacy(sim=None, icell=None):
     lasti = -2  # Last diam. may be bigger if axon cut
 
     if len(diams) < nseg_total:
-        diams = diams + [diams[lasti]] * (nseg_total - len(diams))
-        lens = lens + [lens[lasti]] * (nseg_total - len(lens))
-        if nseg_total - len(diams) > 5:
-            logger.debug("Axon too short, adding more than 5 sections with fixed diam")
+        default_diam = diams[lasti] if len(diams) >= 2 else 1.
+        diams = diams + [default_diam] * (nseg_total - len(diams))
+        default_nseg = (1 + int(L_target / 2. / chunkSize / 2.) * 2)
+        default_len = lens[lasti] if len(lens) >= 2 else L_target / 2 / default_nseg
+        lens = lens + [default_len] * (nseg_total - len(lens))
 
     for section in icell.axonal:
         sim.neuron.h.delete_section(sec=section)
