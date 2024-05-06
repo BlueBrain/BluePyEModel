@@ -144,6 +144,14 @@ proc replace_axon(){ local count, i1, i2, L_target, strenght, taper_scale, termi
 
 def replace_axon_with_taper(sim=None, icell=None):
     """Replace axon with tappered axon initial segment"""
+    if len(list(icell.axonal)) < 3:
+        raise ValueError(
+            "Less than three axon sections are present! "
+            "The replace_axon_with_taper morph modifier cannot be applied to such a morphology. "
+            "Please use 'bluepyopt_replace_axon' or other valid modifiers from "
+            "https://github.com/BlueBrain/BluePyEModel/blob/main/"
+            "bluepyemodel/evaluation/modifiers.py or a custom modifier."
+        )
 
     L_target = 60  # length of stub axon
     nseg0 = 5  # number of segments for each of the two axon sections
@@ -370,6 +378,14 @@ replace_axon_hoc = """
 
 def replace_axon_legacy(sim=None, icell=None):
     """Replace axon used in legacy thalamus project"""
+    if len(list(icell.axonal)) < 2:
+        raise ValueError(
+            "Less than two axon sections are present! "
+            "The replace_axon_legacy morph modifier cannot be applied to such a morphology. "
+            "Please use 'bluepyopt_replace_axon' or other valid modifiers from "
+            "https://github.com/BlueBrain/BluePyEModel/blob/main/"
+            "bluepyemodel/evaluation/modifiers.py or a custom modifier."
+        )
 
     L_target = 60  # length of stub axon
     nseg0 = 5  # number of segments for each of the two axon sections
@@ -393,15 +409,6 @@ def replace_axon_legacy(sim=None, icell=None):
                 break
         if count == nseg_total:
             break
-
-    # Work-around if axon is too short
-    lasti = -2  # Last diam. may be bigger if axon cut
-
-    if len(diams) < nseg_total:
-        diams = diams + [diams[lasti]] * (nseg_total - len(diams))
-        lens = lens + [lens[lasti]] * (nseg_total - len(lens))
-        if nseg_total - len(diams) > 5:
-            logger.debug("Axon too short, adding more than 5 sections with fixed diam")
 
     for section in icell.axonal:
         sim.neuron.h.delete_section(sec=section)
@@ -522,30 +529,6 @@ proc replace_axon(){local nSec, L_chunk, dist, i1, i2, count, L_target, chunkSiz
 
 def replace_axon_olfactory_bulb(sim=None, icell=None):
     """Replace axon used in olfactory bulb models."""
-    L_target = 60  # length of stub axon
-    nseg0 = 5  # number of segments for each of the two axon sections
-
-    nseg_total = nseg0 * 2
-    chunkSize = L_target / nseg_total
-
-    diams = []
-    lens = []
-
-    count = 0
-    for section in icell.axonal:
-        L = section.L
-        nseg = 1 + int(L / chunkSize / 2.0) * 2  # nseg to get diameter
-        section.nseg = nseg
-
-        for seg in section:
-            count = count + 1
-            diams.append(seg.diam)
-            lens.append(L / nseg)
-            if count == nseg_total:
-                break
-        if count == nseg_total:
-            break
-
     for section in icell.axonal:
         sim.neuron.h.delete_section(sec=section)
 
