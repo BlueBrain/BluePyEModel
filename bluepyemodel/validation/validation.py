@@ -63,7 +63,7 @@ def define_validation_function(access_point):
 
 def compute_scores(model, validation_protocols):
     """Compute the scores of an emodel.
-    
+
     Args:
         model (EModel): emodel
         validation_protocols (list): list of validation protocols

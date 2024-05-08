@@ -249,6 +249,7 @@ def search_figure_emodel_rheobase(emodel_metadata, seed, use_allen_notation=True
 
 def figure_emodel_parameters(emodel_metadata, seed=None, use_allen_notation=True):
     """Get path for the pdf representing the distribution of the parameters of an emodel"""
+    # pylint: disable=unused-argument
 
     metadata_str = emodel_metadata.as_string(use_allen_notation=use_allen_notation)
     fname = f"{metadata_str}__parameters_distribution.pdf"
@@ -326,14 +327,21 @@ def copy_emodel_pdf_dependency_to_new_path(old_path, new_path, overwrite=False):
             shutil.copy(old_path, new_path)
 
 
-def copy_emodel_pdf_dependencies_to_new_path(old_metadata, new_metadata, old_allen_notation, new_allen_notation, seed, overwrite=False):
+def copy_emodel_pdf_dependencies_to_new_path(
+    old_metadata, new_metadata, old_allen_notation, new_allen_notation, seed, overwrite=False
+):
     """Copy dependencies to new path using allen notation"""
     # pylint: disable=too-many-locals
 
     # do not have all and validated subfolders
     single_folder_fcts = [figure_emodel_optimisation, figure_emodel_parameters_evolution]
     # have all and validated subfolders
-    two_folders_fcts = [figure_emodel_traces, figure_emodel_score, figure_emodel_parameters, figure_emodel_thumbnail]
+    two_folders_fcts = [
+        figure_emodel_traces,
+        figure_emodel_score,
+        figure_emodel_parameters,
+        figure_emodel_thumbnail,
+    ]
 
     for fct in single_folder_fcts:
         old_path = fct(old_metadata, seed=seed, use_allen_notation=old_allen_notation)

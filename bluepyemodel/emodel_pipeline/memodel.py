@@ -18,6 +18,7 @@ limitations under the License.
 
 from bluepyemodel.emodel_pipeline.emodel import EModelMixin
 
+
 class MEModel(EModelMixin):
     """Combination of an EModel and a Morphology. Should contain ids of these resources,
     as well as analysis plotting figure paths."""

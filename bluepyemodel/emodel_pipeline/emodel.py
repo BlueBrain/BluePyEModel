@@ -40,6 +40,7 @@ def format_dict_for_resource(d):
 
 class EModelMixin:
     """Contains functions used both in EModel and MEModel classes."""
+
     def build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
 
