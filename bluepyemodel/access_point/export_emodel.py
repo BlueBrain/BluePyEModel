@@ -23,8 +23,31 @@ def export_emodels_nexus(
     seeds=None,
     description=None,
     sleep_time=10,
+    sonata=True,
 ):
-    """Transfer e-models from the LocalAccessPoint to a Nexus project"""
+    """Transfer e-models from the LocalAccessPoint to a Nexus project
+
+    Args:
+        local_access_point (LocalAccessPoint): The local access point containing the e-models.
+        nexus_organisation (str): The Nexus organisation to which the e-models will be transferred.
+        nexus_project (str): The Nexus project to which the e-models will be transferred.
+        nexus_endpoint (str, optional): The Nexus endpoint.
+            Defaults to "https://bbp.epfl.ch/nexus/v1".
+        forge_path (str, optional): The path to the forge.
+        forge_ontology_path (str, optional): The path to the forge ontology.
+        access_token (str, optional): The access token for Nexus.
+        only_validated (bool, optional): If True, only validated e-models will be transferred.
+        only_best (bool, optional): If True, only the best e-models will be transferred.
+        seeds (list, optional): The chosen seeds to export.
+        description (str, optional): Optional description to add to the resources in Nexus.
+        sleep_time (int, optional):  time to wait between two Nexus requests
+            (in case of slow indexing).
+        sonata (bool, optional): Determines the format for registering e-models.
+            If True (default), uses Sonata hoc format. Otherwise, uses NEURON hoc format.
+
+    Returns:
+        None
+    """
 
     from bluepyemodel.access_point.nexus import NexusAccessPoint
 
@@ -65,18 +88,24 @@ def export_emodels_nexus(
     nexus_access_point.store_pipeline_settings(pipeline_settings)
 
     logger.info("Registering ExtractionTargetsConfiguration...")
+    # Set local filepath to None to avoid discrepancies between local and Nexus paths
+    for file in targets_configuration.files:
+        file.filepath = None
     nexus_access_point.store_targets_configuration(targets_configuration)
 
     logger.info("Registering EModelConfiguration...")
     # Remove unused local data from the model configuration before uploading to Nexus
     model_configuration.morphology.path = None
-    model_configuration.morphology.format = None
     nexus_access_point.store_model_configuration(model_configuration)
 
-    # Wait for the EModelConfiguration to be uploaded and fetchable
-    time.sleep(sleep_time)
-
     logger.info("Registering EModelWorkflow...")
+    filters = {"type": "EModelWorkflow", "eModel": metadata["emodel"], "iteration": iteration}
+    filters_legacy = {
+        "type": "EModelWorkflow",
+        "emodel": metadata["emodel"],
+        "iteration": iteration,
+    }
+    nexus_access_point.access_point.deprecate(filters, filters_legacy)
     time.sleep(sleep_time)
     emw = nexus_access_point.create_emodel_workflow(state="done")
     nexus_access_point.store_or_update_emodel_workflow(emw)
@@ -92,9 +121,27 @@ def export_emodels_nexus(
         logger.info("Registering EModel %s...", mo.emodel_metadata.emodel)
         nexus_access_point.store_emodel(mo, description=description)
 
-    logger.info("Registering EModelScript (hoc file)...")
-    nexus_access_point.store_emodels_hoc(
-        only_best=only_best, only_validated=only_validated, seeds=seeds, description=description
-    )
+    if sonata:
+        logger.info(
+            "Registering EModelScript (in sonata hoc format with threshold_current and "
+            "holding_current in node.h5 file) for circuit building using neurodamus..."
+        )
+        nexus_access_point.store_emodels_sonata(
+            only_best=only_best,
+            only_validated=only_validated,
+            seeds=seeds,
+            description=description,
+        )
+    else:
+        logger.info("Registering EModelScript (in hoc format to run e-model using NEURON)...")
+        nexus_access_point.store_emodels_hoc(
+            only_best=only_best,
+            only_validated=only_validated,
+            seeds=seeds,
+            description=description,
+        )
 
-    logger.info("Exporting the emodel %s to Nexus done.", local_access_point.emodel_metadata.emodel)
+    logger.info(
+        "Exporting the emodel %s to Nexus done.",
+        local_access_point.emodel_metadata.emodel,
+    )

@@ -9,11 +9,6 @@ from datetime import timedelta
 from datetime import timezone
 
 import jwt
-from entity_management.state import refresh_token
-from kgforge.core import KnowledgeGraphForge
-from kgforge.core import Resource
-from kgforge.core.commons.strategies import ResolvingStrategy
-from kgforge.specializations.resources import Dataset
 from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.emodel_pipeline.emodel_script import EModelScript
@@ -23,6 +18,11 @@ from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalc
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools.utils import yesno
+from entity_management.state import refresh_token
+from kgforge.core import KnowledgeGraphForge
+from kgforge.core import Resource
+from kgforge.core.commons.strategies import ResolvingStrategy
+from kgforge.specializations.resources import Dataset
 
 logger = logging.getLogger("__main__")
 
@@ -76,6 +76,7 @@ NEXUS_ENTRIES = [
 NEXUS_PROJECTS_TRACES = [
     {"project": "lnmce", "organisation": "bbp"},
     {"project": "thalamus", "organisation": "public"},
+    {"project": "mmb-point-neuron-framework-model", "organisation": "bbp"},
 ]
 
 
@@ -116,7 +117,8 @@ class NexusForgeAccessPoint:
             self.access_token = self.get_access_token()
         decoded_token = jwt.decode(self.access_token, options={"verify_signature": False})
         self.agent = self.forge.reshape(
-            self.forge.from_json(decoded_token), keep=["name", "email", "sub", "preferred_username"]
+            self.forge.from_json(decoded_token),
+            keep=["name", "email", "sub", "preferred_username"],
         )
         username = decoded_token["preferred_username"]
         self.agent.id = f"https://bbp.epfl.ch/nexus/v1/realms/bbp/users/{username}"
@@ -125,6 +127,27 @@ class NexusForgeAccessPoint:
         self._available_etypes = None
         self._available_mtypes = None
         self._available_ttypes = None
+        self._atlas_release = None
+
+    def refresh_token(self, offset=300):
+        """refresh token if token is expired or will be soon. Returns new expiring time.
+
+        Args:
+            offset (int): offset to apply to the expiring time in s.
+        """
+        # Check if the access token has expired
+        decoded_token = jwt.decode(self.access_token, options={"verify_signature": False})
+        token_exp_timestamp = decoded_token["exp"]
+        # Get the current UTC time as a timezone-aware datetime object
+        utc_now = datetime.now(timezone.utc)
+        current_timestamp = int(utc_now.timestamp())
+        if current_timestamp > token_exp_timestamp - offset:
+            logger.info("Nexus access token has expired, refreshing token...")
+            self.access_token = self.get_access_token()
+            decoded_token = jwt.decode(self.access_token, options={"verify_signature": False})
+            token_exp_timestamp = decoded_token["exp"]
+
+        return token_exp_timestamp
 
     @property
     def forge(self):
@@ -134,21 +157,12 @@ class NexusForgeAccessPoint:
             if expiry > datetime.utcnow():
                 return forge
 
-        # Check if the access token has expired
-        decoded_token = jwt.decode(self.access_token, options={"verify_signature": False})
-        token_exp_timestamp = decoded_token["exp"]
-        # Get the current UTC time as a timezone-aware datetime object
-        utc_now = datetime.now(timezone.utc)
-        current_timestamp = int(utc_now.timestamp())
-        offset_seconds = 300  # e.g., 5 minutes buffer
-        if current_timestamp > token_exp_timestamp - offset_seconds:
-            logger.info("Nexus access token has expired, refreshing token...")
-            self.access_token = self.get_access_token()
-            decoded_token = jwt.decode(self.access_token, options={"verify_signature": False})
-            token_exp_timestamp = decoded_token["exp"]
-
+        token_exp_timestamp = self.refresh_token()
         forge = KnowledgeGraphForge(
-            self.forge_path, bucket=self.bucket, endpoint=self.endpoint, token=self.access_token
+            self.forge_path,
+            bucket=self.bucket,
+            endpoint=self.endpoint,
+            token=self.access_token,
         )
 
         self.__class__.forges[key] = (
@@ -177,6 +191,25 @@ class NexusForgeAccessPoint:
         if self._available_ttypes is None:
             self._available_ttypes = self.get_available_ttypes()
         return self._available_ttypes
+
+    @property
+    def atlas_release(self):
+        """Hard-coded atlas release fields for metadata"""
+        # pylint: disable=protected-access
+        atlas_def = {
+            "id": "https://bbp.epfl.ch/neurosciencegraph/data/4906ab85-694f-469d-962f-c0174e901885",
+            "type": ["BrainAtlasRelease", "AtlasRelease"],
+        }
+
+        if self._atlas_release is None:
+            self.refresh_token()
+            atlas_access_point = atlas_forge_access_point(
+                access_token=self.access_token, forge_path=self.forge_path
+            )
+            atlas_resource = atlas_access_point.retrieve(atlas_def["id"])
+            atlas_def["_rev"] = atlas_resource._store_metadata["_rev"]
+            self._atlas_release = atlas_def
+        return self._atlas_release
 
     def get_available_etypes(self):
         """Returns a list of nexus ids of all the etype resources using sparql"""
@@ -289,8 +322,10 @@ class NexusForgeAccessPoint:
         self,
         resource_description,
         filters_existence=None,
+        legacy_filters_existence=None,
         replace=False,
         distributions=None,
+        images=None,
     ):
         """Register a resource from its dictionary description.
 
@@ -298,8 +333,11 @@ class NexusForgeAccessPoint:
             resource_description (dict): contains resource type, name and metadata
             filters_existence (dict): contains resource type, name and metadata,
                 can be used to search for existence of resource on nexus
+            legacy_filters_existence (dict): same as filters_existence,
+                but with legacy nexus metadata
             replace (bool): whether to replace resource if found with filters_existence
             distributions (list): paths to resource object as json and other distributions
+            images (list): paths to images to be attached to the resource
         """
 
         if "type" not in resource_description:
@@ -307,9 +345,11 @@ class NexusForgeAccessPoint:
 
         previous_resources = None
         if filters_existence:
-            previous_resources = self.fetch(filters_existence)
+            previous_resources = self.fetch_legacy_compatible(
+                filters_existence, legacy_filters_existence
+            )
 
-        if filters_existence and previous_resources:
+        if previous_resources:
             if replace:
                 for resource in previous_resources:
                     rr = self.retrieve(resource.id)
@@ -323,9 +363,10 @@ class NexusForgeAccessPoint:
 
         resource_description["objectOfStudy"] = {
             "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
-            "@type": "nsg:ObjectOfStudy",
             "label": "Single Cell",
         }
+        if resource_description.get("brainLocation", None) is not None:
+            resource_description["atlasRelease"] = self.atlas_release
 
         logger.debug("Registering resources: %s", resource_description)
 
@@ -336,6 +377,23 @@ class NexusForgeAccessPoint:
             resource = Dataset.from_resource(self.forge, resource)
             for path in distributions:
                 resource.add_distribution(path, content_type=f"application/{path.split('.')[-1]}")
+
+        if images:
+            imgs = []
+            for path in images:
+                try:
+                    resource_type = path.split("__")[-1].split(".")[0]
+                except IndexError:
+                    resource_type = filters_existence.get("type", None)
+                image = self.forge.attach_image(
+                    path=path,
+                    content_type=f"application/{path.split('.')[-1]}",
+                    about=resource_type,
+                )
+                imgs.append(image)
+            # Do NOT do this BEFORE turning resource into a Dataset.
+            # That would break the storing LazyAction into a string
+            resource.image = imgs
 
         self.forge.register(resource)
 
@@ -381,10 +439,28 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch_one(self, filters, strict=True):
+    def fetch_legacy_compatible(self, filters, legacy_filters=None):
+        """Fetch resources based on filters. Use legacy filters if no resources are found.
+
+        Args:
+            filters (dict): keys and values used for the "WHERE". Should include "type" or "id".
+            legacy_filters (dict): same as filters, with legacy nexus metadata
+
+        Returns:
+            resources (list): list of resources
+        """
+        resources = self.fetch(filters)
+        if not resources and legacy_filters is not None:
+            resources = self.fetch(legacy_filters)
+
+        if resources:
+            return resources
+        return None
+
+    def fetch_one(self, filters, legacy_filters=None, strict=True):
         """Fetch one and only one resource based on filters."""
 
-        resources = self.fetch(filters)
+        resources = self.fetch_legacy_compatible(filters, legacy_filters)
 
         if resources is None:
             if strict:
@@ -398,7 +474,7 @@ class NexusForgeAccessPoint:
 
         return resources[0]
 
-    def download(self, resource_id, download_directory=None, metadata_str=None):
+    def download(self, resource_id, download_directory=None, metadata_str=None, content_type=None):
         """Download datafile from nexus if it doesn't already exist."""
         if download_directory is None:
             if metadata_str is None:
@@ -427,20 +503,24 @@ class NexusForgeAccessPoint:
 
             if any(not fp.is_file() for fp in file_paths):
                 self.forge.download(
-                    resource, "distribution.contentUrl", download_directory, cross_bucket=True
+                    resource,
+                    "distribution.contentUrl",
+                    download_directory,
+                    cross_bucket=True,
+                    content_type=content_type,
                 )
 
             return [str(fp) for fp in file_paths]
 
         return []
 
-    def deprecate(self, filters):
+    def deprecate(self, filters, legacy_filters=None):
         """Deprecate resources based on filters."""
 
         tmp_cross_bucket = self.cross_bucket
         self.cross_bucket = False
 
-        resources = self.fetch(filters)
+        resources = self.fetch_legacy_compatible(filters, legacy_filters)
 
         if resources:
             for resource in resources:
@@ -450,7 +530,7 @@ class NexusForgeAccessPoint:
 
         self.cross_bucket = tmp_cross_bucket
 
-    def deprecate_all(self, metadata):
+    def deprecate_all(self, metadata, metadata_legacy=None):
         """Deprecate all resources used or produced by BluePyModel. Use with extreme caution."""
 
         if not yesno("Confirm deprecation of all BluePyEmodel resources in Nexus project"):
@@ -460,7 +540,13 @@ class NexusForgeAccessPoint:
             filters = {"type": type_}
             filters.update(metadata)
 
-            self.deprecate(filters)
+            if metadata_legacy is None:
+                legacy_filters = None
+            else:
+                legacy_filters = {"type": type_}
+                legacy_filters.update(metadata_legacy)
+
+            self.deprecate(filters, legacy_filters)
 
     def resource_location(self, resource, metadata_str):
         """Get the path of the files attached to a resource. If the resource is
@@ -497,8 +583,14 @@ class NexusForgeAccessPoint:
         name_parts = [CLASS_TO_RESOURCE_NAME[class_name]]
         if "iteration" in metadata:
             name_parts.append(metadata["iteration"])
+        if "eModel" in metadata:
+            name_parts.append(metadata["eModel"])
+        if "tType" in metadata:
+            name_parts.append(metadata["tType"])
+        # legacy nexus emodel metadata
         if "emodel" in metadata:
             name_parts.append(metadata["emodel"])
+        # legacy nexus ttype metadata
         if "ttype" in metadata:
             name_parts.append(metadata["ttype"])
         if seed is not None:
@@ -519,6 +611,7 @@ class NexusForgeAccessPoint:
         )
 
         distributions = [path_json]
+        json_payload.pop("nexus_images", None)  # remove nexus_images from payload
         if "nexus_distributions" in json_payload:
             distributions += json_payload.pop("nexus_distributions")
 
@@ -535,7 +628,15 @@ class NexusForgeAccessPoint:
             seed = object_.seed
         return seed
 
-    def object_to_nexus(self, object_, metadata_dict, metadata_str, replace=True, seed=None):
+    def object_to_nexus(
+        self,
+        object_,
+        metadata_dict,
+        metadata_str,
+        metadata_dict_legacy,
+        replace=True,
+        currents=None,
+    ):
         """Transform a BPEM object into a dict which gets registered into Nexus as
         the distribution of a Dataset of the matching type. The metadata
         are also attached to the object to be able to retrieve the Resource."""
@@ -556,10 +657,17 @@ class NexusForgeAccessPoint:
             "type": type_,
             "name": self.resource_name(class_name, metadata_dict, seed=seed),
         }
+        payload_existence_legacy = {
+            "type": type_,
+            "name": self.resource_name(class_name, metadata_dict_legacy, seed=seed),
+        }
 
         base_payload.update(metadata_dict)
         if score is not None:
             base_payload["score"] = score
+        if currents is not None:
+            base_payload["holding_current"] = currents["holding"]
+            base_payload["threshold_current"] = currents["threshold"]
         if hasattr(object_, "get_related_nexus_ids"):
             related_nexus_ids = object_.get_related_nexus_ids()
             if related_nexus_ids:
@@ -568,6 +676,10 @@ class NexusForgeAccessPoint:
         payload_existence.update(metadata_dict)
         payload_existence.pop("annotation", None)
 
+        payload_existence_legacy.update(metadata_dict_legacy)
+        payload_existence_legacy.pop("annotation", None)
+
+        nexus_images = object_.as_dict().get("nexus_images", None)
         distributions = self.dump_json_and_get_distributions(
             object_=object_, class_name=class_name, metadata_str=metadata_str, seed=seed
         )
@@ -575,8 +687,10 @@ class NexusForgeAccessPoint:
         self.register(
             base_payload,
             filters_existence=payload_existence,
+            legacy_filters_existence=payload_existence_legacy,
             replace=replace,
             distributions=distributions,
+            images=nexus_images,
         )
 
     def update_distribution(self, resource, metadata_str, object_):
@@ -625,6 +739,7 @@ class NexusForgeAccessPoint:
 
         if json_path is None:
             # legacy case where the payload is in the Resource
+            # can no longer use this for recent resources
             payload = self.forge.as_json(resource)
 
             for k in metadata:
@@ -640,25 +755,35 @@ class NexusForgeAccessPoint:
 
         return NEXUS_TYPE_TO_CLASS[type_](**payload)
 
-    def nexus_to_object(self, type_, metadata, metadata_str):
+    def nexus_to_object(self, type_, metadata, metadata_str, legacy_metadata=None):
         """Search for a single Resource matching the ``type_`` and metadata and return it
         as a BPEM object of the matching type"""
 
         filters = {"type": type_}
         filters.update(metadata)
 
-        resource = self.fetch_one(filters)
+        legacy_filters = None
+        if legacy_metadata:
+            legacy_filters = {"type": type_}
+            legacy_filters.update(legacy_metadata)
+
+        resource = self.fetch_one(filters, legacy_filters)
 
         return self.resource_to_object(type_, resource, metadata, metadata_str)
 
-    def nexus_to_objects(self, type_, metadata, metadata_str):
+    def nexus_to_objects(self, type_, metadata, metadata_str, legacy_metadata=None):
         """Search for Resources matching the ``type_`` and metadata and return them
         as BPEM objects of the matching type"""
 
         filters = {"type": type_}
         filters.update(metadata)
 
-        resources = self.fetch(filters)
+        legacy_filters = None
+        if legacy_metadata:
+            legacy_filters = {"type": type_}
+            legacy_filters.update(legacy_metadata)
+
+        resources = self.fetch_legacy_compatible(filters, legacy_filters)
 
         objects_ = []
         ids = []
@@ -670,12 +795,17 @@ class NexusForgeAccessPoint:
 
         return objects_, ids
 
-    def get_nexus_id(self, type_, metadata):
+    def get_nexus_id(self, type_, metadata, legacy_metadata=None):
         """Search for a single Resource matching the ``type_`` and metadata and return its id"""
         filters = {"type": type_}
         filters.update(metadata)
 
-        resource = self.fetch_one(filters)
+        legacy_filters = None
+        if legacy_metadata:
+            legacy_filters = {"type": type_}
+            legacy_filters.update(legacy_metadata)
+
+        resource = self.fetch_one(filters, legacy_filters)
 
         return resource.id
 
@@ -748,6 +878,20 @@ def ontology_forge_access_point(access_token=None, forge_path=None):
     access_point = NexusForgeAccessPoint(
         project="datamodels",
         organisation="neurosciencegraph",
+        endpoint="https://bbp.epfl.ch/nexus/v1",
+        forge_path=forge_path,
+        access_token=access_token,
+    )
+
+    return access_point
+
+
+def atlas_forge_access_point(access_token=None, forge_path=None):
+    """Returns an access point targeting the project containing the atlas"""
+
+    access_point = NexusForgeAccessPoint(
+        project="atlas",
+        organisation="bbp",
         endpoint="https://bbp.epfl.ch/nexus/v1",
         forge_path=forge_path,
         access_token=access_token,
@@ -840,7 +984,7 @@ def get_available_traces(species=None, brain_region=None, access_token=None, for
             endpoint="https://bbp.epfl.ch/nexus/v1",
             forge_path=forge_path,
             access_token=access_token,
-            cross_bucket=False,
+            cross_bucket=True,
         )
         tmp_resources = access_point.fetch(filters=filters)
         if tmp_resources:
@@ -866,6 +1010,9 @@ def get_brain_region(brain_region, access_token=None, forge_path=None):
 
     if brain_region in ["SSCX", "sscx"]:
         brain_region = "somatosensory areas"
+    if brain_region == "all":
+        # http://api.brain-map.org/api/v2/data/Structure/8
+        brain_region = "Basic cell groups and regions"
 
     resource = access_point.resolve(brain_region, strategy="exact")
     # try with capital 1st letter, or every letter lowercase
@@ -953,10 +1100,70 @@ def get_curated_morphology(resources):
     """Get curated morphology from multiple resources with same morphology name"""
     for r in resources:
         if hasattr(r, "annotation"):
-            for annotation in r.annotation:
+            annotations = r.annotation if isinstance(r.annotation, list) else [r.annotation]
+            for annotation in annotations:
                 if "QualityAnnotation" in annotation.type:
                     if annotation.hasBody.label == "Curated":
                         return r
         if hasattr(r, "derivation"):
             return r
     return None
+
+
+def filter_mechanisms_with_brain_region(forge, resources, brain_region_label, br_visited):
+    """Filter mechanisms by brain region"""
+    br_visited.add(brain_region_label)
+    filtered_resources = [
+        r
+        for r in resources
+        if hasattr(r, "brainLocation") and r.brainLocation.brainRegion.label == brain_region_label
+    ]
+    if len(filtered_resources) > 0:
+        return filtered_resources, br_visited
+
+    query = (
+        """
+        SELECT DISTINCT ?br ?label
+        WHERE{
+            ?id label \""""
+        + f"{brain_region_label}"
+        + """\" ;
+            isPartOf ?br .
+            ?br label ?label .
+        }
+    """
+    )
+    brs = forge.sparql(query, limit=1000)
+    # when fails can be None or empty list
+    if brs:
+        new_brain_region_label = brs[0].label
+        return filter_mechanisms_with_brain_region(
+            forge, resources, new_brain_region_label, br_visited
+        )
+
+    # if no isPartOf present, try with isLayerPartOf
+    query = (
+        """
+        SELECT DISTINCT ?br ?label
+        WHERE{
+            ?id label \""""
+        + f"{brain_region_label}"
+        + """\" ;
+            isLayerPartOf ?br .
+            ?br label ?label .
+        }
+    """
+    )
+    brs = forge.sparql(query, limit=1000)
+    # when fails can be None or empty list
+    if brs:
+        # can have multiple brain regions
+        for br in brs:
+            new_brain_region_label = br.label
+            resources, br_visited = filter_mechanisms_with_brain_region(
+                forge, resources, new_brain_region_label, br_visited
+            )
+            if resources is not None:
+                return resources, br_visited
+
+    return None, br_visited

@@ -6,6 +6,7 @@ import os
 import pathlib
 import subprocess
 import time
+from itertools import chain
 
 import pandas
 from kgforge.core import Resource
@@ -14,6 +15,7 @@ from bluepyemodel.access_point.forge_access_point import NEXUS_PROJECTS_TRACES
 from bluepyemodel.access_point.forge_access_point import AccessPointException
 from bluepyemodel.access_point.forge_access_point import NexusForgeAccessPoint
 from bluepyemodel.access_point.forge_access_point import check_resource
+from bluepyemodel.access_point.forge_access_point import filter_mechanisms_with_brain_region
 from bluepyemodel.access_point.forge_access_point import get_available_traces
 from bluepyemodel.access_point.forge_access_point import get_brain_region_notation
 from bluepyemodel.access_point.forge_access_point import get_curated_morphology
@@ -136,7 +138,10 @@ class NexusAccessPoint(DataAccessPoint):
         logger.info("Etype checked")
 
         if self.emodel_metadata.mtype is not None:
-            logger.info("Checking if mtype %s is present on nexus...", self.emodel_metadata.mtype)
+            logger.info(
+                "Checking if mtype %s is present on nexus...",
+                self.emodel_metadata.mtype,
+            )
             check_resource(
                 self.emodel_metadata.mtype,
                 "mtype",
@@ -149,7 +154,10 @@ class NexusAccessPoint(DataAccessPoint):
             logger.info("Mtype is None, its presence on Nexus is not being checked.")
 
         if self.emodel_metadata.ttype is not None:
-            logger.info("Checking if ttype %s is present on nexus...", self.emodel_metadata.ttype)
+            logger.info(
+                "Checking if ttype %s is present on nexus...",
+                self.emodel_metadata.ttype,
+            )
             check_resource(
                 self.emodel_metadata.ttype,
                 "ttype",
@@ -167,6 +175,7 @@ class NexusAccessPoint(DataAccessPoint):
                 type_="EModelPipelineSettings",
                 metadata=self.emodel_metadata_ontology.filters_for_resource(),
                 metadata_str=self.emodel_metadata.as_string(),
+                legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
             )
 
         try:
@@ -174,6 +183,7 @@ class NexusAccessPoint(DataAccessPoint):
                 type_="EModelPipelineSettings",
                 metadata=self.emodel_metadata_ontology.filters_for_resource(),
                 metadata_str=self.emodel_metadata.as_string(),
+                legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
             )
         except AccessPointException:
             return EModelPipelineSettings()
@@ -185,6 +195,7 @@ class NexusAccessPoint(DataAccessPoint):
             pipeline_settings,
             self.emodel_metadata_ontology.for_resource(),
             self.emodel_metadata.as_string(),
+            self.emodel_metadata_ontology.filters_for_resource_legacy(),
             replace=True,
         )
 
@@ -199,9 +210,25 @@ class NexusAccessPoint(DataAccessPoint):
         )
 
     def get_nexus_subject(self, species):
-        """Get the ontology of a species based on the species name."""
+        """
+        Get the ontology of a species based on the species name.
 
-        if species == "human":
+        Args:
+            species (str): The common name or scientific name of the species.
+            Can be None, in which case the function will return None.
+
+        Returns:
+            dict: The ontology data for the specified species.
+
+        Raises:
+            ValueError: If the species is not recognized.
+        """
+
+        if species is None:
+            return None
+
+        species = species.lower()
+        if species in ("human", "homo sapiens"):
             subject = {
                 "type": "Subject",
                 "species": {
@@ -210,7 +237,7 @@ class NexusAccessPoint(DataAccessPoint):
                 },
             }
 
-        elif species == "rat":
+        elif species in ("rat", "rattus norvegicus"):
             subject = {
                 "type": "Subject",
                 "species": {
@@ -219,7 +246,7 @@ class NexusAccessPoint(DataAccessPoint):
                 },
             }
 
-        elif species == "mouse":
+        elif species in ("mouse", "mus musculus"):
             subject = {
                 "type": "Subject",
                 "species": {
@@ -227,14 +254,12 @@ class NexusAccessPoint(DataAccessPoint):
                     "label": "Mus musculus",
                 },
             }
-        elif species is None:
-            subject = None
         else:
             raise ValueError(f"Unknown species {species}.")
 
         return subject
 
-    def store_object(self, object_, seed=None, description=None):
+    def store_object(self, object_, seed=None, description=None, currents=None):
         """Store a BPEM object on Nexus"""
 
         metadata_dict = self.emodel_metadata_ontology.for_resource()
@@ -247,8 +272,9 @@ class NexusAccessPoint(DataAccessPoint):
             object_,
             metadata_dict,
             self.emodel_metadata.as_string(),
+            self.emodel_metadata_ontology.filters_for_resource_legacy(),
             replace=True,
-            seed=seed,
+            currents=currents,
         )
 
     def get_targets_configuration(self):
@@ -258,6 +284,7 @@ class NexusAccessPoint(DataAccessPoint):
             type_="ExtractionTargetsConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
             metadata_str=self.emodel_metadata.as_string(),
+            legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
         )
 
         configuration.available_traces = self.get_available_traces()
@@ -265,13 +292,25 @@ class NexusAccessPoint(DataAccessPoint):
 
         if not configuration.files:
             logger.debug(
-                "Empty list of files in the TargetsConfiguration, filling"
+                "Empty list of files in the TargetsConfiguration, filling "
                 "it using what is available on Nexus for the present etype."
             )
-            configuration.files = configuration.available_traces
+            filtered_traces = [
+                trace
+                for trace in configuration.available_traces
+                if trace.etype == self.emodel_metadata.etype
+            ]
+            if not filtered_traces:
+                raise AccessPointException(
+                    "Could not find any trace with etype {self.emodel_metadata.etype}. "
+                    "Please specify files in your ExtractionTargetsConfiguration."
+                )
+            configuration.files = filtered_traces
 
         for file in configuration.files:
-            file.filepath = self.download_trace(id_=file.resource_id, name=file.filename)
+            file.filepath = self.download_trace(
+                id_=file.id, id_legacy=file.resource_id, name=file.filename
+            )
 
         return configuration
 
@@ -289,6 +328,8 @@ class NexusAccessPoint(DataAccessPoint):
         for file in configuration.files:
             if file.cell_name in available_traces_names:
                 file.id = traces[available_traces_names.index(file.cell_name)].id
+            else:
+                logger.warning("Trace %s not found.", file.cell_name)
 
         self.store_object(configuration)
 
@@ -299,7 +340,20 @@ class NexusAccessPoint(DataAccessPoint):
             type_="FitnessCalculatorConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
             metadata_str=self.emodel_metadata.as_string(),
+            legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
         )
+
+        # contains ion currents and ionic concentrations to be recorded
+        ion_variables = None
+        if record_ions_and_currents:
+            ion_currents, ionic_concentrations = self.get_ion_currents_concentrations()
+            if ion_currents is not None and ionic_concentrations is not None:
+                ion_variables = list(chain.from_iterable((ion_currents, ionic_concentrations)))
+
+        for prot in configuration.protocols:
+            prot.recordings, prot.recordings_from_config = prot.init_recordings(
+                prot.recordings_from_config, ion_variables
+            )
 
         if configuration.name_rmp_protocol is None:
             configuration.name_rmp_protocol = self.pipeline_settings.name_rmp_protocol
@@ -331,31 +385,149 @@ class NexusAccessPoint(DataAccessPoint):
         type_ = "FitnessCalculatorConfiguration"
         filters = {"type": type_}
         filters.update(self.emodel_metadata_ontology.filters_for_resource())
-        resource = self.access_point.fetch_one(filters)
+        filters_legacy = {"type": type_}
+        filters_legacy.update(self.emodel_metadata_ontology.filters_for_resource_legacy())
+        resource = self.access_point.fetch_one(filters, filters_legacy)
         fitness_id = resource.id
 
         workflow.fitness_configuration_id = fitness_id
         self.store_or_update_emodel_workflow(workflow)
 
-    def get_model_configuration(self):
-        """Get the configuration of the model, including parameters, mechanisms and distributions"""
+    def get_model_configuration(self, skip_get_available_morph=True):
+        """Get the configuration of the model, including parameters, mechanisms and distributions
+
+        Args:
+            skip_get_available_morphs (bool): set to True to skip getting the available
+                morphologies and setting them to configuration.
+                available_morphologies are only used in
+                bluepyemodel.model.model_configuration.configure_model, so we assume
+                they have already been checked for configuration present on nexus.
+        """
 
         configuration = self.access_point.nexus_to_object(
             type_="EModelConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
             metadata_str=self.emodel_metadata.as_string(),
+            legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
         )
 
         morph_path = self.download_morphology(
-            configuration.morphology.name, configuration.morphology.format
+            configuration.morphology.name,
+            configuration.morphology.format,
+            configuration.morphology.id,
         )
-        self.download_mechanisms(configuration.mechanisms)
+        any_downloaded = False
+        if self.pipeline_settings.use_ProbAMPANMDA_EMS:
+            any_downloaded = self.download_ProbAMPANMDA_EMS()
+        self.download_mechanisms(configuration.mechanisms, any_downloaded)
 
         configuration.morphology.path = morph_path
         configuration.available_mechanisms = self.get_available_mechanisms()
-        configuration.available_morphologies = self.get_available_morphologies()
+        if not skip_get_available_morph:
+            configuration.available_morphologies = self.get_available_morphologies()
 
         return configuration
+
+    def fetch_and_filter_mechanism(self, mechanism, ontology_access_point):
+        """Find a mech resource based on its brain region, temperature, species and ljp correction
+
+        Args:
+            mechanism (MechanismConfiguration): the mechanism to find on nexus
+            ontology_access_point (NexusForgeAccessPoint): access point
+                where to find the brain regions
+
+        Returns the mechanism as a nexus resource
+        """
+        default_temperatures = [34, 35, 37]
+        default_ljp = True
+
+        resources = self.access_point.fetch(
+            {"type": "SubCellularModelScript", "name": mechanism.name}
+        )
+        if resources is None:
+            raise AccessPointException(f"SubCellularModelScript {mechanism.name} not found")
+
+        # brain region filtering
+        br_visited = set()
+        filtered_resources, br_visited = filter_mechanisms_with_brain_region(
+            ontology_access_point.forge,
+            resources,
+            self.emodel_metadata_ontology.brain_region["brainRegion"]["label"],
+            br_visited,
+        )
+        br_visited_to_str = ", ".join(br_visited)
+        error_msg = f"brain region in ({br_visited_to_str})"
+        if filtered_resources is not None:
+            resources = filtered_resources
+
+        # temperature filtering
+        if mechanism.temperature is not None:
+            error_msg += f"temperature = {mechanism.temperature} "
+            filtered_resources = [
+                r
+                for r in resources
+                if hasattr(r, "temperature")
+                and getattr(r.temperature, "value", r.temperature) == mechanism.temperature
+            ]
+            if len(filtered_resources) > 0:
+                resources = filtered_resources
+
+        # species filtering
+        error_msg += f"species = {self.emodel_metadata_ontology.species['species']['label']} "
+        filtered_resources = [
+            r
+            for r in resources
+            if hasattr(r, "subject")
+            and r.subject.species.label == self.emodel_metadata_ontology.species["species"]["label"]
+        ]
+        if len(filtered_resources) > 0:
+            resources = filtered_resources
+
+        # ljp correction filtering
+        if mechanism.ljp_corrected is not None:
+            error_msg += f"ljp correction = {mechanism.ljp_corrected} "
+            filtered_resources = [
+                r
+                for r in resources
+                if hasattr(r, "isLjpCorrected") and r.isLjpCorrected == mechanism.ljp_corrected
+            ]
+            if len(filtered_resources) > 0:
+                resources = filtered_resources
+
+        if len(resources) == 0:
+            raise AccessPointException(
+                f"SubCellularModelScript {mechanism.name} not found with {error_msg}"
+            )
+
+        # use default values
+        if len(resources) > 1:
+            logger.warning(
+                "More than one resource fetched for mechanism %s",
+                mechanism.name,
+            )
+        if len(resources) > 1 and mechanism.temperature is None:
+            resources = discriminate_by_temp(resources, default_temperatures)
+
+        if len(resources) > 1 and mechanism.ljp_corrected is None:
+            tmp_resources = [
+                r
+                for r in resources
+                if hasattr(r, "isLjpCorrected") and r.isLjpCorrected is default_ljp
+            ]
+            if len(tmp_resources) > 0 and len(tmp_resources) < len(resources):
+                logger.warning(
+                    "Discriminating resources based on ljp correction. "
+                    "Keeping only resource with ljp correction."
+                )
+                resources = tmp_resources
+
+        if len(resources) > 1:
+            logger.warning(
+                "Could not reduce the number of resources fetched down to one. "
+                "Keeping the 1st resource of the list."
+            )
+
+        return resources[0]
 
     def store_model_configuration(self, configuration, path=None):
         """Store a model configuration as a resource of type EModelConfiguration"""
@@ -374,20 +546,22 @@ class NexusAccessPoint(DataAccessPoint):
             configuration.morphology.id = morphologies[
                 available_morphologies_names.index(configuration.morphology.name)
             ].id
+        else:
+            logger.warning("Morphology %s not found.", configuration.morphology.name)
 
-        # Search for all Mechanisms on Nexus and add their Nexus ids to the configuration
-        mechanisms = self.get_available_mechanisms()
-        if not mechanisms:
-            raise AccessPointException(
-                "Cannot find mechanisms on Nexus. Please make sure that "
-                "mechanisms can be reached from the current Nexus session."
-            )
-
-        available_mechanisms_names = [mechanism.name for mechanism in mechanisms]
-
+        # set id to mechanisms by filtering with brain region, temperature, species, ljp correction
+        ontology_access_point = ontology_forge_access_point(
+            self.access_point.access_token, self.forge_ontology_path
+        )
         for mechanism in configuration.mechanisms:
-            if mechanism.name in available_mechanisms_names:
-                mechanism.id = mechanisms[available_mechanisms_names.index(mechanism.name)].id
+            if mechanism.name in NEURON_BUILTIN_MECHANISMS:
+                continue
+            mech_resource = self.fetch_and_filter_mechanism(mechanism, ontology_access_point)
+            mechanism.id = mech_resource.id
+
+        if self.pipeline_settings.use_ProbAMPANMDA_EMS:
+            ProbAMPANMDA_EMS_id = self.get_ProbAMPANMDA_EMS_resource().id
+            configuration.extra_mech_ids = [(ProbAMPANMDA_EMS_id, "SynapsePhysiologyModel")]
 
         self.store_object(configuration)
 
@@ -412,6 +586,7 @@ class NexusAccessPoint(DataAccessPoint):
             targets_configuration_id = self.access_point.get_nexus_id(
                 type_="ExtractionTargetsConfiguration",
                 metadata=self.emodel_metadata_ontology.filters_for_resource(),
+                legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
             )
         except AccessPointException:
             targets_configuration_id = None
@@ -419,16 +594,19 @@ class NexusAccessPoint(DataAccessPoint):
         pipeline_settings_id = self.access_point.get_nexus_id(
             type_="EModelPipelineSettings",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
         )
         emodel_configuration_id = self.access_point.get_nexus_id(
             type_="EModelConfiguration",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
+            legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
         )
 
         try:
             fitness_configuration_id = self.access_point.get_nexus_id(
                 type_="FitnessCalculatorConfiguration",
                 metadata=self.emodel_metadata_ontology.filters_for_resource(),
+                legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
             )
         except AccessPointException:
             fitness_configuration_id = None
@@ -450,6 +628,7 @@ class NexusAccessPoint(DataAccessPoint):
             type_="EModelWorkflow",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
             metadata_str=self.emodel_metadata.as_string(),
+            legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
         )
 
         if emodel_workflow:
@@ -472,7 +651,9 @@ class NexusAccessPoint(DataAccessPoint):
 
         filters = {"type": type_}
         filters.update(self.emodel_metadata_ontology.filters_for_resource())
-        resources = self.access_point.fetch(filters)
+        filters_legacy = {"type": type_}
+        filters_legacy.update(self.emodel_metadata_ontology.filters_for_resource_legacy())
+        resources = self.access_point.fetch_legacy_compatible(filters, filters_legacy)
 
         # not present on nexus yet -> store it
         if resources is None:
@@ -480,6 +661,7 @@ class NexusAccessPoint(DataAccessPoint):
                 emodel_workflow,
                 self.emodel_metadata_ontology.for_resource(),
                 self.emodel_metadata.as_string(),
+                self.emodel_metadata_ontology.filters_for_resource_legacy(),
                 replace=False,
             )
         # if present on nexus -> update its state
@@ -503,14 +685,17 @@ class NexusAccessPoint(DataAccessPoint):
         """Fetch an emodel"""
 
         metadata = self.emodel_metadata_ontology.filters_for_resource()
+        legacy_metadata = self.emodel_metadata_ontology.filters_for_resource_legacy()
 
         if seed is not None:
             metadata["seed"] = int(seed)
+            legacy_metadata["seed"] = int(seed)
 
         emodel = self.access_point.nexus_to_object(
             type_="EModel",
             metadata=metadata,
             metadata_str=self.emodel_metadata.as_string(),
+            legacy_metadata=legacy_metadata,
         )
         emodel.emodel_metadata = copy.deepcopy(self.emodel_metadata)
 
@@ -535,7 +720,9 @@ class NexusAccessPoint(DataAccessPoint):
         type_ = "EModel"
         filters = {"type": type_, "seed": emodel.seed}
         filters.update(self.emodel_metadata_ontology.filters_for_resource())
-        resource = self.access_point.fetch_one(filters)
+        filters_legacy = {"type": type_, "seed": emodel.seed}
+        filters_legacy.update(self.emodel_metadata_ontology.filters_for_resource_legacy())
+        resource = self.access_point.fetch_one(filters, filters_legacy)
         model_id = resource.id
 
         workflow.add_emodel_id(model_id)
@@ -548,6 +735,7 @@ class NexusAccessPoint(DataAccessPoint):
             type_="EModel",
             metadata=self.emodel_metadata_ontology.filters_for_resource(),
             metadata_str=self.emodel_metadata.as_string(),
+            legacy_metadata=self.emodel_metadata_ontology.filters_for_resource_legacy(),
         )
 
         for em in emodels:
@@ -637,68 +825,71 @@ class NexusAccessPoint(DataAccessPoint):
         except AccessPointException:
             return False
 
-    def download_mechanisms(self, mechanisms):
+    def get_ProbAMPANMDA_EMS_resource(self):
+        """Get the ProbAMPANMDA_EMS resource from nexus."""
+        resources = self.access_point.fetch(
+            {"type": "SynapsePhysiologyModel", "name": "ProbAMPANMDA_EMS"}
+        )
+        if resources is None:
+            raise AccessPointException("SynapsePhysiologyModel ProbAMPANMDA_EMS not found")
+
+        if len(resources) > 1:
+            logger.warning(
+                "Could not reduce the number of resources fetched down to one. "
+                "Keeping the 1st resource of the list."
+            )
+        return resources[0]
+
+    def download_ProbAMPANMDA_EMS(self):
+        """Download the ProbAMPANMDA_EMS mod file.
+
+        Returns True if the mod file has been downloaded, returns False otherwise.
+        """
+        mechanisms_directory = self.get_mechanisms_directory()
+        resource = self.get_ProbAMPANMDA_EMS_resource()
+
+        mod_file_name = "ProbAMPANMDA_EMS.mod"
+        if os.path.isfile(str(mechanisms_directory / mod_file_name)):
+            return False
+
+        filepath = self.access_point.download(
+            resource.id, str(mechanisms_directory), content_type="application/neuron-mod"
+        )[0]
+
+        # Rename the file in case it's different from the name of the resource
+        filepath = pathlib.Path(filepath)
+        if filepath.stem != "ProbAMPANMDA_EMS":
+            filepath.rename(pathlib.Path(filepath.parent / mod_file_name))
+
+        return True
+
+    def download_mechanisms(self, mechanisms, any_downloaded=False):
         """Download the mod files if not already downloaded"""
-        default_temperatures = [34, 35, 37]
-        default_ljp = True
+        # pylint: disable=protected-access
 
         mechanisms_directory = self.get_mechanisms_directory()
+        ontology_access_point = ontology_forge_access_point(
+            self.access_point.access_token, self.forge_ontology_path
+        )
 
-        any_downloaded = False
         for mechanism in mechanisms:
             if mechanism.name in NEURON_BUILTIN_MECHANISMS:
                 continue
 
-            resources = self.access_point.fetch(
-                {"type": "SubCellularModelScript", "name": mechanism.name}
-            )
-            if resources is None:
-                raise AccessPointException(f"SubCellularModelScript {mechanism.name} not found")
-
-            error_msg = ""
-            if mechanism.version is not None:
-                error_msg += f"version = {mechanism.version}"
-                resources = [r for r in resources if r.modelId == mechanism.version]
-            if mechanism.temperature is not None:
-                error_msg += f"temperature = {mechanism.temperature}"
-                resources = [r for r in resources if r.temperature.value == mechanism.temperature]
-            if mechanism.ljp_corrected is not None:
-                error_msg += f"ljp correction = {mechanism.ljp_corrected}"
-                resources = [r for r in resources if r.isLjpCorrected == mechanism.ljp_corrected]
-
-            if len(resources) == 0:
-                raise AccessPointException(
-                    f"SubCellularModelScript {mechanism.name} not found with {error_msg}"
-                )
-
-            # use default values
-            if len(resources) > 1:
-                logger.warning("More than one resource fetched for mechanism %s", mechanism.name)
-            if len(resources) > 1 and mechanism.temperature is None:
-                resources = discriminate_by_temp(resources, default_temperatures)
-
-            if len(resources) > 1 and mechanism.ljp_corrected is None:
-                tmp_resources = [r for r in resources if r.isLjpCorrected is default_ljp]
-                if len(tmp_resources) > 0 and len(tmp_resources) < len(resources):
-                    logger.warning(
-                        "Discriminating resources based on ljp correction. "
-                        "Keeping only resource with ljp correction."
+            resource = None
+            if mechanism.id is not None:
+                resource = self.access_point.forge.retrieve(mechanism.id)
+                if resource is not None and resource._store_metadata["_deprecated"]:
+                    logger.info(
+                        "Nexus resource for mechanism %s is deprecated. "
+                        "Looking for a new resource...",
+                        mechanism.name,
                     )
-                    resources = tmp_resources
+                    resource = None
 
-            # use latest version
-            if len(resources) > 1 and all(hasattr(r, "modelId") for r in resources):
-                logger.warning(
-                    "Discriminating resources based on version. Keeping only the latest version."
-                )
-                resource = sorted(resources, key=lambda x: x.modelId)[-1]
-            else:
-                if len(resources) > 1:
-                    logger.warning(
-                        "Could not reduce the number of resources fetched down to one. "
-                        "Keeping the 1st resource of the list."
-                    )
-                resource = resources[0]
+            # if could not find by id, try with filtering
+            if resource is None:
+                resource = self.fetch_and_filter_mechanism(mechanism, ontology_access_point)
 
             mod_file_name = f"{mechanism.name}.mod"
             if os.path.isfile(str(mechanisms_directory / mod_file_name)):
@@ -706,7 +897,6 @@ class NexusAccessPoint(DataAccessPoint):
 
             filepath = self.access_point.download(resource.id, str(mechanisms_directory))[0]
             any_downloaded = True
-
             # Rename the file in case it's different from the name of the resource
             filepath = pathlib.Path(filepath)
             if filepath.stem != mechanism:
@@ -718,27 +908,51 @@ class NexusAccessPoint(DataAccessPoint):
             subprocess.run("nrnivmodl mechanisms", shell=True, check=True)
             os.chdir(previous_dir)
 
-    def download_morphology(self, name, format_=None):
-        """Download a morphology by name if not already downloaded"""
+    def download_morphology(self, name=None, format_=None, id_=None):
+        """Download a morphology by its id if provided. If no id is given,
+        the function attempts to download the morphology by its name,
+        provided it has not already been downloaded
 
-        # Temporary fix for the duplicated morphology issue
-        resources = self.access_point.fetch({"type": "NeuronMorphology", "name": name})
-        if resources is None:
-            raise AccessPointException(f"Could not get resource for morphology {name}")
-        if len(resources) == 1:
-            resource = resources[0]
-        elif len(resources) == 2:
-            resource = get_curated_morphology(resources)
-            if resource is None:
+        Args:
+            name (str): name of the morphology resource
+            format_ (str): Optional. Can be 'asc', 'swc', or 'h5'.
+                Must be available in the resource.
+            id_ (str): id of the nexus resource
+
+        Raises:
+            TypeError if id_ and name are not given
+            AccessPointException if resource could not be retrieved
+            FileNotFoundError if downloaded morphology could not be find locally
+        """
+
+        if id_ is None and name is None:
+            raise TypeError("In download_morphology, at least name or id_ must be given.")
+
+        if id_ is None:
+            species_label = self.emodel_metadata_ontology.species["species"]["label"]
+            resources = self.access_point.fetch(
+                {
+                    "type": "NeuronMorphology",
+                    "name": name,
+                    "subject": {"species": {"label": species_label}},
+                }
+            )
+            if resources is None:
                 raise AccessPointException(f"Could not get resource for morphology {name}")
+            if len(resources) == 1:
+                resource = resources[0]
+            elif len(resources) >= 2:
+                resource = get_curated_morphology(resources)
+                if resource is None:
+                    raise AccessPointException(f"Could not get resource for morphology {name}")
+
+            res_id = resource.id
         else:
-            raise AccessPointException(f"More than 2 morphologies with name: {name}")
+            res_id = id_
 
         directory_name = self.emodel_metadata.as_string()
         filepath = pathlib.Path(
-            self.access_point.download(resource.id, pathlib.Path("./nexus_temp/") / directory_name)[
-                0
-            ]
+            self.access_point.download(res_id, pathlib.Path("./nexus_temp/") / directory_name)[0]
         )
 
         # Some morphologies have .h5 attached and we don't want that:
@@ -761,7 +975,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         return str(filepath)
 
-    def download_trace(self, id_=None, name=None):
+    def download_trace(self, id_=None, id_legacy=None, name=None):
         """Does not actually download the Trace since traces are already stored on Nexus"""
 
         for proj_traces in NEXUS_PROJECTS_TRACES:
@@ -771,11 +985,13 @@ class NexusAccessPoint(DataAccessPoint):
                 endpoint="https://bbp.epfl.ch/nexus/v1",
                 forge_path=self.access_point.forge_path,
                 access_token=self.access_point.access_token,
-                cross_bucket=False,
+                cross_bucket=True,
             )
 
             if id_:
                 resource = access_point.retrieve(id_)
+            elif id_legacy:
+                resource = access_point.retrieve(id_legacy)
             elif name:
                 resource = access_point.fetch_one(
                     {
@@ -830,6 +1046,8 @@ class NexusAccessPoint(DataAccessPoint):
         """Get the list of t-types available for the present emodel"""
 
         df, _ = self.load_channel_gene_expression(table_name)
+        # replace non-alphanumeric characters with underscores in t-types from RNASeq data
+        df["me-type"] = df["me-type"].str.replace(r"\W", "_")
         return (
             df.loc[self.emodel_metadata.emodel].index.get_level_values("t-type").unique().tolist()
         )
@@ -845,10 +1063,14 @@ class NexusAccessPoint(DataAccessPoint):
         logger.warning("Did not find any available morphologies.")
         return set()
 
-    def get_available_mechanisms(self):
-        """Get all the available mechanisms"""
+    def get_available_mechanisms(self, filters=None):
+        """Get all the available mechanisms.
+        Optional filters can be applied to refine the search."""
 
-        resources = self.access_point.fetch({"type": "SubCellularModelScript"})
+        filter = {"type": "SubCellularModelScript"}
+        if filters:
+            filter.update(filters)
+        resources = self.access_point.fetch(filter)
 
         if resources is None:
             logger.warning("No SubCellularModelScript mechanisms available")
@@ -856,6 +1078,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         available_mechanisms = []
         for r in resources:
+            logger.debug("fetching %s mechanism from nexus.", r.name)
             version = r.modelId if hasattr(r, "modelId") else None
             temperature = (
                 getattr(r.temperature, "value", r.temperature)
@@ -875,7 +1098,10 @@ class NexusAccessPoint(DataAccessPoint):
                         lower_limit = ep.lowerLimit if hasattr(ep, "lowerLimit") else None
                         upper_limit = ep.upperLimit if hasattr(ep, "upperLimit") else None
                         if hasattr(r, "mod"):
-                            parameters[f"{ep.name}_{r.mod.suffix}"] = [lower_limit, upper_limit]
+                            parameters[f"{ep.name}_{r.mod.suffix}"] = [
+                                lower_limit,
+                                upper_limit,
+                            ]
                         else:
                             parameters[f"{ep.name}_{r.nmodlParameters.suffix}"] = [
                                 lower_limit,
@@ -894,9 +1120,10 @@ class NexusAccessPoint(DataAccessPoint):
                 ions = r.ion if isinstance(r.ion, list) else [r.ion]
 
             for ion in ions:
-                ion_name = ion.label.lower()
-                ion_currents.append(f"i{ion_name}")
-                ionic_concentrations.append(f"{ion_name}i")
+                if hasattr(ion, "label"):
+                    ion_name = ion.label.lower()
+                    ion_currents.append(f"i{ion_name}")
+                    ionic_concentrations.append(f"{ion_name}i")
 
             mech = MechanismConfiguration(
                 r.name,
@@ -939,12 +1166,13 @@ class NexusAccessPoint(DataAccessPoint):
         for r in resource_traces:
             ecodes = None
             if hasattr(r, "stimulus"):
+                # is stimulus a list
+                stimuli = r.stimulus if isinstance(r.stimulus, list) else [r.stimulus]
                 ecodes = {
                     stim.stimulusType.label: {}
-                    for stim in r.stimulus
+                    for stim in stimuli
                     if hasattr(stim.stimulusType, "label")
                 }
-
             species = None
             if hasattr(r, "subject") and hasattr(r.subject, "species"):
                 species = r.subject.species
@@ -963,21 +1191,20 @@ class NexusAccessPoint(DataAccessPoint):
                         if "e-type" in annotation.name.lower():
                             etype = annotation.hasBody.label
 
-            if etype is not None and etype == self.emodel_metadata.etype:
-                traces.append(
-                    TraceFile(
-                        r.name,
-                        filename=None,
-                        filepath=None,
-                        resource_id=r.id,
-                        ecodes=ecodes,
-                        other_metadata=None,
-                        species=species,
-                        brain_region=brain_region,
-                        etype=etype,
-                        id=r.id,
-                    )
+            traces.append(
+                TraceFile(
+                    r.name,
+                    filename=None,
+                    filepath=None,
+                    resource_id=r.id,
+                    ecodes=ecodes,
+                    other_metadata=None,
+                    species=species,
+                    brain_region=brain_region,
+                    etype=etype,
+                    id=r.id,
                 )
+            )
         return traces
 
     def store_morphology(self, morphology_name, morphology_path, mtype=None, reconstructed=True):
@@ -985,12 +1212,15 @@ class NexusAccessPoint(DataAccessPoint):
             "type": [
                 "NeuronMorphology",
                 "Dataset",
-                "ReconstructedNeuronMorphology" if reconstructed else "SynthesizedNeuronMorphology",
+                (
+                    "ReconstructedNeuronMorphology"
+                    if reconstructed
+                    else "PlaceholderNeuronMorphology"
+                ),
             ],
             "name": pathlib.Path(morphology_path).stem,
             "objectOfStudy": {
                 "@id": "http://bbp.epfl.ch/neurosciencegraph/taxonomies/objectsofstudy/singlecells",
-                "@type": "ObjectOfStudy",
                 "label": "Single Cell",
             },
         }
@@ -1050,6 +1280,9 @@ class NexusAccessPoint(DataAccessPoint):
                 "No emodels selected in store_hocs. No hoc file will be registered on nexus."
             )
 
+        hold_key = "SearchHoldingCurrent.soma.v.bpo_holding_current"
+        thres_key = "SearchThresholdCurrent.soma.v.bpo_threshold_current"
+
         # maybe use map here?
         for emodel in emodels:
             if new_emodel_name is not None:
@@ -1071,8 +1304,21 @@ class NexusAccessPoint(DataAccessPoint):
                 )
                 continue
 
+            currents = None
+            if emodel.features is not None:
+                if hold_key in emodel.features and thres_key in emodel.features:
+                    currents = {
+                        "holding": emodel.features[hold_key],
+                        "threshold": emodel.features[thres_key],
+                    }
+
             emodelscript = EModelScript(str(hoc_file_path), emodel.seed, workflow_id)
-            self.store_object(emodelscript, seed=emodel.seed, description=description)
+            self.store_object(
+                emodelscript,
+                seed=emodel.seed,
+                description=description,
+                currents=currents,
+            )
             # wait for the object to be uploaded and fetchable
             time.sleep(self.sleep_time)
 
@@ -1080,7 +1326,9 @@ class NexusAccessPoint(DataAccessPoint):
             type_ = "EModelScript"
             filters = {"type": type_, "seed": emodel.seed}
             filters.update(self.emodel_metadata_ontology.filters_for_resource())
-            resource = self.access_point.fetch_one(filters, strict=True)
+            filters_legacy = {"type": type_, "seed": emodel.seed}
+            filters_legacy.update(self.emodel_metadata_ontology.filters_for_resource_legacy())
+            resource = self.access_point.fetch_one(filters, filters_legacy, strict=True)
             modelscript_id = resource.id
             workflow.add_emodel_script_id(modelscript_id)
 
@@ -1124,16 +1372,19 @@ class NexusAccessPoint(DataAccessPoint):
             "export_emodels_sonata",
         )
 
-    def get_hoc(self, seed):
+    def get_hoc(self, seed=None):
         """Get the EModelScript resource"""
         metadata = self.emodel_metadata_ontology.filters_for_resource()
+        legacy_metadata = self.emodel_metadata_ontology.filters_for_resource_legacy()
         if seed is not None:
             metadata["seed"] = int(seed)
+            legacy_metadata["seed"] = int(seed)
 
         hoc = self.access_point.nexus_to_object(
             type_="EModelScript",
             metadata=metadata,
             metadata_str=self.emodel_metadata.as_string(),
+            legacy_metadata=legacy_metadata,
         )
         return hoc
 
