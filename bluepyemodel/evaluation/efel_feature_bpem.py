@@ -59,7 +59,9 @@ class eFELFeatureBPEM(eFELFeature):
         stimulus_current=None,
         comment="",
         interp_step=None,
-        efel_settings=None,
+        double_settings=None,
+        int_settings=None,
+        string_settings=None,
         weight=1.0,
     ):
         """Constructor
@@ -92,7 +94,9 @@ class eFELFeatureBPEM(eFELFeature):
             stimulus_current,
             comment,
             interp_step,
-            efel_settings,
+            double_settings,
+            int_settings,
+            string_settings,
             max_score=250.0,
         )
         self.weight = weight  # used in objective
@@ -160,20 +164,28 @@ class eFELFeatureBPEM(eFELFeature):
         efel.reset()
 
         if self.threshold is not None:
-            efel.set_setting("Threshold", self.threshold)
+            efel.set_threshold(self.threshold)
 
         if self.stimulus_current is not None:
             if callable(self.stimulus_current):
-                efel.set_setting("stimulus_current", self.stimulus_current())
+                efel.set_double_setting("stimulus_current", self.stimulus_current())
             else:
-                efel.set_setting("stimulus_current", self.stimulus_current)
+                efel.set_double_setting("stimulus_current", self.stimulus_current)
 
         if self.interp_step is not None:
-            efel.set_setting("interp_step", self.interp_step)
+            efel.set_double_setting("interp_step", self.interp_step)
 
-        if self.efel_settings is not None:
-            for setting_name, setting_value in self.efel_settings.items():
-                efel.set_setting(setting_name, setting_value)
+        if self.double_settings is not None:
+            for setting_name, setting_value in self.double_settings.items():
+                efel.set_double_setting(setting_name, setting_value)
+
+        if self.int_settings is not None:
+            for setting_name, setting_value in self.int_settings.items():
+                efel.set_int_setting(setting_name, setting_value)
+
+        if self.string_settings is not None:
+            for setting_name, setting_value in self.string_settings.items():
+                efel.set_str_setting(setting_name, setting_value)
 
     def calculate_feature(self, responses, raise_warnings=False):
         """Calculate feature value"""
@@ -262,7 +274,9 @@ class DendFitFeature(eFELFeatureBPEM):
         stimulus_current=None,
         comment="",
         interp_step=None,
-        efel_settings=None,
+        double_settings=None,
+        int_settings=None,
+        string_settings=None,
         decay=None,
         linear=None,
         weight=1.0,
@@ -281,7 +295,9 @@ class DendFitFeature(eFELFeatureBPEM):
             stimulus_current,
             comment,
             interp_step,
-            efel_settings,
+            double_settings,
+            int_settings,
+            string_settings,
             weight,
         )
         self.decay = decay

@@ -1,5 +1,4 @@
 x86_64/
-arm64/
 checkpoints/
 ExampleCell/
 examples/optimisation/mechanisms/

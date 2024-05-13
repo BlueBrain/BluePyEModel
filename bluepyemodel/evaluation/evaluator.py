@@ -251,6 +251,9 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
         else:
             efel_settings["multi_stim_start"] = [stim_start]
             efel_settings["multi_stim_end"] = [stim_end]
+    double_settings = {k: v for k, v in efel_settings.items() if isinstance(v, (float, list))}
+    int_settings = {k: v for k, v in efel_settings.items() if isinstance(v, int)}
+    string_settings = {k: v for k, v in efel_settings.items() if isinstance(v, str)}
 
     if "dendrite_backpropagation_fit" in feature_config.name:
         decay = "decay" in feature_config.name
@@ -266,7 +269,9 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
             stimulus_current=stim_amp,
             threshold=efel_settings.get("Threshold", None),
             interp_step=efel_settings.get("interp_step", None),
-            efel_settings=efel_settings,
+            double_settings=double_settings,
+            int_settings=int_settings,
+            string_settings=string_settings,
             decay=decay,
             linear=linear,
             weight=feature_config.weight,
@@ -286,7 +291,9 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
             stimulus_current=stim_amp,
             threshold=efel_settings.get("Threshold", None),
             interp_step=efel_settings.get("interp_step", None),
-            efel_settings=efel_settings,
+            double_settings=double_settings,
+            int_settings=int_settings,
+            string_settings=string_settings,
             decay=decay,
             linear=linear,
             weight=feature_config.weight,
@@ -303,7 +310,9 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
             stimulus_current=stim_amp,
             threshold=efel_settings.get("Threshold", None),
             interp_step=efel_settings.get("interp_step", None),
-            efel_settings=efel_settings,
+            double_settings=double_settings,
+            int_settings=int_settings,
+            string_settings=string_settings,
             weight=feature_config.weight,
         )
 
