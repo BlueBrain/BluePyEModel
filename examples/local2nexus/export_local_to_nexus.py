@@ -28,7 +28,7 @@ brain_region = "SSCX"  # e.g. "SSCX"
 description = ""
 
 # Nexus settings
-nexus_project = "mmb-emodels-for-synthesized-neurons"  # a valid Nexus project name to which the emodel should be uploaded.
+nexus_project = ""  # a valid Nexus project name to which the emodel should be uploaded.
 nexus_organisation = "bbp"  # choose between "bbp" or "public"
 # Nexus advanced settings (only change if you know what you are doing)
 nexus_endpoint = "https://bbp.epfl.ch/nexus/v1"

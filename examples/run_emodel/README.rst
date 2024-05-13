@@ -1,7 +1,7 @@
 Running an emodel on BlueCelluLab
 =================================
 
-The ``run_emodel.py`` script provides an example to run a simulation of an emodel stored on Nexus with BlueCellulab. The script takes care of downloading all the resources related to the emodel, including hoc templates, morphologies, and mod files from the Nexus project ``mmb-point-neuron-framework-model``.
+The ``run_emodel.py`` script provides an example to run a simulation of an emodel stored on Nexus with BlueCellulab. The script takes care of downloading all the resources related to the emodel, including hoc templates, morphologies, and mod files.
 
 Prerequisites
 -------------
@@ -17,20 +17,7 @@ With the virtual environment activated, install the following packages:
 
 Usage
 -----
-To execute the script, you must provide the ``emodel_id``, which is the Nexus ``Resource ID`` for the emodel resource. This ID can be obtained from the json file of the `Datacatalogue resource <https://bbp.epfl.ch/data/bbp/mmb-point-neuron-framework-model/2f00630e-dd48-4acc-9909-d464858c929e>` for the emodel within the Nexus project ``mmb-point-neuron-framework-model``.
-The ``emodel_id`` is the value of the key ``@id`` in the json file.
-
-e.g. For this entry in the json file:
-
-.. code-block:: json
-
-   {
-        "@id": "https://bbp.epfl.ch/data/bbp/mmb-point-neuron-framework-model/613ebf19-588f-4430-b5e8-6d4ea069eb1e",
-        "@type": "https://neuroshapes.org/EModel",
-        "about": "https://bbp.epfl.ch/ontologies/core/bmo/PlaceholderNeuronMorphology"
-   },
-
-The ``emodel_id`` is "https://bbp.epfl.ch/data/bbp/mmb-point-neuron-framework-model/613ebf19-588f-4430-b5e8-6d4ea069eb1e".
+To execute the script, you must provide the ``emodel_id``, which is the Nexus ``Resource ID`` for the emodel resource.
 
 To run the script:
 
