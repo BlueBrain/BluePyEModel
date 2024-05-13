@@ -37,10 +37,10 @@ EXTRA_DOC = [
 ]
 
 EXTRA_NEXUS = [
-    # "icselector",
-    # "nexusforge>=0.7.1",
-    # "entity_management>=1.2",
-    # "pyJWT>=2.1.0",
+    # "icselector", # not available on PyPI yet
+    "nexusforge>=0.7.1",
+    "entity_management>=1.2",
+    "pyJWT>=2.1.0",
 ]
 
 setup(

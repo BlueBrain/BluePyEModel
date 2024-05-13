@@ -56,6 +56,7 @@ BluePyEModel can be pip installed with the following command:
 If you do not wish to install all dependencies, specific dependencies can be selected by indicating which ones to install between brackets in place of 'all' (If you want multiple dependencies, they have to be separated by commas). The available dependencies are:
 
 * luigi
+* nexus
 * all
 
 To get started with the E-Model building pipeline
@@ -75,7 +76,7 @@ The pipeline is divided in 6 steps:
 * ``plotting``: reads the models and runs the optimisation protocols and/or validation protocols on them. Then, plots the resulting traces along the e-feature scores and parameter distributions.
 * ``exporting``: read the parameter of the best models and export them in files that can be used either in NEURON or for circuit building.
 
-These six steps are to be run in order as for example validation cannot be run if no models have been stored. Steps "validation", "plotting" and "exporting" are optional. Step "extraction" can also be optional in the case where the file containing the protocols and optimisation targets is created by hand or if it is obtained from an older project.
+These six steps are to be run in order as for example validation cannot be run if no models have been stored. Steps ``validation``, ``plotting`` and ``exporting`` are optional. Step ``extraction`` can also be optional in the case where the file containing the protocols and optimisation targets is created by hand or if it is obtained from an older project.
 
 Schematics of BluePyEModel classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
