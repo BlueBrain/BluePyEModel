@@ -9,6 +9,11 @@ from datetime import timedelta
 from datetime import timezone
 
 import jwt
+from entity_management.state import refresh_token
+from kgforge.core import KnowledgeGraphForge
+from kgforge.core import Resource
+from kgforge.core.commons.strategies import ResolvingStrategy
+from kgforge.specializations.resources import Dataset
 from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.emodel_pipeline.emodel_script import EModelScript
@@ -18,11 +23,6 @@ from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalc
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
 from bluepyemodel.tools.utils import yesno
-from entity_management.state import refresh_token
-from kgforge.core import KnowledgeGraphForge
-from kgforge.core import Resource
-from kgforge.core.commons.strategies import ResolvingStrategy
-from kgforge.specializations.resources import Dataset
 
 logger = logging.getLogger("__main__")
 
