@@ -14,30 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
 import numpy
-
+import pytest
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
 from bluepyopt.ephys.recordings import CompRecording
 
 from bluepyemodel.ecode.idrest import IDrest
-from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.evaluation.efeature_configuration import EFeatureConfiguration
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
-from bluepyemodel.evaluation.evaluator import define_location, define_protocol, define_efeature
+from bluepyemodel.evaluation.evaluator import (
+    define_efeature,
+    define_location,
+    define_protocol,
+)
+from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
-from bluepyemodel.access_point import get_access_point
-from tests.unit_tests.test_local_access_point import api_config
-from tests.unit_tests.test_local_access_point import db
-from tests.unit_tests.test_local_access_point import DATA
 
 
 def test_define_location():
 
-    definition = {
-        "type": "CompRecording",
-        "location": "soma"
-    }
+    definition = {"type": "CompRecording", "location": "soma"}
 
     location = define_location(definition)
 
@@ -51,21 +47,25 @@ def protocol():
     protocol_configuration = ProtocolConfiguration(
         **{
             "name": "Step_250",
-            "stimuli": [{
-                "delay": 700.0,
-                "amp": None,
-                "thresh_perc": 250.0,
-                "duration": 2000.0,
-                "totduration": 3000.0,
-                "holding_current": None
-            }],
-            "recordings": [{
-                "type": "CompRecording",
-                "name": f"Step_250.soma.v",
-                "location": "soma",
-                "variable": "v"
-            }],
-            "validation": False
+            "stimuli": [
+                {
+                    "delay": 700.0,
+                    "amp": None,
+                    "thresh_perc": 250.0,
+                    "duration": 2000.0,
+                    "totduration": 3000.0,
+                    "holding_current": None,
+                }
+            ],
+            "recordings": [
+                {
+                    "type": "CompRecording",
+                    "name": f"Step_250.soma.v",
+                    "location": "soma",
+                    "variable": "v",
+                }
+            ],
+            "validation": False,
         }
     )
 
@@ -88,20 +88,20 @@ def test_define_efeature(protocol):
         recording_name="soma.v",
         mean=66.64,
         std=5.0,
-        efel_settings={"stim_start": 300.},
-        threshold_efeature_std=0.1
+        efel_settings={"stim_start": 300.0},
+        threshold_efeature_std=0.1,
     )
 
-    global_efel_settings = {"stim_start": 500.}
+    global_efel_settings = {"stim_start": 500.0}
 
     feature = define_efeature(feature_config, protocol, global_efel_settings)
 
     numpy.testing.assert_almost_equal(feature.exp_std, 6.664)
-    assert feature.stim_start == 300.
-    assert feature.recording_names[''] == "Step_250.soma.v"
+    assert feature.stim_start == 300.0
+    assert feature.recording_names[""] == "Step_250.soma.v"
 
 
-def test_start_from_emodel(db):
+def test_start_from_emodel(db, db_restart):
     """Test start_from_emodel in get_evaluator_from_access_point"""
     eva = get_evaluator_from_access_point(db)
     assert len(eva.param_names) == 31
@@ -110,14 +110,8 @@ def test_start_from_emodel(db):
     assert eva.cell_model.params["constant.distribution_decay"].bounds is not None
     assert eva.cell_model.params["constant.distribution_decay"]._value is None
 
-    new_db = get_access_point(
-        "local",
-        emodel="cADpyr_L5TPC",
-        emodel_dir=DATA,
-        recipes_path=DATA / "config/recipes_restart.json",
-    )
-    new_db.pipeline_settings.start_from_emodel = {"emodel": "cADpyr_L5TPC"}
-    eva = get_evaluator_from_access_point(new_db)
+    db_restart.pipeline_settings.start_from_emodel = {"emodel": "cADpyr_L5TPC"}
+    eva = get_evaluator_from_access_point(db_restart)
     assert len(eva.param_names) == 30
     assert eva.cell_model.params["constant.distribution_decay"].frozen is True
     assert eva.cell_model.params["constant.distribution_decay"].bounds is None

@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
-from bluepyemodel.validation import validation_functions
 from bluepyemodel.emodel_pipeline.emodel import EModel
+from bluepyemodel.validation import validation_functions
+
 
 def test_validate_max_score():
 
     model = EModel(
         score={"a": 0.0, "b": 4.9, "c": 0.5, "d": 9.9},
-        scoreValidation={"c": 0.5, "d": 9.9}
+        scoreValidation={"c": 0.5, "d": 9.9},
     )
 
     validation_result = validation_functions.validate_max_score(
@@ -40,7 +40,7 @@ def test_validate_mean_score():
 
     model = EModel(
         score={"a": 0.0, "b": 4.9, "c": 0.5, "d": 9.9},
-        scoreValidation={"c": 0.5, "d": 9.9}
+        scoreValidation={"c": 0.5, "d": 9.9},
     )
 
     validation_result = validation_functions.validate_mean_score(

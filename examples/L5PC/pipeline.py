@@ -26,6 +26,7 @@ from targets import file_type, filenames, ecodes_metadata, targets, protocols_rh
 
 logger = logging.getLogger()
 
+
 def configure_targets(access_point):
     files_metadata = []
 
@@ -36,75 +37,90 @@ def configure_targets(access_point):
             for ecode in ecodes_metadata:
                 if ecode in fn:
                     files_metadata.append(
-                            {
-                                "cell_name": "cell1",
-                                "filename": filename.split("/")[-1].split(".")[0],
-                                "ecodes": {ecode: ecodes_metadata[ecode]},
-                                "other_metadata": {
-                                    "v_file": filename,
-                                    # IMPORTANT: modify "ch1" with your number of channel in your ibw files
-                                    "i_file": filename.replace("ch0", "ch1"),
-                                    "i_unit": "A",
-                                    "v_unit": "V",
-                                    "t_unit": "s",
-                                }
-                            }
-                        )
+                        {
+                            "cell_name": "cell1",
+                            "filename": filename.split("/")[-1].split(".")[0],
+                            "ecodes": {ecode: ecodes_metadata[ecode]},
+                            "other_metadata": {
+                                "v_file": filename,
+                                # IMPORTANT: modify "ch1" with your number of channel in your ibw files
+                                "i_file": filename.replace("ch0", "ch1"),
+                                "i_unit": "A",
+                                "v_unit": "V",
+                                "t_unit": "s",
+                            },
+                        }
+                    )
     elif file_type == "nwb":
         files_metadata = []
         for filename in filenames:
             files_metadata.append(
                 {
                     "cell_name": filename.split("/")[-1].split(".")[0],
-                    "filepath":filename,
-                    "ecodes": ecodes_metadata
+                    "filepath": filename,
+                    "ecodes": ecodes_metadata,
                 }
             )
     else:
-        raise ValueError(f"file type {file_type} is not supported in this current pipeline: "
-                          "Expected 'ibw' or 'nwb'. "
-                          "For other types of format please modify configure_targets "
-                          "in pipeline.py.")
+        raise ValueError(
+            f"file type {file_type} is not supported in this current pipeline: "
+            "Expected 'ibw' or 'nwb'. "
+            "For other types of format please modify configure_targets "
+            "in pipeline.py."
+        )
 
     targets_formated = []
     for ecode in targets:
-        for amplitude in targets[ecode]['amplitudes']:
+        for amplitude in targets[ecode]["amplitudes"]:
             for efeature in targets[ecode]["efeatures"]:
                 protocol_name = ecode
                 # remove ohmic_input_resistance_vb_ssse for IV_0 protocol (RMPProtocol). we only need voltage_base
-                if not (protocol_name == "IV" and amplitude == 0 and efeature == "ohmic_input_resistance_vb_ssse"):
-                    targets_formated.append({
-                        "efeature": efeature,
-                        "protocol": protocol_name,
-                        "amplitude": amplitude,
-                        "tolerance": 20
-                    })
+                if not (
+                    protocol_name == "IV"
+                    and amplitude == 0
+                    and efeature == "ohmic_input_resistance_vb_ssse"
+                ):
+                    targets_formated.append(
+                        {
+                            "efeature": efeature,
+                            "protocol": protocol_name,
+                            "amplitude": amplitude,
+                            "tolerance": 20,
+                        }
+                    )
 
     if not files_metadata:
-        raise FileNotFoundError("Cannot find electrophysiological experimental data. "
-                        "Please provide them, with the correct path to them in targets.py.")
+        raise FileNotFoundError(
+            "Cannot find electrophysiological experimental data. "
+            "Please provide them, with the correct path to them in targets.py."
+        )
 
     configurator = TargetsConfigurator(access_point)
     configurator.new_configuration(files_metadata, targets_formated, protocols_rheobase)
     configurator.save_configuration()
 
+
 def get_parser():
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description='Pipeline for emodel creation'
+        description="Pipeline for emodel creation",
     )
 
-    parser.add_argument("--step", type=str, required=True, choices=[
-        "extract", "optimise", "analyse", "export_hoc", "export_sonata"])
-    parser.add_argument('--emodel', type=str, required=True)
-    parser.add_argument('--etype', type=str, required=False, default=None)
-    parser.add_argument('--mtype', type=str, required=False, default=None)
-    parser.add_argument('--ttype', type=str, required=False, default=None)
-    parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--githash', type=str, required=False, default=None)
-    parser.add_argument('--use_ipyparallel', action="store_true", default=False)
-    parser.add_argument('--use_multiprocessing', action="store_true", default=False)
+    parser.add_argument(
+        "--step",
+        type=str,
+        required=True,
+        choices=["extract", "optimise", "analyse", "export_hoc", "export_sonata"],
+    )
+    parser.add_argument("--emodel", type=str, required=True)
+    parser.add_argument("--etype", type=str, required=False, default=None)
+    parser.add_argument("--mtype", type=str, required=False, default=None)
+    parser.add_argument("--ttype", type=str, required=False, default=None)
+    parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--githash", type=str, required=False, default=None)
+    parser.add_argument("--use_ipyparallel", action="store_true", default=False)
+    parser.add_argument("--use_multiprocessing", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="count", dest="verbosity", default=0)
 
     return parser
@@ -117,7 +133,7 @@ def main():
     species = "rat"
     brain_region = "SSCX"
 
-    recipes_path = './config/recipes.json'
+    recipes_path = "./config/recipes.json"
 
     logging.basicConfig(
         level=(logging.WARNING, logging.INFO, logging.DEBUG)[args.verbosity],
@@ -151,17 +167,22 @@ def main():
         pipeline.plot(only_validated=False)
 
     elif args.step == "export_hoc":
-        export_emodels_hoc(pipeline.access_point,
-                           only_validated=False,
-                           only_best=False,
-                           seeds=[args.seed])
+        export_emodels_hoc(
+            pipeline.access_point,
+            only_validated=False,
+            only_best=False,
+            seeds=[args.seed],
+        )
 
     elif args.step == "export_sonata":
-        export_emodels_sonata(pipeline.access_point,
-                           only_validated=False,
-                           only_best=False,
-                           seeds=[args.seed],
-                           map_function=pipeline.mapper)
+        export_emodels_sonata(
+            pipeline.access_point,
+            only_validated=False,
+            only_best=False,
+            seeds=[args.seed],
+            map_function=pipeline.mapper,
+        )
+
 
 if __name__ == "__main__":
     main()

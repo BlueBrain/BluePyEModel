@@ -1,5 +1,5 @@
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2024, EPFL/Blue Brain Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,21 +23,21 @@ def _always_true_validation(model, threshold=5.0, validation_protocols_only=Fals
     return True
 
 
-def test_define_validation_function(db):
+def test_define_validation_function(db_from_nexus):
 
     model = {
         "scores": {"a": 0.0, "b": 4.9, "c": 0.5, "d": 9.9},
         "scores_validation": {"c": 0.5, "d": 9.9},
     }
 
-    db.pipeline_settings.validation_function = _always_true_validation
+    db_from_nexus.pipeline_settings.validation_function = _always_true_validation
 
-    validation_function = define_validation_function(db)
+    validation_function = define_validation_function(db_from_nexus)
 
     validated = bool(
         validation_function(
             model,
-            db.pipeline_settings.validation_threshold,
+            db_from_nexus.pipeline_settings.validation_threshold,
             False,
         )
     )
@@ -45,14 +45,24 @@ def test_define_validation_function(db):
     assert validated
 
 
-def test_validation(db):
+def test_validation(db_from_nexus):
 
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
 
-    db.get_mechanisms_directory = lambda: None
+    def _get_final_content(lock_file=True):
+        # enforce validated to None to ensure that the validation is run
+        result = get_final_content(lock_file=lock_file)
+        for key, value in result.items():
+            assert "validated" in value
+            value["validated"] = None
+        return result
+
+    get_final_content = db_from_nexus.get_final_content
+    db_from_nexus.get_final_content = _get_final_content
+    db_from_nexus.get_mechanisms_directory = lambda: None
     emodels = validate(
-        access_point=db,
+        access_point=db_from_nexus,
         mapper=map,
     )
 

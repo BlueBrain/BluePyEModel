@@ -330,7 +330,8 @@ class TargetsConfiguration:
 
     def check_presence_RMP_Rin_efeatures(self, name_rmp_protocol, name_Rin_protocol):
         """Check that the protocols supposed to be used for RMP and Rin are present in the target
-        and that they have the correct efeatures. If some features are missing, add them."""
+        and that they have the correct efeatures. If some features are missing, add them.
+        """
 
         if self.targets:
             efeatures_rmp = [

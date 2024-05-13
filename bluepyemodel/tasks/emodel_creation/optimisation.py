@@ -931,8 +931,7 @@ class EModelCreation(WorkflowTask):
             if EmodelAPIConfig().api == "nexus":
                 self.access_point.check_mettypes()
             # do this instead of just func(self) because of the yield in EModelCreation
-            for x in func(self):
-                yield x
+            yield from func(self)
 
         return inner
 
@@ -1269,6 +1268,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             plot_distributions=plot_optimisation,
             plot_traces=plot_optimisation,
             plot_scores=plot_optimisation,
+            plot_thumbnail=plot_optimisation,
             plot_dendritic_ISI_CV=plot_optimisation,
             plot_dendritic_rheobase=plot_optimisation,
             plot_currentscape=plot_currentscape,
@@ -1347,6 +1347,7 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
             plot_distributions=True,
             plot_traces=False,
             plot_scores=False,
+            plot_thumbnail=False,
             plot_dendritic_ISI_CV=False,
             plot_dendritic_rheobase=False,
             plot_bAP_EPSP=False,

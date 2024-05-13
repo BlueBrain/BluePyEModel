@@ -168,7 +168,11 @@ class EModel_pipeline:
         )
 
     def configure_model(
-        self, morphology_name, morphology_path=None, morphology_format=None, use_gene_data=False
+        self,
+        morphology_name,
+        morphology_path=None,
+        morphology_format=None,
+        use_gene_data=False,
     ):
         """To be deprecated"""
 
@@ -308,6 +312,7 @@ class EModel_pipeline:
             plot_distributions=True,
             plot_scores=True,
             plot_traces=True,
+            plot_thumbnail=True,
             plot_currentscape=self.access_point.pipeline_settings.plot_currentscape,
             plot_bAP_EPSP=self.access_point.pipeline_settings.plot_bAP_EPSP,
             plot_dendritic_ISI_CV=True,
@@ -354,7 +359,14 @@ def sanitize_gitignore():
 
     lines = " ".join(line for line in lines)
 
-    to_add = ["run/", "checkpoints/", "figures/", "logs/", ".ipython/", ".ipynb_checkpoints/"]
+    to_add = [
+        "run/",
+        "checkpoints/",
+        "figures/",
+        "logs/",
+        ".ipython/",
+        ".ipynb_checkpoints/",
+    ]
 
     with open(str(path_gitignore), "a") as f:
         for a in to_add:

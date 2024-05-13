@@ -41,7 +41,7 @@ class EModelPipelineSettings:
         extract_absolute_amplitudes=False,
         rheobase_strategy_extraction="absolute",
         rheobase_settings_extraction=None,
-        interpolate_RMP_extraction=True,
+        interpolate_RMP_extraction=False,
         default_std_value=1e-3,
         bound_max_std=False,
         efel_settings=None,
@@ -61,6 +61,7 @@ class EModelPipelineSettings:
         validation_function="max_score",
         validation_threshold=5.0,
         plot_optimisation=True,
+        use_ProbAMPANMDA_EMS=False,
         compile_mechanisms=False,
         n_model=3,
         optimisation_batch_size=5,
@@ -70,13 +71,14 @@ class EModelPipelineSettings:
         name_rmp_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
-        plot_currentscape=False,
+        plot_currentscape=True,
         plot_parameter_evolution=True,
         plot_bAP_EPSP=False,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
         cvode_minstep=0.0,
+        use_params_for_seed=True,
         max_threshold_voltage=-30,
         strict_holding_bounds=True,
         max_depth_holding_search=7,
@@ -117,7 +119,9 @@ class EModelPipelineSettings:
                 strategy. Keys have to match the arguments expected by the rheobase computation
                 function present in the module bluepyefe.rheobase.
             interpolate_RMP_extraction (bool): whether to set the RMP after extraction as
-                V_hold - R_in*I_Hold.
+                V_hold - R_in*I_Hold, which is an approximation of the RMP.
+                This should be used when there is no protocol without holding current
+                in the experimental data.
             default_std_value (float): At the end of e-features extraction, all features
                 presenting a standard deviation of 0, will see their standard deviation
                 replaced by the present value.
@@ -131,11 +135,30 @@ class EModelPipelineSettings:
             stochasticity (bool or list of str): should channels behave stochastically if they can.
                 If True, the mechanisms will be stochastic for all protocols. If a list of protocol
                 names is provided, the mechanisms will be stochastic only for these protocols.
-            morph_modifiers (list): List of morphology modifiers. Each modifier has to be
-                informed by the path the file containing the modifier and the name of the
-                function. E.g: morph_modifiers = ``[["path_to_module", "name_of_function"], ...]``.
-                If ``None``, the default modifier will replace the axon with a tappered axon initial
-                segment. If you do not wish to use any modifier, set the present argument to ``[]``.
+            morph_modifiers (list of str or list of list):
+                If str, name of the morph modifier to use from bluepyemodel.evaluation.modifiers.
+                If List of morphology modifiers. Each modifier is defined by a list
+                that includes the following elements:
+                1. The path to the file that contains the modifier.
+                2. The name of the function that applies the modifier.
+                3. Optionally, a "hoc_string" that represents the hoc code for the modifier.
+                For example, morph_modifiers could be defined as follows:
+
+                    .. code-block::
+
+                        morph_modifiers = [["path_to_module",
+                                            "name_of_function",
+                                            "hoc_string"], ...].
+
+                If the "hoc_string" is not provided, the system will search within
+                the specified module for a string that matches the function name appended
+                with "_hoc".
+                If ``None``, the default modifier will replace the axon with a tappered axon
+                initial segment (replace_axon_with_taper). If you do not wish to use any modifier,
+                set the present argument to ``[]``.
+                If ``["bluepyopt_replace_axon"]``, the replace_axon function from
+                bluepyopt.ephys.morphologies.NrnFileMorphology will be used
+                and no other morph modifiers will be used.
             threshold_based_evaluator (bool): not used. To be deprecated.
             start_from_emodel (dict): If informed, the optimisation for the present e-model will
                 be instantiated using as values for the model parameters the ones from the
@@ -202,6 +225,8 @@ class EModelPipelineSettings:
                 building task done. Only used by the Luigi workflow.
             plot_optimisation (bool): should the e-models scores and traces be plotted. Only used
                 by the Luigi workflow.
+            use_ProbAMPANMDA_EMS (bool): True to link ProbAMPANMDA_EMS in EMC on nexus,
+                and download ProbAMPANMDA from nexus along with other mechanisms.
             compile_mechanisms (bool): should the mod files be copied in the local
                 mechanisms_dir directory. Only used by the Luigi workflow.
             path_extract_config (str): specify the path to the .json file containing the targets
@@ -241,6 +266,8 @@ class EModelPipelineSettings:
                 named `recordings`.
             neuron_dt (float): time step of the NEURON simulator. If ``None``, cvode will be used.
             cvode_minstep (float): minimum time step allowed when using cvode.
+            use_params_for_seed (bool): use a hashed version of the parameter
+                dictionary as a seed for the simulator
             max_threshold_voltage (float): upper bound for the voltage during the
                 search for the threshold or rheobase current (see SearchThresholdProtocol).
             strict_holding_bounds (bool): if True, the minimum and maximum values for the current
@@ -286,6 +313,7 @@ class EModelPipelineSettings:
         self.stochasticity = stochasticity
         self.neuron_dt = neuron_dt
         self.cvode_minstep = cvode_minstep
+        self.use_params_for_seed = use_params_for_seed
 
         # Settings related to the optimisation
         self.start_from_emodel = start_from_emodel
@@ -355,6 +383,9 @@ class EModelPipelineSettings:
         self.protocols_rheobase = protocols_rheobase
         self.auto_targets = auto_targets
         self.auto_targets_presets = auto_targets_presets
+
+        # Settings used with nexus
+        self.use_ProbAMPANMDA_EMS = use_ProbAMPANMDA_EMS
 
     def as_dict(self):
         return vars(self)

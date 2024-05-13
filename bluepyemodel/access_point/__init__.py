@@ -23,7 +23,7 @@ def get_access_point(access_point, emodel, **kwargs):
     Args:
         access_point (str): name of the access_point to use, can be 'nexus' or 'local'.
         emodel (str): name of the emodel.
-        kwargs (dict): extra arguments to pass to access_point constructors, see below.
+        kwargs: extra arguments to pass to access_point constructors, see below.
 
     Optional:
         - etype (str): name of the electric type.

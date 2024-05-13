@@ -19,6 +19,7 @@ limitations under the License.
 import copy
 import glob
 import logging
+import re
 from pathlib import Path
 
 import efel
@@ -47,6 +48,7 @@ from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
+from bluepyemodel.tools.utils import select_rec_for_thumbnail
 
 # pylint: disable=W0612,W0102,C0209
 
@@ -65,10 +67,10 @@ colours = {
 }
 
 
-def save_fig(figures_dir, figure_name):
+def save_fig(figures_dir, figure_name, dpi=100):
     """Save a matplotlib figure"""
     p = Path(figures_dir) / figure_name
-    plt.savefig(str(p), dpi=100, bbox_inches="tight")
+    plt.savefig(str(p), dpi=dpi, bbox_inches="tight")
     plt.close("all")
     plt.clf()
 
@@ -201,7 +203,7 @@ def optimisation(
     p = Path(checkpoint_path)
 
     figure_name = p.stem
-    figure_name += ".pdf"
+    figure_name += "__optimisation.pdf"
 
     plt.tight_layout()
 
@@ -212,7 +214,13 @@ def optimisation(
 
 
 def _create_figure_parameter_histograms(
-    histograms, evaluator, checkpoint_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+    histograms,
+    evaluator,
+    checkpoint_path,
+    max_n_gen,
+    gen_per_bin,
+    figures_dir,
+    write_fig,
 ):
     """Create figure and plot the data for the evolution of the density of parameters."""
 
@@ -225,7 +233,9 @@ def _create_figure_parameter_histograms(
     # Plot the histograms
     for param_index, param in enumerate(evaluator.params):
         axs[param_index].imshow(
-            100.0 * numpy.flip(histograms[param_index].T, 0), aspect="auto", interpolation="none"
+            100.0 * numpy.flip(histograms[param_index].T, 0),
+            aspect="auto",
+            interpolation="none",
         )
 
         axs[param_index].set_title(list(evaluator.param_names)[param_index])
@@ -264,7 +274,7 @@ def _create_figure_parameter_histograms(
     p = Path(checkpoint_path)
 
     figure_name = p.stem
-    figure_name += "_evo_parameter_density.pdf"
+    figure_name += "__evo_parameter_density.pdf"
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.92)
@@ -320,7 +330,10 @@ def evolution_parameters_density(
 
             histo_range = [
                 [0, max_n_gen],
-                [evaluator.params[param_index].bounds[0], evaluator.params[param_index].bounds[1]],
+                [
+                    evaluator.params[param_index].bounds[0],
+                    evaluator.params[param_index].bounds[1],
+                ],
             ]
 
             h, _, _ = numpy.histogram2d(x, y, bins=histo_bins, range=histo_range)
@@ -334,7 +347,13 @@ def evolution_parameters_density(
 
         # Create the figure
         _ = _create_figure_parameter_histograms(
-            histograms, evaluator, checkpoint_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+            histograms,
+            evaluator,
+            checkpoint_path,
+            max_n_gen,
+            gen_per_bin,
+            figures_dir,
+            write_fig,
         )
 
     # Plot the figure with the sums of all histograms
@@ -343,7 +362,13 @@ def evolution_parameters_density(
         sum_histograms = {idx: h / len(checkpoint_path) for idx, h in sum_histograms.items()}
         dummy_path = checkpoint_paths[0].partition("__seed=")[0] + "__all_seeds.pkl"
         fig, axs = _create_figure_parameter_histograms(
-            sum_histograms, evaluator, dummy_path, max_n_gen, gen_per_bin, figures_dir, write_fig
+            sum_histograms,
+            evaluator,
+            dummy_path,
+            max_n_gen,
+            gen_per_bin,
+            figures_dir,
+            write_fig,
         )
 
     return fig, axs
@@ -420,7 +445,55 @@ def traces_title(model, threshold=None, holding=None, rmp=None, rin=None):
     return title
 
 
-def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures", write_fig=True):
+def thumbnail(
+    model,
+    responses,
+    recording_names,
+    figures_dir="./figures",
+    write_fig=True,
+    dpi=300,
+    thumbnail_rec=None,
+):
+    """Plot the trace figure to use as thumbnail."""
+    make_dir(figures_dir)
+
+    trace_name = select_rec_for_thumbnail(recording_names, thumbnail_rec=thumbnail_rec)
+
+    # in case e.g. the run fails during preprotocols
+    try:
+        time = responses[trace_name]["time"]
+        voltage = responses[trace_name]["voltage"]
+    except KeyError:
+        logger.warning(
+            "Could not find protocol %s in respsonses. Skipping thumbnail plotting.",
+            trace_name,
+        )
+        return None, None
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ylabel = get_traces_ylabel(var=trace_name.split(".")[-1])
+    ax.plot(time, voltage, color="black")
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel(ylabel)
+
+    fname = model.emodel_metadata.as_string(model.seed) + "__thumbnail.png"
+
+    if write_fig:
+        save_fig(figures_dir, fname, dpi=dpi)
+
+    return fig, ax
+
+
+def traces(
+    model,
+    responses,
+    recording_names,
+    stimuli={},
+    figures_dir="./figures",
+    write_fig=True,
+):
     """Plot the traces of a model"""
     # pylint: disable=too-many-nested-blocks
     make_dir(figures_dir)
@@ -453,7 +526,7 @@ def traces(model, responses, recording_names, stimuli={}, figures_dir="./figures
             axs[idx, 0].set_ylabel(ylabel)
 
             # Plot current
-            basename = t.split(".")[0]
+            basename = re.split(r"\.(?=[a-zA-Z])", t, 1)[0]
             if basename in stimuli:
                 prot = stimuli[basename]
                 if hasattr(prot, "stimulus"):
@@ -560,6 +633,10 @@ def dendritic_feature_plot(
 
     if write_fig:
         fname = model.emodel_metadata.as_string(model.seed) + f"__{feature.name}.pdf"
+        # can have '[', ']' and ',' in feature name. Replace those characters
+        fname = fname.replace("[", "_")
+        fname = fname.replace("]", "_")
+        fname = fname.replace(",", "_")
         save_fig(figures_dir, fname)
 
     return fig, ax
@@ -609,13 +686,20 @@ def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"
 
 
 def _get_if_curve_from_evaluator(
-    holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
+    holding,
+    threshold,
+    model,
+    evaluator,
+    delay,
+    length_step,
+    delta_current,
+    max_offset_current,
 ):
     total_duration = length_step + (2 * delay)
     stim_end = delay + length_step
 
     efel.reset()
-    efel.setIntSetting("strict_stiminterval", True)
+    efel.set_int_setting("strict_stiminterval", True)
 
     soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
     rec = CompRecording(name="Step1.soma.v", location=soma_loc, variable="v")
@@ -644,7 +728,8 @@ def _get_if_curve_from_evaluator(
         evaluator.fitness_protocols = {"Step1": protocol}
 
         responses = evaluator.run_protocols(
-            protocols=evaluator.fitness_protocols.values(), param_values=model.parameters
+            protocols=evaluator.fitness_protocols.values(),
+            param_values=model.parameters,
         )
 
         efel_trace = {
@@ -653,7 +738,7 @@ def _get_if_curve_from_evaluator(
             "stim_start": [delay],
             "stim_end": [stim_end],
         }
-        features = efel.getFeatureValues(
+        features = efel.get_feature_values(
             [efel_trace], ["Spikecount", "mean_frequency"], raise_warnings=False
         )[0]
         spike_freq_equivalent.append(1e3 * float(features["Spikecount"]) / length_step)
@@ -685,7 +770,14 @@ def IF_curve(
         return fig, [ax, ax2]
 
     amps, frequencies, spike_freq_equivalent = _get_if_curve_from_evaluator(
-        holding, threshold, model, evaluator, delay, length_step, delta_current, max_offset_current
+        holding,
+        threshold,
+        model,
+        evaluator,
+        delay,
+        length_step,
+        delta_current,
+        max_offset_current,
     )
 
     ax.scatter(amps, frequencies, c="C0", alpha=0.6)
@@ -809,7 +901,12 @@ def EPSP_fit(feature, distances, values, npoints=20):
 
 
 def plot_bAP(
-    model, responses, apical_feature, basal_feature, figures_dir="./figures", write_fig=True
+    model,
+    responses,
+    apical_feature,
+    basal_feature,
+    figures_dir="./figures",
+    write_fig=True,
 ):
     """Plot back-propagating action potential.
 
@@ -835,9 +932,17 @@ def plot_bAP(
         basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
 
     ax.scatter(
-        apical_distances, apical_values, c=colours["modelpoint_apical"], label="model apical"
+        apical_distances,
+        apical_values,
+        c=colours["modelpoint_apical"],
+        label="model apical",
     )
-    ax.scatter(basal_distances, basal_values, c=colours["modelpoint_basal"], label="model basal")
+    ax.scatter(
+        basal_distances,
+        basal_values,
+        c=colours["modelpoint_basal"],
+        label="model basal",
+    )
     if 0 in apical_distances:
         ax.plot(
             apical_x_fit,
@@ -848,7 +953,11 @@ def plot_bAP(
         )
     if 0 in basal_distances:
         ax.plot(
-            basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit"
+            basal_x_fit,
+            basal_y_fit,
+            "--",
+            c=colours["modelline_basal"],
+            label="model basal fit",
         )
     ax.set_xlabel(r"Distance from soma ($\mu$m)")
     ax.set_ylabel("Amplitude (mV)")
@@ -922,10 +1031,16 @@ def plot_EPSP(
         basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
 
     ax.scatter(
-        apical_distances, apical_attenuation, c=colours["modelpoint_apical"], label="model apical"
+        apical_distances,
+        apical_attenuation,
+        c=colours["modelpoint_apical"],
+        label="model apical",
     )
     ax.scatter(
-        basal_distances, basal_attenuation, c=colours["modelpoint_basal"], label="model basal"
+        basal_distances,
+        basal_attenuation,
+        c=colours["modelpoint_basal"],
+        label="model basal",
     )
     if 0 in apical_distances:
         ax.plot(
@@ -937,7 +1052,11 @@ def plot_EPSP(
         )
     if 0 in basal_distances:
         ax.plot(
-            basal_x_fit, basal_y_fit, "--", c=colours["modelline_basal"], label="model basal fit"
+            basal_x_fit,
+            basal_y_fit,
+            "--",
+            c=colours["modelline_basal"],
+            label="model basal fit",
         )
     ax.set_xlabel(r"Distance from soma ($\mu$m)")
     ax.set_ylabel("Attenuation dendrite amplitude / soma amplitude")
@@ -1127,6 +1246,7 @@ def plot_models(
     plot_distributions=True,
     plot_scores=True,
     plot_traces=True,
+    plot_thumbnail=True,
     plot_currentscape=False,
     plot_if_curve=False,
     plot_dendritic_ISI_CV=True,
@@ -1149,6 +1269,7 @@ def plot_models(
         plot_distributions (bool): True to plot the parameters distributions
         plot_scores (bool): True to plot the scores
         plot_traces (bool): True to plot the traces
+        plot_thumbnail (bool): True to plot a trace used as thumbnail
         plot_currentscape (bool): True to plot the currentscapes
         plot_if_curve (bool): True to plot the current / frequency curve
         plot_dendritic_ISI_CV (bool): True to plot dendritic ISI CV (if present)
@@ -1189,7 +1310,13 @@ def plot_models(
             use_fixed_dt_recordings=False,
         )
 
-    if plot_traces or plot_currentscape or plot_dendritic_ISI_CV or plot_dendritic_rheobase:
+    if (
+        plot_traces
+        or plot_currentscape
+        or plot_dendritic_ISI_CV
+        or plot_dendritic_rheobase
+        or plot_thumbnail
+    ):
         emodels = compute_responses(
             access_point,
             cell_evaluator,
@@ -1248,6 +1375,14 @@ def plot_models(
             )
             traces(mo, mo.responses, recording_names, stimuli, figures_dir_traces)
 
+        if plot_thumbnail:
+            figures_dir_thumbnail = figures_dir / "thumbnail" / dest_leaf
+            recording_names = get_recording_names(
+                access_point.get_fitness_calculator_configuration().protocols,
+                stimuli,
+            )
+            thumbnail(mo, mo.responses, recording_names, figures_dir_thumbnail)
+
         if plot_dendritic_ISI_CV:
             dendritic_feature_plots(mo, "ISI_CV", dest_leaf, figures_dir)
 
@@ -1263,8 +1398,6 @@ def plot_models(
                 metadata_str=mo.emodel_metadata.as_string(mo.seed),
                 figures_dir=figures_dir_currentscape,
                 emodel=mo.emodel_metadata.emodel,
-                iteration_tag=mo.emodel_metadata.iteration,
-                seed=mo.seed,
             )
             # reset rcParams which are modified by currentscape
             matplotlib.rcParams.update(matplotlib.rcParamsDefault)
@@ -1272,7 +1405,10 @@ def plot_models(
         if plot_if_curve:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             IF_curve(
-                mo, mo.responses, copy.deepcopy(cell_evaluator), figures_dir=figures_dir_traces
+                mo,
+                mo.responses,
+                copy.deepcopy(cell_evaluator),
+                figures_dir=figures_dir_traces,
             )
 
     if plot_bAP_EPSP:
@@ -1397,8 +1533,6 @@ def currentscape(
     metadata_str="",
     figures_dir="./figures",
     emodel="",
-    seed=None,
-    iteration_tag=None,
 ):
     """Plot the currentscapes for all protocols.
 
@@ -1413,7 +1547,8 @@ def currentscape(
         iteration_tag (str): githash
         seed (int): random seed number
     """
-    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-branches, too-many-statements
+    # TODO: refactor this a little
     if responses is None and output_dir is None:
         raise TypeError("Responses or output directory must be set.")
 
@@ -1430,6 +1565,10 @@ def currentscape(
         updated_config["ions"] = {}
     if "output" not in updated_config:
         updated_config["output"] = {}
+    if "legend" not in updated_config:
+        updated_config["legend"] = {}
+    if "show" not in updated_config:
+        updated_config["show"] = {}
 
     current_subset = None
     if "names" in updated_config["current"]:
@@ -1462,7 +1601,7 @@ def currentscape(
                     key_dict, output_dir
                 )
 
-            name = ".".join((metadata_str, prot, loc))
+            name = ".".join((f"{metadata_str}__currentscape", prot, loc))
 
             # adapt config
             if current_subset and key_dict["current_names"]:
@@ -1487,13 +1626,22 @@ def currentscape(
             updated_config["output"]["fname"] = name
             if "dir" not in updated_config["output"]:
                 updated_config["output"]["dir"] = figures_dir
-            if "title" not in updated_config and emodel:
-                title = get_title(emodel, iteration_tag, seed)
+            if "title" not in config and emodel:
+                # check config because we want to change this for each plot
+                title = f"{emodel}\n{prot}"
                 updated_config["title"] = title
+            # resizing
+            if "figsize" not in updated_config:
+                updated_config["figsize"] = (4.5, 6)
+            if "textsize" not in updated_config:
+                updated_config["textsize"] = 8
+            if "textsize" not in updated_config["legend"]:
+                updated_config["legend"]["textsize"] = 5
 
             if len(voltage) == 0 or len(currents) == 0:
                 logger.warning(
-                    "Could not plot currentscape for %s: voltage or currents is empty.", name
+                    "Could not plot currentscape for %s: voltage or currents is empty.",
+                    name,
                 )
             else:
                 try:
@@ -1501,7 +1649,11 @@ def currentscape(
 
                     logger.info("Plotting currentscape for %s", name)
                     fig = plot_currentscape_fct(
-                        voltage, currents, updated_config, ions_data=ionic_concentrations, time=time
+                        voltage,
+                        currents,
+                        updated_config,
+                        ions_data=ionic_concentrations,
+                        time=time,
                     )
                     plt.close(fig)
                 except ModuleNotFoundError:

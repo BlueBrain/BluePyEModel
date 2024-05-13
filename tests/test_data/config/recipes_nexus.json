@@ -1,0 +1,15 @@
+{
+  "L5PC": {
+    "morph_path": "morphology",
+    "morphology": [
+      [
+        "C060114A5",
+        "C060114A5.asc"
+      ]
+    ],
+    "params": "config/nexus/EMC__emodel=L5PC.json",
+    "final": "config/nexus/EM__emodel=L5PC.json",
+    "pipeline_settings": "config/nexus/EMPS__emodel=L5PC.json",
+    "features": "config/nexus/FCC__emodel=L5PC.json"
+  }
+}

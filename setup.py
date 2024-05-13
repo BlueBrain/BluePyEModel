@@ -16,13 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import imp
-import sys
-
-from setuptools import setup, find_packages
-
-if sys.version_info < (3, 7):
-    sys.exit("Sorry, Python < 3.7 is not supported")
+from setuptools import find_packages, setup
 
 # Read the contents of the README file
 with open("README.rst", encoding="utf-8") as f:
@@ -34,10 +28,7 @@ EXTRA_LUIGI = [
     "luigi-tools>=0.0.12",
 ]
 
-EXTRA_TEST = [
-    "pytest>=6.2",
-    "dictdiffer>=0.8"
-]
+EXTRA_TEST = ["pytest>=6.2", "dictdiffer>=0.8"]
 
 EXTRA_DOC = [
     "graphviz",
@@ -55,16 +46,17 @@ EXTRA_NEXUS = [
 setup(
     name="bluepyemodel",
     use_scm_version={
-        'version_scheme': 'python-simplified-semver',
-        'local_scheme': 'no-local-version'
+        "version_scheme": "python-simplified-semver",
+        "local_scheme": "no-local-version",
     },
-    setup_requires=['setuptools_scm'],
+    setup_requires=["setuptools_scm"],
     author="Blue Brain Project, EPFL",
     author_email="",
     description="Blue Brain Python Electrical Modeling Pipeline",
     long_description=README,
     long_description_content_type="text/x-rst",
     license="Apache-2.0",
+    python_requires=">=3.8",
     install_requires=[
         "numpy",
         "scipy",
@@ -76,14 +68,14 @@ setup(
         "bluepyopt>=1.14.10",
         "bluepyefe>=2.2.0",
         "neurom>=3.0,<4.0",
-        "efel>=3.1",
+        "efel>=5.5.5",
         "configparser",
         "neuron>=8.0",
         "morph_tool>=2.8",
         "morphio",
         "fasteners>=0.16",
         "jinja2>=3.0.3",
-        "currentscape>=0.0.11"
+        "currentscape>=0.0.11",
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,
@@ -92,22 +84,23 @@ setup(
         "test": EXTRA_TEST,
         "nexus": EXTRA_NEXUS,
     },
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=("tests",)),
     include_package_data=True,
     keywords=[
-        'computational neuroscience',
-        'simulation',
-        'analysis',
-        'parameters',
-        'Blue Brain Project'],
+        "computational neuroscience",
+        "simulation",
+        "analysis",
+        "parameters",
+        "Blue Brain Project",
+    ],
     url="https://github.com/BlueBrain/BluePyEModel",
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: POSIX',
-        'Topic :: Scientific/Engineering',
-        'Programming Language :: Python :: 3',
-        'Topic :: Utilities',
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: POSIX",
+        "Topic :: Scientific/Engineering",
+        "Programming Language :: Python :: 3",
+        "Topic :: Utilities",
     ],
 )

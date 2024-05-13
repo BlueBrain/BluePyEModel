@@ -67,7 +67,7 @@ class EModel:
             passedValidation (bool or None): did the model go through validation and if yes,
                 did it pass it successfully (None: no validation, True: passed, False: didn't pass)
             seed (str): seed used during optimisation for this emodel.
-            emodel_metadata (str): metadata of the model (emodel name, etype, ttype, ...)
+            emodel_metadata (EModelMetadata): metadata of the model (emodel name, etype, ttype, ...)
         """
 
         self.emodel_metadata = emodel_metadata
@@ -106,9 +106,11 @@ class EModel:
         self.responses = {}
         self.evaluator = None
 
-    def copy_pdf_dependencies_to_new_path(self, seed):
+    def copy_pdf_dependencies_to_new_path(self, seed, overwrite=False):
         """Copy pdf dependencies to new path using allen notation"""
-        search_pdfs.copy_emodel_pdf_dependencies_to_new_path(self.emodel_metadata, seed)
+        search_pdfs.copy_emodel_pdf_dependencies_to_new_path(
+            self.emodel_metadata, seed, overwrite=overwrite
+        )
 
     def build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
@@ -127,9 +129,31 @@ class EModel:
         if scores_pdf:
             pdfs += [p for p in scores_pdf if p]
 
+        thumbnail_pdf = search_pdfs.search_figure_emodel_thumbnail(self.emodel_metadata, seed)
+        if thumbnail_pdf:
+            pdfs += [p for p in thumbnail_pdf if p]
+
         parameters_pdf = search_pdfs.search_figure_emodel_parameters(self.emodel_metadata)
         if parameters_pdf:
             pdfs += [p for p in parameters_pdf if p]
+
+        parameters_evo_pdf = search_pdfs.search_figure_emodel_parameters_evolution(
+            self.emodel_metadata, seed
+        )
+        if parameters_evo_pdf:
+            pdfs.append(parameters_evo_pdf)
+
+        all_parameters_evo_pdf = search_pdfs.search_figure_emodel_parameters_evolution(
+            self.emodel_metadata, seed=None
+        )
+        if all_parameters_evo_pdf:
+            pdfs.append(all_parameters_evo_pdf)
+
+        currentscape_pdfs = search_pdfs.search_figure_emodel_currentscapes(
+            self.emodel_metadata, seed
+        )
+        if currentscape_pdfs:
+            pdfs += [p for p in currentscape_pdfs if p]
 
         bAP_pdf = search_pdfs.search_figure_emodel_bAP(self.emodel_metadata, seed)
         if bAP_pdf:
@@ -155,7 +179,10 @@ class EModel:
                 "type": "Generation",
                 "activity": {
                     "type": "Activity",
-                    "followedWorkflow": {"type": "EModelWorkflow", "id": self.workflow_id},
+                    "followedWorkflow": {
+                        "type": "EModelWorkflow",
+                        "id": self.workflow_id,
+                    },
                 },
             }
         }
@@ -174,6 +201,6 @@ class EModel:
             "features": features_resource,
             "scoreValidation": scores_validation_resource,
             "passedValidation": self.passed_validation,
-            "nexus_distributions": pdf_dependencies,
+            "nexus_images": pdf_dependencies,
             "seed": self.seed,
         }

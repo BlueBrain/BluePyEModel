@@ -52,6 +52,7 @@ class NeuronModelConfiguration:
         available_mechanisms=None,
         available_morphologies=None,
         morph_modifiers=None,
+        extra_mech_ids=None,
     ):
         """Creates a model configuration, which includes the model parameters, distributions,
         mechanisms and a morphology.
@@ -82,13 +83,40 @@ class NeuronModelConfiguration:
             available_morphologies (list of str): list of the names of the available morphology in
                 the ``./morphology`` directory for the local access point or on Nexus for the
                 Nexus access point.
-            morph_modifiers (list): List of morphology modifiers. Each modifier has to be
-                informed by the path the file containing the modifier and the name of the
-                function. E.g:
+            morph_modifiers (list of str or list of list):
+                If str, name of the morph modifier to use from bluepyemodel.evaluation.modifiers.
+                If List of morphology modifiers. Each modifier is defined by a list
+                that includes the following elements:
+                1. The path to the file that contains the modifier.
+                2. The name of the function that applies the modifier.
+                3. Optionally, a "hoc_string" that represents the hoc code for the modifier.
+                For example, morph_modifiers could be defined as follows:
 
                     .. code-block::
 
-                        morph_modifiers = [["path_to_module", "name_of_function"], ...].
+                        morph_modifiers = [["path_to_module",
+                                            "name_of_function",
+                                            "hoc_string"], ...].
+
+                If the "hoc_string" is not provided, the system will search within
+                the specified module for a string that matches the function name appended
+                with "_hoc".
+                If ``None``, the default modifier will replace the axon with a tappered axon
+                initial segment (replace_axon_with_taper). If you do not wish to use any modifier,
+                set the present argument to ``[]``.
+                If ``["bluepyopt_replace_axon"]``, the replace_axon function from
+                bluepyopt.ephys.morphologies.NrnFileMorphology will be used
+                and no other morph modifiers will be used.
+            extra_mech_ids (list of 2-d tuples): extra nexus ids and types to add to
+                related nexus ids. Must have shape:
+
+                    .. code-block::
+
+                        extra_mech_ids = [
+                            ("id1", "type1"),
+                            ("id2", "type2"),
+                            ...
+                        ]
         """
 
         if isinstance(parameters, dict):
@@ -130,6 +158,7 @@ class NeuronModelConfiguration:
         self.available_morphologies = available_morphologies
 
         self.morph_modifiers = morph_modifiers
+        self.extra_mech_ids = extra_mech_ids
 
     @property
     def mechanism_names(self):
@@ -160,10 +189,17 @@ class NeuronModelConfiguration:
 
         return locations
 
-    def init_from_dict(self, configuration_dict, auto_mechanism=False):
+    def init_from_dict(self, configuration_dict, morphology, auto_mechanism=False):
         """Instantiate the object from its dictionary form"""
 
         if "distributions" in configuration_dict:
+            # empty the list of distributions
+            if self.distributions and configuration_dict["distributions"]:
+                # remove default uniform distribution if added at
+                # https://github.com/BlueBrain/BluePyEModel/blob/
+                # 15b8dd2824453a8bf097b2ede13dd7ecf5d07d05/bluepyemodel/access_point/local.py#L399
+                logger.warning("Removing %s pre-existing distribution(s)", len(self.distributions))
+                self.distributions = []
             for distribution in configuration_dict["distributions"]:
                 self.add_distribution(
                     distribution["name"],
@@ -186,15 +222,17 @@ class NeuronModelConfiguration:
         if "mechanisms" in configuration_dict:
             for mechanism in configuration_dict["mechanisms"]:
                 self.add_mechanism(
-                    mechanism["name"],
-                    mechanism["location"],
-                    mechanism.get("stochastic", None),
-                    mechanism.get("version", None),
-                    mechanism.get("temperature", None),
-                    mechanism.get("ljp_corrected", None),
+                    mechanism_name=mechanism["name"],
+                    locations=mechanism["location"],
+                    stochastic=mechanism.get("stochastic", None),
+                    version=mechanism.get("version", None),
+                    temperature=mechanism.get("temperature", None),
+                    ljp_corrected=mechanism.get("ljp_corrected", None),
+                    id=mechanism.get("id", None),
                 )
 
-        self.morphology = MorphologyConfiguration(**configuration_dict["morphology"])
+        morphology_params = {**configuration_dict["morphology"], **morphology}
+        self.morphology = MorphologyConfiguration(**morphology_params)
 
     def init_from_legacy_dict(self, parameters, morphology):
         """Instantiate the object from its legacy dictionary form"""
@@ -373,6 +411,7 @@ class NeuronModelConfiguration:
         temperature=None,
         ljp_corrected=None,
         auto_parameter=False,
+        id=None,
     ):
         """Add a mechanism to the configuration. This function should rarely be called directly as
         mechanisms are added automatically when using add_parameters. But it might be needed if a
@@ -388,6 +427,7 @@ class NeuronModelConfiguration:
             ljp_corrected (bool): whether the mechanims is ljp corrected
             auto_parameter (bool): if True, will automatically add the parameters of the mechanism
             if they are known.
+            id (str): Nexus ID of the mechanism.
         """
 
         locations = self._format_locations(locations)
@@ -419,6 +459,7 @@ class NeuronModelConfiguration:
                 temperature=temperature,
                 ljp_corrected=ljp_corrected,
                 parameters=mechanism_parameters,
+                id=id,
             )
 
             # Check if mech is not already part of the configuration
@@ -574,6 +615,12 @@ class NeuronModelConfiguration:
                 uses.append({"id": m.id, "type": "SubCellularModelScript"})
                 mechs_ids.add(m.id)
 
+        if self.extra_mech_ids is not None:
+            for mech_id, mech_type in self.extra_mech_ids:
+                if mech_id not in mechs_ids:
+                    uses.append({"id": mech_id, "type": mech_type})
+                    mechs_ids.add(mech_id)
+
         return {"uses": uses}
 
     def as_dict(self):
@@ -610,5 +657,12 @@ class NeuronModelConfiguration:
 
         str_form += "Morphology:\n"
         str_form += f"   {self.morphology.as_dict()}\n"
+
+        str_form += "Morphology modifiers:\n"
+        if isinstance(self.morph_modifiers, list):
+            for morph_modifier in self.morph_modifiers:
+                str_form += f"   {morph_modifier}\n"
+        else:
+            str_form += f"   {self.morph_modifiers}\n"
 
         return str_form

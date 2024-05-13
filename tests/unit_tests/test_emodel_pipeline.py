@@ -15,13 +15,10 @@ limitations under the License.
 """
 
 import pytest
-from pathlib import Path
 
-from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 from bluepyemodel.access_point.local import LocalAccessPoint
-
-TEST_ROOT = Path(__file__).parents[1]
-DATA = TEST_ROOT / "test_data"
+from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
+from tests.utils import DATA
 
 
 @pytest.fixture
@@ -31,8 +28,8 @@ def pipeline():
         emodel="cADpyr_L5TPC",
         recipes_path=DATA / "config/recipes.json",
         ttype="test",
-        species='mouse',
-        brain_region='SSCX'
+        species="mouse",
+        brain_region="SSCX",
     )
 
     pipe.access_point.emodel_dir = DATA
@@ -45,13 +42,13 @@ def test_init(pipeline):
     with pytest.raises(
         ValueError,
         match="Attempted to set a legacy variable. "
-        "This variable should not be modified in new code."
+        "This variable should not be modified in new code.",
     ):
         _ = EModel_pipeline(
             emodel="cADpyr_L5TPC",
             recipes_path=DATA / "config/recipes.json",
             ttype="test",
-            species='mouse',
-            brain_region='SSCX',
-            data_access_point="nexus"
+            species="mouse",
+            brain_region="SSCX",
+            data_access_point="nexus",
         )

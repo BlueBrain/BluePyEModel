@@ -1,5 +1,5 @@
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2024, EPFL/Blue Brain Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,31 +22,28 @@ from dictdiffer import diff
 from tests.utils import DATA
 
 
-def test_get_morphologies(db):
-    morphology = db.get_morphologies()
+def test_get_morphologies(db_from_nexus):
+    morphology = db_from_nexus.get_morphologies()
     assert morphology["name"] == "C060114A5"
     assert Path(morphology["path"]).name == "C060114A5.asc"
 
 
-def test_get_available_morphologies(db):
-    names = db.get_available_morphologies()
+def test_get_available_morphologies(db_from_nexus):
+    names = db_from_nexus.get_available_morphologies()
     assert len(names) == 1
     assert list(names)[0] == "C060114A5"
 
 
-def test_get_recipes(db):
-    recipes = db.get_recipes()
-    # json.dump(recipes, open(DATA / "test_recipes.json", "w"))
-    expected_recipes = json.load(open(DATA / "test_recipes.json", "r"))
+def test_get_recipes(db_from_nexus, emodel_dir):
+    recipes = db_from_nexus.get_recipes()
+    expected_recipes = json.load(open(db_from_nexus.recipes_path, "r"))["L5PC"]
     assert list(diff(recipes, expected_recipes)) == []
 
 
-def test_get_model_configuration(db):
-
-    configuration = db.get_model_configuration()
+def test_get_model_configuration(db_from_nexus):
+    configuration = db_from_nexus.get_model_configuration()
 
     expected_parameters = json.load(open(DATA / "test_parameters.json", "r"))
-    expected_mechanisms = json.load(open(DATA / "test_mechanisms.json", "r"))
 
     for p in configuration.parameters:
         assert p.location in expected_parameters["parameters"]
@@ -71,27 +68,30 @@ def test_get_model_configuration(db):
     ]
 
 
-def test_get_final(db):
-    final = db.get_final()
-    assert "cADpyr_L5TPC" in final
-    assert "parameters" in final["cADpyr_L5TPC"] or "params" in final["cADpyr_L5TPC"]
+def test_get_final_content(db_from_nexus):
+    final = db_from_nexus.get_final_content()
+    assert "L5PC" in final
+    assert "parameters" in final["L5PC"]
 
 
-def test_load_pipeline_settings(db):
-    assert db.pipeline_settings.path_extract_config == "tests/test_data/config/config_dict.json"
-    assert db.pipeline_settings.validation_protocols == ["APWaveform_140"]
+def test_load_pipeline_settings(db_from_nexus):
+    assert (
+        db_from_nexus.pipeline_settings.path_extract_config
+        == "config/extract_config/L5PC_config.json"
+    )
+    assert db_from_nexus.pipeline_settings.validation_protocols == ["sAHP_220"]
 
 
-def test_get_model_name_for_final(db):
-    db.emodel_metadata.iteration = ""
-    assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
-    db.emodel_metadata.iteration = None
-    assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__42"
-    db.emodel_metadata.iteration = "hash"
-    assert db.get_model_name_for_final(seed=42) == "cADpyr_L5TPC__hash__42"
+def test_get_model_name_for_final(db_from_nexus):
+    db_from_nexus.emodel_metadata.iteration = ""
+    assert db_from_nexus.get_model_name_for_final(seed=42) == "L5PC__42"
+    db_from_nexus.emodel_metadata.iteration = None
+    assert db_from_nexus.get_model_name_for_final(seed=42) == "L5PC__42"
+    db_from_nexus.emodel_metadata.iteration = "hash"
+    assert db_from_nexus.get_model_name_for_final(seed=42) == "L5PC__hash__42"
 
 
-def test_get_ion_currents_concentrations(db):
+def test_get_ion_currents_concentrations(db_from_nexus):
     expected_ion_currents = {
         "ica_Ca_HVA2",
         "ica_Ca_LVAst",
@@ -109,6 +109,6 @@ def test_get_ion_currents_concentrations(db):
         "ki",
         "nai",
     }
-    ion_currents, ionic_concentrations = db.get_ion_currents_concentrations()
+    ion_currents, ionic_concentrations = db_from_nexus.get_ion_currents_concentrations()
     assert set(ion_currents) == expected_ion_currents
     assert set(ionic_concentrations) == expected_ionic_concentrations

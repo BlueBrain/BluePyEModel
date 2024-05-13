@@ -139,9 +139,11 @@ def export_emodels_sonata(
     seeds=None,
     map_function=map,
     new_emodel_name=None,
+    new_metadata=None,
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will
-    contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model."""
+    contain a sonata nodes.h5 file, the morphology of the model and a hoc version of the model.
+    """
 
     cell_evaluator = get_evaluator_from_access_point(
         access_point, include_validation_protocols=True
@@ -172,6 +174,8 @@ def export_emodels_sonata(
     cell_model = cell_evaluator.cell_model
 
     for mo in emodels:
+        if new_metadata:
+            mo.emodel_metadata = new_metadata
         if not cell_model.morphology.morph_modifiers:  # Turn [] into None
             cell_model.morphology.morph_modifiers = None
         _export_model_sonata(cell_model, mo, output_dir=None, new_emodel_name=new_emodel_name)
@@ -207,6 +211,7 @@ def export_emodels_hoc(
     only_best=True,
     seeds=None,
     new_emodel_name=None,
+    new_metadata=None,
 ):
     """Export a set of emodels to a set of folder named after them. Each folder will contain a hoc
     version of the model."""
@@ -232,6 +237,8 @@ def export_emodels_hoc(
     cell_model = cell_evaluator.cell_model
 
     for mo in emodels:
+        if new_metadata:
+            mo.emodel_metadata = new_metadata
         if not cell_model.morphology.morph_modifiers:  # Turn [] into None
             cell_model.morphology.morph_modifiers = None
         _export_emodel_hoc(cell_model, mo, output_dir=None, new_emodel_name=new_emodel_name)

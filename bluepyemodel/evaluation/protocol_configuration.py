@@ -93,11 +93,21 @@ class ProtocolConfiguration:
         if isinstance(recordings_from_config, dict):
             recordings_from_config = [recordings_from_config]
 
-        self.recordings = []
-        self.recordings_from_config = []
+        self.recordings, self.recordings_from_config = self.init_recordings(
+            recordings_from_config, ion_variables
+        )
+
+        self.validation = validation
+        self.protocol_type = protocol_type
+
+        self.stochasticity = stochasticity
+
+    def init_recordings(self, recordings_from_config=None, ion_variables=None):
+        new_recordings = []
+        new_recordings_from_config = []
         for recording in recordings_from_config:
-            self.recordings.append(recording)
-            self.recordings_from_config.append(recording)
+            new_recordings.append(recording)
+            new_recordings_from_config.append(recording)
 
             if ion_variables is not None:
                 for ion in ion_variables:
@@ -112,12 +122,9 @@ class ProtocolConfiguration:
 
                     new_rec["name"] = ".".join(new_rec["name"].split(".")[:-1] + [ion])
 
-                    self.recordings.append(new_rec)
+                    new_recordings.append(new_rec)
 
-        self.validation = validation
-        self.protocol_type = protocol_type
-
-        self.stochasticity = stochasticity
+        return new_recordings, new_recordings_from_config
 
     def as_dict(self):
         """Dictionary form"""
