@@ -10,6 +10,7 @@ from itertools import chain
 
 import pandas
 from kgforge.core import Resource
+
 from bluepyemodel.access_point.access_point import DataAccessPoint
 from bluepyemodel.access_point.forge_access_point import NEXUS_PROJECTS_TRACES
 from bluepyemodel.access_point.forge_access_point import AccessPointException

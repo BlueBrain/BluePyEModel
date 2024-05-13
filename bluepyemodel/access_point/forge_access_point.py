@@ -14,6 +14,7 @@ from kgforge.core import KnowledgeGraphForge
 from kgforge.core import Resource
 from kgforge.core.commons.strategies import ResolvingStrategy
 from kgforge.specializations.resources import Dataset
+
 from bluepyemodel.efeatures_extraction.targets_configuration import TargetsConfiguration
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.emodel_pipeline.emodel_script import EModelScript
