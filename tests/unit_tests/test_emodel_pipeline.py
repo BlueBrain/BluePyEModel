@@ -17,6 +17,7 @@ limitations under the License.
 import pytest
 
 from bluepyemodel.access_point.local import LocalAccessPoint
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 from tests.utils import DATA
 
@@ -37,12 +38,15 @@ def pipeline():
     return pipe
 
 
-def test_init(pipeline):
+def test_init_local(pipeline):
     assert isinstance(pipeline.access_point, LocalAccessPoint)
+
+
+def test_init_nexus_missing_org_proj():
     with pytest.raises(
         ValueError,
-        match="Attempted to set a legacy variable. "
-        "This variable should not be modified in new code.",
+        match= "When using the Nexus access point, you need to provide the Nexus organisation "
+                "and project.",
     ):
         _ = EModel_pipeline(
             emodel="cADpyr_L5TPC",

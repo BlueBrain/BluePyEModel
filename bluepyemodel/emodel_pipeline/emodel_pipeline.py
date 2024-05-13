@@ -58,7 +58,7 @@ class EModel_pipeline:
         recipes_path=None,
         use_ipyparallel=None,
         use_multiprocessing=None,
-        data_access_point=None,
+        data_access_point="local",
         nexus_endpoint="staging",
         forge_path=None,
         forge_ontology_path=None,
@@ -145,6 +145,12 @@ class EModel_pipeline:
         elif nexus_endpoint == "staging":
             endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
 
+        if data_access_point == "nexus" and not (nexus_organisation and nexus_project):
+            raise ValueError(
+                "When using the Nexus access point, you need to provide the Nexus organisation "
+                "and project."
+            )
+
         self.access_point = get_access_point(
             emodel=emodel,
             etype=etype,
@@ -156,7 +162,6 @@ class EModel_pipeline:
             morph_class=morph_class,
             synapse_class=synapse_class,
             layer=layer,
-            access_point="local",
             recipes_path=recipes_path,
             final_path="final.json",
             organisation=nexus_organisation,
