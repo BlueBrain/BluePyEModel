@@ -1199,7 +1199,7 @@ class PlotOptimisation(WorkflowTask):
         """ """
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
 
-        fname = f"{Path(checkpoint_path).stem}.pdf"
+        fname = f"{Path(checkpoint_path).stem}__optimisation.pdf"
         return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
