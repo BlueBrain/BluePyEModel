@@ -37,4 +37,4 @@ sleep 20
 srun ipengine --profile=${IPYTHON_PROFILE} --location=$(hostname) &
 sleep 20
 
-python pipeline.py --use_ipyparallel --step='export_hoc' --emodel=${OPT_EMODEL} --seed=${OPT_SEED}
+python pipeline.py --use_ipyparallel --step='export_hoc' --emodel=${OPT_EMODEL} --seed=${OPT_SEED} --githash=${GITHASH}
