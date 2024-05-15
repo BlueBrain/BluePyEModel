@@ -1333,6 +1333,7 @@ class NexusAccessPoint(DataAccessPoint):
             modelscript_id = resource.id
             workflow.add_emodel_script_id(modelscript_id)
 
+        time.sleep(self.sleep_time)
         self.store_or_update_emodel_workflow(workflow)
 
     def store_emodels_hoc(
