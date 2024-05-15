@@ -17,8 +17,8 @@ limitations under the License.
 """
 
 import csv
+from importlib import resources
 
-import importlib_resources as resources
 import numpy as np
 
 

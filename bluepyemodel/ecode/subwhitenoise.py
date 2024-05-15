@@ -17,8 +17,8 @@ limitations under the License.
 """
 
 import logging
+from importlib import resources
 
-import importlib_resources as resources
 import numpy
 
 from bluepyemodel.ecode.stimulus import BPEM_stimulus
