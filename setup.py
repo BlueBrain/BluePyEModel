@@ -72,7 +72,8 @@ setup(
         "morphio",
         "fasteners>=0.16",
         "jinja2>=3.0.3",
-        "currentscape>=0.0.11"
+        "currentscape>=0.0.11",
+        "importlib_resources>=5.0.0",
     ],
     extras_require={
         "luigi": EXTRA_LUIGI,
