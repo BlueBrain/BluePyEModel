@@ -18,8 +18,8 @@ limitations under the License.
 
 import csv
 
-import numpy as np
 import importlib_resources as resources
+import numpy as np
 
 
 def get_dendritic_data_filepath(data_type):
@@ -32,10 +32,11 @@ def get_dendritic_data_filepath(data_type):
         ValueError if data_type is not 'ISI_CV' nor 'rheobase'
     """
     if data_type == "ISI_CV":
-        return resources('bluepyemodel') / 'data' / 'ISI_CV_Shai2015.csv'
+        return resources.files("bluepyemodel").joinpath("data", "ISI_CV_Shai2015.csv")
     if data_type == "rheobase":
-        return (resources('bluepyemodel') / 'data' /
-                "spike_rheobase_pA_BeaulieuLaroche2021.csv")
+        return resources.files("bluepyemodel").joinpath(
+            "data", "spike_rheobase_pA_BeaulieuLaroche2021.csv"
+        )
 
     raise ValueError(f"read_data expects 'ISI_CV' or 'rheobase' but got {data_type}")
 

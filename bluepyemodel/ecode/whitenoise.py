@@ -18,8 +18,8 @@ limitations under the License.
 
 import logging
 
-import numpy
 import importlib_resources as resources
+import numpy
 
 from bluepyemodel.ecode.noise import NoiseMixin
 
@@ -55,8 +55,9 @@ class WhiteNoise(NoiseMixin):
         if data_filepath is not None:
             series = numpy.loadtxt(data_filepath)
         else:
-            series_file = resources('bluepyemodel') / 'data' / 'WhiteNoise.txt'
-            series = numpy.loadtxt(series_file)
+            resource = resources.files("bluepyemodel").joinpath("data", "WhiteNoise.txt")
+            with open(resource, "r") as f:
+                series = numpy.loadtxt(f)
 
         self.current_series = series[:, 1]
         self.time_series = series[:, 0]

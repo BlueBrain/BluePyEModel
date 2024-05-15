@@ -93,6 +93,8 @@ def parse_legacy_checkpoint_path(path):
             "iteration": None,
             "ttype": None,
         }
+    else:
+        raise ValueError(f"Invalid checkpoint path: {path}")
 
     return checkpoint_metadata
 

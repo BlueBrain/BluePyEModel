@@ -18,8 +18,8 @@ limitations under the License.
 
 import logging
 
-import numpy
 import importlib_resources as resources
+import numpy
 
 from bluepyemodel.ecode.stimulus import BPEM_stimulus
 
@@ -62,8 +62,9 @@ class SubWhiteNoise(BPEM_stimulus):
         if data_filepath is not None:
             series = numpy.loadtxt(data_filepath)
         else:
-            series_file = resources('bluepyemodel') / 'data' / 'SubWhiteNoise.txt'
-            series = numpy.loadtxt(series_file)
+            resource = resources.files("bluepyemodel").joinpath("data", "SubWhiteNoise.txt")
+            with open(resource, "r") as f:
+                series = numpy.loadtxt(f)
 
         self.current_series = series[:, 1]
         self.time_series = series[:, 0]
