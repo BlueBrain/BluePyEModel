@@ -72,6 +72,9 @@ def get_access_point(access_point, emodel, **kwargs):
     if access_point == "nexus":
         from bluepyemodel.access_point.nexus import NexusAccessPoint
 
+        if not kwargs.get("project"):
+            raise ValueError("Nexus project name is required for Nexus access point.")
+
         return NexusAccessPoint(
             emodel=emodel,
             etype=etype,

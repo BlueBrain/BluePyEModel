@@ -145,12 +145,6 @@ class EModel_pipeline:
         elif nexus_endpoint == "staging":
             endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
 
-        if data_access_point == "nexus" and not (nexus_organisation and nexus_project):
-            raise ValueError(
-                "When using the Nexus access point, you need to provide the Nexus organisation "
-                "and project."
-            )
-
         self.access_point = get_access_point(
             emodel=emodel,
             etype=etype,
