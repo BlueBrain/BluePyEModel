@@ -51,7 +51,7 @@ seclist_to_sec = {
     "myelinated": "myelin",
 }
 
-SUPPORTED_MORPHOLOGY_EXTENSIONS = (".asc", ".swc")
+SUPPORTED_MORPHOLOGY_EXTENSIONS = (".asc", ".swc", ".ASC", ".SWC")
 
 
 class LocalAccessPoint(DataAccessPoint):
@@ -452,8 +452,12 @@ class LocalAccessPoint(DataAccessPoint):
         patterns = ["*" + ext for ext in SUPPORTED_MORPHOLOGY_EXTENSIONS]
         return {morph_file.stem for pattern in patterns for morph_file in morph_dir.glob(pattern)}
 
-    def get_model_configuration(self):
-        """Get the configuration of the model, including parameters, mechanisms and distributions"""
+    def get_model_configuration(self, skip_get_available_morph=False):
+        """Get the configuration of the model, including parameters, mechanisms and distributions
+
+        Args:
+            skip_get_available_morph (bool): only used in nexus access point.
+        """
 
         configuration = NeuronModelConfiguration(
             available_mechanisms=self.get_available_mechanisms(),
@@ -477,7 +481,7 @@ class LocalAccessPoint(DataAccessPoint):
             configuration.init_from_dict(parameters, self.get_morphologies())
 
         configuration.mapping_multilocation = self.get_recipes().get("multiloc_map", None)
-
+        configuration.morph_modifiers = self.get_recipes().get("morph_modifiers", None)
         return configuration
 
     def store_targets_configuration(self, configuration):
@@ -690,9 +694,9 @@ class LocalAccessPoint(DataAccessPoint):
                 models.append(self.format_emodel_data(mod_data))
 
         filtered_models = []
-        api_metadata = self.emodel_metadata.for_resource()
+        api_metadata = self.emodel_metadata.as_dict()
         for m in models:
-            model_metadata = m.emodel_metadata.for_resource()
+            model_metadata = m.emodel_metadata.as_dict()
             for f, v in api_metadata.items():
                 if f in model_metadata and v != model_metadata[f]:
                     break

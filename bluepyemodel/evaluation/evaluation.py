@@ -202,7 +202,8 @@ def compute_responses(
 
     else:
         logger.warning(
-            "In compute_responses, no emodel for %s", access_point.emodel_metadata.emodel
+            "In compute_responses, no emodel for %s",
+            access_point.emodel_metadata.emodel,
         )
 
     return emodels

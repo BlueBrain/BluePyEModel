@@ -48,7 +48,9 @@ def configure_model(
     configurator.new_configuration(use_gene_data=use_gene_data)
 
     configurator.configuration.select_morphology(
-        morphology_name, morphology_path=morphology_path, morphology_format=morphology_format
+        morphology_name,
+        morphology_path=morphology_path,
+        morphology_format=morphology_format,
     )
 
     configurator.save_configuration()

@@ -52,7 +52,12 @@ logger = logging.getLogger(__name__)
 soma_loc = NrnSeclistCompLocation(name="soma", seclist_name="somatic", sec_index=0, comp_x=0.5)
 ais_loc = NrnSeclistCompLocation(name="ais", seclist_name="axonal", sec_index=0, comp_x=0.5)
 
-PRE_PROTOCOLS = ["SearchHoldingCurrent", "SearchThresholdCurrent", "RMPProtocol", "RinProtocol"]
+PRE_PROTOCOLS = [
+    "SearchHoldingCurrent",
+    "SearchThresholdCurrent",
+    "RMPProtocol",
+    "RinProtocol",
+]
 LEGACY_PRE_PROTOCOLS = ["RMP", "Rin", "RinHoldcurrent", "Main", "ThresholdDetection"]
 
 seclist_to_sec = {
@@ -531,7 +536,10 @@ def define_protocols(
 
 
 def define_efeatures(
-    fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+    fitness_calculator_configuration,
+    include_validation_protocols,
+    protocols,
+    efel_settings,
 ):
     """Instantiate several Protocols"""
 
@@ -601,7 +609,10 @@ def define_optimisation_protocol(
     )
 
     efeatures = define_efeatures(
-        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        protocols,
+        efel_settings,
     )
 
     protocol_runner = ProtocolRunner(protocols)
@@ -756,7 +767,10 @@ def define_threshold_based_optimisation_protocol(
     )
 
     efeatures = define_efeatures(
-        fitness_calculator_configuration, include_validation_protocols, protocols, efel_settings
+        fitness_calculator_configuration,
+        include_validation_protocols,
+        protocols,
+        efel_settings,
     )
 
     # Create the special protocols for local stimulation
@@ -888,7 +902,9 @@ def get_simulator(stochasticity, cell_model, dt=None, mechanisms_directory=None,
         for mechanism in cell_model.mechanisms:
             if not mechanism.deterministic:
                 return NrnSimulator(
-                    dt=dt or 0.025, cvode_active=False, mechanisms_directory=mechs_parent_dir
+                    dt=dt or 0.025,
+                    cvode_active=False,
+                    mechanisms_directory=mechs_parent_dir,
                 )
 
         logger.warning(
@@ -992,7 +1008,7 @@ def create_evaluator(
         fitness_protocols=fitness_protocols,
         fitness_calculator=fitness_calculator,
         sim=simulator,
-        use_params_for_seed=True,
+        use_params_for_seed=pipeline_settings.use_params_for_seed,
         timeout=timeout,
     )
     cell_eval.prefix = cell_model.name

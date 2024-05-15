@@ -144,7 +144,8 @@ class IPyParallelTask(IPyParallelExclusive):
                     setattr(self, attr, json.dumps(dict(getattr(self, attr))))
 
                 if getattr(self, attr) is True:
-                    self.args = " ".join([self.args, "--" + attr])  # pylint:disable=W0201
+                    # pylint:disable=W0201
+                    self.args = " ".join([self.args, "--" + attr])
                 elif getattr(self, attr) is not False and getattr(self, attr) is not None:
                     # be sure that lists and dicts are inside ' '
                     # so that argparse detect them as one argument
@@ -152,7 +153,11 @@ class IPyParallelTask(IPyParallelExclusive):
                     # inside quotes (') in command from bbp-workflow
                     # single quotes would mess that up
                     self.args = " ".join(  # pylint:disable=W0201
-                        [self.args, "--" + attr, "'\\''" + str(getattr(self, attr)) + "'\\''"]
+                        [
+                            self.args,
+                            "--" + attr,
+                            "'\\''" + str(getattr(self, attr)) + "'\\''",
+                        ]
                     )
 
         # append API-related arguments

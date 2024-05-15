@@ -96,7 +96,12 @@ def copy_hocs_to_new_output_path(emodel, output_base_dir):
 
 
 def select_emodels(
-    emodel_name, emodels, only_validated=False, only_best=True, seeds=None, iteration=None
+    emodel_name,
+    emodels,
+    only_validated=False,
+    only_best=True,
+    seeds=None,
+    iteration=None,
 ):
     if not emodels:
         logger.warning("In export_emodels_nexus, no emodel for %s", emodel_name)
@@ -112,7 +117,9 @@ def select_emodels(
         emodels = [e for e in emodels if e.seed in seeds]
         if not emodels:
             logger.warning(
-                "In export_emodels_nexus, no emodel for %s and seeds %s", emodel_name, seeds
+                "In export_emodels_nexus, no emodel for %s and seeds %s",
+                emodel_name,
+                seeds,
             )
             return []
 
@@ -120,7 +127,8 @@ def select_emodels(
         emodels = [e for e in emodels if e.passed_validation]
         if not emodels:
             logger.warning(
-                "In export_emodels_nexus, no emodel for %s that passed validation", emodel_name
+                "In export_emodels_nexus, no emodel for %s that passed validation",
+                emodel_name,
             )
             return []
 

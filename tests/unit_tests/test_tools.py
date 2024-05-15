@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 import pytest
 
 from bluepyemodel.tools.mechanisms import get_mechanism_currents
@@ -100,7 +99,12 @@ def test_are_same_protocol():
 def test_select_rec_for_thumbnail():
     """Test for select_rec_for_thumbnail function."""
     # normal case: select step protocol with lowest positive amplitude
-    rec_names = ["IDrest_200.soma.v", "IDrest_-40.soma.v", "IDrest_130.soma.v", "sAHP_40.soma.v"]
+    rec_names = [
+        "IDrest_200.soma.v",
+        "IDrest_-40.soma.v",
+        "IDrest_130.soma.v",
+        "sAHP_40.soma.v",
+    ]
     assert select_rec_for_thumbnail(rec_names) == "IDrest_130.soma.v"
 
     # empty recordings case
@@ -118,9 +122,10 @@ def test_select_rec_for_thumbnail():
     # additional step protocol names case
     rec_names = ["IDrest_200.soma.v", "MyStep_100.soma.v"]
     other_step_prot_names = ["MyStep", "Test"]
-    assert select_rec_for_thumbnail(
-        rec_names, additional_step_prots=other_step_prot_names
-    ) == "MyStep_100.soma.v"
+    assert (
+        select_rec_for_thumbnail(rec_names, additional_step_prots=other_step_prot_names)
+        == "MyStep_100.soma.v"
+    )
 
     # thumbnail_rec case
     rec_names = ["IDrest_130.soma.v", "sAHP_40.soma.v"]
@@ -128,7 +133,6 @@ def test_select_rec_for_thumbnail():
 
     # thumbnail_rec not in rec_names:
     rec_names = ["sAHP_40.soma.v", "IDrest_130.soma.v"]
-    assert select_rec_for_thumbnail(
-        rec_names, thumbnail_rec="sAHP_20.soma.v"
-    ) == "IDrest_130.soma.v"
-
+    assert (
+        select_rec_for_thumbnail(rec_names, thumbnail_rec="sAHP_20.soma.v") == "IDrest_130.soma.v"
+    )

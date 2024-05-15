@@ -79,7 +79,7 @@ def test_get_final(db):
 
 def test_load_pipeline_settings(db):
     assert db.pipeline_settings.path_extract_config == "tests/test_data/config/config_dict.json"
-    assert db.pipeline_settings.validation_protocols ==  ["APWaveform_140"]
+    assert db.pipeline_settings.validation_protocols == ["APWaveform_140"]
 
 
 def test_get_model_name_for_final(db):
