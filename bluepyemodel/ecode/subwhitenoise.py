@@ -62,7 +62,9 @@ class SubWhiteNoise(BPEM_stimulus):
         if data_filepath is not None:
             series = numpy.loadtxt(data_filepath)
         else:
-            resource = resources.files("bluepyemodel").joinpath("data", "SubWhiteNoise.txt")
+            resource = resources.files("bluepyemodel").joinpath(
+                "ecode", "data", "SubWhiteNoise.txt"
+            )
             with open(resource, "r") as f:
                 series = numpy.loadtxt(f)
 

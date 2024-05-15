@@ -55,7 +55,7 @@ class NoiseOU3(NoiseMixin):
         if data_filepath is not None:
             series = numpy.loadtxt(data_filepath)
         else:
-            resource = resources.files("bluepyemodel").joinpath("data", "NoiseOU3.txt")
+            resource = resources.files("bluepyemodel").joinpath("ecode", "data", "NoiseOU3.txt")
             with open(resource, "r") as f:
                 series = numpy.loadtxt(f)
 
