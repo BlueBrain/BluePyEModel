@@ -56,7 +56,7 @@ setup(
     long_description=README,
     long_description_content_type="text/x-rst",
     license="Apache-2.0",
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     install_requires=[
         "numpy",
         "scipy",

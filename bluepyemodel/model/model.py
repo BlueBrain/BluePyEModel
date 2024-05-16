@@ -68,6 +68,7 @@ def define_distributions(distributions_definition, morphology=None):
     Args:
         distributions_definition (list): definitions of the distributions
     """
+    hotspot_begin, hotspot_end = None, None
     if any(definition.name == "step" for definition in distributions_definition):
         hotspot_begin, hotspot_end = get_hotspot_location(morphology.morphology_path)
     distributions = collections.OrderedDict()
