@@ -155,7 +155,7 @@ class NexusForgeAccessPoint:
         key = f"{self.endpoint}|{self.bucket}|{self.forge_path}"
         if key in self.__class__.forges:
             expiry, forge = self.__class__.forges[key]
-            if expiry > datetime.utcnow():
+            if expiry > datetime.now(timezone.utc):
                 return forge
 
         token_exp_timestamp = self.refresh_token()
@@ -167,7 +167,7 @@ class NexusForgeAccessPoint:
         )
 
         self.__class__.forges[key] = (
-            datetime.utcfromtimestamp(token_exp_timestamp) - timedelta(minutes=15),
+            datetime.fromtimestamp(token_exp_timestamp, timezone.utc) - timedelta(minutes=15),
             forge,
         )
         return forge
