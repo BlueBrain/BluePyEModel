@@ -29,7 +29,8 @@ class MEModel(EModelMixin):
         emodel_metadata=None,
         emodel_id=None,
         morphology_id=None,
-        validated_by_user=False,
+        validated=False,
+        status="initialized"
     ):
         """Init
 
@@ -38,7 +39,8 @@ class MEModel(EModelMixin):
             emodel_metadata (EModelMetadata): metadata of the model (emodel name, etype, ttype, ...)
             emodel_id (str): nexus if of the e-model used in this me-model
             morphology_id (str): nexus id of the morphology used in this me-model
-            validated_by_user (bool): whether the MEModel has been validated by user
+            validated (bool): whether the MEModel has been validated by user
+            status (str): whether the analysis has run or not. Can be "initialized" or "done".
         """
 
         self.emodel_metadata = emodel_metadata
@@ -47,7 +49,8 @@ class MEModel(EModelMixin):
         self.emodel_id = emodel_id
         self.morphology_id = morphology_id
 
-        self.validated_by_user = validated_by_user
+        self.validated = validated
+        self.status = status
 
     def get_related_nexus_ids(self):
         uses = []
@@ -65,5 +68,6 @@ class MEModel(EModelMixin):
             "seed": self.seed,
             "emodel_id": self.emodel_id,
             "morphology_id": self.morphology_id,
-            "validated_by_user": self.validated_by_user,
+            "validated": self.validated,
+            "status": self.status,
         }
