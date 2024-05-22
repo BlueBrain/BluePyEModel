@@ -61,11 +61,7 @@ def define_validation_function(access_point):
     return validation_function
 
 
-def validate(
-    access_point,
-    mapper,
-    preselect_for_validation=False
-):
+def validate(access_point, mapper, preselect_for_validation=False):
     """Compute the scores and traces for the optimisation and validation
     protocols and perform validation.
 
