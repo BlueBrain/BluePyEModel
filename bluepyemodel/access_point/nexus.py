@@ -423,6 +423,7 @@ class NexusAccessPoint(DataAccessPoint):
         self.download_mechanisms(configuration.mechanisms, any_downloaded)
 
         configuration.morphology.path = morph_path
+        logger.debug("Using morphology: %s", configuration.morphology.path)
         configuration.available_mechanisms = self.get_available_mechanisms()
         if not skip_get_available_morph:
             configuration.available_morphologies = self.get_available_morphologies()
