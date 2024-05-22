@@ -61,10 +61,7 @@ def define_validation_function(access_point):
     return validation_function
 
 
-def validate(
-    access_point,
-    mapper,
-):
+def validate(access_point, mapper, preselect_for_validation=False):
     """Compute the scores and traces for the optimisation and validation
     protocols and perform validation.
 
@@ -72,6 +69,7 @@ def validate(
         access_point (DataAccessPoint): data access point.
         mapper (map): used to parallelize the evaluation of the
             individual in the population.
+        preselect_for_validation (bool): True to not re-run already validated models
 
     Returns:
         emodels (list): list of emodels.
@@ -86,7 +84,7 @@ def validate(
         access_point,
         cell_evaluator=cell_evaluator,
         map_function=mapper,
-        preselect_for_validation=True,
+        preselect_for_validation=preselect_for_validation,
     )
 
     if not emodels:

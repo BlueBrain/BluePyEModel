@@ -218,7 +218,7 @@ class EModel_pipeline:
                     checkpoint_path=chkp_path,
                 )
 
-    def validation(self):
+    def validation(self, preselect_for_validation=False):
         """Run a validation on the stored e-models. To work, some protocols have to be
         marked as for validation only. If no protocol is marked as such, the validation will
         simply check if the scores are all below a given threshold."""
@@ -226,6 +226,7 @@ class EModel_pipeline:
         validate(
             access_point=self.access_point,
             mapper=self.mapper,
+            preselect_for_validation=preselect_for_validation,
         )
 
     def plot(self, only_validated=False, load_from_local=False):
