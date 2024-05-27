@@ -224,6 +224,9 @@ class EModelMetadata:
         # can have ':' in mtype. Replace this character.
         s = s.replace(":", "_")
 
+        # also replace spaces if any
+        s = s.replace(" ", "_")
+
         return s[:-2]
 
     def check_emodel_name(self):
