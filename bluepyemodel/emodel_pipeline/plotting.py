@@ -44,7 +44,7 @@ from bluepyemodel.evaluation.utils import define_bAP_feature
 from bluepyemodel.evaluation.utils import define_bAP_protocol
 from bluepyemodel.evaluation.utils import define_EPSP_feature
 from bluepyemodel.evaluation.utils import define_EPSP_protocol
-from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
+from bluepyemodel.model.morphology_utils import get_basal_and_apical_max_radial_distances
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
@@ -1103,7 +1103,7 @@ def run_and_plot_bAP(
 
     # get basal and apical lengths
     morph_path = cell_evaluator.cell_model.morphology.morphology_path
-    max_basal_length, max_apical_length = get_basal_and_apical_lengths(morph_path)
+    max_basal_length, max_apical_length = get_basal_and_apical_max_radial_distances(morph_path)
     max_basal_length = int(max_basal_length)
     max_apical_length = int(max_apical_length)
 
@@ -1178,7 +1178,7 @@ def run_and_plot_EPSP(
 
     # get basal and apical lengths
     morph_path = cell_evaluator.cell_model.morphology.morphology_path
-    max_basal_length, max_apical_length = get_basal_and_apical_lengths(morph_path)
+    max_basal_length, max_apical_length = get_basal_and_apical_max_radial_distances(morph_path)
     max_basal_length = int(max_basal_length)
     max_apical_length = int(max_apical_length)
 
