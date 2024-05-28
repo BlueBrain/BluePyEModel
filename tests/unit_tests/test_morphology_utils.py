@@ -19,9 +19,9 @@ limitations under the License.
 import numpy
 import pytest
 
-from bluepyemodel.model.morphology_utils import get_apical_length
+from bluepyemodel.model.morphology_utils import get_apical_max_radial_distance
 from bluepyemodel.model.morphology_utils import get_apical_point_soma_distance
-from bluepyemodel.model.morphology_utils import get_basal_and_apical_lengths
+from bluepyemodel.model.morphology_utils import get_basal_and_apical_max_radial_distances
 from bluepyemodel.model.morphology_utils import get_hotspot_location
 
 from tests.utils import DATA
@@ -38,19 +38,19 @@ def test_get_apical_point_soma_distance(morph_path):
     numpy.testing.assert_allclose(soma_dist, 624.8454)
 
 
-def test_get_apical_length(morph_path):
+def test_get_apical_max_radial_distance(morph_path):
     """Test get_apical_length function."""
-    apical_length =  get_apical_length(morph_path)
+    apical_max_radial_distance =  get_apical_max_radial_distance(morph_path)
     # increase tolerance because neurom v4 has changed behavior of 'max_radial_distance'
-    numpy.testing.assert_allclose(apical_length, 1044.1445, rtol=0.02)
+    numpy.testing.assert_allclose(apical_max_radial_distance, 1044.1445, rtol=0.02)
 
 
-def test_get_basal_and_apical_lengths(morph_path):
-    """Test get_basal_and_apical_lengths function."""
-    basal_length, apical_length = get_basal_and_apical_lengths(morph_path)
+def test_get_basal_and_apical_max_radial_distances(morph_path):
+    """Test get_basal_and_apical_max_radial_distances function."""
+    basal_radial_dist, apical_radial_dist = get_basal_and_apical_max_radial_distances(morph_path)
     # increase tolerance because neurom v4 has changed behavior of 'max_radial_distance'
-    numpy.testing.assert_allclose(apical_length, 1044.1445, rtol=0.02)
-    numpy.testing.assert_allclose(basal_length, 232.56221, rtol=0.1)
+    numpy.testing.assert_allclose(apical_radial_dist, 1044.1445, rtol=0.02)
+    numpy.testing.assert_allclose(basal_radial_dist, 232.56221, rtol=0.1)
 
 
 def test_get_hotspot_location(morph_path):
@@ -63,13 +63,13 @@ def test_get_hotspot_location(morph_path):
 
 def test_morphology_utils(morph_path):
     """Test that output of morphology_utils functions are consistent with one another."""
-    apical_length_1 =  get_apical_length(morph_path)
-    basal_length, apical_length_2 = get_basal_and_apical_lengths(morph_path)
+    apical_max_dist_1 =  get_apical_max_radial_distance(morph_path)
+    basal_max_dist, apical_max_dist_2 = get_basal_and_apical_max_radial_distances(morph_path)
     soma_dist = get_apical_point_soma_distance(morph_path)
     hotspot_start, hotspot_end = get_hotspot_location(morph_path)
 
-    assert apical_length_1 == apical_length_2
-    assert basal_length < apical_length_2
-    assert soma_dist < apical_length_1
+    assert apical_max_dist_1 == apical_max_dist_2
+    assert basal_max_dist < apical_max_dist_2
+    assert soma_dist < apical_max_dist_1
     assert hotspot_start >= 0
     assert hotspot_start < soma_dist < hotspot_end
