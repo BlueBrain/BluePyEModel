@@ -30,7 +30,7 @@ class MEModel(EModelMixin):
         emodel_id=None,
         morphology_id=None,
         validated=False,
-        status="initialized"
+        status="initialized",
     ):
         """Init
 
