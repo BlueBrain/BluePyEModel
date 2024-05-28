@@ -54,6 +54,7 @@ def test_validation(db):
     emodels = validate(
         access_point=db,
         mapper=map,
+        preselect_for_validation=True,
     )
 
     assert len(emodels) == 1

@@ -50,7 +50,7 @@ setup(
     long_description=README,
     long_description_content_type="text/x-rst",
     license="Apache-2.0",
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     install_requires=[
         "numpy",
         "scipy",
@@ -61,7 +61,7 @@ setup(
         "gitpython",
         "bluepyopt>=1.14.10",
         "bluepyefe>=2.2.0",
-        "neurom>=3.0,<4.0",
+        "neurom>=3.0",
         "efel>=5.5.5",
         "configparser",
         "neuron>=8.0",
