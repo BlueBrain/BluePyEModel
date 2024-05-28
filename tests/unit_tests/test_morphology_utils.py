@@ -41,21 +41,24 @@ def test_get_apical_point_soma_distance(morph_path):
 def test_get_apical_length(morph_path):
     """Test get_apical_length function."""
     apical_length =  get_apical_length(morph_path)
-    numpy.testing.assert_allclose(apical_length, 1044.1445)
+    # increase tolerance because neurom v4 has changed behavior of 'max_radial_distance'
+    numpy.testing.assert_allclose(apical_length, 1044.1445, rtol=0.02)
 
 
 def test_get_basal_and_apical_lengths(morph_path):
     """Test get_basal_and_apical_lengths function."""
     basal_length, apical_length = get_basal_and_apical_lengths(morph_path)
-    numpy.testing.assert_allclose(apical_length, 1044.1445)
-    numpy.testing.assert_allclose(basal_length, 232.56221)
+    # increase tolerance because neurom v4 has changed behavior of 'max_radial_distance'
+    numpy.testing.assert_allclose(apical_length, 1044.1445, rtol=0.02)
+    numpy.testing.assert_allclose(basal_length, 232.56221, rtol=0.1)
 
 
 def test_get_hotspot_location(morph_path):
     """Test get_hotspot_location function."""
     hotspot_start, hotspot_end = get_hotspot_location(morph_path)
-    numpy.testing.assert_allclose(hotspot_start, 520.430945)
-    numpy.testing.assert_allclose(hotspot_end, 729.259851)
+    # increase tolerance because neurom v4 has changed behavior of 'max_radial_distance'
+    numpy.testing.assert_allclose(hotspot_start, 520.430945, rtol=0.02)
+    numpy.testing.assert_allclose(hotspot_end, 729.259851, rtol=0.02)
 
 
 def test_morphology_utils(morph_path):
