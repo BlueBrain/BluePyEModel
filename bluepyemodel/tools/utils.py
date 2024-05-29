@@ -30,19 +30,24 @@ logger = logging.getLogger("__main__")
 
 def checkpoint_path_exists(checkpoint_path):
     """Returns True if checkpoint path exists, False if not.
-    
+
     Args:
         checkpoint_path (str or Path): checkpoint path
     """
     checkpoint_path = Path(checkpoint_path)
-    return checkpoint_path.is_file() or checkpoint_path.with_suffix(checkpoint_path.suffix + ".tmp").is_file()
+    return (
+        checkpoint_path.is_file()
+        or checkpoint_path.with_suffix(checkpoint_path.suffix + ".tmp").is_file()
+    )
 
 
 def get_checkpoint_path(metadata, seed=None):
     """Get checkpoint path. Use legacy format if any is found, if not use latest format."""
     base_path = f"./checkpoints/{metadata.emodel}/{metadata.iteration}/"
     # legacy case 1 (2023.05.11 - 2023.10.19)
-    filename = metadata.as_string(seed=seed, use_allen_notation=False, replace_semicolons=False, replace_spaces=False)
+    filename = metadata.as_string(
+        seed=seed, use_allen_notation=False, replace_semicolons=False, replace_spaces=False
+    )
     full_path = f"{base_path}{filename}.pkl"
 
     # legacy case 0 (before 2023.05.11)
@@ -51,17 +56,23 @@ def get_checkpoint_path(metadata, seed=None):
 
     # legacy case 2 (2023.10.19 - 2024.02.14)
     if not checkpoint_path_exists(full_path):
-        filename = metadata.as_string(seed=seed, use_allen_notation=True, replace_semicolons=False, replace_spaces=False)
+        filename = metadata.as_string(
+            seed=seed, use_allen_notation=True, replace_semicolons=False, replace_spaces=False
+        )
         full_path = f"{base_path}{filename}.pkl"
 
     # legacy case 3 (2024.02.14 - 2024.05.29)
     if not checkpoint_path_exists(full_path):
-        filename = metadata.as_string(seed=seed, use_allen_notation=True, replace_semicolons=True, replace_spaces=False)
+        filename = metadata.as_string(
+            seed=seed, use_allen_notation=True, replace_semicolons=True, replace_spaces=False
+        )
         full_path = f"{base_path}{filename}.pkl"
 
     # Up-to-date checkpoint path (after 2024.05.29)
     if not checkpoint_path_exists(full_path):
-        filename = metadata.as_string(seed=seed, use_allen_notation=True, replace_semicolons=True, replace_spaces=True)
+        filename = metadata.as_string(
+            seed=seed, use_allen_notation=True, replace_semicolons=True, replace_spaces=True
+        )
         full_path = f"{base_path}{filename}.pkl"
 
     return full_path
@@ -107,9 +118,7 @@ def get_seed_from_checkpoint_path(path):
     filename = Path(path).stem.split("__")
 
     search_str = "seed="
-    seed = next(
-        (e.replace(search_str, "") for e in filename if search_str in e), None
-    )
+    seed = next((e.replace(search_str, "") for e in filename if search_str in e), None)
 
     return int(seed)
 

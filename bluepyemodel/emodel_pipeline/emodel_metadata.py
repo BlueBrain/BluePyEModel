@@ -198,7 +198,9 @@ class EModelMetadata:
         """Metadata as dict."""
         return vars(self)
 
-    def as_string(self, seed=None, use_allen_notation=True, replace_semicolons=True, replace_spaces=True):
+    def as_string(
+        self, seed=None, use_allen_notation=True, replace_semicolons=True, replace_spaces=True
+    ):
         s = ""
 
         for k in [
