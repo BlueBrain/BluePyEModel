@@ -46,7 +46,6 @@ from bluepyemodel.evaluation.utils import define_EPSP_feature
 from bluepyemodel.evaluation.utils import define_EPSP_protocol
 from bluepyemodel.model.morphology_utils import get_basal_and_apical_max_radial_distances
 from bluepyemodel.tools.utils import make_dir
-from bluepyemodel.tools.utils import parse_checkpoint_path
 from bluepyemodel.tools.utils import read_checkpoint
 from bluepyemodel.tools.utils import select_rec_for_thumbnail
 
@@ -216,7 +215,8 @@ def optimisation(
 def _create_figure_parameter_histograms(
     histograms,
     evaluator,
-    checkpoint_path,
+    metadata,
+    seed,
     max_n_gen,
     gen_per_bin,
     figures_dir,
@@ -262,18 +262,15 @@ def _create_figure_parameter_histograms(
     fig.supylabel("Parameter value", size="xx-large")
 
     suptitle = "Parameter evolution\n"
-    metadata = parse_checkpoint_path(checkpoint_path)
-    if metadata.get("emodel", None) is not None:
-        suptitle += f"e-model = {metadata['emodel']}"
-    if metadata.get("iteration", None) is not None:
-        suptitle += f" ; iteration = {metadata['iteration']}"
-    if metadata.get("seed", None) is not None:
-        suptitle += f" ; seed = {metadata['seed']}"
+    if metadata.emodel is not None:
+        suptitle += f"e-model = {metadata.emodel}"
+    if metadata.iteration is not None:
+        suptitle += f" ; iteration = {metadata.iteration}"
+    if seed is not None:
+        suptitle += f" ; seed = {seed}"
     fig.suptitle(suptitle, size="xx-large")
 
-    p = Path(checkpoint_path)
-
-    figure_name = p.stem
+    figure_name = metadata.as_string(seed=seed)
     figure_name += "__evo_parameter_density.pdf"
 
     plt.tight_layout()
@@ -286,7 +283,7 @@ def _create_figure_parameter_histograms(
 
 
 def evolution_parameters_density(
-    evaluator, checkpoint_paths, figures_dir="./figures", write_fig=True
+    evaluator, checkpoint_paths, metadata, figures_dir="./figures", write_fig=True
 ):
     """Create plots of the evolution of the density of parameters in the population as the
     optimisation progresses. Create one plot per checkpoint plus one plot with all checkpoints.
@@ -298,6 +295,7 @@ def evolution_parameters_density(
     Args:
         evaluator (CellEvaluator): evaluator used to evaluate the individuals.
         checkpoint_paths (list of str): list of paths to the checkpoints .pkl.
+        metadata (EModelMetadata): metadata of the emodel.
         figures_dir (str): path to the directory where the figures will be saved.
         write_fig (bool): whether to write the figures to disk.
     """
@@ -307,12 +305,12 @@ def evolution_parameters_density(
     max_n_gen = 0
     genealogies = {}
     for checkpoint_path in checkpoint_paths:
-        run, _ = read_checkpoint(checkpoint_path)
+        run, seed = read_checkpoint(checkpoint_path)
         if run["generation"] < 4:
             continue
 
         max_n_gen = max(max_n_gen, run["generation"])
-        genealogies[checkpoint_path] = run["history"].genealogy_history
+        genealogies[checkpoint_path] = (run["history"].genealogy_history, seed)
 
     gen_per_bin = 4
     pop_size = len(run["population"])
@@ -321,7 +319,7 @@ def evolution_parameters_density(
 
     # Compute and plot the histograms for each checkpoint
     sum_histograms = {}
-    for checkpoint_path, genealogy in genealogies.items():
+    for checkpoint_path, (genealogy, seed) in genealogies.items():
         # Get the histograms for all parameters
         histograms = {}
         for param_index in range(len(genealogy[1])):
@@ -349,7 +347,8 @@ def evolution_parameters_density(
         _ = _create_figure_parameter_histograms(
             histograms,
             evaluator,
-            checkpoint_path,
+            metadata,
+            seed,
             max_n_gen,
             gen_per_bin,
             figures_dir,
@@ -360,11 +359,11 @@ def evolution_parameters_density(
     fig, axs = None, None
     if sum_histograms:
         sum_histograms = {idx: h / len(checkpoint_path) for idx, h in sum_histograms.items()}
-        dummy_path = checkpoint_paths[0].partition("__seed=")[0] + "__all_seeds.pkl"
         fig, axs = _create_figure_parameter_histograms(
             sum_histograms,
             evaluator,
-            dummy_path,
+            metadata,
+            "all_seeds",
             max_n_gen,
             gen_per_bin,
             figures_dir,

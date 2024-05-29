@@ -28,16 +28,40 @@ from bluepyemodel.ecode import eCodes
 logger = logging.getLogger("__main__")
 
 
-def get_checkpoint_path(metadata, seed=None):
-    """"""
+def checkpoint_path_exists(checkpoint_path):
+    """Returns True if checkpoint path exists, False if not.
+    
+    Args:
+        checkpoint_path (str or Path): checkpoint path
+    """
+    checkpoint_path = Path(checkpoint_path)
+    return checkpoint_path.is_file() or checkpoint_path.with_suffix(checkpoint_path.suffix + ".tmp").is_file()
 
+
+def get_checkpoint_path(metadata, seed=None):
+    """Get checkpoint path. Use legacy format if any is found, if not use latest format."""
     base_path = f"./checkpoints/{metadata.emodel}/{metadata.iteration}/"
-    filename = metadata.as_string(seed=seed, use_allen_notation=False)
+    # legacy case 1 (2023.05.11 - 2023.10.19)
+    filename = metadata.as_string(seed=seed, use_allen_notation=False, replace_semicolons=False, replace_spaces=False)
     full_path = f"{base_path}{filename}.pkl"
 
-    # Switch to Allen notation if no previous legacy checkpoint is found
-    if not Path(full_path).is_file():
-        filename = metadata.as_string(seed=seed, use_allen_notation=True)
+    # legacy case 0 (before 2023.05.11)
+    if checkpoint_path_exists(get_legacy_checkpoint_path(full_path)):
+        full_path = get_legacy_checkpoint_path(full_path)
+
+    # legacy case 2 (2023.10.19 - 2024.02.14)
+    if not checkpoint_path_exists(full_path):
+        filename = metadata.as_string(seed=seed, use_allen_notation=True, replace_semicolons=False, replace_spaces=False)
+        full_path = f"{base_path}{filename}.pkl"
+
+    # legacy case 3 (2024.02.14 - 2024.05.29)
+    if not checkpoint_path_exists(full_path):
+        filename = metadata.as_string(seed=seed, use_allen_notation=True, replace_semicolons=True, replace_spaces=False)
+        full_path = f"{base_path}{filename}.pkl"
+
+    # Up-to-date checkpoint path (after 2024.05.29)
+    if not checkpoint_path_exists(full_path):
+        filename = metadata.as_string(seed=seed, use_allen_notation=True, replace_semicolons=True, replace_spaces=True)
         full_path = f"{base_path}{filename}.pkl"
 
     return full_path
@@ -74,60 +98,20 @@ def yesno(question):
     return False
 
 
-def parse_legacy_checkpoint_path(path):
+def get_seed_from_checkpoint_path(path):
     """"""
-
-    filename = Path(path).stem.split("__")
-
-    if len(filename) == 4:
-        checkpoint_metadata = {
-            "emodel": filename[1],
-            "seed": filename[3],
-            "iteration": filename[2],
-            "ttype": None,
-        }
-    elif len(filename) == 3:
-        checkpoint_metadata = {
-            "emodel": filename[1],
-            "seed": filename[2],
-            "iteration": None,
-            "ttype": None,
-        }
-    else:
-        raise ValueError(f"Invalid checkpoint path: {path}")
-
-    return checkpoint_metadata
-
-
-def parse_checkpoint_path(path):
-    """"""
-
-    if "emodel" not in path and "checkpoint" in path:
-        return parse_legacy_checkpoint_path(path)
 
     if path.endswith(".tmp"):
         path = path.replace(".tmp", "")
 
     filename = Path(path).stem.split("__")
 
-    checkpoint_metadata = {}
+    search_str = "seed="
+    seed = next(
+        (e.replace(search_str, "") for e in filename if search_str in e), None
+    )
 
-    for field in [
-        "emodel",
-        "etype",
-        "ttype",
-        "mtype",
-        "species",
-        "brain_region",
-        "seed",
-        "iteration",
-    ]:
-        search_str = f"{field}="
-        checkpoint_metadata[field] = next(
-            (e.replace(search_str, "") for e in filename if search_str in e), None
-        )
-
-    return checkpoint_metadata
+    return int(seed)
 
 
 def read_checkpoint(checkpoint_path):
@@ -136,28 +120,22 @@ def read_checkpoint(checkpoint_path):
     p = Path(checkpoint_path)
     p_tmp = p.with_suffix(p.suffix + ".tmp")
 
-    # legacy case
-    if not p.is_file() and not p_tmp.is_file():
-        legacy_checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
-        p = Path(legacy_checkpoint_path)
-        p_tmp = p.with_suffix(p.suffix + ".tmp")
-
     try:
         with open(str(p), "rb") as checkpoint_file:
             run = pickle.load(checkpoint_file, encoding="latin1")
-            run_metadata = parse_checkpoint_path(str(p))
+            seed = get_seed_from_checkpoint_path(str(p))
     except EOFError:
         try:
             with open(str(p_tmp), "rb") as checkpoint_tmp_file:
                 run = pickle.load(checkpoint_tmp_file, encoding="latin1")
-                run_metadata = parse_checkpoint_path(str(p_tmp))
+                seed = get_seed_from_checkpoint_path(str(p_tmp))
         except EOFError:
             logger.error(
                 "Cannot store model. Checkpoint file %s does not exist or is corrupted.",
                 checkpoint_path,
             )
 
-    return run, run_metadata
+    return run, seed
 
 
 def format_protocol_name_to_list(protocol_name):
