@@ -42,7 +42,7 @@ def checkpoint_path_exists(checkpoint_path):
 
 
 def get_checkpoint_path(metadata, seed=None):
-    """Get checkpoint path. Use legacy format if any is found, if not use latest format."""
+    """Get checkpoint path. Use legacy format if any is found, else use latest format."""
     base_path = f"./checkpoints/{metadata.emodel}/{metadata.iteration}/"
     # legacy case 1 (2023.05.11 - 2023.10.19)
     filename = metadata.as_string(
@@ -110,7 +110,7 @@ def yesno(question):
 
 
 def get_seed_from_checkpoint_path(path):
-    """"""
+    """Get seed from checkpoint path name. default seed is 0 if not found."""
 
     if path.endswith(".tmp"):
         path = path.replace(".tmp", "")
@@ -118,7 +118,7 @@ def get_seed_from_checkpoint_path(path):
     filename = Path(path).stem.split("__")
 
     search_str = "seed="
-    seed = next((e.replace(search_str, "") for e in filename if search_str in e), None)
+    seed = next((e.replace(search_str, "") for e in filename if search_str in e), 0)
 
     return int(seed)
 

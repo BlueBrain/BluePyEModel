@@ -24,7 +24,7 @@ from bluepyemodel.emodel_pipeline.emodel_metadata import EModelMetadata
 
 def checkpoint_check(dir, fname, metadata, inner_dir):
     f = dir / fname
-    f.write_text("")
+    f.touch()
     assert str(get_checkpoint_path(metadata, seed=0)) == "/".join((".", inner_dir, fname))
     f.unlink()
 
