@@ -38,79 +38,8 @@ def format_dict_for_resource(d):
     return out
 
 
-class EModel:
-    """Contains all the information related to an optimized e-model, such as its parameters or
-    its e-feature values and scores.
-
-    This class is not meant to be instantiated by hand. It is used to transmit the information
-    about optimized e-model information."""
-
-    def __init__(
-        self,
-        fitness=None,
-        parameter=None,
-        score=None,
-        features=None,
-        scoreValidation=None,
-        passedValidation=None,
-        seed=None,
-        emodel_metadata=None,
-    ):
-        """Init
-
-        Args:
-            fitness (float): fitness of the emodel as the sum of scores.
-            parameter (dict or Resource): parameters of the emodel
-            score (dict or Resource): scores of the emodel.
-            features (dict or Resource): feature values of the emodel.
-            scoreValidation (dict or Resource): scores obtained on the validation protocols.
-            passedValidation (bool or None): did the model go through validation and if yes,
-                did it pass it successfully (None: no validation, True: passed, False: didn't pass)
-            seed (str): seed used during optimisation for this emodel.
-            emodel_metadata (EModelMetadata): metadata of the model (emodel name, etype, ttype, ...)
-        """
-
-        self.emodel_metadata = emodel_metadata
-        self.passed_validation = passedValidation
-        self.fitness = fitness
-        self.seed = seed
-
-        self.workflow_id = None
-
-        if isinstance(parameter, dict):
-            self.parameters = parameter
-        else:
-            self.parameters = {p["name"]: p["value"] for p in parameter} if parameter else {}
-
-        if isinstance(score, dict):
-            self.scores = score
-        else:
-            self.scores = {p["name"]: p["value"] for p in score} if score else {}
-
-        if isinstance(features, dict):
-            self.features = features
-        else:
-            self.features = (
-                {p["name"]: (p["value"] if "value" in p else numpy.nan) for p in features}
-                if features
-                else {}
-            )
-
-        if isinstance(scoreValidation, dict):
-            self.scores_validation = scoreValidation
-        else:
-            self.scores_validation = (
-                {p["name"]: p["value"] for p in scoreValidation} if scoreValidation else {}
-            )
-
-        self.responses = {}
-        self.evaluator = None
-
-    def copy_pdf_dependencies_to_new_path(self, seed, overwrite=False):
-        """Copy pdf dependencies to new path using allen notation"""
-        search_pdfs.copy_emodel_pdf_dependencies_to_new_path(
-            self.emodel_metadata, seed, overwrite=overwrite
-        )
+class EModelMixin:
+    """Contains functions used both in EModel and MEModel classes."""
 
     def build_pdf_dependencies(self, seed):
         """Find all the pdfs associated to an emodel"""
@@ -172,6 +101,81 @@ class EModel:
             pdfs += [p for p in rheobase_pdf if p]
 
         return pdfs
+
+
+class EModel(EModelMixin):
+    """Contains all the information related to an optimized e-model, such as its parameters or
+    its e-feature values and scores.
+
+    This class is not meant to be instantiated by hand. It is used to transmit the information
+    about optimized e-model information."""
+
+    def __init__(
+        self,
+        fitness=None,
+        parameter=None,
+        score=None,
+        features=None,
+        scoreValidation=None,
+        passedValidation=None,
+        seed=None,
+        emodel_metadata=None,
+    ):
+        """Init
+
+        Args:
+            fitness (float): fitness of the emodel as the sum of scores.
+            parameter (dict or Resource): parameters of the emodel
+            score (dict or Resource): scores of the emodel.
+            features (dict or Resource): feature values of the emodel.
+            scoreValidation (dict or Resource): scores obtained on the validation protocols.
+            passedValidation (bool or None): did the model go through validation and if yes,
+                did it pass it successfully (None: no validation, True: passed, False: didn't pass)
+            seed (int): seed used during optimisation for this emodel.
+            emodel_metadata (EModelMetadata): metadata of the model (emodel name, etype, ttype, ...)
+        """
+
+        self.emodel_metadata = emodel_metadata
+        self.passed_validation = passedValidation
+        self.fitness = fitness
+        self.seed = seed
+
+        self.workflow_id = None
+
+        if isinstance(parameter, dict):
+            self.parameters = parameter
+        else:
+            self.parameters = {p["name"]: p["value"] for p in parameter} if parameter else {}
+
+        if isinstance(score, dict):
+            self.scores = score
+        else:
+            self.scores = {p["name"]: p["value"] for p in score} if score else {}
+
+        if isinstance(features, dict):
+            self.features = features
+        else:
+            self.features = (
+                {p["name"]: (p["value"] if "value" in p else numpy.nan) for p in features}
+                if features
+                else {}
+            )
+
+        if isinstance(scoreValidation, dict):
+            self.scores_validation = scoreValidation
+        else:
+            self.scores_validation = (
+                {p["name"]: p["value"] for p in scoreValidation} if scoreValidation else {}
+            )
+
+        self.responses = {}
+        self.evaluator = None
+
+    def copy_pdf_dependencies_to_new_path(self, seed, overwrite=False):
+        """Copy pdf dependencies to new path using allen notation"""
+        search_pdfs.copy_emodel_pdf_dependencies_to_new_path(
+            self.emodel_metadata, self.emodel_metadata, False, True, seed, overwrite=overwrite
+        )
 
     def get_related_nexus_ids(self):
         return {

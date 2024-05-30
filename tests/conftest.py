@@ -20,7 +20,6 @@ import shutil
 import pytest
 
 from bluepyemodel.access_point import get_access_point
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from tests.utils import DATA, cwd
 
 
