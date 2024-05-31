@@ -120,6 +120,7 @@ class EModel(EModelMixin):
         passedValidation=None,
         seed=None,
         emodel_metadata=None,
+        workflow_id=None,
     ):
         """Init
 
@@ -133,6 +134,7 @@ class EModel(EModelMixin):
                 did it pass it successfully (None: no validation, True: passed, False: didn't pass)
             seed (int): seed used during optimisation for this emodel.
             emodel_metadata (EModelMetadata): metadata of the model (emodel name, etype, ttype, ...)
+            workflow_id (str): EModelWorkflow id on nexus.
         """
 
         self.emodel_metadata = emodel_metadata
@@ -140,7 +142,7 @@ class EModel(EModelMixin):
         self.fitness = fitness
         self.seed = seed
 
-        self.workflow_id = None
+        self.workflow_id = workflow_id
 
         if isinstance(parameter, dict):
             self.parameters = parameter
