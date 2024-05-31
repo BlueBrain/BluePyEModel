@@ -698,7 +698,7 @@ class LocalAccessPoint(DataAccessPoint):
         for m in models:
             model_metadata = m.emodel_metadata.as_dict()
             for f, v in api_metadata.items():
-                if f in model_metadata and v != model_metadata[f]:
+                if f in model_metadata and v != model_metadata[f] and f != "allen_notation":
                     break
             else:
                 filtered_models.append(m)
