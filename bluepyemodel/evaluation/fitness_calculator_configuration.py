@@ -91,6 +91,7 @@ class FitnessCalculatorConfiguration:
         validation_protocols=None,
         stochasticity=False,
         ion_variables=None,
+        workflow_id=None,
     ):
         """Init.
 
@@ -175,6 +176,7 @@ class FitnessCalculatorConfiguration:
                 for these protocols, and deterministic for the other ones.
             ion_variables (list of str): ion current names and ionic concentration anmes
                 for all available mechanisms
+            workflow_id (str): EModelWorkflow id on nexus.
         """
 
         self.rmp_duration = 500.0
@@ -209,7 +211,7 @@ class FitnessCalculatorConfiguration:
         self.name_rmp_protocol = name_rmp_protocol
         self.name_rin_protocol = name_rin_protocol
 
-        self.workflow_id = None
+        self.workflow_id = workflow_id
         self.default_std_value = default_std_value
 
     def initialise_protocols(self, protocols):
