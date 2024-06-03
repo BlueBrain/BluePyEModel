@@ -2,7 +2,7 @@
 
 import getpass
 import os
-from bluepyemodel.access_point.export_emodel import export_emodels_nexus
+from bluepyemodel.export_emodel.export_emodel import export_emodels_nexus
 from bluepyemodel.access_point.local import LocalAccessPoint
 import logging
 
