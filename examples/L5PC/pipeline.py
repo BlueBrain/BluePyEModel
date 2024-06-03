@@ -38,7 +38,7 @@ def configure_targets(access_point):
                 if ecode in fn:
                     files_metadata.append(
                         {
-                            "cell_name": "cell1",
+                            "cell_name": filename.split("/")[-2],
                             "filename": filename.split("/")[-1].split(".")[0],
                             "ecodes": {ecode: ecodes_metadata[ecode]},
                             "other_metadata": {
