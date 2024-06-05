@@ -30,6 +30,8 @@ from bluepyemodel.export_emodel.utils import get_hoc_file_path
 from bluepyemodel.export_emodel.utils import get_output_path
 from bluepyemodel.export_emodel.utils import select_emodels
 
+# pylint: disable=too-many-locals
+
 logger = logging.getLogger(__name__)
 
 
