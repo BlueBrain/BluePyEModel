@@ -356,6 +356,7 @@ def export_emodels_nexus(
         logger.info("Registering EModel %s...", mo.emodel_metadata.emodel)
         nexus_access_point.store_emodel(mo, description=description)
 
+    time.sleep(sleep_time)
     if sonata:
         logger.info(
             "Registering EModelScript (in sonata hoc format with threshold_current and "

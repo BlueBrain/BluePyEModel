@@ -20,6 +20,7 @@ from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.emodel_pipeline.emodel_script import EModelScript
 from bluepyemodel.emodel_pipeline.emodel_settings import EModelPipelineSettings
 from bluepyemodel.emodel_pipeline.emodel_workflow import EModelWorkflow
+from bluepyemodel.emodel_pipeline.memodel import MEModel
 from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
 from bluepyemodel.model.distribution_configuration import DistributionConfiguration
 from bluepyemodel.model.neuron_model_configuration import NeuronModelConfiguration
@@ -39,6 +40,7 @@ CLASS_TO_NEXUS_TYPE = {
     "DistributionConfiguration": "EModelChannelDistribution",
     "EModelWorkflow": "EModelWorkflow",
     "EModelScript": "EModelScript",
+    "MEModel": "MEModel",
 }
 
 CLASS_TO_RESOURCE_NAME = {
@@ -50,6 +52,7 @@ CLASS_TO_RESOURCE_NAME = {
     "DistributionConfiguration": "EMCD",
     "EModelWorkflow": "EMW",
     "EModelScript": "EMS",
+    "MEModel": "MEM",
 }
 
 NEXUS_TYPE_TO_CLASS = {
@@ -61,6 +64,7 @@ NEXUS_TYPE_TO_CLASS = {
     "EModelChannelDistribution": DistributionConfiguration,
     "EModelWorkflow": EModelWorkflow,
     "EModelScript": EModelScript,
+    "MEModel": MEModel,
 }
 
 NEXUS_ENTRIES = [
@@ -380,21 +384,18 @@ class NexusForgeAccessPoint:
                 resource.add_distribution(path, content_type=f"application/{path.split('.')[-1]}")
 
         if images:
-            imgs = []
             for path in images:
                 try:
                     resource_type = path.split("__")[-1].split(".")[0]
                 except IndexError:
                     resource_type = filters_existence.get("type", None)
-                image = self.forge.attach_image(
+                # Do NOT do this BEFORE turning resource into a Dataset.
+                # That would break the storing LazyAction into a string
+                resource.add_image(
                     path=path,
                     content_type=f"application/{path.split('.')[-1]}",
                     about=resource_type,
                 )
-                imgs.append(image)
-            # Do NOT do this BEFORE turning resource into a Dataset.
-            # That would break the storing LazyAction into a string
-            resource.image = imgs
 
         self.forge.register(resource)
 
@@ -475,14 +476,8 @@ class NexusForgeAccessPoint:
 
         return resources[0]
 
-    def download(self, resource_id, download_directory=None, metadata_str=None, content_type=None):
+    def download(self, resource_id, download_directory, content_type=None):
         """Download datafile from nexus if it doesn't already exist."""
-        if download_directory is None:
-            if metadata_str is None:
-                raise AccessPointException(
-                    "download_directory or metadata_str should be other than None"
-                )
-            download_directory = pathlib.Path("./nexus_temp") / metadata_str
         resource = self.forge.retrieve(resource_id, cross_bucket=True)
 
         if resource is None:
@@ -502,14 +497,14 @@ class NexusForgeAccessPoint:
             else:
                 file_paths = [pathlib.Path(download_directory) / resource.distribution.name]
 
-            if any(not fp.is_file() for fp in file_paths):
-                self.forge.download(
-                    resource,
-                    "distribution.contentUrl",
-                    download_directory,
-                    cross_bucket=True,
-                    content_type=content_type,
-                )
+            self.forge.download(
+                resource,
+                "distribution.contentUrl",
+                download_directory,
+                cross_bucket=True,
+                content_type=content_type,
+                overwrite=True,
+            )
 
             return [str(fp) for fp in file_paths]
 
@@ -549,7 +544,7 @@ class NexusForgeAccessPoint:
 
             self.deprecate(filters, legacy_filters)
 
-    def resource_location(self, resource, metadata_str):
+    def resource_location(self, resource, download_directory):
         """Get the path of the files attached to a resource. If the resource is
         not located on gpfs, download it instead"""
 
@@ -572,7 +567,7 @@ class NexusForgeAccessPoint:
                     filepath = loc["location"].replace("file:/", "")
 
             if filepath is None:
-                filepath = self.download(resource.id, metadata_str=metadata_str)[0]
+                filepath = self.download(resource.id, download_directory)[0]
 
             paths.append(filepath)
 
@@ -732,10 +727,10 @@ class NexusForgeAccessPoint:
         resource.distribution = [resource.distribution[1]]
         return resource
 
-    def resource_to_object(self, type_, resource, metadata, metadata_str):
+    def resource_to_object(self, type_, resource, metadata, download_directory):
         """Transform a Resource into a BPEM object of the matching type"""
 
-        file_paths = self.download(resource.id, metadata_str=metadata_str)
+        file_paths = self.download(resource.id, download_directory)
         json_path = next((fp for fp in file_paths if pathlib.Path(fp).suffix == ".json"), None)
 
         if json_path is None:
@@ -756,7 +751,7 @@ class NexusForgeAccessPoint:
 
         return NEXUS_TYPE_TO_CLASS[type_](**payload)
 
-    def nexus_to_object(self, type_, metadata, metadata_str, legacy_metadata=None):
+    def nexus_to_object(self, type_, metadata, download_directory, legacy_metadata=None):
         """Search for a single Resource matching the ``type_`` and metadata and return it
         as a BPEM object of the matching type"""
 
@@ -770,9 +765,9 @@ class NexusForgeAccessPoint:
 
         resource = self.fetch_one(filters, legacy_filters)
 
-        return self.resource_to_object(type_, resource, metadata, metadata_str)
+        return self.resource_to_object(type_, resource, metadata, download_directory)
 
-    def nexus_to_objects(self, type_, metadata, metadata_str, legacy_metadata=None):
+    def nexus_to_objects(self, type_, metadata, download_directory, legacy_metadata=None):
         """Search for Resources matching the ``type_`` and metadata and return them
         as BPEM objects of the matching type"""
 
@@ -791,7 +786,9 @@ class NexusForgeAccessPoint:
 
         if resources:
             for resource in resources:
-                objects_.append(self.resource_to_object(type_, resource, metadata, metadata_str))
+                objects_.append(
+                    self.resource_to_object(type_, resource, metadata, download_directory)
+                )
                 ids.append(resource.id)
 
         return objects_, ids
