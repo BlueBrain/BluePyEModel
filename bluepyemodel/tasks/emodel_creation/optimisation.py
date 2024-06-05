@@ -37,7 +37,6 @@ from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTaskRequiringMechanisms
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
 from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
-from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 
 # pylint: disable=W0235,W0621,W0404,W0611,W0703,E1128
 logger = logging.getLogger(__name__)
@@ -1180,11 +1179,6 @@ class PlotOptimisation(WorkflowTask):
         """ """
 
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
-        if (
-            not Path(checkpoint_path).is_file()
-            and Path(get_legacy_checkpoint_path(checkpoint_path)).is_file()
-        ):
-            checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
 
         optimisation(
             optimiser=self.access_point.pipeline_settings.optimiser,

@@ -25,7 +25,6 @@ import bluepyopt
 from bluepyemodel.emodel_pipeline.emodel import EModel
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.tools.utils import get_checkpoint_path
-from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.tools.utils import logger
 from bluepyemodel.tools.utils import read_checkpoint
 
@@ -102,13 +101,6 @@ def run_optimisation(
             "Will continue optimisation from last generation in checkpoint"
         )
         continue_opt = True
-    elif Path(get_legacy_checkpoint_path(checkpoint_path)).is_file():
-        checkpoint_path = get_legacy_checkpoint_path(checkpoint_path)
-        continue_opt = True
-        logger.info(
-            "Found a legacy checkpoint path. Will use it instead "
-            "and continue optimisation from last generation."
-        )
     else:
         logger.info("No checkpoint found. Will start optimisation from scratch.")
         continue_opt = False
@@ -189,7 +181,7 @@ def store_best_model(
 
         checkpoint_path = get_checkpoint_path(access_point.emodel_metadata, seed=seed)
 
-    run, run_metadata = read_checkpoint(checkpoint_path)
+    run, seed_from_checkpoint = read_checkpoint(checkpoint_path)
 
     best_model = run["halloffame"][0]
     feature_names = [obj.name for obj in cell_evaluator.fitness_calculator.objectives]
@@ -207,7 +199,7 @@ def store_best_model(
 
     scores = dict(zip(feature_names, best_model.fitness.values))
 
-    emodel_seed = run_metadata.get("seed", None) if seed is None else seed
+    emodel_seed = seed_from_checkpoint if seed is None else seed
 
     emodel = EModel(
         fitness=sum(list(scores.values())),

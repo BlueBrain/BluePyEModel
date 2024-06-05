@@ -30,7 +30,6 @@ from bluepyemodel.optimisation import setup_and_run_optimisation
 from bluepyemodel.optimisation import store_best_model
 from bluepyemodel.tools.multiprocessing import get_mapper
 from bluepyemodel.tools.utils import get_checkpoint_path
-from bluepyemodel.tools.utils import get_legacy_checkpoint_path
 from bluepyemodel.validation.validation import validate
 
 logger = logging.getLogger()
@@ -220,10 +219,6 @@ class EModel_pipeline:
         else:
             checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=1)
             checkpoint_list = glob.glob(checkpoint_path.replace("seed=1", "*"))
-            if not checkpoint_list:
-                checkpoint_list = glob.glob(
-                    get_legacy_checkpoint_path(checkpoint_path).replace("seed=1", "*")
-                )
 
             for chkp_path in checkpoint_list:
                 file_name = pathlib.Path(chkp_path).stem
@@ -237,7 +232,7 @@ class EModel_pipeline:
                     checkpoint_path=chkp_path,
                 )
 
-    def validation(self):
+    def validation(self, preselect_for_validation=False):
         """Run a validation on the stored e-models. To work, some protocols have to be
         marked as for validation only. If no protocol is marked as such, the validation will
         simply check if the scores are all below a given threshold."""
@@ -245,6 +240,7 @@ class EModel_pipeline:
         validate(
             access_point=self.access_point,
             mapper=self.mapper,
+            preselect_for_validation=preselect_for_validation,
         )
 
     def plot(self, only_validated=False, load_from_local=False):
@@ -298,6 +294,7 @@ class EModel_pipeline:
             plotting.evolution_parameters_density(
                 evaluator=cell_evaluator,
                 checkpoint_paths=checkpoint_paths,
+                metadata=self.access_point.emodel_metadata,
                 figures_dir=pathlib.Path("./figures")
                 / self.access_point.emodel_metadata.emodel
                 / "parameter_evolution",

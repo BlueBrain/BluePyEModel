@@ -61,10 +61,29 @@ def define_validation_function(access_point):
     return validation_function
 
 
-def validate(
-    access_point,
-    mapper,
-):
+def compute_scores(model, validation_protocols):
+    """Compute the scores of an emodel.
+
+    Args:
+        model (EModel): emodel
+        validation_protocols (list): list of validation protocols
+    """
+    model.features = model.evaluator.fitness_calculator.calculate_values(model.responses)
+    for key, value in model.features.items():
+        if value is not None:
+            # turn features from arrays to float to be json serializable
+            model.features[key] = float(numpy.nanmean([v for v in value if v is not None]))
+
+    scores = model.evaluator.fitness_calculator.calculate_scores(model.responses)
+    for feature_name in scores:
+        protocol_name = feature_name.split(".")[0]
+        if any(are_same_protocol(p, protocol_name) for p in validation_protocols):
+            model.scores_validation[feature_name] = scores[feature_name]
+        else:
+            model.scores[feature_name] = scores[feature_name]
+
+
+def validate(access_point, mapper, preselect_for_validation=False):
     """Compute the scores and traces for the optimisation and validation
     protocols and perform validation.
 
@@ -72,6 +91,7 @@ def validate(
         access_point (DataAccessPoint): data access point.
         mapper (map): used to parallelize the evaluation of the
             individual in the population.
+        preselect_for_validation (bool): True to not re-run already validated models
 
     Returns:
         emodels (list): list of emodels.
@@ -86,11 +106,11 @@ def validate(
         access_point,
         cell_evaluator=cell_evaluator,
         map_function=mapper,
-        preselect_for_validation=True,
+        preselect_for_validation=preselect_for_validation,
     )
 
     if not emodels:
-        logger.warning("In compute_scores, no emodels for %s", access_point.emodel_metadata.emodel)
+        logger.warning("In validate, no emodels for %s", access_point.emodel_metadata.emodel)
         return []
 
     validation_function = define_validation_function(access_point)
@@ -98,22 +118,7 @@ def validate(
     logger.info("In validate, %s emodels found to validate.", len(emodels))
 
     for model in emodels:
-        # turn features from arrays to float to be json serializable
-        model.features = model.evaluator.fitness_calculator.calculate_values(model.responses)
-        for key, value in model.features.items():
-            if value is not None:
-                model.features[key] = float(numpy.nanmean([v for v in value if v is not None]))
-
-        scores = model.evaluator.fitness_calculator.calculate_scores(model.responses)
-        for feature_name in scores:
-            protocol_name = feature_name.split(".")[0]
-            if any(
-                are_same_protocol(p, protocol_name)
-                for p in access_point.pipeline_settings.validation_protocols
-            ):
-                model.scores_validation[feature_name] = scores[feature_name]
-            else:
-                model.scores[feature_name] = scores[feature_name]
+        compute_scores(model, access_point.pipeline_settings.validation_protocols)
 
         # turn bool_ into bool to be json serializable
         model.passed_validation = bool(

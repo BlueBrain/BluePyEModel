@@ -198,7 +198,9 @@ class EModelMetadata:
         """Metadata as dict."""
         return vars(self)
 
-    def as_string(self, seed=None, use_allen_notation=True):
+    def as_string(
+        self, seed=None, use_allen_notation=True, replace_semicolons=True, replace_spaces=True
+    ):
         s = ""
 
         for k in [
@@ -222,7 +224,12 @@ class EModelMetadata:
             s += f"seed={seed}__"
 
         # can have ':' in mtype. Replace this character.
-        s = s.replace(":", "_")
+        if replace_semicolons:
+            s = s.replace(":", "_")
+
+        # also replace spaces if any
+        if replace_spaces:
+            s = s.replace(" ", "_")
 
         return s[:-2]
 

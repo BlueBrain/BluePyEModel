@@ -35,7 +35,7 @@ def get_apical_point_soma_distance(morph_path):
     return neurom.morphmath.point_dist(apical_point, morphio_morph.soma.center)
 
 
-def get_apical_length(morph_path):
+def get_apical_max_radial_distance(morph_path):
     """Returns the max radial distance of the apical dendrites."""
     import neurom
 
@@ -45,8 +45,8 @@ def get_apical_length(morph_path):
     )
 
 
-def get_basal_and_apical_lengths(morph_path):
-    """Returns the max radial distance of the apical and basal dendrites."""
+def get_basal_and_apical_max_radial_distances(morph_path):
+    """Returns the max radial distances of the apical and basal dendrites."""
     import neurom
 
     neurom_morph = neurom.load_morphology(morph_path)
@@ -69,12 +69,12 @@ def get_hotspot_location(morph_path, hotspot_percent=20.0):
 
     Args:
         morph_path (str): path to the morphology
-        hotspot_percent (float): percentage of the radial apical length that is in the hot spot.
-            Here, we assume that the hotspot size is dependent on the apical length.
+        hotspot_percent (float): percentage of the radial apical distance that is in the hot spot.
+            Here, we assume that the hotspot size is dependent on the apical radial distance.
             20% is in accordance with experiments from Larkum and Zhu, 2002
     """
     ap_soma_dist = get_apical_point_soma_distance(morph_path)
-    apical_length = get_apical_length(morph_path)
+    apical_length = get_apical_max_radial_distance(morph_path)
     hotspot_halfsize = apical_length * hotspot_percent / 2.0 / 100.0
 
     return max((0.0, ap_soma_dist - hotspot_halfsize)), ap_soma_dist + hotspot_halfsize
