@@ -1010,7 +1010,6 @@ class NexusAccessPoint(DataAccessPoint):
             if resource:
                 return access_point.resource_location(resource, self.download_directory)[0]
 
-
         raise ValueError(f"No matching resource for {id_} {name}")
 
     def get_mechanisms_directory(self):
