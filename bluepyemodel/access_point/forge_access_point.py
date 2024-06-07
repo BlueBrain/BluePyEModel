@@ -477,7 +477,7 @@ class NexusForgeAccessPoint:
         return resources[0]
 
     def download(self, resource_id, download_directory, content_type=None):
-        """Download datafile from nexus if it doesn't already exist."""
+        """Download datafile from nexus."""
         resource = self.forge.retrieve(resource_id, cross_bucket=True)
 
         if resource is None:
@@ -505,6 +505,13 @@ class NexusForgeAccessPoint:
                 content_type=content_type,
                 overwrite=True,
             )
+
+            # Verify that each datafile for the resource was successfully downloaded
+            for fp in file_paths:
+                if not fp.exists():
+                    raise AccessPointException(
+                        f"Download failed: file {fp} does not exist for resource {resource_id}"
+                    )
 
             return [str(fp) for fp in file_paths]
 
