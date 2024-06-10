@@ -37,7 +37,7 @@ class ModelSelector():
         """ Load mechanism field from the icmap
 
         Returns:
-            mechanisms (dict [Mechanism]): 
+            mechanisms (dict [Mechanism]):
         """
         ic_map_mechs = self._get_ic_map_entry('mechanisms')
         mechanisms = {k: Mechanism(**v) for k, v in ic_map_mechs.items()}
@@ -77,8 +77,7 @@ class ModelSelector():
 
         if hasattr(mech, 'type'):
             has_correct_type = \
-                    (mech.type == self.mode) or \
-                    (self.mode == 'mixed')
+                (mech.type == self.mode) or (self.mode == 'mixed')
             return has_correct_type
         else:
             # Always include if 'type' not specified
@@ -101,15 +100,13 @@ class ModelSelector():
             else:
                 return None
         else:
-            #logging.warning("No entry for model '%s'.")
+            # logging.warning("No entry for model '%s'.")
             return None
 
     def get(self, name):
         """Get mechanism from channel or model name
-
         Args:
             name (str): channel or model name
-
         Returns:
             (Mechanism): corresponding mechanism
         """
@@ -121,10 +118,8 @@ class ModelSelector():
 
     def select(self, name):
         """Select an return mechanism by channel or model name
-
         Args:
             name (str): channel or model name
-
         Returns:
             (Mechanism): corresponding mechanism
         """
@@ -132,22 +127,20 @@ class ModelSelector():
         mech = self.get(name)
         if not mech:
             return None
-        mech.select(check_status = self.status)
+        mech.select(check_status=self.status)
         if mech.is_selected():
             for req_mod in mech.requires:
-                req_mech = self.select(req_mod) #NB: recursion!
+                req_mech = self.select(req_mod)  # NB: recursion!
                 if req_mech.is_selected():
                     req_mech.set_distribution(mech.distribution)
         return mech
 
-    def get_mechanisms(self, selected_only = True):
+    def get_mechanisms(self, selected_only=True):
         """Get a copy of all available mechanisms from the icmapping file.
-
         Args:
             selected_only (bool): flag to get only selected channels
-
         Returns:
-            mechs (dict [Mechanism]): mechanisms with all associated info 
+            mechs (dict [Mechanism]): mechanisms with all associated info
                 fields
         """
 

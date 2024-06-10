@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, asdict
 
+
 @dataclass
 class Parameter:
     """Used to exchange configuration information with BPEM."""
@@ -11,6 +12,7 @@ class Parameter:
     location: str           # Cell compartment
     mechanism: str = ''     # Mechanism suffix
     distribution: str = ''  # Morphology dependent function
+
 
 class Configuration:
     """Class to collect cell model parameters and generate a
@@ -31,7 +33,7 @@ class Configuration:
         list_of_dicts = [dict(s) for s in set(frozenset(x.items()) for x in list_of_dicts)]
         # Sort by key
         if sort_by:
-            list_of_dicts = sorted(list_of_dicts, key = lambda k: k[sort_by])
+            list_of_dicts = sorted(list_of_dicts, key=lambda k: k[sort_by])
         return list_of_dicts
 
     def _add_mech_param(self, mech, param):
@@ -49,11 +51,11 @@ class Configuration:
         for comp, distr in locations.items():
             if not distr == '':
                 pset = Parameter(
-                        name = name,
-                        value = tuple(mech.get_bounds(param)),
-                        location = comp,
-                        mechanism = suffix,
-                        distribution = distr)
+                    name=name,
+                    value=tuple(mech.get_bounds(param)),
+                    location=comp,
+                    mechanism=suffix,
+                    distribution=distr)
                 self._parameters.append(pset)
 
     def add_from_mechanism(self, mech):
@@ -82,14 +84,15 @@ class Configuration:
             value (tuple): bounds for parameter optimization
         """
 
-        pset = Parameter(name = name, location = location, value = value)
+        pset = Parameter(name=name, location=location, value=value)
         self._parameters.append(pset)
 
     def get_mechanisms(self):
         """Returns a list of mechanisms and compartments to insert them."""
 
-        mechanisms = [{'name': p.mechanism, 'location': p.location}
-                for p in self._parameters if p.mechanism]
+        mechanisms = [
+            {'name': p.mechanism, 'location': p.location}
+            for p in self._parameters if p.mechanism]
         return self._clean_up_list_of_dicts(mechanisms, 'name')
 
     def get_parameters(self):
@@ -107,7 +110,7 @@ class Configuration:
     def __str__(self):
         locations = {}
         for param in self._parameters:
-            if not param.location in locations:
+            if param.location not in locations:
                 locations[param.location] = []
             locations[param.location].append([
                 param.name, param.value, param.distribution])

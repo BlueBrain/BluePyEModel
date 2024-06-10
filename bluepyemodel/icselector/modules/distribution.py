@@ -7,7 +7,7 @@ from dataclasses import dataclass, asdict
 class Distribution:
     """Holds subcellular distribution for each compartment."""
 
-    all: str = '' # If 'all' is set, other fields will be ignored!
+    all: str = ''  # If 'all' is set, other fields will be ignored!
     somatic: str = 'uniform'
     basal: str = 'uniform'
     apical: str = 'uniform'
@@ -30,7 +30,7 @@ class Distribution:
         """Set distributions on compartments.
 
         Args:
-            fields (dict): fields to be set specified as 
+            fields (dict): fields to be set specified as
                 {compartment: distribution}
         """
 

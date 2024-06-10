@@ -4,6 +4,7 @@ from pprint import pprint
 import numpy as np
 from .distribution import Distribution, asdict
 
+
 class Mechanism:
     """Holds all collected information associated with a Neuron mechanism.
     Corresponds to mechanisms fields in the icmapping file, with added
@@ -26,12 +27,10 @@ class Mechanism:
                 self.set_parameters(**{param: 0})
         self.set_gbar([0, 1])
 
-    def select(self, check_status = None):
+    def select(self, check_status=None):
         """Select mechanism for inclusion in model configuration.
-        
         Args:
-            check_status (str): only select the mechanism if status meets 
-                criterium
+            check_status (str): only select the mechanism if status meets criterium
         """
 
         if not self.status:
@@ -49,8 +48,7 @@ class Mechanism:
         self._selected = False
 
     def is_selected(self):
-        """Mechanism has been selected for inclusion in model configuration. 
-        
+        """Mechanism has been selected for inclusion in model configuration.
         Args:
             selected (bool): Mechanism has been selected
         """
@@ -59,7 +57,6 @@ class Mechanism:
 
     def get_bounds(self, param):
         """Get parameter bounds.
-        
         Args:
             param (str): parameter name
 
@@ -71,11 +68,9 @@ class Mechanism:
 
     def set_distribution(self, *args, **kwargs):
         """Set gbar distributions for all compartments.
-
         Args:
             args (list): distribution (str or Distribution)
-            kwargs (dict): fields to be set specified as 
-                {compartment: distribution}
+            kwargs (dict): fields to be set specified as {compartment: distribution}
         """
 
         if len(args) > 0:
@@ -89,7 +84,6 @@ class Mechanism:
 
     def set_parameters(self, **kwargs):
         """Set the values of model parameters other than gbar
-        
         Args:
             kwargs (dict): parameter values formatted as {parameter: value}
         """
@@ -105,14 +99,13 @@ class Mechanism:
 
     def set_gbar(self, value):
         """Set the value of gbar
-
         Args:
             value (list or number): value or bounds of gbar
         """
 
         if 'gbar' in self.model:
             gbar = self.model['gbar']
-            #self.set_parameters(**{gbar: value})
+            # self.set_parameters(**{gbar: value})
             if not isinstance(value, list):
                 value = [value]
             value_check = [(isinstance(v, float) or isinstance(v, int)) for v in value]
@@ -122,7 +115,6 @@ class Mechanism:
 
     def set_from_gene_info(self, info):
         """Set fields based on gene info.
-
         Args:
             info (dict): channel information coming from the GeneSelector
         """
@@ -134,7 +126,6 @@ class Mechanism:
 
     def set_from_icmap(self, info):
         """Set fields based on icmap info.
-
         Args:
             info (dict): channel information coming from the icmapping file
         """
@@ -166,6 +157,6 @@ class Mechanism:
         pstr = ', '.join([f'{k} = {v}' for k, v in self._bounds.items()])
         out_str = '{name}, distribution: {dist}, bounds: {param}'
         return out_str.format(
-                name = self.model['suffix'],
-                dist = self.distribution,
-                param = pstr)
+            name=self.model['suffix'],
+            dist=self.distribution,
+            param=pstr)

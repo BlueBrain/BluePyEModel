@@ -1,17 +1,17 @@
 """# ICSELECTOR
-Select a set of NEURON mechanisms, parameters and bounds from corresponding 
-genes. Gene names can be selected from a file mapping genes to different 
-ME-T types. Corresponding channels are selected from a file mapping channels 
+Select a set of NEURON mechanisms, parameters and bounds from corresponding
+genes. Gene names can be selected from a file mapping genes to different
+ME-T types. Corresponding channels are selected from a file mapping channels
 and parameters to genes.
 
 ## Usage
 Select from a gene-mapping file:
-    $ python icselector.py 
-        --ic_map <ic_mapping_file.json> 
-        --gene_map <gene_mapping_file.csv> 
+    $ python icselector.py
+        --ic_map <ic_mapping_file.json>
+        --gene_map <gene_mapping_file.csv>
         --keys <any_key_from_gene_map> ...
 
-<any_key_from_gene_map> could be an me-type, t-type or gene name from the 
+<any_key_from_gene_map> could be an me-type, t-type or gene name from the
 gene_map file, or part of a name e.g.
         --keys L3_TPC:A 'L2/3 IT Cxcl14_1'
 
@@ -44,37 +44,43 @@ def get_cmd_args():
     """Define command line arguments"""
     usage = "%(prog)s"
     parser = ArgumentParser(
-            description = "Retrieve a list of NEURON mechanisms associated with provided genes.",
-            usage = usage)
-    parser.add_argument('--ic_map',
-            dest = 'ic_map_path',
-            type = str,
-            help = "Path to .json file containing gene to channel mapping.")
-    parser.add_argument('--gene_map',
-            dest = 'gene_map_path',
-            type = str,
-            help = "Path to .csv file containing met-type to gene mapping.")
-    parser.add_argument('--keys',
-            type = str,
-            nargs = '+',
-            help = 'Optional list of keywords to filter genes.')
-    parser.add_argument('--mode',
-            type = str,
-            choices = ['genetic', 'generic', 'mixed'],
-            default = 'mixed',
-            help = 'Model types to include.')
-    parser.add_argument('--status',
-            type = str,
-            choices = ['stable', 'latest'],
-            default = 'latest',
-            help = 'Model version to include.')
+        description="Retrieve a list of NEURON mechanisms associated with provided genes.",
+        usage=usage)
+    parser.add_argument(
+        '--ic_map',
+        dest='ic_map_path',
+        type=str,
+        help="Path to .json file containing gene to channel mapping.")
+    parser.add_argument(
+        '--gene_map',
+        dest='gene_map_path',
+        type=str,
+        help="Path to .csv file containing met-type to gene mapping.")
+    parser.add_argument(
+        '--keys',
+        type=str,
+        nargs='+',
+        help='Optional list of keywords to filter genes.')
+    parser.add_argument(
+        '--mode',
+        type=str,
+        choices=['genetic', 'generic', 'mixed'],
+        default='mixed',
+        help='Model types to include.')
+    parser.add_argument(
+        '--status',
+        type=str,
+        choices=['stable', 'latest'],
+        default='latest',
+        help='Model version to include.')
 
     args = parser.parse_args()
     return vars(args)
 
+
 class ICSelector():
     """ Selects NEURON mechanisms, with parameters, value bounds, and
-    distributions. Uses reference files for MET-type to gene mapping, 
+    distributions. Uses reference files for MET-type to gene mapping,
     gene to channel mapping, and channel to parameter mapping. """
 
     def __init__(self, ic_map_path, gene_map_path=None, mode='mixed', status='latest'):
@@ -87,7 +93,7 @@ class ICSelector():
 
         # === Load mapping files
         if gene_map_path:
-            gene_map = pd.read_csv(gene_map_path, index_col = [0, 1, 2])
+            gene_map = pd.read_csv(gene_map_path, index_col=[0, 1, 2])
             self._gene_selector = GeneSelector(gene_map)
         else:
             self._gene_selector = None
@@ -152,7 +158,6 @@ class ICSelector():
 
     def __set_parameters_from_gene(self, gene_name):
         """Set mechanism fields corresponding to gene.
-        
         Args:
             gene_name (str): gene name
         """
@@ -173,7 +178,6 @@ class ICSelector():
 
     def _select_genes_from_ttype(self, key_words):
         """Select genes from key words.
-        
         Args:
             key_words (list [str]): list of keys to select genes
         """
@@ -227,7 +231,6 @@ class ICSelector():
 
     def get_gene_mapping(self):
         """Get a dict of all selected genes and mapped channels.
-        
         Returns:
             genes (dict): all selected genes and mapped channels
         """
@@ -242,14 +245,14 @@ class ICSelector():
                     v['mapped_to'] = a
         return genes
 
-    def get_mechanisms(self, selected_only = True):
+    def get_mechanisms(self, selected_only=True):
         """Get all available mechanisms from the icmapping file.
 
         Args:
             selected_only (bool): flag to get only selected channels
 
         Returns:
-            mechs (dict [Mechanism]): mechanisms with all associated info 
+            mechs (dict [Mechanism]): mechanisms with all associated info
                 fields
         """
 
@@ -258,7 +261,7 @@ class ICSelector():
         return mechs
 
     def get_selected_cell_types(self):
-        """ Get met types selected from the gene mapping table. 
+        """ Get met types selected from the gene mapping table.
 
         Returns:
             (list): all selected cell types
@@ -281,7 +284,7 @@ class ICSelector():
         logging.info('\n=======================\nParameter Configuration\n=======================')
 
         # === Set additional parameters
-        #misc = self._get_ic_map_entry('misc_parameters')
+        # misc = self._get_ic_map_entry('misc_parameters')
         misc = self._misc_parameters
         for name, setting in misc.items():
 
