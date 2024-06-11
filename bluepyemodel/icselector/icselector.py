@@ -29,15 +29,9 @@ from pprint import pprint
 import numpy as np
 import pandas as pd
 
-
-if __name__ == '__main__':
-    from modules.gene_selector import GeneSelector
-    from modules.model_selector import ModelSelector
-    from modules.configuration import Configuration
-else:
-    from .modules.gene_selector import GeneSelector
-    from .modules.model_selector import ModelSelector
-    from .modules.configuration import Configuration
+from .modules.gene_selector import GeneSelector
+from .modules.model_selector import ModelSelector
+from .modules.configuration import Configuration
 
 
 def get_cmd_args():
@@ -137,8 +131,7 @@ class ICSelector():
         """
         if gene_name in self._gene_to_ic:
             return self._gene_to_ic[gene_name]
-        else:
-            return None
+        return None
 
     def _get_mech_from_gene(self, gene_name):
         """Get channel mechanism from gene.
@@ -153,8 +146,7 @@ class ICSelector():
         channel_name = self._get_channel_name(gene_name)
         if channel_name:
             return self._model_selector.get(channel_name)
-        else:
-            return None
+        return None
 
     def __set_parameters_from_gene(self, gene_name):
         """Set mechanism fields corresponding to gene.

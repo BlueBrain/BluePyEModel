@@ -150,8 +150,7 @@ class GeneSelector:
 
         if gene_name in self.selected_genes:
             return self.selected_genes[gene_name]
-        else:
-            raise KeyError('Gene not available for the selected ttype.')
+        raise KeyError('Gene not available for the selected ttype.')
 
     def select_from_ttype(self, keys=None, group_compartments=False):
         """ Returns selected genes and distributions associated with provided

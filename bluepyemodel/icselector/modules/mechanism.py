@@ -108,7 +108,7 @@ class Mechanism:
             # self.set_parameters(**{gbar: value})
             if not isinstance(value, list):
                 value = [value]
-            value_check = [(isinstance(v, float) or isinstance(v, int)) for v in value]
+            value_check = [isinstance(v, (float, int)) for v in value]
             if not np.sum(value_check) == len(value):
                 raise TypeError('gbar value must be numeric.')
             self._bounds[gbar] = value

@@ -76,12 +76,8 @@ class ModelSelector():
             return False
 
         if hasattr(mech, 'type'):
-            has_correct_type = \
-                (mech.type == self.mode) or (self.mode == 'mixed')
-            return has_correct_type
-        else:
-            # Always include if 'type' not specified
-            return True
+            return self.mode in (mech.type, 'mixed')
+        return True
 
     def _get_mech_from_model(self, model_name):
         """Get mechanism by model name
@@ -97,11 +93,7 @@ class ModelSelector():
             mech = self._mechanisms[model_name]
             if self._check_mech(mech):
                 return mech
-            else:
-                return None
-        else:
-            # logging.warning("No entry for model '%s'.")
-            return None
+        return None
 
     def get(self, name):
         """Get mechanism from channel or model name
