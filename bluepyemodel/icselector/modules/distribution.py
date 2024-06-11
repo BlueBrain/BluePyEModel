@@ -1,6 +1,7 @@
 """Mechanism class corresponding to mechanisms fields in the icmapping file."""
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
+from dataclasses import dataclass
 
 
 @dataclass

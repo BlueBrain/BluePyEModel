@@ -1,6 +1,7 @@
 """Methods to handle cell model configuration."""
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
+from dataclasses import dataclass
 
 
 @dataclass

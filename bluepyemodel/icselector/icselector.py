@@ -29,9 +29,9 @@ from pprint import pprint
 import numpy as np
 import pandas as pd
 
+from .modules.configuration import Configuration
 from .modules.gene_selector import GeneSelector
 from .modules.model_selector import ModelSelector
-from .modules.configuration import Configuration
 
 
 def get_cmd_args():
