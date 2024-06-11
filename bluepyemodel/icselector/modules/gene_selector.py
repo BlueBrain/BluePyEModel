@@ -8,7 +8,7 @@ from .distribution import Distribution
 
 
 class GeneSelector:
-    """ Selects genes from Yann's gene mapping file."""
+    """Selects genes from Yann's gene mapping file."""
 
     def __init__(self, gene_map):
         """
@@ -57,7 +57,7 @@ class GeneSelector:
             presence (array [bool]): gene is present
         """
 
-        gene_present = gene['presence']
+        gene_present = gene["presence"]
         if isinstance(gene_present, str):
             presence = np.array([int(gene_present)], dtype=int) == 1
         else:
@@ -78,31 +78,40 @@ class GeneSelector:
         """
 
         all_comps = None
-        dend = np.unique(np.array(gene.filter(regex='dend', axis=0).values[presence], dtype=str))
-        axon = np.unique(np.array(gene.filter(regex='axon', axis=0).values[presence], dtype=str))
-        soma = np.unique(np.array(gene.filter(regex='soma', axis=0).values[presence], dtype=str))
+        dend = np.unique(np.array(gene.filter(regex="dend", axis=0).values[presence], dtype=str))
+        axon = np.unique(np.array(gene.filter(regex="axon", axis=0).values[presence], dtype=str))
+        soma = np.unique(np.array(gene.filter(regex="soma", axis=0).values[presence], dtype=str))
 
         if len(dend) > 1:
-            logging.warning((
-                "Conflicting dendritic distributions for gene %s. " +
-                "Selected '%s' from %s"), gene.name, dend[0], dend)
+            logging.warning(
+                "Conflicting dendritic distributions for gene %s. Selected '%s' from %s",
+                gene.name,
+                dend[0],
+                dend,
+            )
         dend = dend[0]
         if len(axon) > 1:
-            logging.warning((
-                "Conflicting axonal distributions for gene %s. " +
-                "Selected '%s' from %s"), gene.name, axon[0], axon)
+            logging.warning(
+                "Conflicting axonal distributions for gene %s. Selected '%s' from %s",
+                gene.name,
+                axon[0],
+                axon,
+            )
         axon = axon[0]
         if len(soma) > 1:
-            logging.warning((
-                "Conflicting somatic distributions for gene %s. " +
-                "Selected '%s' from %s"), gene.name, soma[0], soma)
+            logging.warning(
+                "Conflicting somatic distributions for gene %s. Selected '%s' from %s",
+                gene.name,
+                soma[0],
+                soma,
+            )
         soma = soma[0]
 
         if (dend == axon) and (axon == soma):
             all_comps = dend
 
         def str_has_value(s):
-            return not ((s == 'nan') or (s.strip() == ''))
+            return not ((s == "nan") or (s.strip() == ""))
 
         distros = Distribution()
         if all_comps and group_compartments:
@@ -124,7 +133,7 @@ class GeneSelector:
         """
 
         try:
-            gbar_max = gene['g_bar_max']
+            gbar_max = gene["g_bar_max"]
             gbar_max = np.array([float(g) for g in gbar_max.values])
             # gbar_max = np.array(gbar_max.values, dtype = np.float)
         except KeyError:
@@ -133,9 +142,12 @@ class GeneSelector:
         gbar_max[crit] = 0.0
         gbar_max = np.unique(gbar_max)
         if len(gbar_max) > 1:
-            logging.warning((
-                "Conflicting g_bar_max values for gene %s. " +
-                "Selected '%s' from %s"), gene.name, np.max(gbar_max), gbar_max)
+            logging.warning(
+                "Conflicting g_bar_max values for gene %s. Selected '%s' from %s",
+                gene.name,
+                np.max(gbar_max),
+                gbar_max,
+            )
         return np.max(gbar_max)
 
     def get(self, gene_name):
@@ -150,10 +162,10 @@ class GeneSelector:
 
         if gene_name in self.selected_genes:
             return self.selected_genes[gene_name]
-        raise KeyError('Gene not available for the selected ttype.')
+        raise KeyError("Gene not available for the selected ttype.")
 
     def select_from_ttype(self, keys=None, group_compartments=False):
-        """ Returns selected genes and distributions associated with provided
+        """Returns selected genes and distributions associated with provided
         key words.
 
         Args:
@@ -171,9 +183,7 @@ class GeneSelector:
         if keys:
             df = self._filter(df, keys)
         # Store result
-        self.selected_met_types = np.unique(
-            [f'{v[0]} - {v[1]}'
-             for v in df.index.values])
+        self.selected_met_types = np.unique([f"{v[0]} - {v[1]}" for v in df.index.values])
         df = df.droplevel([0, 1])
         # Apply filter also to genes
         if keys:
@@ -195,24 +205,25 @@ class GeneSelector:
             gbar_max = self._get_gbar_max(gene)
             # Add item
             self.selected_genes[name] = {
-                'channel': 'n/a',
-                'distribution': distros,
-                'gbar_max': gbar_max}
+                "channel": "n/a",
+                "distribution": distros,
+                "gbar_max": gbar_max,
+            }
 
         return self.selected_genes
 
     def __str__(self):
         # heading_str = '\n===========\nM/E/T types\n==========='
-        heading_str = '\n>>> M/E/T types <<<'
+        heading_str = "\n>>> M/E/T types <<<"
         out_str = [heading_str]
         for k in self.selected_met_types:
             out_str += [k]
         # out_str += ['==============\nGenes Selection\n==============']
-        out_str += ['\n>>> Genes <<<']
+        out_str += ["\n>>> Genes <<<"]
         items = self.selected_genes.items()
         n = 1
         for k, v in items:
             items_str = f"-{n}- {k}, distribution: {v['distribution']}, gbar_max: {v['gbar_max']}"
             n += 1
             out_str += [items_str]
-        return '\n'.join(out_str)
+        return "\n".join(out_str)

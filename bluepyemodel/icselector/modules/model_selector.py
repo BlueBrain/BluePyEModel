@@ -5,7 +5,7 @@ import copy
 from .mechanism import Mechanism
 
 
-class ModelSelector():
+class ModelSelector:
     """selects NEURON mechanisms for cell model configuration"""
 
     def __init__(self, ic_map):
@@ -16,8 +16,8 @@ class ModelSelector():
 
         self._ic_map = ic_map
         self._mechanisms = self._load_mechanisms()
-        self.status = 'stable'
-        self.mode = 'mixed'
+        self.status = "stable"
+        self.mode = "mixed"
 
     def _get_ic_map_entry(self, key):
         """Get an entry from the icmap
@@ -30,24 +30,24 @@ class ModelSelector():
         """
 
         entry = self._ic_map[key]
-        entry = {k: v for k, v in entry.items() if not k[0] == '_'}
+        entry = {k: v for k, v in entry.items() if not k[0] == "_"}
         return entry
 
     def _load_mechanisms(self):
-        """ Load mechanism field from the icmap
+        """Load mechanism field from the icmap
 
         Returns:
             mechanisms (dict [Mechanism]):
         """
-        ic_map_mechs = self._get_ic_map_entry('mechanisms')
+        ic_map_mechs = self._get_ic_map_entry("mechanisms")
         mechanisms = {k: Mechanism(**v) for k, v in ic_map_mechs.items()}
         return mechanisms
 
     def _set_mechanism_parameters(self):
-        """ Set mechanism parameters from icmap settings."""
+        """Set mechanism parameters from icmap settings."""
 
         mechs = self._mechanisms
-        params = self._get_ic_map_entry('mechanism_parameters')
+        params = self._get_ic_map_entry("mechanism_parameters")
         for name, info in params.items():
             mech = mechs[name]
             mech.set_from_icmap(info)
@@ -62,7 +62,7 @@ class ModelSelector():
             mech (Mechanism): corresponding mechanism
         """
 
-        chan_to_model = self._get_ic_map_entry('channels')
+        chan_to_model = self._get_ic_map_entry("channels")
         models = chan_to_model.pop(channel_name, [])
         mechs = [self._get_mech_from_model(model) for model in models]
 
@@ -75,8 +75,8 @@ class ModelSelector():
         if not mech:
             return False
 
-        if hasattr(mech, 'type'):
-            return self.mode in (mech.type, 'mixed')
+        if hasattr(mech, "type"):
+            return self.mode in (mech.type, "mixed")
         return True
 
     def _get_mech_from_model(self, model_name):
@@ -136,7 +136,7 @@ class ModelSelector():
                 fields
         """
 
-        self.select('pas')
+        self.select("pas")
         self._set_mechanism_parameters()
         if selected_only:
             mechs = {name: mech for name, mech in self._mechanisms.items() if mech.is_selected()}
@@ -146,11 +146,11 @@ class ModelSelector():
 
     def __str__(self):
         out_str = []
-        out_str += ['\n>>> Mechanisms <<<']
+        out_str += ["\n>>> Mechanisms <<<"]
         n = 1
         mechs = self.get_mechanisms()
         for v in mechs.values():
-            items_str = f'-{n}- {str(v)}'
+            items_str = f"-{n}- {str(v)}"
             n += 1
             out_str.append(items_str)
-        return '\n'.join(out_str)
+        return "\n".join(out_str)

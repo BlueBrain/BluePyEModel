@@ -8,11 +8,11 @@ from dataclasses import dataclass
 class Parameter:
     """Used to exchange configuration information with BPEM."""
 
-    name: str               # Neuron parameter name, i.e. {param}_{suffix}
-    value: tuple            # Optimization boundaries
-    location: str           # Cell compartment
-    mechanism: str = ''     # Mechanism suffix
-    distribution: str = ''  # Morphology dependent function
+    name: str  # Neuron parameter name, i.e. {param}_{suffix}
+    value: tuple  # Optimization boundaries
+    location: str  # Cell compartment
+    mechanism: str = ""  # Mechanism suffix
+    distribution: str = ""  # Morphology dependent function
 
 
 class Configuration:
@@ -46,17 +46,18 @@ class Configuration:
         """
 
         model = mech.model
-        suffix = model['suffix']
+        suffix = model["suffix"]
         locations = asdict(mech.distribution)
-        name = param + '_' + suffix
+        name = param + "_" + suffix
         for comp, distr in locations.items():
-            if not distr == '':
+            if not distr == "":
                 pset = Parameter(
                     name=name,
                     value=tuple(mech.get_bounds(param)),
                     location=comp,
                     mechanism=suffix,
-                    distribution=distr)
+                    distribution=distr,
+                )
                 self._parameters.append(pset)
 
     def add_from_mechanism(self, mech):
@@ -68,12 +69,12 @@ class Configuration:
 
         model = mech.model
 
-        if 'gbar' in model:
-            param = model['gbar']
+        if "gbar" in model:
+            param = model["gbar"]
             self._add_mech_param(mech, param)
 
-        if 'parameters' in model:
-            for param in model['parameters']:
+        if "parameters" in model:
+            for param in model["parameters"]:
                 self._add_mech_param(mech, param)
 
     def add_parameter(self, name, location, value):
@@ -92,35 +93,34 @@ class Configuration:
         """Returns a list of mechanisms and compartments to insert them."""
 
         mechanisms = [
-            {'name': p.mechanism, 'location': p.location}
-            for p in self._parameters if p.mechanism]
-        return self._clean_up_list_of_dicts(mechanisms, 'name')
+            {"name": p.mechanism, "location": p.location} for p in self._parameters if p.mechanism
+        ]
+        return self._clean_up_list_of_dicts(mechanisms, "name")
 
     def get_parameters(self):
         """Returns a list of configuration parameters."""
 
         params = [asdict(p) for p in self._parameters]
-        return self._clean_up_list_of_dicts(params, 'mechanism')
+        return self._clean_up_list_of_dicts(params, "mechanism")
 
     def get_distributions(self):
         """Returns a list of unique distribution definitions used."""
 
-        distr = [{'name': p.distribution} for p in self._parameters if p.distribution]
-        return self._clean_up_list_of_dicts(distr, 'name')
+        distr = [{"name": p.distribution} for p in self._parameters if p.distribution]
+        return self._clean_up_list_of_dicts(distr, "name")
 
     def __str__(self):
         locations = {}
         for param in self._parameters:
             if param.location not in locations:
                 locations[param.location] = []
-            locations[param.location].append([
-                param.name, param.value, param.distribution])
-        out_str = ['\n']
+            locations[param.location].append([param.name, param.value, param.distribution])
+        out_str = ["\n"]
         for loc, content in locations.items():
-            out_str.append(f'>>> {loc} <<<')
+            out_str.append(f">>> {loc} <<<")
             for p in content:
                 if p[2]:
-                    out_str.append(f'    {p[0]}, value: {p[1]}, distribution: {p[2]}')
+                    out_str.append(f"    {p[0]}, value: {p[1]}, distribution: {p[2]}")
                 else:
-                    out_str.append(f'    {p[0]}, value: {p[1]}')
-        return '\n'.join(out_str)
+                    out_str.append(f"    {p[0]}, value: {p[1]}")
+        return "\n".join(out_str)

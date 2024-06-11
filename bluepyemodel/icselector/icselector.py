@@ -1,4 +1,4 @@
-"""# ICSELECTOR
+""" ICSELECTOR
 Select a set of NEURON mechanisms, parameters and bounds from corresponding
 genes. Gene names can be selected from a file mapping genes to different
 ME-T types. Corresponding channels are selected from a file mapping channels
@@ -39,45 +39,51 @@ def get_cmd_args():
     usage = "%(prog)s"
     parser = ArgumentParser(
         description="Retrieve a list of NEURON mechanisms associated with provided genes.",
-        usage=usage)
+        usage=usage,
+    )
     parser.add_argument(
-        '--ic_map',
-        dest='ic_map_path',
+        "--ic_map",
+        dest="ic_map_path",
         type=str,
-        help="Path to .json file containing gene to channel mapping.")
+        help="Path to .json file containing gene to channel mapping.",
+    )
     parser.add_argument(
-        '--gene_map',
-        dest='gene_map_path',
+        "--gene_map",
+        dest="gene_map_path",
         type=str,
-        help="Path to .csv file containing met-type to gene mapping.")
+        help="Path to .csv file containing met-type to gene mapping.",
+    )
     parser.add_argument(
-        '--keys',
+        "--keys",
         type=str,
-        nargs='+',
-        help='Optional list of keywords to filter genes.')
+        nargs="+",
+        help="Optional list of keywords to filter genes.",
+    )
     parser.add_argument(
-        '--mode',
+        "--mode",
         type=str,
-        choices=['genetic', 'generic', 'mixed'],
-        default='mixed',
-        help='Model types to include.')
+        choices=["genetic", "generic", "mixed"],
+        default="mixed",
+        help="Model types to include.",
+    )
     parser.add_argument(
-        '--status',
+        "--status",
         type=str,
-        choices=['stable', 'latest'],
-        default='latest',
-        help='Model version to include.')
+        choices=["stable", "latest"],
+        default="latest",
+        help="Model version to include.",
+    )
 
     args = parser.parse_args()
     return vars(args)
 
 
-class ICSelector():
-    """ Selects NEURON mechanisms, with parameters, value bounds, and
+class ICSelector:
+    """Selects NEURON mechanisms, with parameters, value bounds, and
     distributions. Uses reference files for MET-type to gene mapping,
-    gene to channel mapping, and channel to parameter mapping. """
+    gene to channel mapping, and channel to parameter mapping."""
 
-    def __init__(self, ic_map_path, gene_map_path=None, mode='mixed', status='latest'):
+    def __init__(self, ic_map_path, gene_map_path=None, mode="mixed", status="latest"):
         """
         Args:
             ic_map_path (str): path to ic_mapping file (.json)
@@ -92,11 +98,11 @@ class ICSelector():
         else:
             self._gene_selector = None
 
-        with open(ic_map_path, mode='r', encoding="utf-8") as fid:
+        with open(ic_map_path, mode="r", encoding="utf-8") as fid:
             ic_map = json.load(fid)
-        self._misc_parameters = ic_map['misc_parameters']
-        self._gene_to_ic = ic_map['genes']
-        self._distributions = ic_map['distributions']
+        self._misc_parameters = ic_map["misc_parameters"]
+        self._gene_to_ic = ic_map["genes"]
+        self._distributions = ic_map["distributions"]
         self._model_selector = ModelSelector(ic_map)
         self.set_status(status)
         self.set_mode(mode)
@@ -107,7 +113,7 @@ class ICSelector():
         Args:
             status (str): 'stable' or 'latest'
         """
-        if status in ['stable', 'latest']:
+        if status in ["stable", "latest"]:
             self._model_selector.status = status
 
     def set_mode(self, mode):
@@ -117,7 +123,7 @@ class ICSelector():
             mode (str): 'generic', 'genetic', or 'mixed'
         """
 
-        if mode in ['genetic', 'generic', 'mixed']:
+        if mode in ["genetic", "generic", "mixed"]:
             self._model_selector.mode = mode
 
     def _get_channel_name(self, gene_name):
@@ -155,12 +161,12 @@ class ICSelector():
         """
 
         info = self._gene_selector.get(gene_name)
-        channel_name = info['channel']
+        channel_name = info["channel"]
         mech = self.get(channel_name)
         if mech:
             mech.set_from_gene_info(info)
         else:
-            logging.warning('Could not determine mechanism for gene %s', gene_name)
+            logging.warning("Could not determine mechanism for gene %s", gene_name)
 
     def _set_parameters_from_ttype(self):
         """Copy parameters from selected genes to mechanims."""
@@ -175,19 +181,19 @@ class ICSelector():
         """
 
         # === Get genes from gene mapping file
-        logging.info('\n===============\nGenes Selection\n===============')
+        logging.info("\n===============\nGenes Selection\n===============")
         genes = self._gene_selector.select_from_ttype(key_words)
         logging.info(str(self._gene_selector))
 
         # === Map genes to channels
         for gene, info in genes.items():
             if gene in self._gene_to_ic:
-                info['channel'] = self._gene_to_ic[gene]
+                info["channel"] = self._gene_to_ic[gene]
 
     def _select_mechanisms_from_ttype(self):
         """Select mechanisms from previously selected genes."""
 
-        logging.info('\n==================\nChannels Selection\n==================')
+        logging.info("\n==================\nChannels Selection\n==================")
         for gene_name in self._gene_selector.selected_genes:
             self.select(gene_name)
         logging.info(str(self._model_selector))
@@ -229,12 +235,12 @@ class ICSelector():
 
         mechs = self.get_mechanisms()
         genes = self._gene_selector.selected_genes
-        genes = {k: v for k, v in genes.items() if not v['channel'] == 'n/a'}
+        genes = {k: v for k, v in genes.items() if not v["channel"] == "n/a"}
         for k, v in genes.items():
-            channel = v['channel']
+            channel = v["channel"]
             for a, b in mechs.items():
-                if channel in b['_mapped_from']:
-                    v['mapped_to'] = a
+                if channel in b["_mapped_from"]:
+                    v["mapped_to"] = a
         return genes
 
     def get_mechanisms(self, selected_only=True):
@@ -253,7 +259,7 @@ class ICSelector():
         return mechs
 
     def get_selected_cell_types(self):
-        """ Get met types selected from the gene mapping table.
+        """Get met types selected from the gene mapping table.
 
         Returns:
             (list): all selected cell types
@@ -273,25 +279,25 @@ class ICSelector():
         for mech in mechanisms.values():
             config.add_from_mechanism(mech)
 
-        logging.info('\n=======================\nParameter Configuration\n=======================')
+        logging.info("\n=======================\nParameter Configuration\n=======================")
 
         # === Set additional parameters
         # misc = self._get_ic_map_entry('misc_parameters')
         misc = self._misc_parameters
         for name, setting in misc.items():
 
-            if 'local' in setting:
+            if "local" in setting:
                 # Location to be obtained from mechanism
                 locations = []
                 for mech in mechanisms.values():
                     model = mech.model
-                    if 'read' in model:
-                        reads = model['read']
+                    if "read" in model:
+                        reads = model["read"]
                         if name in reads:
                             locs = mech.distribution.get()
                             locations.extend(locs.keys())
                 for loc in np.unique(locations):
-                    config.add_parameter(name, loc, setting['local'])
+                    config.add_parameter(name, loc, setting["local"])
             else:
                 for loc, value in setting.items():
                     config.add_parameter(name, loc, value)
@@ -300,7 +306,7 @@ class ICSelector():
         return config
 
     def get_cell_config_from_ttype(self, key_words):
-        """ Get all information related to cell model configuration from
+        """Get all information related to cell model configuration from
         mechanisms selected based on genetic expression profiles.
 
         Args:
@@ -330,8 +336,8 @@ class ICSelector():
         # Define distributions
         distr_funcs = self._distributions
         for distr in distributions:
-            distr_name = distr['name']
-            if not distr_name == 'uniform':
+            distr_name = distr["name"]
+            if not distr_name == "uniform":
                 if distr_name in distr_funcs:
                     d = distr_funcs[distr_name]
                     for k, v in d.items():
@@ -348,7 +354,7 @@ class ICSelector():
 def main(*args, **kwargs):
     """Main"""
     # === Instantiate
-    keys = kwargs.pop('keys', None)
+    keys = kwargs.pop("keys", None)
     icselector = ICSelector(*args, **kwargs)
 
     # === Get cell configuration
@@ -367,7 +373,7 @@ def main(*args, **kwargs):
     pprint(genes)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     cmd_args = get_cmd_args()
     main(**cmd_args)

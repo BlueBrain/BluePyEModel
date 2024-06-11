@@ -25,8 +25,8 @@ class Mechanism:
         for k, v in kwargs.items():
             setattr(self, k, v)
         # Some initial values
-        if 'parameters' in self.model:
-            for param in self.model['parameters']:
+        if "parameters" in self.model:
+            for param in self.model["parameters"]:
                 self.set_parameters(**{param: 0})
         self.set_gbar([0, 1])
 
@@ -40,7 +40,7 @@ class Mechanism:
             self._selected = True
             return
 
-        if check_status == 'stable':
+        if check_status == "stable":
             self._selected = check_status == self.status
         else:
             self._selected = True
@@ -91,9 +91,9 @@ class Mechanism:
             kwargs (dict): parameter values formatted as {parameter: value}
         """
 
-        if 'parameters' in self.model:
+        if "parameters" in self.model:
             for name, value in kwargs.items():
-                if name in self.model['parameters']:
+                if name in self.model["parameters"]:
                     if not isinstance(value, list):
                         value = [value]
                     self._bounds[name] = value
@@ -106,14 +106,14 @@ class Mechanism:
             value (list or number): value or bounds of gbar
         """
 
-        if 'gbar' in self.model:
-            gbar = self.model['gbar']
+        if "gbar" in self.model:
+            gbar = self.model["gbar"]
             # self.set_parameters(**{gbar: value})
             if not isinstance(value, list):
                 value = [value]
             value_check = [isinstance(v, (float, int)) for v in value]
             if not np.sum(value_check) == len(value):
-                raise TypeError('gbar value must be numeric.')
+                raise TypeError("gbar value must be numeric.")
             self._bounds[gbar] = value
 
     def set_from_gene_info(self, info):
@@ -122,8 +122,8 @@ class Mechanism:
             info (dict): channel information coming from the GeneSelector
         """
 
-        self.set_distribution(info['distribution'])
-        gbar = [0, info['gbar_max']]
+        self.set_distribution(info["distribution"])
+        gbar = [0, info["gbar_max"]]
         self.set_gbar(gbar)
         self._mapped_from.append(f"{info['channel']}")
 
@@ -137,14 +137,14 @@ class Mechanism:
             self.set_gbar(info)
         elif isinstance(info, dict):
             for key, value in info.items():
-                if key == 'gbar':
+                if key == "gbar":
                     self.set_gbar(value)
-                elif key == 'distribution':
+                elif key == "distribution":
                     if isinstance(value, str):
                         self.set_distribution(value)
                     elif isinstance(value, dict):
                         self.set_distribution(**value)
-                elif key == 'bounds':
+                elif key == "bounds":
                     self.set_parameters(**value)
 
     def asdict(self):
@@ -154,12 +154,10 @@ class Mechanism:
 
     def print(self):
         """Alternative print method"""
+
         pprint(self.asdict())
 
     def __str__(self):
-        pstr = ', '.join([f'{k} = {v}' for k, v in self._bounds.items()])
-        out_str = '{name}, distribution: {dist}, bounds: {param}'
-        return out_str.format(
-            name=self.model['suffix'],
-            dist=self.distribution,
-            param=pstr)
+        pstr = ", ".join([f"{k} = {v}" for k, v in self._bounds.items()])
+        out_str = "{name}, distribution: {dist}, bounds: {param}"
+        return out_str.format(name=self.model["suffix"], dist=self.distribution, param=pstr)
