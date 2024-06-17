@@ -100,20 +100,19 @@ class ICSelector:
     distributions. Uses reference files for MET-type to gene mapping,
     gene to channel mapping, and channel to parameter mapping."""
 
-    def __init__(self, ic_map_path, gene_map_path=None, mode="mixed", status="latest"):
+    def __init__(self, ic_map_path, gene_map_path, mode="mixed", status="latest"):
         """
         Args:
             ic_map_path (str): path to ic_mapping file (.json)
-            gene_map_path (str): Optional path to gene mapping file (.csv)
-            keys (list [str]): key words to filter gene map
+            gene_map_path (str): path to gene mapping file (.csv)
+            mode (str): types of ion channel model to select.
+                Options are 'generic', 'genetic', and 'mixed' (default).
+            status (str): model status. Options are 'stable' and 'latest'.
         """
 
         # === Load mapping files
-        if gene_map_path:
-            gene_map = pd.read_csv(gene_map_path, index_col=[0, 1, 2])
-            self._gene_selector = GeneSelector(gene_map)
-        else:
-            self._gene_selector = None
+        gene_map = pd.read_csv(gene_map_path, index_col=[0, 1, 2])
+        self._gene_selector = GeneSelector(gene_map)
 
         with open(ic_map_path, mode="r", encoding="utf-8") as fid:
             ic_map = json.load(fid)
@@ -121,6 +120,7 @@ class ICSelector:
         self._gene_to_ic = ic_map["genes"]
         self._distributions = ic_map["distributions"]
         self._model_selector = ModelSelector(ic_map)
+
         self.set_status(status)
         self.set_mode(mode)
 
