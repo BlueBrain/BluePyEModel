@@ -23,7 +23,7 @@ from .mechanism import Mechanism
 
 
 class ModelSelector:
-    """selects NEURON mechanisms for cell model configuration"""
+    """Selects NEURON mechanisms for cell model configuration"""
 
     def __init__(self, ic_map):
         """
@@ -126,7 +126,7 @@ class ModelSelector:
         return mech
 
     def select(self, name):
-        """Select an return mechanism by channel or model name
+        """Select and return mechanism by channel or model name
         Args:
             name (str): channel or model name
         Returns:

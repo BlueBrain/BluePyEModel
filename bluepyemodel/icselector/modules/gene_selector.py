@@ -152,7 +152,6 @@ class GeneSelector:
         try:
             gbar_max = gene["g_bar_max"]
             gbar_max = np.array([float(g) for g in gbar_max.values])
-            # gbar_max = np.array(gbar_max.values, dtype = np.float)
         except KeyError:
             gbar_max = np.array([0.0])
         crit = np.array([np.isnan(g) for g in gbar_max])
@@ -230,12 +229,10 @@ class GeneSelector:
         return self.selected_genes
 
     def __str__(self):
-        # heading_str = '\n===========\nM/E/T types\n==========='
         heading_str = "\n>>> M/E/T types <<<"
         out_str = [heading_str]
         for k in self.selected_met_types:
             out_str += [k]
-        # out_str += ['==============\nGenes Selection\n==============']
         out_str += ["\n>>> Genes <<<"]
         items = self.selected_genes.items()
         n = 1

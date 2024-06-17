@@ -299,7 +299,6 @@ class ICSelector:
         logging.info("\n=======================\nParameter Configuration\n=======================")
 
         # === Set additional parameters
-        # misc = self._get_ic_map_entry('misc_parameters')
         misc = self._misc_parameters
         for name, setting in misc.items():
 

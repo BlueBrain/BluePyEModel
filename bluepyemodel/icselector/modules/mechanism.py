@@ -68,10 +68,7 @@ class Mechanism:
         self._selected = False
 
     def is_selected(self):
-        """Mechanism has been selected for inclusion in model configuration.
-        Args:
-            selected (bool): Mechanism has been selected
-        """
+        """Mechanism has been selected for inclusion in model configuration."""
 
         return self._selected
 
@@ -125,7 +122,6 @@ class Mechanism:
 
         if "gbar" in self.model:
             gbar = self.model["gbar"]
-            # self.set_parameters(**{gbar: value})
             if not isinstance(value, list):
                 value = [value]
             value_check = [isinstance(v, (float, int)) for v in value]
