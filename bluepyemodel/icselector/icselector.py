@@ -138,7 +138,7 @@ class ICSelector:
         # === Get genes from gene mapping file
         logging.info("\n===============\nGenes Selection\n===============")
         genes = self._gene_selector.select_from_mettype(mettype)
-        # logging.info(str(self._gene_selector))
+        logging.info(str(self._gene_selector))
 
         # === Map genes to channels
         for gene, info in genes.items():
