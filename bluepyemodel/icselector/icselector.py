@@ -3,22 +3,6 @@ Select a set of NEURON mechanisms, parameters and bounds from corresponding
 genes. Gene names can be selected from a file mapping genes to different
 ME-T types. Corresponding channels are selected from a file mapping channels
 and parameters to genes.
-
-## Usage
-Select from a gene-mapping file:
-    $ python icselector.py
-        --ic_map <ic_mapping_file.json>
-        --gene_map <gene_mapping_file.csv>
-        --keys <any_key_from_gene_map> ...
-
-<any_key_from_gene_map> could be an me-type, t-type or gene name from the
-gene_map file, or part of a name e.g.
-        --keys L3_TPC:A 'L2/3 IT Cxcl14_1'
-
-See 'main' function for an example script.
-
-## Version
-Version 3, December 2021
 """
 
 """
@@ -40,8 +24,6 @@ limitations under the License.
 
 import json
 import logging
-from argparse import ArgumentParser
-from pprint import pprint
 
 import numpy as np
 import pandas as pd
@@ -49,50 +31,6 @@ import pandas as pd
 from .modules.configuration import Configuration
 from .modules.gene_selector import GeneSelector
 from .modules.model_selector import ModelSelector
-
-
-def get_cmd_args():
-    """Define command line arguments"""
-    usage = "%(prog)s"
-    parser = ArgumentParser(
-        description="Retrieve a list of NEURON mechanisms associated with provided genes.",
-        usage=usage,
-    )
-    parser.add_argument(
-        "--ic_map",
-        dest="ic_map_path",
-        type=str,
-        help="Path to .json file containing gene to channel mapping.",
-    )
-    parser.add_argument(
-        "--gene_map",
-        dest="gene_map_path",
-        type=str,
-        help="Path to .csv file containing met-type to gene mapping.",
-    )
-    parser.add_argument(
-        "--keys",
-        type=str,
-        nargs="+",
-        help="Optional list of keywords to filter genes.",
-    )
-    parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["genetic", "generic", "mixed"],
-        default="mixed",
-        help="Model types to include.",
-    )
-    parser.add_argument(
-        "--status",
-        type=str,
-        choices=["stable", "latest"],
-        default="latest",
-        help="Model version to include.",
-    )
-
-    args = parser.parse_args()
-    return vars(args)
 
 
 class ICSelector:
@@ -365,31 +303,3 @@ class ICSelector:
         nexus_keys = [v.nexus for k, v in mechs.items() if v.nexus]
 
         return parameters, mechanisms, distributions, nexus_keys
-
-
-def main(*args, **kwargs):
-    """Main"""
-    # === Instantiate
-    keys = kwargs.pop("keys", None)
-    icselector = ICSelector(*args, **kwargs)
-
-    # === Get cell configuration
-    parameters, mechanisms, distributions, nexus_keys = icselector.get_cell_config_from_ttype(keys)
-    pprint(parameters)
-    pprint(mechanisms)
-    pprint(distributions)
-    pprint(nexus_keys)
-
-    # === Retrieve all mechanisms available in Nexus
-    mechs = icselector.get_mechanisms(selected_only=False)
-    pprint(mechs)
-
-    # === Retrieve channels mapped from genes
-    genes = icselector.get_gene_mapping()
-    pprint(genes)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    cmd_args = get_cmd_args()
-    main(**cmd_args)
