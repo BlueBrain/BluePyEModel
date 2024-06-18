@@ -151,7 +151,10 @@ class GeneSelector:
 
         try:
             gbar_max = gene["g_bar_max"]
-            gbar_max = np.array([float(g) for g in gbar_max.values])
+            if isinstance(gbar_max, (str, float)):
+                gbar_max = np.array([float(gbar_max)])
+            else:
+                gbar_max = np.array([float(g) for g in gbar_max.values])
         except KeyError:
             gbar_max = np.array([0.0])
         crit = np.array([np.isnan(g) for g in gbar_max])
