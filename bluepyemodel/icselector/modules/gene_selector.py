@@ -37,7 +37,6 @@ class GeneSelector:
         self.selected_genes = {}
         self.selected_met_types = []
 
-
     @staticmethod
     def _get_gene_presence(gene):
         """Determine if a gene is present or not.
