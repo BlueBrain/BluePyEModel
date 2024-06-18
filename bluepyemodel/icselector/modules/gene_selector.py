@@ -172,18 +172,17 @@ class GeneSelector:
         """
 
         df = self._gene_map
-        me_type = f"{mettype["etype"]}_{mettype["mtype"]}"
-        ttype = mettype["ttype"]
 
-        # replace spaces with double underscore in ttype since it is not supported
-        df['t-type'] = df['t-type'].str.replace(' ', '__')
-        ttype = ttype.str.replace(' ', '__')
+        me_type = f"{mettype['mtype']}_{mettype['etype']}"
+        t_type = mettype["ttype"]
 
-        # Filter on met-type
-        genes = df[(df['me-type'] == me_type) & (df['t-type'] == ttype)]
+        # replace double underscores with spaces
+        t_type = t_type.replace('__', ' ')
 
-        if genes.empty:
-            raise ValueError(f"No genes found for me-type: {me_type} and t-type: {ttype}")
+        try:
+            genes = df.loc[(me_type, t_type)]
+        except KeyError:
+            raise ValueError(f"No records found for me-type: {me_type} and t-type: {t_type}")
 
         # Store result
         self.selected_met_types = np.unique([f"{v[0]} - {v[1]}" for v in df.index.values])
