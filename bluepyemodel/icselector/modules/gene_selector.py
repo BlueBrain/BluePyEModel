@@ -37,31 +37,6 @@ class GeneSelector:
         self.selected_genes = {}
         self.selected_met_types = []
 
-    @staticmethod
-    def _filter(df, keys):
-        """Rules for filtering the columns of Yann's gene map.
-
-        Args:
-            df (DataFrame): subset of Yann's table
-            keys (list [str]): list of strings to filter columns
-
-        Returns:
-            df (DataFrame): subset of the table
-        """
-
-        # First filter on exact match
-        for name in df.index.names:
-            crit = df.index.get_level_values(name).isin(keys)
-            # Only apply filter if exact match was found
-            if not np.all(~crit):
-                df = df[crit]
-        # Then filter on partial match
-        for key in keys:
-            new_df = df.filter(regex=key, axis=0)
-            # Only apply filter if partial match was found
-            if not new_df.shape[0] == 0:
-                df = new_df
-        return df
 
     @staticmethod
     def _get_gene_presence(gene):
@@ -183,12 +158,12 @@ class GeneSelector:
             return self.selected_genes[gene_name]
         raise KeyError("Gene not available for the selected ttype.")
 
-    def select_from_ttype(self, keys=None, group_compartments=False):
+    def select_from_mettype(self, mettype, group_compartments=False):
         """Returns selected genes and distributions associated with provided
-        key words.
+        mettype.
 
         Args:
-            keys (list [str]): List of keywords
+            mettype (dict): Dictionary containing the etype, mtype and ttype
             group_compartments: Option to combine compartments into groups
             (e.g. 'all', or 'alldend')
 
@@ -197,19 +172,22 @@ class GeneSelector:
         """
 
         df = self._gene_map
-        if isinstance(keys, str):
-            keys = [keys]
-        if keys:
-            df = self._filter(df, keys)
+        me_type = f"{mettype["etype"]}_{mettype["mtype"]}"
+        ttype = mettype["ttype"]
+
+        # replace spaces with double underscore in ttype since it is not supported
+        df['t-type'] = df['t-type'].str.replace(' ', '__')
+        ttype = ttype.str.replace(' ', '__')
+
+        # Filter on met-type
+        genes = df[(df['me-type'] == me_type) & (df['t-type'] == ttype)]
+
+        if genes.empty:
+            raise ValueError(f"No genes found for me-type: {me_type} and t-type: {ttype}")
+
         # Store result
         self.selected_met_types = np.unique([f"{v[0]} - {v[1]}" for v in df.index.values])
         df = df.droplevel([0, 1])
-        # Apply filter also to genes
-        if keys:
-            genes = self._filter(df.T, keys)
-            genes = genes.T
-        else:
-            genes = df
 
         names = genes.columns.values
         for name in names:
