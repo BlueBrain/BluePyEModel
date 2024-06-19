@@ -108,7 +108,7 @@ class EModel_pipeline:
                 located.
             nexus_project (str): name of the Nexus project to which the forge will connect to
                 retrieve the data.
-            nexus_endpoint (str): Nexus endpoint ("prod" or "staging").
+            nexus_endpoint (str): Nexus endpoint address, e.g., ``https://bbp.epfl.ch/nexus/v1``.
             recipes_path (str): path of the recipes.json configuration file.This configuration
                 file is the main file required when using the access point of type "local". It
                 is expected to be a json file containing a dictionary whose keys are the names
@@ -138,11 +138,12 @@ class EModel_pipeline:
         else:
             self.mapper = map
 
-        endpoint = None
         if nexus_endpoint == "prod":
             endpoint = "https://bbp.epfl.ch/nexus/v1"
         elif nexus_endpoint == "staging":
             endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
+        else:
+            endpoint = nexus_endpoint
 
         self.access_point = get_access_point(
             emodel=emodel,

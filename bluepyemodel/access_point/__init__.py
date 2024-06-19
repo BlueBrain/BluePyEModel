@@ -86,7 +86,7 @@ def get_access_point(access_point, emodel, **kwargs):
             synapse_class=kwargs.get("synapse_class", None),
             project=kwargs.get("project", None),
             organisation=kwargs.get("organisation", "bbp"),
-            endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
+            endpoint=kwargs.get("endpoint", "https://staging.nexus.ocp.bbp.epfl.ch/v1"),
             forge_path=kwargs.get("forge_path", None),
             forge_ontology_path=kwargs.get("forge_ontology_path", None),
             access_token=kwargs.get("access_token", None),
