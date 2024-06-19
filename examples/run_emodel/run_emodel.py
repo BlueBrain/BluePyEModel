@@ -1,17 +1,17 @@
 """Running the emodel with BlueCelluLab"""
 
-import matplotlib.pyplot as plt
-from pathlib import Path
-import glob
-
-from kgforge.core import KnowledgeGraphForge
+import argparse
 import getpass
-from bluepyemodel.access_point.nexus import NexusAccessPoint
+import glob
+import json
 import os
 import shutil
 from pathlib import Path
-import json
-import argparse
+
+import matplotlib.pyplot as plt
+from kgforge.core import KnowledgeGraphForge
+
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 
 ######################################################
 # CONFIGURATION
@@ -146,8 +146,9 @@ if __name__ == "__main__":
     holding_current, threshold_current = getHoldingThreshCurrent(directory_path)
 
     # Run the simulation
+    from bluecellulab import Cell
+    from bluecellulab import Simulation
     from bluecellulab.circuit.circuit_access import EmodelProperties
-    from bluecellulab import Cell, Simulation
     from bluecellulab.simulation.neuron_globals import NeuronGlobals
 
     emodel_properties = EmodelProperties(threshold_current=threshold_current,
