@@ -176,12 +176,15 @@ class GeneSelector:
         t_type = mettype["ttype"]
 
         # replace double underscores with spaces
-        t_type = t_type.replace('__', ' ')
+        t_type = t_type.replace("__", " ")
 
         try:
             genes = df.loc[(me_type, t_type)]
-        except KeyError:
-            raise ValueError(f"No records found for me-type: {me_type} and t-type: {t_type}")
+        except KeyError as exc:
+            raise ValueError(
+                f"No records found for me-type: {me_type} \
+                             and t-type: {t_type}"
+            ) from exc
 
         # Store result
         self.selected_met_types = np.unique([f"{v[0]} - {v[1]}" for v in df.index.values])
