@@ -1,6 +1,6 @@
 # Export local e-model to Nexus
 
-This example demonstrates how users can export an e-model built using [BluePyEModel](https://github.com/BlueBrain/BluePyEModel) locally (on PC or BB5) to [Nexus](https://bbp.epfl.ch/nexus/web/). To do so, the script ``export_local_to_nexus.py`` creates the BluePyEModel ``LocalAccessPoint`` similar to that used in the e-model construction. It then uses the ``export_emodels_nexus`` function in BluePyEModelNexus to create a ``NexusAccessPoint``,  which registers the e-model-related resources on Nexus.
+This example demonstrates how users can export an e-model built locally using [BluePyEModel](https://github.com/BlueBrain/BluePyEModel) to [Nexus](https://bbp.epfl.ch/nexus/web/). To do so, the script ``export_local_to_nexus.py`` creates the BluePyEModel ``LocalAccessPoint`` similar to that used in the e-model construction. Then, it calls the ``export_emodels_nexus`` function from ``export_emodel.py`` to create a ``NexusAccessPoint``, which registers the e-model resources on Nexus.
 To export your own e-model, copy this script and the yaml files (``forge.yml`` and ``nsg.yml``) into your local e-model folder, which should contain the following files created during the e-model creation process:
 
 - ``final.json``: which contains the analysis of each optimised model
@@ -23,36 +23,38 @@ python export_local_to_nexus.py
 
 If the script runs successfully, the following e-model resources will be created in the specified Nexus project:
 - ``EModelPipelineSettings`` (EMPS): the pipeline settings of the e-model.
-- ``ExtractionTargetsConfiguration`` (ETC): the extraction target configuration of the e-model from the ``run/githash/config/extract_config`` folder, as well as the links to the ephys data.
-- ``EModelConfiguration`` (EMC): the configuration of the e-model, which links to the morphology and mechanisms and stores a reformatted version of the parameters file of the e-model from ``run/githash/config/params`` folder.
-- ``FitnessCalculatorConfiguration`` (FCC): the fitness calculator configuration of the e-model, which stores the features and protocols file of the e-model from ``run/githash/config/features/`` folder.
+- ``ExtractionTargetsConfiguration`` (ETC): the extraction target configuration of the e-model from the ``run/{githash}/config/extract_config`` folder, as well as the links to the ephys data.
+- ``EModelConfiguration`` (EMC): the configuration of the e-model, which links to the morphology and mechanisms and stores a reformatted version of the parameters file of the e-model from ``run/{githash}/config/params`` folder.
+- ``FitnessCalculatorConfiguration`` (FCC): the fitness calculator configuration of the e-model, which stores the features and protocols of the e-model from ``run/{githash}/config/features/`` folder.
 - ``EmodelScript`` (ES): the hoc file of the e-model.
-- ``EModelWorkflow`` (EMW): the resource to which all the above resources are linked to, including the workflow state.
 - ``EModel`` (EM): all the information related to an optimised e-model. It contains the final parameters of the e-model from final.json, and pdfs of the e-model distribution plots, features scores and e-model response traces. It also links to EModelWorflow.
+- ``EModelWorkflow`` (EMW): the resource to which all the above resources are linked also contains the workflow state.
 
 The graph structure of the e-model resources is shown below:
 
 ```
-    EModelWorkflow --> EModel
-                        |
-                        ├──> EModelPipelineSettings
-                        |
-                        ├──> ExtractionTargetsConfiguration
-                        |       |
-                        |       ├──> Trace1
-                        |       ├──> ...
-                        |       └──> TraceN
-                        |
-                        ├──> EModelConfiguration
-                        |       |
-                        |       ├──> Mechanism1
-                        |       ├──> ...
-                        |       └──> MechanismN
-                        |       └──> Morphology
-                        |
-                        ├──> FitnessCalculatorConfiguration
-                        |
-                        └──> EModelScript
+    EModelWorkflow
+        |
+        ├──> EModelPipelineSettings
+        |
+        ├──> ExtractionTargetsConfiguration
+        |       |
+        |       ├──> Trace1
+        |       ├──> ...
+        |       └──> TraceN
+        |
+        ├──> EModelConfiguration
+        |       |
+        |       ├──> Mechanism1
+        |       ├──> ...
+        |       └──> MechanismN
+        |       └──> Morphology
+        |
+        ├──> FitnessCalculatorConfiguration
+        |
+        ├──> EModel
+        |
+        └──> EModelScript
 ```
 
 ## Troubleshooting: Delays in Resource Registration with Nexus
