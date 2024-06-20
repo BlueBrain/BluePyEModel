@@ -40,9 +40,11 @@ class GeneSelector:
     @staticmethod
     def _filter(df, keys):
         """Rules for filtering the columns of Yann's gene map.
+
         Args:
             df (DataFrame): subset of Yann's table
             keys (list [str]): list of strings to filter columns
+
         Returns:
             df (DataFrame): subset of the table
         """
