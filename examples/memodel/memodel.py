@@ -19,8 +19,8 @@ from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.tools.search_pdfs import copy_emodel_pdf_dependencies_to_new_path
 from bluepyemodel.validation.validation import compute_scores
 
-from bluepyemodelnexus.forge_access_point import get_brain_region_notation
-from bluepyemodelnexus.nexus import NexusAccessPoint
+from bluepyemodel.access_point.forge_access_point import get_brain_region_notation
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 
 
 
@@ -52,7 +52,7 @@ def get_ids_from_memodel(memodel_r):
         raise TypeError("Could not find any EModel resource id link in MEModel resource.")
     if morph_id is None:
         raise TypeError("Could not find any NeuronMorphology resource id link in MEModel resource.")
-    
+
     return emodel_id, morph_id
 
 
@@ -73,7 +73,7 @@ def get_morph_metadata(access_point, morph_id):
     resource = access_point.access_point.retrieve(morph_id)
     if resource is None:
         raise TypeError(f"Could not find the morphology resource with id {morph_id}")
-    
+
     morph_brain_region = None
     if hasattr(resource, "brainLocation"):
         if hasattr(resource.brainLocation, "brainRegion"):
@@ -103,7 +103,7 @@ def get_morph_metadata(access_point, morph_id):
                 "nsg:MTypeAnnotation" in annotation.type
             ):
                 morph_mtype = get_morph_mtype(annotation)
-    
+
     if morph_mtype is None:
         raise TypeError("Could not find mtype in morphology resource")
 
@@ -172,7 +172,7 @@ def plot_scores(access_point, cell_evaluator, mapper, figures_dir, seed):
     )
     if not emodels:
         raise ValueError("In plot_scores, no emodels for %s", access_point.emodel_metadata.emodel)
-    
+
     # we iterate but we expect only one emodel to be in the list
     for model in emodels:
         compute_scores(model, access_point.pipeline_settings.validation_protocols)
