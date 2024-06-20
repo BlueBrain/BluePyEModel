@@ -38,6 +38,30 @@ class GeneSelector:
         self.selected_met_types = []
 
     @staticmethod
+    def _filter(df, keys):
+        """Rules for filtering the columns of Yann's gene map.
+        Args:
+            df (DataFrame): subset of Yann's table
+            keys (list [str]): list of strings to filter columns
+        Returns:
+            df (DataFrame): subset of the table
+        """
+
+        # First filter on exact match
+        for name in df.index.names:
+            crit = df.index.get_level_values(name).isin(keys)
+            # Only apply filter if exact match was found
+            if not np.all(~crit):
+                df = df[crit]
+        # Then filter on partial match
+        for key in keys:
+            new_df = df.filter(regex=key, axis=0)
+            # Only apply filter if partial match was found
+            if not new_df.shape[0] == 0:
+                df = new_df
+        return df
+
+    @staticmethod
     def _get_gene_presence(gene):
         """Determine if a gene is present or not.
 
