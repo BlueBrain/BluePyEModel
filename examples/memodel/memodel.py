@@ -286,7 +286,7 @@ if __name__ == "__main__":
     endpoint = "https://bbp.epfl.ch/nexus/v1"
     forge_path = "./forge.yml"  # this file has to be present
     forge_ontology_path = "./forge_ontology_path.yml"  # this file also
-    memodel_id = "https://bbp.epfl.ch/data/bbp/mmb-point-neuron-framework-model/1e16e488-c4c5-4d44-80f2-82c9e6795422"
+    memodel_id = "<MEMODEL ID>"
 
     mapper = map
     # also available:
