@@ -123,21 +123,21 @@ class ICSelector:
         else:
             logging.warning("Could not determine mechanism for gene %s", gene_name)
 
-    def _set_parameters_from_mettype(self):
+    def _set_parameters_from_ttype(self):
         """Copy parameters from selected genes to mechanims."""
 
         for gene_name in self._gene_selector.selected_genes:
             self.__set_parameters_from_gene(gene_name)
 
-    def _select_genes_from_mettype(self, mettype):
+    def _select_genes_from_ttype(self, key_words):
         """Select genes from key words.
         Args:
-            mettype (dict): dict containing the etype, mtype and ttype
+            key_words (list [str]): list of keys to select genes
         """
 
         # === Get genes from gene mapping file
         logging.info("\n===============\nGenes Selection\n===============")
-        genes = self._gene_selector.select_from_mettype(mettype)
+        genes = self._gene_selector.select_from_ttype(key_words)
         logging.info(str(self._gene_selector))
 
         # === Map genes to channels
@@ -145,7 +145,7 @@ class ICSelector:
             if gene in self._gene_to_ic:
                 info["channel"] = self._gene_to_ic[gene]
 
-    def _select_mechanisms_from_mettype(self):
+    def _select_mechanisms_from_ttype(self):
         """Select mechanisms from previously selected genes."""
 
         logging.info("\n==================\nChannels Selection\n==================")
@@ -259,12 +259,12 @@ class ICSelector:
         logging.info(str(config))
         return config
 
-    def get_cell_config_from_mettype(self, mettype):
+    def get_cell_config_from_ttype(self, key_words):
         """Get all information related to cell model configuration from
         mechanisms selected based on genetic expression profiles.
 
         Args:
-            mettype (dict): Dictionary containing the MET-types
+            key_words: keys to select MET-types
 
         Returns:
             parameters (list [dict,]): mechanism parameters per compartment
@@ -274,9 +274,9 @@ class ICSelector:
         """
 
         # Perform selections
-        self._select_genes_from_mettype(mettype)
-        self._set_parameters_from_mettype()
-        self._select_mechanisms_from_mettype()
+        self._select_genes_from_ttype(key_words)
+        self._set_parameters_from_ttype()
+        self._select_mechanisms_from_ttype()
 
         # Get configuration
         mechs = self._model_selector.get_mechanisms()

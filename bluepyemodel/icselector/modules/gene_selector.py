@@ -183,12 +183,12 @@ class GeneSelector:
             return self.selected_genes[gene_name]
         raise KeyError("Gene not available for the selected ttype.")
 
-    def select_from_mettype(self, mettype, group_compartments=False):
+    def select_from_ttype(self, keys=None, group_compartments=False):
         """Returns selected genes and distributions associated with provided
-        mettype.
+        key words.
 
         Args:
-            mettype (dict): Dictionary containing the etype, mtype and ttype
+            keys (list [str]): List of keywords
             group_compartments: Option to combine compartments into groups
             (e.g. 'all', or 'alldend')
 
@@ -197,23 +197,19 @@ class GeneSelector:
         """
 
         df = self._gene_map
-
-        me_type = f"{mettype['mtype']}_{mettype['etype']}"
-        t_type = mettype["ttype"]
-
-        # replace double underscores with spaces
-        t_type = t_type.replace("__", " ")
-
-        try:
-            genes = df.loc[(me_type, t_type)]
-        except KeyError as exc:
-            raise ValueError(
-                f"No records found for me-type: {me_type} \
-                             and t-type: {t_type}"
-            ) from exc
-
+        if isinstance(keys, str):
+            keys = [keys]
+        if keys:
+            df = self._filter(df, keys)
         # Store result
-        self.selected_met_types = [f"{me_type} - {t_type}"]
+        self.selected_met_types = np.unique([f"{v[0]} - {v[1]}" for v in df.index.values])
+        df = df.droplevel([0, 1])
+        # Apply filter also to genes
+        if keys:
+            genes = self._filter(df.T, keys)
+            genes = genes.T
+        else:
+            genes = df
 
         names = genes.columns.values
         for name in names:
