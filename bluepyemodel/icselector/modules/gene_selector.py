@@ -187,8 +187,7 @@ class GeneSelector:
             ) from exc
 
         # Store result
-        self.selected_met_types = np.unique([f"{v[0]} - {v[1]}" for v in df.index.values])
-        df = df.droplevel([0, 1])
+        self.selected_met_types = [f"{me_type} - {t_type}"]
 
         names = genes.columns.values
         for name in names:
