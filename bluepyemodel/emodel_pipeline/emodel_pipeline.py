@@ -269,11 +269,11 @@ class EModel_pipeline:
         # Filter the checkpoints to plot
         checkpoint_paths = []
         for chkp_path in chkp_paths:
-            if self.access_point.emodel_metadata.emodel not in chkp_path:
+            if self.access_point.emodel_metadata.emodel not in chkp_path.split("/"):
                 continue
             if (
                 self.access_point.emodel_metadata.iteration
-                and self.access_point.emodel_metadata.iteration not in chkp_path
+                and self.access_point.emodel_metadata.iteration not in chkp_path.split("/")
             ):
                 continue
             checkpoint_paths.append(chkp_path)
