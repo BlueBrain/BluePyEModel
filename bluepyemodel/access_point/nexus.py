@@ -1070,8 +1070,6 @@ class NexusAccessPoint(DataAccessPoint):
         # do not look in other projects for these resources,
         # because resources have 'full' metadata only in a few projects.
         resources = self.access_point.fetch(filter, cross_bucket=False)
-
-
         if resources is None:
             logger.warning("No SubCellularModelScript mechanisms available")
             return None
@@ -1105,8 +1103,10 @@ class NexusAccessPoint(DataAccessPoint):
                     elif ep.type == "CurrentDensity":
                         if not hasattr(ep, "ionName"):
                             logger.warning(
-                                f"Will not add {ep.name} current, "
-                                f"because 'ionName' field was not found in {r.name}."
+                                "Will not add %s current, "
+                                "because 'ionName' field was not found in %s.",
+                                ep.name,
+                                r.name,
                             )
                         elif ep.ionName == "non-specific":
                             non_specific_currents.append(ep.name)
@@ -1118,7 +1118,6 @@ class NexusAccessPoint(DataAccessPoint):
 
             # remove duplicates
             ionic_concentrations = list(set(ionic_concentrations))
-
 
             mech = MechanismConfiguration(
                 r.name,

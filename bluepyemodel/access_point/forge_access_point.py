@@ -423,7 +423,7 @@ class NexusForgeAccessPoint:
         """
         if "type" not in filters and "id" not in filters:
             raise AccessPointException("Search filters should contain either 'type' or 'id'.")
-        
+
         if cross_bucket is None:
             cross_bucket = self.cross_bucket
 
