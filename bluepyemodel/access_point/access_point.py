@@ -284,9 +284,10 @@ class DataAccessPoint:
         mechs = self.get_available_mechanisms()
         if mechs is None:
             return None, None
-        ion_currents = list(chain.from_iterable([mech.get_current() for mech in mechs]))
+        # use list(set(...)) to only keep unique occurences
+        ion_currents = list(set(chain.from_iterable([mech.get_current() for mech in mechs])))
         ionic_concentrations = list(
-            chain.from_iterable([mech.ionic_concentrations for mech in mechs])
+            set(chain.from_iterable([mech.ionic_concentrations for mech in mechs]))
         )
         # append i_pas which is present by default
         ion_currents.append("i_pas")

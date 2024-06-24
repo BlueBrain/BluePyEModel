@@ -411,24 +411,27 @@ class NexusForgeAccessPoint:
 
         return None
 
-    def fetch(self, filters):
+    def fetch(self, filters, cross_bucket=None):
         """Fetch resources based on filters.
 
         Args:
             filters (dict): keys and values used for the "WHERE". Should include "type" or "id".
+            cross_bucket (bool): whether to also fetch from other projects or not.
 
         Returns:
             resources (list): list of resources
         """
-
         if "type" not in filters and "id" not in filters:
             raise AccessPointException("Search filters should contain either 'type' or 'id'.")
+
+        if cross_bucket is None:
+            cross_bucket = self.cross_bucket
 
         logger.debug("Searching: %s", filters)
 
         resources = self.forge.search(
             filters,
-            cross_bucket=self.cross_bucket,
+            cross_bucket=cross_bucket,
             limit=self.limit,
             debug=self.debug,
             search_endpoint=self.search_endpoint,

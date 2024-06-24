@@ -129,8 +129,10 @@ def get_mechanism_currents(mech_file):
                 ionic_concentrations.append(ion_var_name)
         elif "NONSPECIFIC_CURRENT" in line:
             var_name = line.split("NONSPECIFIC_CURRENT ")[1].rstrip("\n").split(" ")[0]
-            if var_name[0] == "i":
-                nonspecific_currents.append(var_name)
+            # here, we do not check if first letter is i, because
+            # NONSPECIFIC_CURRENT should indicate a current,
+            # and some special current do no start with i, e.g. 'lk'
+            nonspecific_currents.append(var_name)
 
     return ion_currs, nonspecific_currents, ionic_concentrations
 
