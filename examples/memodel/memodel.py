@@ -11,6 +11,8 @@ import pathlib
 from kgforge.core import KnowledgeGraphForge
 from kgforge.specializations.resources import Dataset
 
+from bluepyemodel.access_point.forge_access_point import get_brain_region_notation
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.emodel_pipeline.memodel import MEModel
 from bluepyemodel.emodel_pipeline.plotting import plot_models
 from bluepyemodel.emodel_pipeline.plotting import scores
@@ -18,10 +20,6 @@ from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.tools.search_pdfs import copy_emodel_pdf_dependencies_to_new_path
 from bluepyemodel.validation.validation import compute_scores
-
-from bluepyemodel.access_point.forge_access_point import get_brain_region_notation
-from bluepyemodel.access_point.nexus import NexusAccessPoint
-
 
 
 def connect_forge(bucket, endpoint, access_token, forge_path=None):
@@ -286,7 +284,7 @@ if __name__ == "__main__":
     endpoint = "https://bbp.epfl.ch/nexus/v1"
     forge_path = "./forge.yml"  # this file has to be present
     forge_ontology_path = "./forge_ontology_path.yml"  # this file also
-    memodel_id = "<MEMODEL ID>"
+    memodel_id = "<MEMODEL ID>" # replace with the id of the MEModel you want to update
 
     mapper = map
     # also available:
