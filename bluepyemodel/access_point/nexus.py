@@ -1089,6 +1089,9 @@ class NexusAccessPoint(DataAccessPoint):
             stochastic = r.stochastic if hasattr(r, "stochastic") else None
 
             parameters = {}
+            ion_currents = []
+            non_specific_currents = []
+            ionic_concentrations = []
             if hasattr(r, "exposesParameter"):
                 exposes_parameters = r.exposesParameter
                 if not isinstance(exposes_parameters, list):
@@ -1097,33 +1100,25 @@ class NexusAccessPoint(DataAccessPoint):
                     if ep.type == "ConductanceDensity":
                         lower_limit = ep.lowerLimit if hasattr(ep, "lowerLimit") else None
                         upper_limit = ep.upperLimit if hasattr(ep, "upperLimit") else None
-                        if hasattr(r, "mod"):
-                            parameters[f"{ep.name}_{r.mod.suffix}"] = [
-                                lower_limit,
-                                upper_limit,
-                            ]
+                        # resource name is the mech SUFFIX
+                        parameters[f"{ep.name}_{r.name}"] = [lower_limit, upper_limit]
+                    elif ep.type == "CurrentDensity":
+                        if not hasattr(ep, "ionName"):
+                            logger.warning(
+                                f"Will not add {ep.name} current, "
+                                f"because 'ionName' field was not found in {r.name}."
+                            )
+                        elif ep.ionName == "non-specific":
+                            non_specific_currents.append(ep.name)
                         else:
-                            parameters[f"{ep.name}_{r.nmodlParameters.suffix}"] = [
-                                lower_limit,
-                                upper_limit,
-                            ]
+                            ion_currents.append(ep.name)
+                            ionic_concentrations.append(f"{ep.ionName}i")
+                    elif ep.type == "IonConcentration":
+                        ionic_concentrations.append(ep.name)
 
-            ion_currents = []
-            ionic_concentrations = []
-            # technically, also adds non-specific currents to ion_currents list,
-            # because they are not distinguished in nexus for now, but
-            # the code should work nevertheless
-            ions = []
-            if hasattr(r, "mod") and hasattr(r.mod, "ion"):
-                ions = r.mod.ion if isinstance(r.mod.ion, list) else [r.mod.ion]
-            elif hasattr(r, "ion"):
-                ions = r.ion if isinstance(r.ion, list) else [r.ion]
+            # remove duplicates
+            ionic_concentrations = list(set(ionic_concentrations))
 
-            for ion in ions:
-                if hasattr(ion, "label"):
-                    ion_name = ion.label.lower()
-                    ion_currents.append(f"i{ion_name}")
-                    ionic_concentrations.append(f"{ion_name}i")
 
             mech = MechanismConfiguration(
                 r.name,
