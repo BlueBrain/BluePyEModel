@@ -1067,7 +1067,10 @@ class NexusAccessPoint(DataAccessPoint):
         filter = {"type": "SubCellularModelScript"}
         if filters:
             filter.update(filters)
-        resources = self.access_point.fetch(filter)
+        # do not look in other projects for these resources,
+        # because resources have 'full' metadata only in a few projects.
+        resources = self.access_point.fetch(filter, cross_bucket=False)
+
 
         if resources is None:
             logger.warning("No SubCellularModelScript mechanisms available")
