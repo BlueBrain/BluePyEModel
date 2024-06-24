@@ -1,7 +1,7 @@
 """EModel_pipeline class."""
 
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2023-2024 Blue Brain Project / EPFL
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ limitations under the License.
 import glob
 import logging
 import pathlib
+import warnings
 
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
@@ -57,7 +58,12 @@ class EModel_pipeline:
         recipes_path=None,
         use_ipyparallel=None,
         use_multiprocessing=None,
-        data_access_point=None,
+        data_access_point="local",
+        nexus_endpoint="staging",
+        forge_path=None,
+        forge_ontology_path=None,
+        nexus_organisation=None,
+        nexus_project=None,
     ):
         """Initializes the EModel_pipeline.
 
@@ -94,6 +100,16 @@ class EModel_pipeline:
             synapse_class (str): name of the synapse class of the e-model, has to be "EXC", "INH".
                 Not used at the moment.
             layer (str): layer of the e-model. To be depracted.
+            forge_path (str): path to the .yml used to connect to Nexus Forge. This is only needed
+                if you wish to customize the connection to Nexus. If not provided,
+                a default .yml file will be used.
+            forge_ontology_path (str): path to the .yml used for the ontology in Nexus Forge
+                if not provided, forge_path will be used.
+            nexus_organisation (str): name of the Nexus organisation in which the project is
+                located.
+            nexus_project (str): name of the Nexus project to which the forge will connect to
+                retrieve the data.
+            nexus_endpoint (str): Nexus endpoint address, e.g., ``https://bbp.epfl.ch/nexus/v1``.
             recipes_path (str): path of the recipes.json configuration file.This configuration
                 file is the main file required when using the access point of type "local". It
                 is expected to be a json file containing a dictionary whose keys are the names
@@ -104,7 +120,9 @@ class EModel_pipeline:
                 the e-model building pipeline be based on ipyparallel.
             use_multiprocessing (bool): should the parallelization map used for the different steps
                 of the e-model building pipeline be based on multiprocessing.
-            data_access_point (str): Used for legacy purposes only
+            data_access_point (str): name of the access_point used to access the data,
+                can be "nexus" or "local".
+
         """
 
         # pylint: disable=too-many-arguments
@@ -121,13 +139,12 @@ class EModel_pipeline:
         else:
             self.mapper = map
 
-        endpoint = None
-
-        if data_access_point is not None and data_access_point != "local":
-            raise ValueError(
-                "Attempted to set a legacy variable. "
-                "This variable should not be modified in new code."
-            )
+        if nexus_endpoint == "prod":
+            endpoint = "https://bbp.epfl.ch/nexus/v1"
+        elif nexus_endpoint == "staging":
+            endpoint = "https://staging.nexus.ocp.bbp.epfl.ch/v1"
+        else:
+            endpoint = nexus_endpoint
 
         self.access_point = get_access_point(
             emodel=emodel,
@@ -140,10 +157,14 @@ class EModel_pipeline:
             morph_class=morph_class,
             synapse_class=synapse_class,
             layer=layer,
-            access_point="local",
             recipes_path=recipes_path,
             final_path="final.json",
+            organisation=nexus_organisation,
+            project=nexus_project,
             endpoint=endpoint,
+            access_point=data_access_point,
+            forge_path=forge_path,
+            forge_ontology_path=forge_ontology_path,
         )
 
     def configure_model(
@@ -319,6 +340,99 @@ class EModel_pipeline:
         """Prints a summary of the state of the current e-model building procedure"""
 
         print(self.access_point)
+
+
+class EModel_pipeline_nexus(EModel_pipeline):
+    """The EModel_pipeline_nexus class is there to allow the execution of the steps
+    of the e-model building pipeline for Nexus using python (as opposed to the Luigi workflow).
+    This class is deprecated and maintained for legacy purposes.
+    """
+
+    def __init__(
+        self,
+        emodel,
+        etype=None,
+        ttype=None,
+        mtype=None,
+        species=None,
+        brain_region=None,
+        iteration_tag=None,
+        morph_class=None,
+        synapse_class=None,
+        layer=None,
+        forge_path=None,
+        forge_ontology_path=None,
+        nexus_organisation=None,
+        nexus_project=None,
+        nexus_endpoint="staging",
+        use_ipyparallel=None,
+        use_multiprocessing=None,
+    ):
+        """Initializes the Nexus EModel_pipeline.
+
+        Args:
+            emodel (str): name of the emodel.
+            etype (str): name of the e-type of the e-model. Used as an identifier for the e-model.
+            ttype (str): name of the t-type of the e-model. Used as an identifier for the e-model.
+                This argument is required when using the gene expression or IC selector.
+            mtype (str): name of the m-type of the e-model. Used as an identifier for the e-model.
+            species (str): name of the species of the e-model. Used as an identifier for the
+                e-model.
+            brain_region (str): name of the brain region of the e-model. Used as an identifier for
+                the e-model.
+            iteration_tag (str): tag associated to the current run. Used as an identifier for the
+                e-model.
+            morph_class (str): name of the morphology class, has to be "PYR", "INT". To be
+                depracted.
+            synapse_class (str): name of the synapse class of the e-model, has to be "EXC", "INH".
+                Not used at the moment.
+            layer (str): layer of the e-model. To be depracted.
+            forge_path (str): path to the .yml used to connect to Nexus Forge. This is only needed
+                if you wish to customize the connection to Nexus. If not provided,
+                a default .yml file will be used.
+            forge_ontology_path (str): path to the .yml used for the ontology in Nexus Forge
+                if not provided, forge_path will be used.
+            nexus_organisation (str): name of the Nexus organisation in which the project is
+                located.
+            nexus_project (str): name of the Nexus project to which the forge will connect to
+                retrieve the data.
+            nexus_endpoint (str): Nexus endpoint address, e.g., ``https://bbp.epfl.ch/nexus/v1``.
+            use_ipyparallel (bool): should the parallelization map used for the different steps of
+                the e-model building pipeline be based on ipyparallel.
+            use_multiprocessing (bool): should the parallelization map used for the different steps
+                of the e-model building pipeline be based on multiprocessing.
+        """
+
+        # pylint: disable=too-many-arguments
+
+        warnings.warn(
+            "EModel_pipeline_nexus is deprecated."
+            "Please use EModel_pipeline with data_access_point='nexus' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        super().__init__(
+            emodel=emodel,
+            etype=etype,
+            ttype=ttype,
+            mtype=mtype,
+            species=species,
+            brain_region=brain_region,
+            iteration_tag=iteration_tag,
+            morph_class=morph_class,
+            synapse_class=synapse_class,
+            layer=layer,
+            recipes_path=None,
+            use_ipyparallel=use_ipyparallel,
+            use_multiprocessing=use_multiprocessing,
+            data_access_point="nexus",
+            nexus_endpoint=nexus_endpoint,
+            forge_path=forge_path,
+            forge_ontology_path=forge_ontology_path,
+            nexus_organisation=nexus_organisation,
+            nexus_project=nexus_project,
+        )
 
 
 def sanitize_gitignore():

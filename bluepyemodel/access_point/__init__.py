@@ -1,7 +1,7 @@
 """E-model access_point module"""
 
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2023-2024 Blue Brain Project / EPFL
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -70,12 +70,10 @@ def get_access_point(access_point, emodel, **kwargs):
     brain_region = brain_region.replace("__", " ") if brain_region else None
 
     if access_point == "nexus":
-        try:
-            from bluepyemodelnexus.nexus import NexusAccessPoint
-        except ImportError as exc:
-            raise ImportError(
-                "The internal bluepyemodelnexus package is required to use the Nexus access point."
-            ) from exc
+        from bluepyemodel.access_point.nexus import NexusAccessPoint
+
+        if not kwargs.get("project"):
+            raise ValueError("Nexus project name is required for Nexus access point.")
 
         return NexusAccessPoint(
             emodel=emodel,
@@ -88,7 +86,7 @@ def get_access_point(access_point, emodel, **kwargs):
             synapse_class=kwargs.get("synapse_class", None),
             project=kwargs.get("project", None),
             organisation=kwargs.get("organisation", "bbp"),
-            endpoint=kwargs.get("endpoint", "https://bbp.epfl.ch/nexus/v1"),
+            endpoint=kwargs.get("endpoint", "https://staging.nexus.ocp.bbp.epfl.ch/v1"),
             forge_path=kwargs.get("forge_path", None),
             forge_ontology_path=kwargs.get("forge_ontology_path", None),
             access_token=kwargs.get("access_token", None),

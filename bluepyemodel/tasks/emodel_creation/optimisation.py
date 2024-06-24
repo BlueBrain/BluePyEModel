@@ -1,7 +1,7 @@
 """Luigi tasks for emodel optimisation."""
 
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2023-2024 Blue Brain Project / EPFL
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -1193,7 +1193,7 @@ class PlotOptimisation(WorkflowTask):
         """ """
         checkpoint_path = get_checkpoint_path(self.access_point.emodel_metadata, seed=self.seed)
 
-        fname = f"{Path(checkpoint_path).stem}.pdf"
+        fname = f"{Path(checkpoint_path).stem}__optimisation.pdf"
         return luigi.LocalTarget(Path("./figures") / self.emodel / "optimisation" / fname)
 
 
