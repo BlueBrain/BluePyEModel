@@ -1495,12 +1495,13 @@ def get_ordered_currentscape_keys(keys):
 
             if curr_name == "v":
                 ordered_keys[prot_name][loc_name]["voltage_key"] = name
-            elif curr_name[0] == "i":
-                ordered_keys[prot_name][loc_name]["current_keys"].append(name)
-                ordered_keys[prot_name][loc_name]["current_names"].append(curr_name)
             elif curr_name[-1] == "i":
                 ordered_keys[prot_name][loc_name]["ion_conc_keys"].append(name)
                 ordered_keys[prot_name][loc_name]["ion_conc_names"].append(curr_name)
+            # assumes we don't have any extra-cellular concentrations (that ends with 'o')
+            else:
+                ordered_keys[prot_name][loc_name]["current_keys"].append(name)
+                ordered_keys[prot_name][loc_name]["current_names"].append(curr_name)
 
     return ordered_keys
 
