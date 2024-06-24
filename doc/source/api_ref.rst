@@ -18,6 +18,7 @@ BluePyEModel
    emodel_pipeline
    evaluation
    export_emodel
+   icselector
    model
    optimisation
    tasks

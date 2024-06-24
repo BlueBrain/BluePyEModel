@@ -1,5 +1,5 @@
 #####################################################################
-# Copyright 2023, EPFL/Blue Brain Project
+# Copyright 2023-2024 Blue Brain Project / EPFL
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 source ./myvenv/bin/activate
 
 export OPT_EMODEL="L5PC"
+export GITHASH="YOUR_GITHASH_HERE"
 
 for seed in {1..5}; do
     export OPT_SEED=${seed}
-    sbatch -J "export_hoc_${OPT_EMODEL}_${OPT_SEED}"  ./export_hoc.sbatch
+    sbatch -J "export_hoc_${OPT_EMODEL}_${OPT_SEED}_${GITHASH}"  ./export_hoc.sbatch
 done

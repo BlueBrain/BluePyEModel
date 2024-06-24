@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #####################################################################
-# Copyright 2023, EPFL/Blue Brain Project
+# Copyright 2023-2024 Blue Brain Project / EPFL
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,4 +37,4 @@ sleep 20
 srun ipengine --profile=${IPYTHON_PROFILE} --location=$(hostname) &
 sleep 20
 
-python pipeline.py --use_ipyparallel --step='export_hoc' --emodel=${OPT_EMODEL} --seed=${OPT_SEED}
+python pipeline.py --use_ipyparallel --step='export_hoc' --emodel=${OPT_EMODEL} --seed=${OPT_SEED} --githash=${GITHASH}

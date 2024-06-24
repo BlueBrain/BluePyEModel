@@ -16,6 +16,9 @@ software/
 SOURCES.txt
 *.svg
 *.DS_Store
+nexus_temp/
+.tmp/
+figures/
 
 *~
 *.pyc
@@ -136,6 +139,7 @@ celerybeat-schedule
 venv/
 ENV/
 myvenv/
+myvenv_cli/
 
 # Spyder project settings
 .spyderproject

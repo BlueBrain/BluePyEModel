@@ -1,7 +1,7 @@
 """Model Configurator"""
 
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2023-2024 Blue Brain Project / EPFL
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -85,12 +85,7 @@ class ModelConfigurator:
         """Get the gene mapping from Nexus and retrieve the matching parameters and mechanisms
         from the ion channel selector"""
 
-        try:
-            import icselector
-        except ImportError as exc:
-            raise ImportError(
-                "The internal icselector package is required to use gene based configuration."
-            ) from exc
+        from bluepyemodel.icselector import icselector
 
         if not self.access_point.pipeline_settings.name_gene_map:
             logger.warning(
@@ -106,8 +101,10 @@ class ModelConfigurator:
         ic_map_path = self.access_point.load_ic_map()
 
         selector = icselector.ICSelector(ic_map_path, gene_map_path)
+        me_type = f"{self.access_point.emodel_metadata.mtype}_ \
+                    {self.access_point.emodel_metadata.etype}"
         parameters, mechanisms, distributions, nexus_keys = selector.get_cell_config_from_ttype(
-            self.access_point.emodel_metadata.ttype
+            [self.access_point.emodel_metadata.ttype, me_type]
         )
 
         return parameters, mechanisms, distributions, nexus_keys

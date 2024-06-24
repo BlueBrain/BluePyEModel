@@ -1,5 +1,5 @@
 """
-Copyright 2023, EPFL/Blue Brain Project
+Copyright 2023-2024 Blue Brain Project / EPFL
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@ limitations under the License.
 import pytest
 
 from bluepyemodel.access_point.local import LocalAccessPoint
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.emodel_pipeline.emodel_pipeline import EModel_pipeline
 from tests.utils import DATA
+from unittest.mock import patch
 
 
 @pytest.fixture
@@ -37,12 +39,14 @@ def pipeline():
     return pipe
 
 
-def test_init(pipeline):
+def test_init_local(pipeline):
     assert isinstance(pipeline.access_point, LocalAccessPoint)
+
+
+def test_init_nexus_missing_project():
     with pytest.raises(
         ValueError,
-        match="Attempted to set a legacy variable. "
-        "This variable should not be modified in new code.",
+        match= "Nexus project name is required for Nexus access point.",
     ):
         _ = EModel_pipeline(
             emodel="cADpyr_L5TPC",
