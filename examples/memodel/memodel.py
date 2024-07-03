@@ -20,6 +20,7 @@ limitations under the License.
 # It is highly recommended to clean the figures folder between two runs
 # to avoid any leftover figure to be wrongly associated with a MEModel.
 
+import argparse
 import copy
 import getpass
 import pathlib
@@ -294,13 +295,28 @@ def update_memodel(
     forge.update(memodel_r)
 
 
+def get_parser():
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument('--memodelid', type=str, required=True)
+    parser.add_argument('--project', type=str, required=False, default="mmb-point-neuron-framework-model")
+    parser.add_argument('--organisation', type=str, required=False, default="bbp")
+    parser.add_argument('--endpoint', type=str, required=False, default="https://bbp.epfl.ch/nexus/v1")
+
+    return parser
+
+
 if __name__ == "__main__":
-    project = "mmb-point-neuron-framework-model"
-    organisation = "bbp"
-    endpoint = "https://bbp.epfl.ch/nexus/v1"
+    args = get_parser().parse_args()
+    project = args.project
+    organisation = args.organisation
+    endpoint = args.endpoint
     forge_path = "./forge.yml"  # this file has to be present
     forge_ontology_path = "./forge_ontology_path.yml"  # this file also
-    memodel_id = "<MEMODEL ID>" # replace with the id of the MEModel you want to update
+    memodel_id = args.memodelid
 
     mapper = map
     # also available:
