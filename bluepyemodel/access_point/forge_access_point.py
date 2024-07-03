@@ -895,7 +895,9 @@ class NexusForgeAccessPoint:
         )
 
 
-def ontology_forge_access_point(access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"):
+def ontology_forge_access_point(
+    access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Returns an access point targeting the project containing the ontology for the
     species and brain regions"""
 
@@ -955,7 +957,14 @@ def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
     raise AccessPointException(base_text)
 
 
-def check_resource(label, category, access_point=None, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"):
+def check_resource(
+    label,
+    category,
+    access_point=None,
+    access_token=None,
+    forge_path=None,
+    endpoint="https://bbp.epfl.ch/nexus/v1",
+):
     """Checks that resource is present on nexus and is part of the provided category
 
     Arguments:
@@ -1018,7 +1027,9 @@ def get_available_traces(species=None, brain_region=None, access_token=None, for
     return resources
 
 
-def get_brain_region(brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"):
+def get_brain_region(
+    brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Returns the resource corresponding to the brain region
 
     If the brain region name is not present in nexus,
@@ -1064,7 +1075,9 @@ def get_brain_region(brain_region, access_token=None, forge_path=None, endpoint=
     return resource
 
 
-def get_brain_region_dict(brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"):
+def get_brain_region_dict(
+    brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Returns a dict with id and label of the resource corresponding to the brain region
 
     Arguments:
@@ -1088,7 +1101,9 @@ def get_brain_region_dict(brain_region, access_token=None, forge_path=None, endp
     }
 
 
-def get_brain_region_notation(brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"):
+def get_brain_region_notation(
+    brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Get the ontology of the brain location."""
     if brain_region is None:
         return None
@@ -1100,7 +1115,9 @@ def get_brain_region_notation(brain_region, access_token=None, forge_path=None, 
     return brain_region_resource.notation
 
 
-def get_nexus_brain_region(brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"):
+def get_nexus_brain_region(
+    brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Get the ontology of the brain location."""
     if brain_region is None:
         return None
