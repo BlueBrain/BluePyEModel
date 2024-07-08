@@ -199,6 +199,75 @@ def plot_scores(access_point, cell_evaluator, mapper, figures_dir, seed):
     return emodel_score
 
 
+def get_default_threshold_search_protocol():
+    """Create a default protocol to use to search for the threshold with no holding current."""
+    from bluepyemodel.evaluation.evaluator import define_efeatures
+    from bluepyemodel.evaluation.evaluator import define_preprotocols
+    from bluepyemodel.evaluation.evaluator import soma_loc
+    from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalculatorConfiguration
+    from bluepyemodel.evaluation.protocols import ProtocolRunner
+
+    rmp_prot_name = "RMPProtocol_noholding"
+    rin_prot_name = "RinProtocol_noholding"
+    efeatures_dict = [
+        {
+            "efel_feature_name": "steady_state_voltage_stimend",
+            "protocol_name": rmp_prot_name,
+            "recording_name": "soma.v",
+            "mean": 0,
+        },
+        {
+            "efel_feature_name": "ohmic_input_resistance_vb_ssse",
+            "protocol_name": rin_prot_name,
+            "recording_name": "soma.v",
+            "mean": 0,
+        },
+    ]
+    fcc = FitnessCalculatorConfiguration(
+        efeatures=efeatures_dict,
+        name_rmp_protocol=rmp_prot_name,
+        name_rin_protocol=rin_prot_name,
+    )
+    efeatures = define_efeatures(
+        fcc,
+        include_validation_protocols=False,
+        protocols={},
+        efel_settings={},
+    )
+
+    protocols = define_preprotocols(
+        efeatures=efeatures,
+        location=soma_loc,
+        fitness_calculator_configuration=fcc,
+        rmp_key="bpo_rmp_noholding",
+        hold_key="bpo_holding_current_noholding",
+        rin_key="bpo_rin_noholding",
+        thres_key="bpo_threshold_current_noholding",
+        rmp_prot_name=rmp_prot_name,
+        hold_prot_name="SearchHoldingCurrent_noholding",
+        rin_prot_name=rin_prot_name,
+        thres_prot_name="SearchThresholdCurrent_noholding",
+        recording_name="soma.v",
+        no_holding=True,
+    )
+
+    return ProtocolRunner(protocols)
+
+def get_threshold(cell_evaluator, access_point, mapper):
+    """Computes and returns threshold current."""
+    evaluator = copy.deepcopy(cell_evaluator)
+
+    protocol = get_default_threshold_search_protocol()
+    evaluator.fitness_protocols = {"main_protocol": protocol}
+    emodels = compute_responses(
+        access_point,
+        evaluator,
+        mapper,
+    )
+
+    return emodels[0].responses.get("bpo_threshold_current_noholding", None)
+
+
 def plot(access_point, seed, cell_evaluator, figures_dir, mapper):
     """Plot figures and return total fitness (sum of scores), holding and threshold currents"""
     # compute scores
@@ -403,6 +472,14 @@ if __name__ == "__main__":
     emodel_score, emodel_holding, emodel_threshold = plot(access_point, seed, cell_evaluator, figures_dir, mapper)
     if not add_score:
         emodel_score = None
+    
+    # if we have absolute amplitude protocols, and threshold current was not computed,
+    # then compute it
+    if emodel_threshold is None:
+        # assume holding = 0
+        emodel_holding = 0
+        emodel_threshold = get_threshold(cell_evaluator, access_point, mapper)
+
     # attention! after this step, do NOT push EModel again.
     # It has been modified and would overwrite the correct one on nexus
 
