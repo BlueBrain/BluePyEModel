@@ -200,13 +200,13 @@ def plot_scores(access_point, cell_evaluator, mapper, figures_dir, seed):
 
 
 def plot(access_point, seed, cell_evaluator, figures_dir, mapper):
-    """Plot figures and return total fitness (sum of scores)"""
+    """Plot figures and return total fitness (sum of scores), holding and threshold currents"""
     # compute scores
     # we need to do this outside of main plotting function with custom function
     # so that we do not take old emodel scores in scores figure
     emodel_score = plot_scores(access_point, cell_evaluator, mapper, figures_dir, seed)
 
-    plot_models(
+    emodels = plot_models(
         access_point=access_point,
         mapper=mapper,
         seeds=[seed],
@@ -224,8 +224,10 @@ def plot(access_point, seed, cell_evaluator, figures_dir, mapper):
         load_from_local=False,
         cell_evaluator=cell_evaluator,  # <-- feed the modified evaluator here
     )
+    emodel_holding = emodels[0].responses.get("bpo_holding_current", None)
+    emodel_threshold = emodels[0].responses.get("bpo_threshold_current", None)
 
-    return emodel_score
+    return emodel_score, emodel_holding, emodel_threshold
 
 
 def get_nexus_images(access_point, seed, new_emodel_metadata, morph_id, emodel_id):
@@ -254,6 +256,8 @@ def update_memodel(
     brain_location_ontology,
     nexus_images,
     emodel_score=None,
+    emodel_holding=None,
+    emodel_threshold=None,
     new_status="done",
 ):
     """Update ME-Model."""
@@ -272,6 +276,12 @@ def update_memodel(
     memodel_r.status = new_status
     if emodel_score is not None:
         memodel_r.score = emodel_score
+    if emodel_threshold is not None:
+        memodel_r.threshold_current = emodel_threshold
+        if emodel_holding is not None:
+            memodel_r.holding_current = emodel_holding
+        else:
+            memodel_r.holding_current = 0
 
     # do not add any description: we expect it to be already present
 
@@ -390,7 +400,7 @@ if __name__ == "__main__":
     # plotting
     figures_dir = pathlib.Path("./figures") / access_point.emodel_metadata.emodel
     # trick: get scores from plot_scores, so that we don't have to run the model twice
-    emodel_score = plot(access_point, seed, cell_evaluator, figures_dir, mapper)
+    emodel_score, emodel_holding, emodel_threshold = plot(access_point, seed, cell_evaluator, figures_dir, mapper)
     if not add_score:
         emodel_score = None
     # attention! after this step, do NOT push EModel again.
@@ -413,4 +423,6 @@ if __name__ == "__main__":
         brain_location_ontology,
         nexus_images,
         emodel_score,
+        emodel_holding,
+        emodel_threshold,
     )
