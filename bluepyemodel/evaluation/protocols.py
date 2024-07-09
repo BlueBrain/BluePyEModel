@@ -686,7 +686,7 @@ class SearchThresholdCurrent(ProtocolWithDependencies):
         name,
         location,
         target_threshold=None,
-        current_precision=2e-3,
+        current_precision=1e-2,
         stimulus_delay=500.0,
         stimulus_duration=2000.0,
         stimulus_totduration=3000.0,

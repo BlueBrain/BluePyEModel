@@ -452,6 +452,9 @@ if __name__ == "__main__":
         access_token=access_token,
     )
 
+    # update settings for better threshold precision
+    access_point.pipeline_settings.current_precision = 2e-3
+
     # get cell evaluator with 'new' morphology
     cell_evaluator = get_cell_evaluator(access_point, morph_name, morph_format, morph_id)
 
