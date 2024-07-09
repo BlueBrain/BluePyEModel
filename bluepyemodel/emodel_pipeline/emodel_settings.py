@@ -79,6 +79,7 @@ class EModelPipelineSettings:
         neuron_dt=None,
         cvode_minstep=0.0,
         use_params_for_seed=True,
+        current_precision=1e-2,
         max_threshold_voltage=-30,
         strict_holding_bounds=True,
         max_depth_holding_search=7,
@@ -268,6 +269,8 @@ class EModelPipelineSettings:
             cvode_minstep (float): minimum time step allowed when using cvode.
             use_params_for_seed (bool): use a hashed version of the parameter
                 dictionary as a seed for the simulator
+            current_precision (float): size of search interval in current to stop the search
+                in SearchThresholdProtocol
             max_threshold_voltage (float): upper bound for the voltage during the
                 search for the threshold or rheobase current (see SearchThresholdProtocol).
             strict_holding_bounds (bool): if True, the minimum and maximum values for the current
@@ -305,6 +308,7 @@ class EModelPipelineSettings:
         self.minimum_protocol_delay = minimum_protocol_delay
 
         # Settings related to the evaluator
+        self.current_precision = current_precision
         self.max_threshold_voltage = max_threshold_voltage
         self.threshold_efeature_std = threshold_efeature_std
         self.max_depth_holding_search = max_depth_holding_search

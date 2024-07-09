@@ -159,7 +159,8 @@ def test_check_mettypes(mock_nexus_access_point, mock_available_etypes, mock_ava
 
     mock_ontology_forge.assert_called_once_with(
         mock_nexus_access_point.access_point.access_token,
-        mock_nexus_access_point.forge_ontology_path
+        mock_nexus_access_point.forge_ontology_path,
+        mock_nexus_access_point.access_point.endpoint,
     )
 
     mock_check_resource.assert_any_call(
@@ -167,7 +168,8 @@ def test_check_mettypes(mock_nexus_access_point, mock_available_etypes, mock_ava
         "etype",
         access_point=mock_ontology_forge.return_value,
         access_token=mock_nexus_access_point.access_point.access_token,
-        forge_path=mock_nexus_access_point.forge_ontology_path
+        forge_path=mock_nexus_access_point.forge_ontology_path,
+        endpoint=mock_nexus_access_point.access_point.endpoint,
     )
 
 

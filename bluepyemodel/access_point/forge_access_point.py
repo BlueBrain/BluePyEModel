@@ -896,14 +896,16 @@ class NexusForgeAccessPoint:
         )
 
 
-def ontology_forge_access_point(access_token=None, forge_path=None):
+def ontology_forge_access_point(
+    access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Returns an access point targeting the project containing the ontology for the
     species and brain regions"""
 
     access_point = NexusForgeAccessPoint(
         project="datamodels",
         organisation="neurosciencegraph",
-        endpoint="https://bbp.epfl.ch/nexus/v1",
+        endpoint=endpoint,
         forge_path=forge_path,
         access_token=access_token,
     )
@@ -956,7 +958,14 @@ def raise_not_found_exception(base_text, label, access_point, filter, limit=30):
     raise AccessPointException(base_text)
 
 
-def check_resource(label, category, access_point=None, access_token=None, forge_path=None):
+def check_resource(
+    label,
+    category,
+    access_point=None,
+    access_token=None,
+    forge_path=None,
+    endpoint="https://bbp.epfl.ch/nexus/v1",
+):
     """Checks that resource is present on nexus and is part of the provided category
 
     Arguments:
@@ -964,13 +973,14 @@ def check_resource(label, category, access_point=None, access_token=None, forge_
         category (str): can be "etype", "mtype" or "ttype"
         access_point (str):  ontology_forge_access_point(access_token)
         forge_path (str): path to a .yml used as configuration by nexus-forge.
+        endpoint (str): nexus endpoint
     """
     allowed_categories = ["etype", "mtype", "ttype"]
     if category not in allowed_categories:
         raise AccessPointException(f"Category is {category}, but should be in {allowed_categories}")
 
     if access_point is None:
-        access_point = ontology_forge_access_point(access_token, forge_path)
+        access_point = ontology_forge_access_point(access_token, forge_path, endpoint)
 
     resource = access_point.resolve(label, strategy="exact")
     # raise Exception if resource was not found
@@ -1018,7 +1028,9 @@ def get_available_traces(species=None, brain_region=None, access_token=None, for
     return resources
 
 
-def get_brain_region(brain_region, access_token=None, forge_path=None):
+def get_brain_region(
+    brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Returns the resource corresponding to the brain region
 
     If the brain region name is not present in nexus,
@@ -1028,10 +1040,11 @@ def get_brain_region(brain_region, access_token=None, forge_path=None):
         brain_region (str): name of the brain region to search for
         access_token (str): nexus connection token
         forge_path (str): path to a .yml used as configuration by nexus-forge.
+        endpoint (str): nexus endpoint
     """
 
     filter = "brain_region"
-    access_point = ontology_forge_access_point(access_token, forge_path)
+    access_point = ontology_forge_access_point(access_token, forge_path, endpoint)
 
     if brain_region in ["SSCX", "sscx"]:
         brain_region = "somatosensory areas"
@@ -1063,20 +1076,23 @@ def get_brain_region(brain_region, access_token=None, forge_path=None):
     return resource
 
 
-def get_brain_region_dict(brain_region, access_token=None, forge_path=None):
+def get_brain_region_dict(
+    brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Returns a dict with id and label of the resource corresponding to the brain region
 
     Arguments:
         brain_region (str): name of the brain region to search for
         access_token (str): nexus connection token
         forge_path (str): path to a .yml used as configuration by nexus-forge.
+        endpoint (str): nexus endpoint
 
     Returns:
         dict: the id and label of the nexus resource of the brain region
     """
-    br_resource = get_brain_region(brain_region, access_token, forge_path)
+    br_resource = get_brain_region(brain_region, access_token, forge_path, endpoint)
 
-    access_point = ontology_forge_access_point(access_token, forge_path)
+    access_point = ontology_forge_access_point(access_token, forge_path, endpoint)
 
     # if no exception was raised, filter to get id and label and return them
     brain_region_dict = access_point.forge.as_json(br_resource)
@@ -1086,25 +1102,29 @@ def get_brain_region_dict(brain_region, access_token=None, forge_path=None):
     }
 
 
-def get_brain_region_notation(brain_region, access_token=None, forge_path=None):
+def get_brain_region_notation(
+    brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Get the ontology of the brain location."""
     if brain_region is None:
         return None
 
     brain_region_resource = get_brain_region(
-        brain_region, access_token=access_token, forge_path=forge_path
+        brain_region, access_token=access_token, forge_path=forge_path, endpoint=endpoint
     )
 
     return brain_region_resource.notation
 
 
-def get_nexus_brain_region(brain_region, access_token=None, forge_path=None):
+def get_nexus_brain_region(
+    brain_region, access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"
+):
     """Get the ontology of the brain location."""
     if brain_region is None:
         return None
 
     brain_region_from_nexus = get_brain_region_dict(
-        brain_region, access_token=access_token, forge_path=forge_path
+        brain_region, access_token=access_token, forge_path=forge_path, endpoint=endpoint
     )
 
     return {
@@ -1113,8 +1133,8 @@ def get_nexus_brain_region(brain_region, access_token=None, forge_path=None):
     }
 
 
-def get_all_species(access_token=None, forge_path=None):
-    access_point = ontology_forge_access_point(access_token, forge_path)
+def get_all_species(access_token=None, forge_path=None, endpoint="https://bbp.epfl.ch/nexus/v1"):
+    access_point = ontology_forge_access_point(access_token, forge_path, endpoint)
 
     resources = access_point.forge.search({"subClassOf": "nsg:Species"}, limit=100)
 

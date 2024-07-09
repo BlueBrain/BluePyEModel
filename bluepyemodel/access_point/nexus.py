@@ -129,6 +129,7 @@ class NexusAccessPoint(DataAccessPoint):
             self.emodel_metadata.brain_region,
             self.access_point.access_token,
             self.forge_ontology_path,
+            self.access_point.endpoint,
         )
 
         self.pipeline_settings = self.get_pipeline_settings(strict=False)
@@ -145,7 +146,7 @@ class NexusAccessPoint(DataAccessPoint):
     def check_mettypes(self):
         """Check that etype, mtype and ttype are present on nexus"""
         ontology_access_point = ontology_forge_access_point(
-            self.access_point.access_token, self.forge_ontology_path
+            self.access_point.access_token, self.forge_ontology_path, self.access_point.endpoint
         )
 
         logger.info("Checking if etype %s is present on nexus...", self.emodel_metadata.etype)
@@ -155,6 +156,7 @@ class NexusAccessPoint(DataAccessPoint):
             access_point=ontology_access_point,
             access_token=self.access_point.access_token,
             forge_path=self.forge_ontology_path,
+            endpoint=self.access_point.endpoint,
         )
         logger.info("Etype checked")
 
@@ -169,6 +171,7 @@ class NexusAccessPoint(DataAccessPoint):
                 access_point=ontology_access_point,
                 access_token=self.access_point.access_token,
                 forge_path=self.forge_ontology_path,
+                endpoint=self.access_point.endpoint,
             )
             logger.info("Mtype checked")
         else:
@@ -185,6 +188,7 @@ class NexusAccessPoint(DataAccessPoint):
                 access_point=ontology_access_point,
                 access_token=self.access_point.access_token,
                 forge_path=self.forge_ontology_path,
+                endpoint=self.access_point.endpoint,
             )
             logger.info("Ttype checked")
         else:
@@ -228,6 +232,7 @@ class NexusAccessPoint(DataAccessPoint):
             self.emodel_metadata.brain_region,
             self.access_point.access_token,
             self.forge_ontology_path,
+            self.access_point.endpoint,
         )
 
     def get_nexus_subject(self, species):
@@ -573,7 +578,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         # set id to mechanisms by filtering with brain region, temperature, species, ljp correction
         ontology_access_point = ontology_forge_access_point(
-            self.access_point.access_token, self.forge_ontology_path
+            self.access_point.access_token, self.forge_ontology_path, self.access_point.endpoint
         )
         for mechanism in configuration.mechanisms:
             if mechanism.name in NEURON_BUILTIN_MECHANISMS:
@@ -891,7 +896,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         mechanisms_directory = self.get_mechanisms_directory()
         ontology_access_point = ontology_forge_access_point(
-            self.access_point.access_token, self.forge_ontology_path
+            self.access_point.access_token, self.forge_ontology_path, self.access_point.endpoint
         )
 
         for mechanism in mechanisms:
