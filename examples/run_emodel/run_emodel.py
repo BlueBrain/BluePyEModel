@@ -41,8 +41,8 @@ TEMPERATURE = 34.0 # celsius
 V_INIT = -70 # mV
 
 # Nexus configuration
-ORG = "" # "bbp" or "public
-PROJECT = "" # Nexus project name where the emodel is stored
+ORG = "bbp" # e.g. "bbp"
+PROJECT = "mmb-point-neuron-framework-model" # Nexus project name where the emodel is stored
 bucket = f"{ORG}/{PROJECT}"
 endpoint = "https://bbp.epfl.ch/nexus/v1"
 access_token = getpass.getpass("Enter your Nexus token: ")
@@ -52,26 +52,17 @@ forge_path = (
 )
 ######################################################
 
-def getHoldingThreshCurrent(directory_path):
-    pattern = os.path.join(directory_path, 'EM_*' + 'json')
-    final = glob.glob(pattern)
-    if final:
-        file_name = final[0]
-        with open(file_name, 'r') as file:
-            data = json.load(file)
-    else:
-        raise FileNotFoundError(f"No EModel resource found in {directory_path}.")
-
-    holding_current = 0
-    threshold_current = 0
-
-    for feature in data['features']:
-        if 'soma.v.bpo_holding_current' in feature['name']:
-            holding_current = feature['value']
-            print(feature)
-        elif 'soma.v.bpo_threshold_current' in feature['name']:
-            threshold_current = feature['value']
-            print(feature)
+def getHoldingThreshCurrent(forge, res_em):
+    from kgforge.specializations.resources import Dataset
+    emw_id = res_em.generation.activity.followedWorkflow.id
+    res_emw = forge.retrieve(emw_id)
+    for resource_gen in res_emw.generates:
+        if resource_gen.type == "EModelScript":
+            res_ems = forge.retrieve(resource_gen.id)
+            dataset = Dataset.from_resource(forge, res_ems, store_metadata=True)
+            holding_current = dataset.holding_current
+            threshold_current = dataset.threshold_current
+            break
 
     return (holding_current, threshold_current)
 
@@ -148,18 +139,20 @@ if __name__ == "__main__":
     )
 
     # Download data from Nexus
+    if os.path.exists("./nexus_temp/"):
+        shutil.rmtree("./nexus_temp/")
     print("Downloading data...")
     model_configuration = nap.get_model_configuration()
     nap.get_hoc()
     nap.get_emodel()
 
     # Load the data and mechanism for simulation
-    folder_id = nap.get_emodel().emodel_metadata.as_string()
+    folder_id = nap.get_emodel().emodel_metadata.iteration
     directory_path = f"./nexus_temp/{folder_id}"
     load_mechanism(directory_path=directory_path)
     hoc_file = Path(directory_path) / "model.hoc"
     morph_file = nap.download_morphology(model_configuration.morphology.name, model_configuration.morphology.format, model_configuration.morphology.id)
-    holding_current, threshold_current = getHoldingThreshCurrent(directory_path)
+    holding_current, threshold_current = getHoldingThreshCurrent(forge, r)
 
     # Run the simulation
     from bluecellulab import Cell
@@ -170,8 +163,8 @@ if __name__ == "__main__":
     emodel_properties = EmodelProperties(threshold_current=threshold_current,
                                 holding_current=holding_current)
 
-    if threshold_current != 0:
-        print("The emodel uses threshold based amplitudes")
+    if any(x > 1 for x in amplitudes):
+        print("Threshold based amplitudes detected. Converting to absolute amplitudes.")
         amplitudes = [x * threshold_current / 100 for x in amplitudes]
 
     fig, axes = plt.subplots(nrows=len(amplitudes), ncols=1, figsize=(10, 2*len(amplitudes)))
