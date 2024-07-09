@@ -628,7 +628,6 @@ class NexusForgeAccessPoint:
         path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}__{metadata_str}"
         if seed is not None:
             path_json += f"__{seed}"
-        iteration = metadata_str.split('__iteration=')[1].split('__')[0]
         path_json = str(
             (pathlib.Path("./nexus_temp") / metadata_str / f"{path_json}.json").resolve()
         )
