@@ -464,6 +464,7 @@ def define_holding_protocol(
 
 def define_threshold_protocol(
     efeatures,
+    current_precision=1e-2,
     max_threshold_voltage=-30,
     step_delay=500.0,
     step_duration=2000.0,
@@ -497,6 +498,7 @@ def define_threshold_protocol(
         name=thres_prot_name,
         location=location,
         target_threshold=target_current[0],
+        current_precision=current_precision,
         max_threshold_voltage=max_threshold_voltage,
         stimulus_delay=step_delay,
         stimulus_duration=step_duration,
@@ -626,6 +628,7 @@ def define_preprotocols(
     fitness_calculator_configuration,
     strict_holding_bounds=False,
     max_depth_holding_search=7,
+    current_precision=1e-2,
     max_threshold_voltage=-30,
     spikecount_timeout=50,
     max_depth_threshold_search=10,
@@ -685,6 +688,7 @@ def define_preprotocols(
     )
     threshold_prot = define_threshold_protocol(
         efeatures,
+        current_precision,
         max_threshold_voltage,
         fitness_calculator_configuration.search_threshold_step_delay,
         fitness_calculator_configuration.search_threshold_step_duration,
@@ -717,6 +721,7 @@ def define_threshold_based_optimisation_protocol(
     stochasticity=True,
     ais_recording=False,
     efel_settings=None,
+    current_precision=1e-2,
     max_threshold_voltage=-30,
     strict_holding_bounds=True,
     use_fixed_dt_recordings=False,
@@ -740,6 +745,7 @@ def define_threshold_based_optimisation_protocol(
             deterministic
         ais_recording (bool): if True all the soma recording will be at the first axonal section.
         efel_settings (dict): eFEl settings.
+        current_precision (float): size of search interval in current to stop the search
         max_threshold_voltage (float): maximum voltage at which the SearchThresholdProtocol
             will search for the rheobase.
         strict_holding_bounds (bool): to adaptively enlarge bounds if holding current is outside
@@ -789,6 +795,7 @@ def define_threshold_based_optimisation_protocol(
                             fitness_calculator_configuration=fitness_calculator_configuration,
                             strict_holding_bounds=strict_holding_bounds,
                             max_depth_holding_search=max_depth_holding_search,
+                            current_precision=current_precision,
                             max_threshold_voltage=max_threshold_voltage,
                             spikecount_timeout=spikecount_timeout,
                             max_depth_threshold_search=max_depth_threshold_search,
@@ -820,6 +827,7 @@ def define_threshold_based_optimisation_protocol(
                             fitness_calculator_configuration=fitness_calculator_configuration,
                             strict_holding_bounds=strict_holding_bounds,
                             max_depth_holding_search=max_depth_holding_search,
+                            current_precision=current_precision,
                             max_threshold_voltage=max_threshold_voltage,
                             spikecount_timeout=spikecount_timeout,
                             max_depth_threshold_search=max_depth_threshold_search,
@@ -847,6 +855,7 @@ def define_threshold_based_optimisation_protocol(
                         fitness_calculator_configuration=fitness_calculator_configuration,
                         strict_holding_bounds=strict_holding_bounds,
                         max_depth_holding_search=max_depth_holding_search,
+                        current_precision=current_precision,
                         max_threshold_voltage=max_threshold_voltage,
                         spikecount_timeout=spikecount_timeout,
                         max_depth_threshold_search=max_depth_threshold_search,
@@ -976,6 +985,7 @@ def create_evaluator(
             include_validation_protocols,
             stochasticity=stochasticity,
             efel_settings=pipeline_settings.efel_settings,
+            current_precision=pipeline_settings.current_precision,
             max_threshold_voltage=pipeline_settings.max_threshold_voltage,
             strict_holding_bounds=pipeline_settings.strict_holding_bounds,
             use_fixed_dt_recordings=use_fixed_dt_recordings,
