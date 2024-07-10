@@ -134,8 +134,7 @@ class NexusAccessPoint(DataAccessPoint):
 
         self.pipeline_settings = self.get_pipeline_settings(strict=False)
 
-        directory_name = self.emodel_metadata.as_string()
-        (pathlib.Path("./nexus_temp/") / directory_name).mkdir(parents=True, exist_ok=True)
+        self.download_directory.mkdir(parents=True, exist_ok=True)
 
         self.sleep_time = sleep_time
 
