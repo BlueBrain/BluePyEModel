@@ -264,9 +264,9 @@ def get_evaluator_from_access_point(
         record_ions_and_currents=record_ions_and_currents
     )
 
-    if model_configuration.morph_modifiers:
+    if model_configuration.morph_modifiers is not None:
         morph_modifiers = model_configuration.morph_modifiers
-    elif access_point.pipeline_settings:
+    elif access_point.pipeline_settings is not None:
         morph_modifiers = access_point.pipeline_settings.morph_modifiers
     else:
         morph_modifiers = None
