@@ -121,7 +121,7 @@ class EModel(EModelMixin):
         seed=None,
         emodel_metadata=None,
         workflow_id=None,
-        nexus_images=None
+        nexus_images=None,  # pylint: disable=unused-argument
     ):
         """Init
 
@@ -136,7 +136,8 @@ class EModel(EModelMixin):
             seed (int): seed used during optimisation for this emodel.
             emodel_metadata (EModelMetadata): metadata of the model (emodel name, etype, ttype, ...)
             workflow_id (str): EModelWorkflow id on nexus.
-            nexus_images (list): list of pdfs associated to the emodel. Not used, retained for legacy purposes only.
+            nexus_images (list): list of pdfs associated to the emodel.
+                Not used, retained for legacy purposes only.
         """
 
         self.emodel_metadata = emodel_metadata
