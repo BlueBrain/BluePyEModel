@@ -41,8 +41,8 @@ TEMPERATURE = 34.0 # celsius
 V_INIT = -70 # mV
 
 # Nexus configuration
-ORG = "bbp" # e.g. "bbp"
-PROJECT = "mmb-point-neuron-framework-model" # Nexus project name where the emodel is stored
+ORG = "" # e.g. "bbp"
+PROJECT = "" # Nexus project name where the emodel is stored
 bucket = f"{ORG}/{PROJECT}"
 endpoint = "https://bbp.epfl.ch/nexus/v1"
 access_token = getpass.getpass("Enter your Nexus token: ")
