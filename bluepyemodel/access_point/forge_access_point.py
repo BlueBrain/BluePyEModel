@@ -628,9 +628,8 @@ class NexusForgeAccessPoint:
         path_json = f"{CLASS_TO_RESOURCE_NAME[class_name]}__{metadata_str}"
         if seed is not None:
             path_json += f"__{seed}"
-        path_json = str(
-            (pathlib.Path("./nexus_temp") / metadata_str / f"{path_json}.json").resolve()
-        )
+        iteration = metadata_str.split("__iteration=")[1].split("__")[0]
+        path_json = str((pathlib.Path("./nexus_temp") / iteration / f"{path_json}.json").resolve())
 
         distributions = [path_json]
         json_payload.pop("nexus_images", None)  # remove nexus_images from payload

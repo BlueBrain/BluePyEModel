@@ -298,6 +298,7 @@ class FitnessCalculatorConfiguration:
             threshold_efeature_std=threshold_efeature_std,
             sample_size=feature.get("n", None),
             default_std_value=self.default_std_value,
+            weight=feature.get("weight", 1.0),
         )
 
         if (
@@ -456,6 +457,7 @@ class FitnessCalculatorConfiguration:
             efel_settings=feature.get("efel_settings", {}),
             threshold_efeature_std=threshold_efeature_std,
             default_std_value=self.default_std_value,
+            weight=feature.get("weight", 1.0),
         )
 
         if protocol_name == "Rin":
