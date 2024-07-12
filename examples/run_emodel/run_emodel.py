@@ -18,14 +18,14 @@ limitations under the License.
 
 import argparse
 import getpass
-import glob
-import json
 import os
 import shutil
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+
 from kgforge.core import KnowledgeGraphForge
+from kgforge.specializations.resources import Dataset
 
 from bluepyemodel.access_point.nexus import NexusAccessPoint
 
@@ -53,7 +53,8 @@ forge_path = (
 ######################################################
 
 def getHoldingThreshCurrent(forge, res_em):
-    from kgforge.specializations.resources import Dataset
+    holding_current = None
+    threshold_current = None
     emw_id = res_em.generation.activity.followedWorkflow.id
     res_emw = forge.retrieve(emw_id)
     for resource_gen in res_emw.generates:
@@ -155,8 +156,7 @@ if __name__ == "__main__":
     holding_current, threshold_current = getHoldingThreshCurrent(forge, r)
 
     # Run the simulation
-    from bluecellulab import Cell
-    from bluecellulab import Simulation
+    from bluecellulab import Cell, Simulation
     from bluecellulab.circuit.circuit_access import EmodelProperties
     from bluecellulab.simulation.neuron_globals import NeuronGlobals
 
