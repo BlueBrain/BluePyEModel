@@ -86,8 +86,8 @@ def define_location(definition):
         if definition["location"] == "ais":
             return ais_loc
         raise ValueError(
-            "Only soma and ais are implemented for CompRecording"
-            f' for {definition["name"]} at {definition["location"]}'
+            "Only soma and ais are implemented for CompRecording."
+            f' Cannot load {definition["name"]} at {definition["location"]}.'
         )
 
     if definition["type"] == "somadistance":
