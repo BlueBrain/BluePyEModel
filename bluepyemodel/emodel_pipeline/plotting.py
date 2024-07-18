@@ -930,6 +930,14 @@ def plot_bAP(
     if 0 in basal_distances:
         basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
 
+    if len(apical_distances) != len(apical_values) or len(basal_distances) != len(basal_values):
+        logger.warning(
+            "Cannot plot figure for bAP because of mismatch between "
+            "distances list and feature values list. This can happen when "
+            "the emodel is bad and cannot even compute curent threshold."
+        )
+        return fig, ax
+
     ax.scatter(
         apical_distances,
         apical_values,
@@ -1028,6 +1036,16 @@ def plot_EPSP(
         )
     if 0 in basal_distances:
         basal_x_fit, basal_y_fit = EPSP_fit(basal_basalrec_feat, basal_distances, basal_attenuation)
+
+    if len(apical_distances) != len(apical_attenuation) or len(basal_distances) != len(
+        basal_attenuation
+    ):
+        logger.warning(
+            "Cannot plot figure for bAP because of mismatch between "
+            "distances list and feature values list. This can happen when "
+            "the emodel is bad and cannot even compute curent threshold."
+        )
+        return fig, ax
 
     ax.scatter(
         apical_distances,
