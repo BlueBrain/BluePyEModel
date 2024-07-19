@@ -16,23 +16,23 @@
       },
       {
         "affiliation": "Blue Brain Project, EPFL",
-        "name": "Arnaudon, Alexis",
-        "orcid": "0000-0001-9486-1458"
-      },
-      {
-        "affiliation": "Blue Brain Project, EPFL",
         "name": "Mandge, Darshan",
         "orcid": "0000-0002-7104-4604"
       },
       {
         "affiliation": "Blue Brain Project, EPFL",
-        "name": "Van Geit, Werner",
-        "orcid": "0000-0002-2915-720X"
+        "name": "Kilic, Ilkan",
+        "orcid": "0009-0004-4234-8766"
       },
       {
         "affiliation": "Blue Brain Project, EPFL",
-        "name": "Kilic, Ilkan",
-        "orcid": "0009-0004-4234-8766"
+        "name": "Arnaudon, Alexis",
+        "orcid": "0000-0001-9486-1458"
+      },
+      {
+        "affiliation": "Blue Brain Project, EPFL",
+        "name": "Van Geit, Werner",
+        "orcid": "0000-0002-2915-720X"
       }
     ]
 }
