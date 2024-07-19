@@ -27,22 +27,11 @@ For a general overview and example of electrical model building, please refer to
 
 Note that this package only covers e-model building based on patch-clamp data and that it relies solely on the `NEURON <https://www.neuron.yale.edu/neuron/>`_ simulator.
 
-Citation
---------
+How to cite
+===========
+If you use this repository in your work, please refer to the "Cite this repository" button at the top of the repository page to get various citation formats, including APA and BibTeX.
 
-When you use the BluePyEModel software or method for your research, we ask you to cite the following publication (this includes poster presentations):
-
-.. code-block::
-
-    @software{bluepyemodel_zenodo,
-      author       = {Damart, Tanguy and Jaquier, Aurélien and Arnaudon, Alexis and Mandge, Darshan and Van Geit, Werner and Kilic, Ilkan},
-      title        = {BluePyEModel},
-      month        = aug,
-      year         = 2023,
-      publisher    = {Zenodo},
-      doi          = {8283490},
-      url          = {https://doi.org/10.5281/zenodo.8283490}
-    }
+For detailed citation information, please refer to the `CITATION.cff <./CITATION.cff>`_ file.
 
 Installation
 ------------
