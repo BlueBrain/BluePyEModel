@@ -21,6 +21,7 @@ import glob
 import logging
 import re
 from pathlib import Path
+import pickle
 
 import efel
 import matplotlib
@@ -35,6 +36,7 @@ from matplotlib import cm
 from matplotlib import colors
 
 from bluepyemodel.data.utils import read_dendritic_data
+from bluepyemodel.efeatures_extraction.efeatures_extraction import get_extraction_output_directory
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
@@ -1255,6 +1257,130 @@ def run_and_plot_EPSP(
         )
 
 
+def plot_IV_curve(
+    expt_iv_amp_rel,
+    expt_iv_max_v,
+    simulated_iv_amp_rel,
+    simulated_iv_max_v,
+    expt_iv_amp,
+    simulated_iv_amp,
+    figures_dir,
+    figure_name,
+    ylabel,
+):
+    """Plots IV curve of with simulated and experimental values."""
+    _, ax = plt.subplots(nrows=1, ncols=2, figsize=(10,3))
+    ax[0].plot(expt_iv_amp_rel, expt_iv_max_v, 'o', color='red', label="expt")
+    ax[0].set_ylim(0,25)
+    ax[0].set_xlabel("Amplitude (% of rheobase)")
+    ax[0].set_ylabel(ylabel)
+    ax[0].set_title("Expt IV curve (relative amplitude)")
+    ax[0].plot(simulated_iv_amp_rel, simulated_iv_max_v, 'o', color='blue', label="simulated")
+
+    # plot expt_iv_max_v vs expt_iv_amp_rel
+    ax[1].plot(expt_iv_amp, expt_iv_max_v, 'o', color='red', label="expt")
+    ax[1].set_ylim(0,25)
+    ax[1].set_xlabel("Amplitude (nA)")
+    ax[1].set_ylabel(ylabel)
+    ax[1].set_title("Expt IV curve (absolute amplitude)")
+    ax[1].plot(simulated_iv_amp, simulated_iv_max_v, 'o', color='blue', label="simulated")
+
+    ax[0].legend()
+    ax[1].legend()
+    save_fig(figures_dir, figure_name)
+
+
+def plot_IV_curves(evaluator, emodels, figures_dir):
+    """Plots IV curves of peak voltage and voltage_deflection
+    with simulated and experimental values. Only works for threshold-based protocols."""
+    make_dir(figures_dir)
+
+    for emodel in emodels:
+        emodel_name = emodel.emodel_metadata.emodel
+        cells_filepath= Path(get_extraction_output_directory(emodel_name)) / "cells.pkl"
+        if not cells_filepath.isfile():
+            logger.warning(
+                f"Could not find experimental cells.pkl file for {emodel_name}. "
+                "Skipping plot_peak_IV_curves() fct."
+            )
+            continue
+        with open(cells_filepath, 'rb') as f:
+            cells = pickle.load(f)
+
+        values = evaluator.fitness_calculator.calculate_values(emodel.responses)
+
+        # experimental IV curve
+        expt_peak_amp_rel = []
+        expt_peak_amp = []
+        expt_peak_max_v = []
+        expt_vd_amp_rel = []
+        expt_vd_amp = []
+        expt_vd_max_v = []
+        for cell in cells:
+            for rec in cell.recordings:
+                if rec.protocol_name == "IV" and rec.amp_rel <=100 :
+                    for feat in rec.efeatures:
+                        if feat == "maximum_voltage_from_voltagebase" and 0 < rec.amp_rel:
+                            expt_peak_max_v.append(rec.efeatures[feat])
+                            expt_peak_amp.append(float(rec.amp))
+                            expt_peak_amp_rel.append(float(rec.amp_rel))
+                        elif feat == "voltage_deflection_vb_ssse":
+                            expt_vd_max_v.append(rec.efeatures[feat])
+                            expt_vd_amp.append(float(rec.amp))
+                            expt_vd_amp_rel.append(float(rec.amp_rel))
+
+        # simulated IV curve
+        simulated_peak_max_v = []
+        simulated_peak_amp_rel = []
+        simulated_peak_amp = []
+        simulated_vd_max_v = []
+        simulated_vd_amp_rel = []
+        simulated_vd_amp = []
+        for val in values:
+            if 'IV' in val:
+                # val is e.g. IV_40.soma.maximum_voltage_from_voltagebase
+                n = val.split(".")
+                # case where protocol has '.' in its name, e.g. IV_40.0
+                if len(n) == 4 and n[1].isdigit():
+                    n = [".".join(n[:2]), n[2], n[3]]
+                protocol_name = n[0]
+                amp_rel_temp = float(protocol_name.split("_")[-1])
+                if 'maximum_voltage_from_voltagebase' in val:
+                    simulated_peak_max_v.append(values[val])
+                    simulated_peak_amp_rel.append(amp_rel_temp)
+                    simulated_peak_amp.append(
+                        amp_rel_temp*0.01*emodel.responses['bpo_threshold_current']
+                    )
+                elif 'voltage_deflection_vb_ssse' in val:
+                    simulated_vd_max_v.append(values[val])
+                    simulated_vd_amp_rel.append(amp_rel_temp)
+                    simulated_vd_amp.append(amp_rel_temp*0.01*emodel.responses['bpo_threshold_current'])
+
+        plot_IV_curve(
+            expt_peak_amp_rel,
+            expt_peak_max_v,
+            simulated_peak_amp_rel,
+            simulated_peak_max_v,
+            expt_peak_amp,
+            simulated_peak_amp,
+            figures_dir,
+            figure_name=emodel.emodel_metadata.as_string(emodel.seed) + "__peak_IV_curve.pdf",
+            ylabel="maximum_voltage_from_voltagebase (mV)"
+        )
+
+        plot_IV_curve(
+            expt_vd_amp_rel,
+            expt_vd_max_v,
+            simulated_vd_amp_rel,
+            simulated_vd_max_v,
+            expt_vd_amp,
+            simulated_vd_amp,
+            figures_dir,
+            figure_name=emodel.emodel_metadata.as_string(emodel.seed) + "__voltage_deflection_IV_curve.pdf",
+            ylabel="voltage_deflection_vb_ssse (mV)"
+        )
+
+
 def plot_models(
     access_point,
     mapper,
@@ -1269,6 +1395,7 @@ def plot_models(
     plot_dendritic_ISI_CV=True,
     plot_dendritic_rheobase=True,
     plot_bAP_EPSP=False,
+    plot_IV_curves=False,
     only_validated=False,
     save_recordings=False,
     load_from_local=False,
@@ -1293,6 +1420,8 @@ def plot_models(
         plot_dendritic_rheobase (bool): True to plot dendritic rheobase (if present)
         plot_bAP_EPSP (bool): True to plot bAP and EPSP protocol.
             Only use this on model having apical dendrites.
+        plot_IV_curves (bool): True to plot IV curves for peak voltage and voltage_deflection.
+            Expects threshold-based sub-threshold IV protocol.
         only_validated (bool): True to only plot validated models
         save_recordings (bool): Whether to save the responses data under a folder
             named `recordings`. Responses can then be loaded using load_from_local
@@ -1333,6 +1462,7 @@ def plot_models(
         or plot_dendritic_ISI_CV
         or plot_dendritic_rheobase
         or plot_thumbnail
+        or plot_IV_curves
     ):
         emodels = compute_responses(
             access_point,
@@ -1384,6 +1514,7 @@ def plot_models(
         if plot_scores:
             figures_dir_scores = figures_dir / "scores" / dest_leaf
             scores(mo, figures_dir_scores)
+
         if plot_traces:
             figures_dir_traces = figures_dir / "traces" / dest_leaf
             recording_names = get_recording_names(
@@ -1427,6 +1558,10 @@ def plot_models(
                 copy.deepcopy(cell_evaluator),
                 figures_dir=figures_dir_traces,
             )
+
+        if plot_IV_curves:
+            figures_dir_traces = figures_dir / "IV_curves" / dest_leaf
+            plot_IV_curves(cell_evaluator, emodels, figures_dir)
 
     if plot_bAP_EPSP:
         run_and_plot_bAP(

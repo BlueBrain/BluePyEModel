@@ -29,6 +29,15 @@ from bluepyemodel.tools.search_pdfs import search_figure_efeatures
 logger = logging.getLogger(__name__)
 
 
+def get_extraction_output_directory(emodel):
+    """Get output directory for extraction figures.
+    
+    Args:
+        emodel (str): emodel name as in emodel_metadata.emodel
+    """
+    return f"./figures/{emodel}/efeatures_extraction/"
+
+
 def interpolate_RMP(fitness_calculator_configuration):
     """If we do not have recordings with no holding, we need to estimate the RMP as:
     RMP = V_hold - R_in*I_Hold
@@ -179,7 +188,7 @@ def extract_save_features_protocols(access_point, mapper=map):
 
     threshold_nvalue_save = access_point.pipeline_settings.extraction_threshold_value_save
     plot = access_point.pipeline_settings.plot_extraction
-    output_directory = f"./figures/{access_point.emodel_metadata.emodel}/efeatures_extraction/"
+    output_directory = get_extraction_output_directory(access_point.emodel_metadata.emodel)
 
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
         output_directory=output_directory,

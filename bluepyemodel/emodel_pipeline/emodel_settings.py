@@ -74,6 +74,7 @@ class EModelPipelineSettings:
         plot_currentscape=True,
         plot_parameter_evolution=True,
         plot_bAP_EPSP=False,
+        plot_IV_curves=False,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -257,6 +258,8 @@ class EModelPipelineSettings:
                 and EPSP protocols be run and plotted.
                 Should be True only for pyramidal cells,
                 since it depends on the presence of apical dendrite.
+            plot_IV_curves (bool): during the plotting, should peak voltage and voltage_deflection
+                IV curves be plotted for threshold-based sub-threshold IV protocols.
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
@@ -368,6 +371,7 @@ class EModelPipelineSettings:
 
         self.plot_parameter_evolution = plot_parameter_evolution
         self.plot_bAP_EPSP = plot_bAP_EPSP
+        self.plot_IV_curves = plot_IV_curves
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings
