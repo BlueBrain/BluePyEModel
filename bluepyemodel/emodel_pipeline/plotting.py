@@ -375,6 +375,48 @@ def evolution_parameters_density(
     return fig, axs
 
 
+def phase_plot(emodel_metadata, figures_dir, prot_names, amplitude, amp_window):
+    """Plots recordings as voltage vs time and in phase space.
+    Expects threshold-based protocols."""
+    make_dir(figures_dir)
+
+    emodel_name = emodel_metadata.emodel
+    cells_filepath= Path(get_extraction_output_directory(emodel_name)) / "cells.pkl"
+    if not cells_filepath.isfile():
+        logger.warning(
+            f"Could not find experimental cells.pkl file for {emodel_name}. "
+            "Skipping phase_plot() fct."
+        )
+        return
+    with open(cells_filepath, 'rb') as f:
+        cells = pickle.load(f)
+
+    _, ax = plt.subplots(ncols=2, nrows=1, figsize=(10,5))
+    for cell in cells:
+        for rec in cell.recordings:
+            if any(a.lower() in rec.protocol_name.lower() for a in prot_names):
+                if amplitude - amp_window < rec.amp_rel < amplitude + amp_window:
+                    ax[0].plot(rec.t, rec.voltage)
+                    # interpolate to reproduce what is being done in efel
+                    interp_time = numpy.arange(rec.t[0], rec.t[-1] + 0.1, 0.1)
+                    interp_voltage = numpy.interp(interp_time, rec.t, rec.voltage)
+                    #plot the phase plot d(rec.voltage)/dt vs rec.voltage
+                    ax[1].plot(
+                        interp_voltage[1:], numpy.diff(interp_voltage)/numpy.diff(interp_time)
+                    )
+                    ax[1].set_xlabel("Time (ms)")
+                    ax[1].set_ylabel("Voltage (mV)")
+                    ax[1].set_title("Traces")
+                    ax[1].set_xlabel("Voltage (mV)")
+                    ax[1].set_ylabel("dV/dt (V/s)")
+                    ax[1].set_title("Traces in phase space")
+
+    save_fig(
+        figures_dir,
+        figure_name=emodel_metadata.as_string() + "__phase_plot.pdf",
+    )
+
+
 def scores(model, figures_dir="./figures", write_fig=True):
     """Plot the scores of a model"""
     SCORE_THRESHOLD = 5.0

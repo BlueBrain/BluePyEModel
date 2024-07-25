@@ -75,6 +75,10 @@ class EModelPipelineSettings:
         plot_parameter_evolution=True,
         plot_bAP_EPSP=False,
         plot_IV_curves=False,
+        plot_phase_plot=False,
+        phase_plot_prot_names=None,
+        phase_plot_prot_amplitude=150.,
+        phase_plot_prot_amplitude_window=1.,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -260,6 +264,12 @@ class EModelPipelineSettings:
                 since it depends on the presence of apical dendrite.
             plot_IV_curves (bool): during the plotting, should peak voltage and voltage_deflection
                 IV curves be plotted for threshold-based sub-threshold IV protocols.
+            plot_phase_plot (bool): during the plotting, should phase plot be plotted.
+            phase_plot_prot_names (list): what protocols to plot in phase plot.
+            phase_plot_prot_amplitude (float): which amplitude (percentage of threshold) to plot
+                in phase plot.
+            phase_plot_prot_amplitude_window (float): window of accepted amplitude
+                around amplitude value to use for protocol selection of phase plot.
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
@@ -372,6 +382,12 @@ class EModelPipelineSettings:
         self.plot_parameter_evolution = plot_parameter_evolution
         self.plot_bAP_EPSP = plot_bAP_EPSP
         self.plot_IV_curves = plot_IV_curves
+        self.plot_phase_plot = plot_phase_plot
+        self.phase_plot_prot_names = phase_plot_prot_names
+        if self.phase_plot_prot_names is None:
+            self.phase_plot_prot_names = ["idrest"]
+        self.phase_plot_prot_amplitude = phase_plot_prot_amplitude
+        self.phase_plot_prot_amplitude_window = phase_plot_prot_amplitude_window
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings

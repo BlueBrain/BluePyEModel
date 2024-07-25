@@ -302,6 +302,17 @@ class EModel_pipeline:
                 / "parameter_evolution",
             )
 
+        if self.access_point.pipeline_settings.plot_phase_plot:
+            plotting.phase_plot(
+                self.access_point.emodel_metadata,
+                figures_dir=pathlib.Path("./figures")
+                / self.access_point.emodel_metadata.emodel
+                / "phase_plot",
+                prot_names=self.access_point.pipeline_settings.phase_plot_prot_names,
+                amplitude=self.access_point.pipeline_settings.phase_plot_prot_amplitude,
+                amp_window=self.access_point.pipeline_settings.phase_plot_prot_amplitude_window,
+            )
+
         return plotting.plot_models(
             access_point=self.access_point,
             mapper=self.mapper,
