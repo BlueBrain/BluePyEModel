@@ -18,6 +18,7 @@ limitations under the License.
 
 import logging
 import pathlib
+import pickle
 from importlib.machinery import SourceFileLoader
 
 import bluepyefe.extract
@@ -36,6 +37,21 @@ def get_extraction_output_directory(emodel):
         emodel (str): emodel name as in emodel_metadata.emodel
     """
     return f"./figures/{emodel}/efeatures_extraction/"
+
+
+def read_extraction_output_cells(emodel):
+    """Returns cells.pkl output of extraction if present.
+    
+    Args:
+        emodel (str): emodel name as in emodel_metadata.emodel
+    """
+    cells_filepath= pathlib.Path(get_extraction_output_directory(emodel)) / "cells.pkl"
+    if not cells_filepath.isfile():
+        logger.warning(f"Could not find experimental cells.pkl file at {str(cells_filepath)}.")
+        return None
+    with open(cells_filepath, 'rb') as f:
+        cells = pickle.load(f)
+    return cells
 
 
 def interpolate_RMP(fitness_calculator_configuration):
