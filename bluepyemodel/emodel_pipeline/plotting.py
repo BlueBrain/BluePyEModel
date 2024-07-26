@@ -19,9 +19,9 @@ limitations under the License.
 import copy
 import glob
 import logging
+import pickle
 import re
 from pathlib import Path
-import pickle
 
 import efel
 import matplotlib
@@ -48,6 +48,7 @@ from bluepyemodel.evaluation.utils import define_bAP_protocol
 from bluepyemodel.evaluation.utils import define_EPSP_feature
 from bluepyemodel.evaluation.utils import define_EPSP_protocol
 from bluepyemodel.model.morphology_utils import get_basal_and_apical_max_radial_distances
+from bluepyemodel.tools.utils import get_amplitude_from_feature_key
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import read_checkpoint
 from bluepyemodel.tools.utils import select_rec_for_thumbnail
@@ -376,7 +377,7 @@ def evolution_parameters_density(
     return fig, axs
 
 
-def phase_plot(emodel_metadata, figures_dir, prot_names, amplitude, amp_window):
+def phase_plot(emodel_metadata, figures_dir, prot_names, amplitude, amp_window, write_fig=True):
     """Plots recordings as voltage vs time and in phase space.
     Expects threshold-based protocols."""
     make_dir(figures_dir)
@@ -384,9 +385,9 @@ def phase_plot(emodel_metadata, figures_dir, prot_names, amplitude, amp_window):
     emodel_name = emodel_metadata.emodel
     cells = read_extraction_output_cells(emodel_name)
     if cells is None:
-        return
+        return None, None
 
-    _, ax = plt.subplots(ncols=2, nrows=1, figsize=(10,5))
+    fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(10, 5))
     for cell in cells:
         for rec in cell.recordings:
             if any(a.lower() in rec.protocol_name.lower() for a in prot_names):
@@ -395,21 +396,23 @@ def phase_plot(emodel_metadata, figures_dir, prot_names, amplitude, amp_window):
                     # interpolate to reproduce what is being done in efel
                     interp_time = numpy.arange(rec.t[0], rec.t[-1] + 0.1, 0.1)
                     interp_voltage = numpy.interp(interp_time, rec.t, rec.voltage)
-                    #plot the phase plot d(rec.voltage)/dt vs rec.voltage
+                    # plot the phase plot d(rec.voltage)/dt vs rec.voltage
                     ax[1].plot(
-                        interp_voltage[1:], numpy.diff(interp_voltage)/numpy.diff(interp_time)
+                        interp_voltage[1:], numpy.diff(interp_voltage) / numpy.diff(interp_time)
                     )
-                    ax[1].set_xlabel("Time (ms)")
-                    ax[1].set_ylabel("Voltage (mV)")
-                    ax[1].set_title("Traces")
+                    ax[0].set_xlabel("Time (ms)")
+                    ax[0].set_ylabel("Voltage (mV)")
+                    ax[0].set_title("Traces")
                     ax[1].set_xlabel("Voltage (mV)")
                     ax[1].set_ylabel("dV/dt (V/s)")
                     ax[1].set_title("Traces in phase space")
 
-    save_fig(
-        figures_dir,
-        figure_name=emodel_metadata.as_string() + "__phase_plot.pdf",
-    )
+    if write_fig:
+        save_fig(
+            figures_dir,
+            figure_name=emodel_metadata.as_string() + "__phase_plot.pdf",
+        )
+    return fig, ax
 
 
 def scores(model, figures_dir="./figures", write_fig=True):
@@ -1308,21 +1311,21 @@ def plot_IV_IF_curve(
     curve="IV",
 ):
     """Plots IV or IF curve of with simulated and experimental values."""
-    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(10,3))
-    ax[0].plot(expt_iv_amp_rel, expt_iv_max_v, 'o', color='red', label="expt")
-    ax[0].set_ylim(0,25)
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
+    ax[0].plot(expt_iv_amp_rel, expt_iv_max_v, "o", color="red", label="expt")
+    ax[0].set_ylim(0, 25)
     ax[0].set_xlabel("Amplitude (% of rheobase)")
     ax[0].set_ylabel(ylabel)
     ax[0].set_title(f"Expt {curve} curve (relative amplitude)")
-    ax[0].plot(simulated_iv_amp_rel, simulated_iv_max_v, 'o', color='blue', label="simulated")
+    ax[0].plot(simulated_iv_amp_rel, simulated_iv_max_v, "o", color="blue", label="simulated")
 
     # plot expt_iv_max_v vs expt_iv_amp_rel
-    ax[1].plot(expt_iv_amp, expt_iv_max_v, 'o', color='red', label="expt")
-    ax[1].set_ylim(0,25)
+    ax[1].plot(expt_iv_amp, expt_iv_max_v, "o", color="red", label="expt")
+    ax[1].set_ylim(0, 25)
     ax[1].set_xlabel("Amplitude (nA)")
     ax[1].set_ylabel(ylabel)
     ax[1].set_title(f"Expt {curve} curve (absolute amplitude)")
-    ax[1].plot(simulated_iv_amp, simulated_iv_max_v, 'o', color='blue', label="simulated")
+    ax[1].plot(simulated_iv_amp, simulated_iv_max_v, "o", color="blue", label="simulated")
 
     ax[0].legend()
     ax[1].legend()
@@ -1334,11 +1337,11 @@ def plot_IV_IF_curve(
 def plot_IV_curves(evaluator, emodels, figures_dir, write_fig=True):
     """Plots IV curves of peak voltage and voltage_deflection
     with simulated and experimental values. Only works for threshold-based protocols."""
+    # pylint: disable=too-many-nested-blocks
     make_dir(figures_dir)
 
     for emodel in emodels:
-        emodel_name = emodel.emodel_metadata.emodel
-        cells = read_extraction_output_cells(emodel_name)
+        cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
         if cells is None:
             continue
 
@@ -1353,7 +1356,7 @@ def plot_IV_curves(evaluator, emodels, figures_dir, write_fig=True):
         expt_vd_max_v = []
         for cell in cells:
             for rec in cell.recordings:
-                if rec.protocol_name == "IV" and rec.amp_rel <=100 :
+                if rec.protocol_name == "IV" and rec.amp_rel <= 100:
                     for feat in rec.efeatures:
                         if feat == "maximum_voltage_from_voltagebase" and 0 < rec.amp_rel:
                             expt_peak_max_v.append(rec.efeatures[feat])
@@ -1372,25 +1375,19 @@ def plot_IV_curves(evaluator, emodels, figures_dir, write_fig=True):
         simulated_vd_amp_rel = []
         simulated_vd_amp = []
         for val in values:
-            if 'IV' in val:
-                # val is e.g. IV_40.soma.maximum_voltage_from_voltagebase
-                n = val.split(".")
-                # case where protocol has '.' in its name, e.g. IV_40.0
-                if len(n) == 4 and n[1].isdigit():
-                    n = [".".join(n[:2]), n[2], n[3]]
-                protocol_name = n[0]
-                amp_rel_temp = float(protocol_name.split("_")[-1])
-                if 'maximum_voltage_from_voltagebase' in val:
+            if "IV" in val:
+                amp_rel_temp = get_amplitude_from_feature_key(val)
+                if "maximum_voltage_from_voltagebase" in val:
                     simulated_peak_max_v.append(values[val])
                     simulated_peak_amp_rel.append(amp_rel_temp)
                     simulated_peak_amp.append(
-                        amp_rel_temp*0.01*emodel.responses['bpo_threshold_current']
+                        amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
                     )
-                elif 'voltage_deflection_vb_ssse' in val:
+                elif "voltage_deflection_vb_ssse" in val:
                     simulated_vd_max_v.append(values[val])
                     simulated_vd_amp_rel.append(amp_rel_temp)
                     simulated_vd_amp.append(
-                        amp_rel_temp*0.01*emodel.responses['bpo_threshold_current']
+                        amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
                     )
 
         plot_IV_IF_curve(
@@ -1428,6 +1425,7 @@ def plot_IF_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
     """Plots IF (curretn vs frequency) curves of with simulated and experimental values.
     Only works for threshold-based protocols.
     Expects mean_frequency to be available in extracted and simulated data."""
+    # pylint: disable=too-many-nested-blocks
     make_dir(figures_dir)
 
     for emodel in emodels:
@@ -1444,7 +1442,7 @@ def plot_IF_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
         expt_freq = []
         for cell in cells:
             for rec in cell.recordings:
-                if rec.protocol_name.lower() == prot_name.lower() and rec.amp_rel >=100:
+                if rec.protocol_name.lower() == prot_name.lower() and rec.amp_rel >= 100:
                     for feat in rec.efeatures:
                         if feat == "mean_frequency":
                             expt_freq.append(rec.efeatures[feat])
@@ -1464,11 +1462,11 @@ def plot_IF_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
                     n = [".".join(n[:2]), n[2], n[3]]
                 protocol_name = n[0]
                 amp_rel_temp = float(protocol_name.split("_")[-1])
-                if 'mean_frequency' in val:
+                if "mean_frequency" in val:
                     simulated_freq.append(values[val])
                     simulated_amp_rel.append(amp_rel_temp)
                     simulated_amp.append(
-                        amp_rel_temp*0.01*emodel.responses['bpo_threshold_current']
+                        amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
                     )
 
         plot_IV_IF_curve(
@@ -1488,58 +1486,63 @@ def plot_IF_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
 
 def plot_trace_comparison(emodels, figures_dir, write_fig=True):
     """Compare traces between experiments and models."""
-    prots_to_skip = ["bpo", 'SearchHoldingCurrent.soma.v', 'SearchThresholdCurrent.soma.v',"bAP" ]
+    # pylint: disable=too-many-nested-blocks
+    prots_to_skip = ["bpo", "SearchHoldingCurrent.soma.v", "SearchThresholdCurrent.soma.v", "bAP"]
 
     make_dir(figures_dir)
 
     for emodel in emodels:
         emodel_name = emodel.emodel_metadata.emodel
         protocols_filepath = Path(get_extraction_output_directory(emodel_name)) / "protocols.pkl"
-        with open(protocols_filepath, 'rb') as f:
+        if not protocols_filepath.is_file():
+            logger.warning(
+                "Could not find experimental protocols.pkl file at %s.", protocols_filepath
+            )
+            continue
+        with open(protocols_filepath, "rb") as f:
             protocols = pickle.load(f)
 
-        count=0
+        count = 0
         for key in emodel.responses.keys():
             # only voltage traces
             if any(s in key for s in prots_to_skip):
                 continue
-            else:
-                count=count+1
+            count = count + 1
 
-        #make subplots with count rows
-        fig, axes = plt.subplots(count, figsize=(10,count*2))
+        # make subplots with count rows
+        fig, axes = plt.subplots(count, figsize=(10, count * 2))
 
-        i=0
+        i = 0
         for resp_name, response in sorted(emodel.responses.items()):
             if any(s in resp_name for s in prots_to_skip):
                 continue
 
-            if 'RMPProtocol.soma.v' in resp_name:
+            if "RMPProtocol.soma.v" in resp_name:
                 # plot simulated trace
-                axes[i].plot(response['time'], response['voltage'], label=resp_name, olor='blue')
+                axes[i].plot(response["time"], response["voltage"], label=resp_name, color="blue")
                 axes[i].set_ylabel("Voltage (mV)")
                 axes[i].set_xlabel("Time (ms)")
                 axes[i].set_title(resp_name)
-                i=i+1
+                i = i + 1
                 continue
 
-            if 'RinProtocol.soma.v' in resp_name:
+            if "RinProtocol.soma.v" in resp_name:
                 # Expt Traces
                 for p in protocols:
-                # amplitude in response name
+                    # amplitude in response name
                     if "-40" in f"{p.amplitude}":
                         # plot all recordings of the experimental protocol res. expt data
                         for rec in p.recordings:
                             axes[i].plot(
-                                rec.time, rec.voltage, linestyle= "-", color='red', alpha=0.5
+                                rec.time, rec.voltage, linestyle="-", color="red", alpha=0.5
                             )
 
-                #simulated Rin protocol
-                axes[i].plot(response['time'], response['voltage'], label=resp_name, color='blue')
+                # simulated Rin protocol
+                axes[i].plot(response["time"], response["voltage"], label=resp_name, color="blue")
                 axes[i].set_ylabel("Voltage (mV)")
                 axes[i].set_xlabel("Time (ms)")
                 axes[i].set_title(resp_name)
-                i=i+1
+                i = i + 1
                 continue
 
             # for each protocol in expt data
@@ -1551,15 +1554,17 @@ def plot_trace_comparison(emodels, figures_dir, write_fig=True):
 
                     # plot all recordings of the experimental protocol % res. expt data
                     for rec in p.recordings:
-                        axes[i].plot(rec.time, rec.voltage, linestyle= "-", color='red', alpha=0.5)
+                        axes[i].plot(rec.time, rec.voltage, linestyle="-", color="red", alpha=0.5)
 
                     # plot simulated trace
-                    axes[i].plot(response['time'], response['voltage'], label=resp_name, color='blue')
+                    axes[i].plot(
+                        response["time"], response["voltage"], label=resp_name, color="blue"
+                    )
                     axes[i].legend()
                     axes[i].set_ylabel("Voltage (mV)")
                     axes[i].set_xlabel("Time (ms)")
                     axes[i].set_title(f"{p.name} {p.amplitude}")
-            i=i+1
+            i = i + 1
 
         fig.suptitle(f"emodel = {emodel_name}")
         fig.tight_layout()
@@ -1567,7 +1572,8 @@ def plot_trace_comparison(emodels, figures_dir, write_fig=True):
         if write_fig:
             save_fig(
                 figures_dir,
-                figure_name=emodel.emodel_metadata.as_string(emodel.seed) + "__trace_comparison.pdf",
+                figure_name=emodel.emodel_metadata.as_string(emodel.seed)
+                + "__trace_comparison.pdf",
             )
 
 
@@ -1652,13 +1658,15 @@ def plot_models(
             use_fixed_dt_recordings=False,
         )
 
-    if (
-        plot_traces
-        or plot_currentscape
-        or plot_dendritic_ISI_CV
-        or plot_dendritic_rheobase
-        or plot_thumbnail
-        or plot_IV_curves
+    if any(
+        (
+            plot_traces,
+            plot_currentscape,
+            plot_dendritic_ISI_CV,
+            plot_dendritic_rheobase,
+            plot_thumbnail,
+            plot_IV_curves,
+        )
     ):
         emodels = compute_responses(
             access_point,
@@ -1761,7 +1769,9 @@ def plot_models(
 
         if plot_IF_curve_comparison:
             figures_dir_IF_curves = figures_dir / "IF_curves" / dest_leaf
-            plot_IF_curves_comparison(cell_evaluator, emodels, figures_dir_IF_curves, IF_curve_prot_name)
+            plot_IF_curves_comparison(
+                cell_evaluator, emodels, figures_dir_IF_curves, IF_curve_prot_name
+            )
 
     if plot_bAP_EPSP:
         run_and_plot_bAP(

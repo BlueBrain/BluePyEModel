@@ -326,7 +326,7 @@ class EModel_pipeline:
             plot_dendritic_ISI_CV=True,
             plot_dendritic_rheobase=True,
             plot_bAP_EPSP=self.access_point.pipeline_settings.plot_bAP_EPSP,
-            plot_IV_curves=self.access_point.pipeline_settings.plot_IV_curves,
+            plot_IV_curve=self.access_point.pipeline_settings.plot_IV_curves,
             plot_IF_curve_comparison=self.access_point.pipeline_settings.plot_IF_curve_comparison,
             IF_curve_prot_name=self.access_point.pipeline_settings.IF_curve_prot_name,
             only_validated=only_validated,

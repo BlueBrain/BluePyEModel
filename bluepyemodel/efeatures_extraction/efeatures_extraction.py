@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 def get_extraction_output_directory(emodel):
     """Get output directory for extraction figures.
-    
+
     Args:
         emodel (str): emodel name as in emodel_metadata.emodel
     """
@@ -41,15 +41,15 @@ def get_extraction_output_directory(emodel):
 
 def read_extraction_output_cells(emodel):
     """Returns cells.pkl output of extraction if present.
-    
+
     Args:
         emodel (str): emodel name as in emodel_metadata.emodel
     """
-    cells_filepath= pathlib.Path(get_extraction_output_directory(emodel)) / "cells.pkl"
-    if not cells_filepath.isfile():
-        logger.warning(f"Could not find experimental cells.pkl file at {str(cells_filepath)}.")
+    cells_filepath = pathlib.Path(get_extraction_output_directory(emodel)) / "cells.pkl"
+    if not cells_filepath.is_file():
+        logger.warning("Could not find experimental cells.pkl file at %s.", cells_filepath)
         return None
-    with open(cells_filepath, 'rb') as f:
+    with open(cells_filepath, "rb") as f:
         cells = pickle.load(f)
     return cells
 

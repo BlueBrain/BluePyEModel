@@ -79,8 +79,8 @@ class EModelPipelineSettings:
         IF_curve_prot_name="idrest",
         plot_phase_plot=False,
         phase_plot_prot_names=None,
-        phase_plot_prot_amplitude=150.,
-        phase_plot_prot_amplitude_window=1.,
+        phase_plot_prot_amplitude=150.0,
+        phase_plot_prot_amplitude_window=1.0,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -267,7 +267,7 @@ class EModelPipelineSettings:
             plot_IV_curves (bool): during the plotting, should peak voltage and voltage_deflection
                 IV curves be plotted for threshold-based sub-threshold IV protocols.
             plot_IF_curve_comparison (bool): during the plotting, should IF curve be plotted
-                for experimental and simulated data. 
+                for experimental and simulated data.
             IF_curve_prot_name (str): which protocol to use during plotting of IF curve comparison.
                 The protocol should be supra-threshold
                 and have the efeature mean_frequency associated to it.
