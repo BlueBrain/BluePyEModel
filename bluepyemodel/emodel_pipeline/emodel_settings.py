@@ -75,8 +75,8 @@ class EModelPipelineSettings:
         plot_parameter_evolution=True,
         plot_bAP_EPSP=False,
         plot_IV_curves=False,
-        plot_IF_curve_comparison=False,
-        IF_curve_prot_name="idrest",
+        plot_FI_curve_comparison=False,
+        FI_curve_prot_name="idrest",
         plot_phase_plot=False,
         phase_plot_prot_names=None,
         phase_plot_prot_amplitude=150.0,
@@ -266,9 +266,9 @@ class EModelPipelineSettings:
                 since it depends on the presence of apical dendrite.
             plot_IV_curves (bool): during the plotting, should peak voltage and voltage_deflection
                 IV curves be plotted for threshold-based sub-threshold IV protocols.
-            plot_IF_curve_comparison (bool): during the plotting, should IF curve be plotted
+            plot_FI_curve_comparison (bool): during the plotting, should FI curve be plotted
                 for experimental and simulated data.
-            IF_curve_prot_name (str): which protocol to use during plotting of IF curve comparison.
+            FI_curve_prot_name (str): which protocol to use during plotting of FI curve comparison.
                 The protocol should be supra-threshold
                 and have the efeature mean_frequency associated to it.
             plot_phase_plot (bool): during the plotting, should phase plot be plotted.
@@ -389,8 +389,8 @@ class EModelPipelineSettings:
         self.plot_parameter_evolution = plot_parameter_evolution
         self.plot_bAP_EPSP = plot_bAP_EPSP
         self.plot_IV_curves = plot_IV_curves
-        self.plot_IF_curve_comparison = plot_IF_curve_comparison
-        self.IF_curve_prot_name = IF_curve_prot_name
+        self.plot_FI_curve_comparison = plot_FI_curve_comparison
+        self.FI_curve_prot_name = FI_curve_prot_name
         self.plot_phase_plot = plot_phase_plot
         self.phase_plot_prot_names = phase_plot_prot_names
         if self.phase_plot_prot_names is None:

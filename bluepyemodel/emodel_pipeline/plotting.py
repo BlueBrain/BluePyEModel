@@ -726,7 +726,7 @@ def dendritic_feature_plots(mo, feature_name, dest_leaf, figures_dir="./figures"
         dendritic_feature_plot(mo, mo.responses, feat, feature_name, figures_dir_dendritic)
 
 
-def _get_if_curve_from_evaluator(
+def _get_fi_curve_from_evaluator(
     holding,
     threshold,
     model,
@@ -788,7 +788,7 @@ def _get_if_curve_from_evaluator(
     return amps, frequencies, spike_freq_equivalent
 
 
-def IF_curve(
+def FI_curve(
     model,
     responses,
     evaluator,
@@ -807,10 +807,10 @@ def IF_curve(
     holding = responses.get("bpo_holding_current", None)
     threshold = responses.get("bpo_threshold_current", None)
     if holding is None or threshold is None:
-        logger.warning("Not plotting IF curve, holding or threshold current is missing")
+        logger.warning("Not plotting FI curve, holding or threshold current is missing")
         return fig, [ax, ax2]
 
-    amps, frequencies, spike_freq_equivalent = _get_if_curve_from_evaluator(
+    amps, frequencies, spike_freq_equivalent = _get_fi_curve_from_evaluator(
         holding,
         threshold,
         model,
@@ -830,11 +830,11 @@ def IF_curve(
     ax2.set_ylabel("Spikecount per s over the step", color="C1")
     ax2.tick_params(axis="y", labelcolor="C1")
 
-    title = f"IF curve {model.emodel_metadata.emodel}, seed {model.seed}"
+    title = f"FI curve {model.emodel_metadata.emodel}, seed {model.seed}"
 
     fig.suptitle(title)
 
-    fname = model.emodel_metadata.as_string(model.seed) + "__IF_curve.pdf"
+    fname = model.emodel_metadata.as_string(model.seed) + "__FI_curve.pdf"
 
     plt.tight_layout()
 
@@ -1297,7 +1297,7 @@ def run_and_plot_EPSP(
         )
 
 
-def plot_IV_IF_curve(
+def plot_IV_FI_curve(
     expt_iv_amp_rel,
     expt_iv_max_v,
     simulated_iv_amp_rel,
@@ -1310,9 +1310,9 @@ def plot_IV_IF_curve(
     write_fig=True,
     curve="IV",
 ):
-    """Plots IV or IF curve of with simulated and experimental values."""
+    """Plots IV or FI curve of with simulated and experimental values."""
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
-    ax[0].plot(expt_iv_amp_rel, expt_iv_max_v, "o", color="red", label="expt")
+    ax[0].plot(expt_iv_amp_rel, expt_iv_max_v, "o", color="grey", label="expt")
     ax[0].set_ylim(0, 25)
     ax[0].set_xlabel("Amplitude (% of rheobase)")
     ax[0].set_ylabel(ylabel)
@@ -1320,7 +1320,7 @@ def plot_IV_IF_curve(
     ax[0].plot(simulated_iv_amp_rel, simulated_iv_max_v, "o", color="blue", label="simulated")
 
     # plot expt_iv_max_v vs expt_iv_amp_rel
-    ax[1].plot(expt_iv_amp, expt_iv_max_v, "o", color="red", label="expt")
+    ax[1].plot(expt_iv_amp, expt_iv_max_v, "o", color="grey", label="expt")
     ax[1].set_ylim(0, 25)
     ax[1].set_xlabel("Amplitude (nA)")
     ax[1].set_ylabel(ylabel)
@@ -1390,7 +1390,7 @@ def plot_IV_curves(evaluator, emodels, figures_dir, write_fig=True):
                         amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
                     )
 
-        plot_IV_IF_curve(
+        plot_IV_FI_curve(
             expt_peak_amp_rel,
             expt_peak_max_v,
             simulated_peak_amp_rel,
@@ -1404,7 +1404,7 @@ def plot_IV_curves(evaluator, emodels, figures_dir, write_fig=True):
             curve="IV",
         )
 
-        plot_IV_IF_curve(
+        plot_IV_FI_curve(
             expt_vd_amp_rel,
             expt_vd_max_v,
             simulated_vd_amp_rel,
@@ -1421,8 +1421,8 @@ def plot_IV_curves(evaluator, emodels, figures_dir, write_fig=True):
         )
 
 
-def plot_IF_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_fig=True):
-    """Plots IF (curretn vs frequency) curves of with simulated and experimental values.
+def plot_FI_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_fig=True):
+    """Plots FI (current vs frequency) curves of with simulated and experimental values.
     Only works for threshold-based protocols.
     Expects mean_frequency to be available in extracted and simulated data."""
     # pylint: disable=too-many-nested-blocks
@@ -1436,20 +1436,21 @@ def plot_IF_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
 
         values = evaluator.fitness_calculator.calculate_values(emodel.responses)
 
-        # experimental IF curve
+        # experimental FI curve
         expt_amp_rel = []
         expt_amp = []
         expt_freq = []
         for cell in cells:
             for rec in cell.recordings:
-                if rec.protocol_name.lower() == prot_name.lower() and rec.amp_rel >= 100:
+                if rec.protocol_name.lower() == prot_name.lower():
                     for feat in rec.efeatures:
                         if feat == "mean_frequency":
                             expt_freq.append(rec.efeatures[feat])
                             expt_amp.append(float(rec.amp))
-                            expt_amp_rel.append(float(rec.amp_rel))
+                            if rec.amp_rel is not None:
+                                expt_amp_rel.append(float(rec.amp_rel))
 
-        # simulated IF curve
+        # simulated FI curve
         simulated_freq = []
         simulated_amp_rel = []
         simulated_amp = []
@@ -1461,15 +1462,18 @@ def plot_IF_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
                 if len(n) == 4 and n[1].isdigit():
                     n = [".".join(n[:2]), n[2], n[3]]
                 protocol_name = n[0]
-                amp_rel_temp = float(protocol_name.split("_")[-1])
+                amp_temp = float(protocol_name.split("_")[-1])
                 if "mean_frequency" in val:
                     simulated_freq.append(values[val])
-                    simulated_amp_rel.append(amp_rel_temp)
-                    simulated_amp.append(
-                        amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
-                    )
+                    if "bpo_threshold_current" in emodel.responses:
+                        simulated_amp_rel.append(amp_temp)
+                        simulated_amp.append(
+                            amp_temp * 0.01 * emodel.responses["bpo_threshold_current"]
+                        )
+                    else:
+                        simulated_amp.append(amp_temp)
 
-        plot_IV_IF_curve(
+        plot_IV_FI_curve(
             expt_amp_rel,
             expt_freq,
             simulated_amp_rel,
@@ -1477,10 +1481,10 @@ def plot_IF_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
             expt_amp,
             simulated_amp,
             figures_dir,
-            figure_name=emodel.emodel_metadata.as_string(emodel.seed) + "__IF_curve_comparison.pdf",
+            figure_name=emodel.emodel_metadata.as_string(emodel.seed) + "__FI_curve_comparison.pdf",
             ylabel="Mean Frequency (Hz)",
             write_fig=write_fig,
-            curve="IF",
+            curve="FI",
         )
 
 
@@ -1534,7 +1538,7 @@ def plot_trace_comparison(emodels, figures_dir, write_fig=True):
                         # plot all recordings of the experimental protocol res. expt data
                         for rec in p.recordings:
                             axes[i].plot(
-                                rec.time, rec.voltage, linestyle="-", color="red", alpha=0.5
+                                rec.time, rec.voltage, linestyle="-", color="grey", alpha=0.5
                             )
 
                 # simulated Rin protocol
@@ -1554,7 +1558,7 @@ def plot_trace_comparison(emodels, figures_dir, write_fig=True):
 
                     # plot all recordings of the experimental protocol % res. expt data
                     for rec in p.recordings:
-                        axes[i].plot(rec.time, rec.voltage, linestyle="-", color="red", alpha=0.5)
+                        axes[i].plot(rec.time, rec.voltage, linestyle="-", color="grey", alpha=0.5)
 
                     # plot simulated trace
                     axes[i].plot(
@@ -1587,13 +1591,13 @@ def plot_models(
     plot_traces=True,
     plot_thumbnail=True,
     plot_currentscape=False,
-    plot_if_curve=False,
+    plot_fi_curve=False,
     plot_dendritic_ISI_CV=True,
     plot_dendritic_rheobase=True,
     plot_bAP_EPSP=False,
     plot_IV_curve=False,
-    plot_IF_curve_comparison=False,
-    IF_curve_prot_name="idrest",
+    plot_FI_curve_comparison=False,
+    FI_curve_prot_name="idrest",
     only_validated=False,
     save_recordings=False,
     load_from_local=False,
@@ -1613,16 +1617,16 @@ def plot_models(
         plot_traces (bool): True to plot the traces
         plot_thumbnail (bool): True to plot a trace used as thumbnail
         plot_currentscape (bool): True to plot the currentscapes
-        plot_if_curve (bool): True to plot the current / frequency curve
+        plot_fi_curve (bool): True to plot the current / frequency curve
         plot_dendritic_ISI_CV (bool): True to plot dendritic ISI CV (if present)
         plot_dendritic_rheobase (bool): True to plot dendritic rheobase (if present)
         plot_bAP_EPSP (bool): True to plot bAP and EPSP protocol.
             Only use this on model having apical dendrites.
         plot_IV_curves (bool): True to plot IV curves for peak voltage and voltage_deflection.
             Expects threshold-based sub-threshold IV protocol.
-        plot_IF_curve_comparison (bool): True to plot IF curve with experimental
+        plot_FI_curve_comparison (bool): True to plot FI curve with experimental
             and simulated data. Expects threshold-based protocols.
-        IF_curve_prot_name (str): which protocol to use to plot IF_curve comparison.
+        FI_curve_prot_name (str): which protocol to use to plot FI_curve comparison.
             The protocol must have the mean_frequency feature associated to it.
         only_validated (bool): True to only plot validated models
         save_recordings (bool): Whether to save the responses data under a folder
@@ -1754,23 +1758,23 @@ def plot_models(
             # reset rcParams which are modified by currentscape
             matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 
-        if plot_if_curve:
-            figures_dir_IF_curves = figures_dir / "IF_curves" / dest_leaf
-            IF_curve(
+        if plot_fi_curve:
+            figures_dir_FI_curves = figures_dir / "FI_curves" / dest_leaf
+            FI_curve(
                 mo,
                 mo.responses,
                 copy.deepcopy(cell_evaluator),
-                figures_dir=figures_dir_IF_curves,
+                figures_dir=figures_dir_FI_curves,
             )
 
         if plot_IV_curve:
             figures_dir_IV_curves = figures_dir / "IV_curves" / dest_leaf
             plot_IV_curves(cell_evaluator, emodels, figures_dir_IV_curves)
 
-        if plot_IF_curve_comparison:
-            figures_dir_IF_curves = figures_dir / "IF_curves" / dest_leaf
-            plot_IF_curves_comparison(
-                cell_evaluator, emodels, figures_dir_IF_curves, IF_curve_prot_name
+        if plot_FI_curve_comparison:
+            figures_dir_FI_curves = figures_dir / "FI_curves" / dest_leaf
+            plot_FI_curves_comparison(
+                cell_evaluator, emodels, figures_dir_FI_curves, FI_curve_prot_name
             )
 
     if plot_bAP_EPSP:
