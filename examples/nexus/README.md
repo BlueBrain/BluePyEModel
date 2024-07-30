@@ -1,6 +1,6 @@
 # E-Model Building Pipeline with Luigi and Nexus
 
-This example demonstrates how to build an e-model using the Nexus access point and [Luigi](https://luigi.readthedocs.io/en/stable/). The Nexus access point class [NexusAccessPoint](./../../bluepyemodel/access_point/nexus.py) serves as the API that enables users to store and manage e-models on Nexus. This class provides a set of functions to create e-model-related resources on Nexus and link them to the electrophysiological data, mechanisms, and morphology registered on Nexus.
+This example demonstrates how to build an e-model using the Nexus access point and [Luigi](https://luigi.readthedocs.io/en/stable/). The [NexusAccessPoint](./../../bluepyemodel/access_point/nexus.py) class serves as the API that enables users to store and manage e-models on Nexus. This class provides a set of functions to create e-model-related resources on Nexus and link them to the electrophysiological data, mechanisms, and morphology registered on Nexus.
 
 ## 1. Setup the virtual environment
 To setup the virtual environment and install all the needed packages, run:
@@ -17,13 +17,13 @@ source myvenv/bin/activate
 ```
 
 ## 2. Configure the Luigi pipeline:
-The ``luigi.cfg`` file contains the configuration for the Luigi pipeline. Make sure to set the ``virtual-env`` and ``chdir`` to the path of your virtual environment (created by the previous step) and the absolute path to current working directory respectively. Other parameters can be modified depending on your needs. Below is a description of several variables you may wish to customize:
+The ``luigi.cfg`` file contains the configuration for the Luigi pipeline. Ensure you set ``virtual-env`` to the path of your virtual environment (created in the previous step) and ``chdir`` the absolute path of the current working directory. Other parameters can be adjusted based on your requirements. Below is a description of several variables you may wish to customise:
 
 - [DEFAULT] : settings section used by bbp-workflow.
     - ``account``: project name (e.g. proj72).
     - ``virtual-env``: path to your virtual environment.
-    - ``chdir``: absolute path to the current working directory.
-    - ``workers``: number of workers to be used by the pipeline, at the moment only 1 worker is supported.
+    - ``chdir``: absolute path of the current working directory.
+    - ``workers``: number of workers to be used by the pipeline. Currently, only 1 worker is supported.
     - ``time``: maximum time allowed for the pipeline to run.
 - [Optimise] : settings section used for the optimisation.
     - ``node``: number of nodes to be used on the HPC.
@@ -40,17 +40,15 @@ For a detailed description of the configuration file, please refer to the [Luigi
 Prior to executing the Luigi pipeline, it is essential to register the following resources within the Nexus project, as they will be needed by the pipeline:
 
 - ``EModelPipelineSettings`` (EMPS): the pipeline settings of the e-model.
-- ``ExtractionTargetsConfiguration`` (ETC): The extraction target configuration of the e-model and the links to the ephys data. This resource is created by parsing the ``targets.py`` using the  ``configure_targets`` function in pipeline.py.
+- ``ExtractionTargetsConfiguration`` (ETC): The extraction target configuration of the e-model and the links to the ephys data. This resource is created by parsing the ``targets.py`` using the  ``configure_targets`` function in ``pipeline.py``.
 - ``EModelConfiguration`` (EMC): the configuration of the e-model, which links to the morphology and mechanisms and stores a reformatted version of the parameters file of the e-model.
 
 
 To create and register the ``EModelPipelineSettings`` (EMPS) and ``ExtractionTargetsConfiguration`` (ETC), run:
 
 ```
-python pipeline.py --step=configure_nexus --emodel=EMODEL_NAME --iteration_tag=ITERATION_TAG --etype=ETYPE
+python pipeline.py --step=configure_nexus --emodel=EMODEL_NAME --iteration_tag=ITERATION_TAG --etype=ETYPE --mtype=MTYPE --ttype=TTYPE
 ```
-
-The EMODEL_NAME and ETYPE have to be valid names present in the gene map (e.g.: EMODEL_NAME=="cADpyr", ETYPE=="cADpyr").
 
 The iteration_tag can be any string without spaces. This variable enables the user to run different tests or iterations in parallel on the same e-model. All Nexus resources related to BPEM will be tagged with the iteration_tag, and the pipeline will only use resources with a matching tag. It is important to ensure that the ``iteration_tag`` specified in luigi.cfg matches the ``iteration_tag`` used when running pipeline.py. If a different ``iteration_tag`` is used in pipeline.py, the pipeline will crash because BPEM will not find the expected resources.
 
@@ -61,20 +59,21 @@ The user will be prompted to confirm their intent to deprecate the resources cur
 To set up the EModelConfiguration (EMC), which includes the model's channels, parameters and parameter distributions. You can either create the configuration based on gene data, or through a legacy json file. You can specify the legacy JSON file by adjusting the path of ``legacy_conf_json_file`` in ``pipeline.py`` and then run:
 
 ```
-python pipeline.py --step=configure_model_from_json --emodel=EMODEL_NAME --iteration_tag=ITERATION_TAG --etype=ETYPE
+python pipeline.py --step=configure_model_from_json --emodel=EMODEL_NAME --iteration_tag=ITERATION_TAG --etype=ETYPE --mtype=MTYPE --ttype=TTYPE
 ```
 
 If you choose to create the configuration based on gene data, you will need to provide a ttype, thus, ensure that you have also specified the ``TTYPE`` when running the ``configure_nexus`` step:
 
 ```
-python pipeline.py --step=configure_model_from_gene --emodel=EMODEL_NAME --iteration_tag=ITERATION_TAG --etype=ETYPE --ttype=TTYPE
+python pipeline.py --step=configure_model_from_gene --emodel=EMODEL_NAME --iteration_tag=ITERATION_TAG --etype=ETYPE --mtype=MTYPE --ttype=TTYPE
 ```
 
 If you wish to modify the gene-based configuration before proceeding with model optimisation, you can get the configuration from Nexus and modify it before proceeding further. The jupyter notebook [edit_neuron_model_configuration.ipynb](../ncmv3//edit_neuron_model_configuration.ipynb) explains how to do so.
 
 
 ## 4. Run the Luigi pipeline:
-Set the variables (``emodel``, ``etype`` and ``iteration``) in [launch_luigi.sh](launch_luigi.sh/) to match the values you chose for ``EMODEL_NAME``, ``ETYPE`` and ``ITERATION_TAG``.  Additionally, ensure that the ``species``, ``brain_region`` variables are set to the same values as in ``pipeline.py``.
+Set the variables ``emodel``, ``etype``, ``iteration``, ``mtype``, and ``ttype`` in ``launch_luigi.sh`` to match the values you chose for ``EMODEL_NAME``, ``ETYPE``, ``ITERATION_TAG``, ``MTYPE``, and ``TTYPE``. Additionally, ensure that the ``species`` and ``brain_region`` variables are consistent with the values in ``pipeline.py``.
+
 
 Then, execute:
 
@@ -92,7 +91,7 @@ bbp-workflow webui -o
 
 Then, open the URL returned by this command in your browser.
 
-If an error happens during the execution of the workflow, the command ./launch_luigi.sh can be run again and the workflow will restart from the latest step. If the error persists, please refer to the [Troubleshooting](#troubleshooting) section or contact the package's authors for further assistance.
+If an error happens during the execution of the workflow, the command ``./launch_luigi.sh`` can be run again and the workflow will restart from the latest step. If the error persists, please refer to the [Troubleshooting](#troubleshooting) section or contact the package's authors for further assistance.
 
 ## 5. Results:
 
