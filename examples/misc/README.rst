@@ -21,7 +21,7 @@ local2nexus: Export Local E-Model to Nexus
 
 This example demonstrates how to export a locally built e-model to Nexus.
 
-For detailed instructions, refer to the `README <./local2nexus/README.rst>`_.
+For detailed instructions, refer to the `README <./local2nexus/README.md>`_.
 
 
 memodel: Modify and Upload MEModel
