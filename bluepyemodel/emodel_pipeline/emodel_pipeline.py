@@ -302,17 +302,6 @@ class EModel_pipeline:
                 / "parameter_evolution",
             )
 
-        if self.access_point.pipeline_settings.plot_phase_plot:
-            plotting.phase_plot(
-                self.access_point.emodel_metadata,
-                figures_dir=pathlib.Path("./figures")
-                / self.access_point.emodel_metadata.emodel
-                / "phase_plot",
-                prot_names=self.access_point.pipeline_settings.phase_plot_prot_names,
-                amplitude=self.access_point.pipeline_settings.phase_plot_prot_amplitude,
-                amp_window=self.access_point.pipeline_settings.phase_plot_prot_amplitude_window,
-            )
-
         return plotting.plot_models(
             access_point=self.access_point,
             mapper=self.mapper,
@@ -328,7 +317,10 @@ class EModel_pipeline:
             plot_bAP_EPSP=self.access_point.pipeline_settings.plot_bAP_EPSP,
             plot_IV_curve=self.access_point.pipeline_settings.plot_IV_curves,
             plot_FI_curve_comparison=self.access_point.pipeline_settings.plot_FI_curve_comparison,
+            plot_phase_plot=self.access_point.pipeline_settings.plot_phase_plot,
+            IV_curve_prot_name=self.access_point.pipeline_settings.IV_curve_prot_name,
             FI_curve_prot_name=self.access_point.pipeline_settings.FI_curve_prot_name,
+            phase_plot_settings=self.access_point.pipeline_settings.phase_plot_settings,
             only_validated=only_validated,
             save_recordings=self.access_point.pipeline_settings.save_recordings,
             load_from_local=load_from_local,

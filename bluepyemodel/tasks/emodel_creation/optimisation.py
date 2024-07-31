@@ -1254,6 +1254,8 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
 
         mapper = self.get_mapper()
+        # do not forget to update plot_models here as is in emodel_pipeline.py
+        # if this comment is still here at reviewing stage, you can humiliate me
         plot_models(
             access_point=self.access_point,
             mapper=mapper,
@@ -1276,6 +1278,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
 
         outputs = []
+        # also update output corresponding to new args of plot_models fct before merging change
         if plot_optimisation:
             # distribution
             fname = self.access_point.emodel_metadata.as_string()

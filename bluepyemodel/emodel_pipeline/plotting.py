@@ -23,12 +23,14 @@ import pickle
 import re
 from pathlib import Path
 
+import bluepyefe
 import efel
 import matplotlib
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import numpy
 from bluepyopt.ephys.locations import NrnSeclistCompLocation
+from bluepyopt.ephys.objectives import SingletonWeightObjective
 from bluepyopt.ephys.protocols import SweepProtocol
 from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.stimuli import NrnSquarePulse
@@ -38,6 +40,7 @@ from matplotlib import colors
 from bluepyemodel.data.utils import read_dendritic_data
 from bluepyemodel.efeatures_extraction.efeatures_extraction import get_extraction_output_directory
 from bluepyemodel.efeatures_extraction.efeatures_extraction import read_extraction_output_cells
+from bluepyemodel.evaluation.efel_feature_bpem import eFELFeatureBPEM
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
@@ -375,44 +378,6 @@ def evolution_parameters_density(
         )
 
     return fig, axs
-
-
-def phase_plot(emodel_metadata, figures_dir, prot_names, amplitude, amp_window, write_fig=True):
-    """Plots recordings as voltage vs time and in phase space.
-    Expects threshold-based protocols."""
-    make_dir(figures_dir)
-
-    emodel_name = emodel_metadata.emodel
-    cells = read_extraction_output_cells(emodel_name)
-    if cells is None:
-        return None, None
-
-    fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(10, 5))
-    for cell in cells:
-        for rec in cell.recordings:
-            if any(a.lower() in rec.protocol_name.lower() for a in prot_names):
-                if amplitude - amp_window < rec.amp_rel < amplitude + amp_window:
-                    ax[0].plot(rec.t, rec.voltage)
-                    # interpolate to reproduce what is being done in efel
-                    interp_time = numpy.arange(rec.t[0], rec.t[-1] + 0.1, 0.1)
-                    interp_voltage = numpy.interp(interp_time, rec.t, rec.voltage)
-                    # plot the phase plot d(rec.voltage)/dt vs rec.voltage
-                    ax[1].plot(
-                        interp_voltage[1:], numpy.diff(interp_voltage) / numpy.diff(interp_time)
-                    )
-                    ax[0].set_xlabel("Time (ms)")
-                    ax[0].set_ylabel("Voltage (mV)")
-                    ax[0].set_title("Traces")
-                    ax[1].set_xlabel("Voltage (mV)")
-                    ax[1].set_ylabel("dV/dt (V/s)")
-                    ax[1].set_title("Traces in phase space")
-
-    if write_fig:
-        save_fig(
-            figures_dir,
-            figure_name=emodel_metadata.as_string() + "__phase_plot.pdf",
-        )
-    return fig, ax
 
 
 def scores(model, figures_dir="./figures", write_fig=True):
@@ -1297,144 +1262,334 @@ def run_and_plot_EPSP(
         )
 
 
-def plot_IV_FI_curve(
-    expt_iv_amp_rel,
-    expt_iv_max_v,
-    simulated_iv_amp_rel,
-    simulated_iv_max_v,
-    expt_iv_amp,
-    simulated_iv_amp,
-    figures_dir,
-    figure_name,
-    ylabel,
-    write_fig=True,
-    curve="IV",
-):
-    """Plots IV or FI curve of with simulated and experimental values."""
-    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
-    ax[0].plot(expt_iv_amp_rel, expt_iv_max_v, "o", color="grey", label="expt")
-    ax[0].set_ylim(0, 25)
-    ax[0].set_xlabel("Amplitude (% of rheobase)")
-    ax[0].set_ylabel(ylabel)
-    ax[0].set_title(f"Expt {curve} curve (relative amplitude)")
-    ax[0].plot(simulated_iv_amp_rel, simulated_iv_max_v, "o", color="blue", label="simulated")
+def binning(x, y, n_bin=5):
+    """Put x and y into bins. Returns the binned x, binned y and std of binned y.
+    
+    Args:
+        x (list): x axis data points
+        y (list): y axis data points corresponding to the x data points
+        n_bin (int): number of bins to use
+    """
+    if len(x) <= n_bin:
+        return x, y, list(numpy.zeros(len(x)))
 
-    # plot expt_iv_max_v vs expt_iv_amp_rel
-    ax[1].plot(expt_iv_amp, expt_iv_max_v, "o", color="grey", label="expt")
-    ax[1].set_ylim(0, 25)
-    ax[1].set_xlabel("Amplitude (nA)")
-    ax[1].set_ylabel(ylabel)
-    ax[1].set_title(f"Expt {curve} curve (absolute amplitude)")
-    ax[1].plot(simulated_iv_amp, simulated_iv_max_v, "o", color="blue", label="simulated")
+    new_x = []
+    new_y = []
+    y_err = []
+    x = numpy.asarray(x)
+    y = numpy.asarray(y)
+    intervals = numpy.linspace(numpy.min(x), numpy.max(x), num=n_bin + 1)
+    for i in range(n_bin):
+        start = intervals[i]
+        stop = intervals[i + 1]
+        new_x.append((start + stop) / 2.)
+        y_select = y[numpy.all([x > start, x < stop], axis=0)]
+        new_y.append(numpy.nanmean(y_select))
+        y_err.append(numpy.nanstd(y_select))
 
-    ax[0].legend()
-    ax[1].legend()
-    if write_fig:
-        save_fig(figures_dir, figure_name)
-    return fig, ax
+    return new_x, new_y, y_err
 
 
-def plot_IV_curves(evaluator, emodels, figures_dir, write_fig=True):
+def extract_experimental_data_for_IV_curve(cells, efel_settings, prot_name="iv", n_bin=5):
+    """Get experimental data to be plotted for IV curve from bluepyefe cells.
+    Use efel to extract missing features.
+    
+    Args:
+        cells (list): list of bluepyefe.cell.Cell object to get recordings from
+        efel_settings (dict): efel settings to use during feature extraction
+        prot_name (str): name of protocol of which recordings to use
+        n_bin (int): number of bins to use for plotting
+    """
+    # experimental IV curve
+    expt_peak_amp_rel = []
+    expt_peak_amp = []
+    expt_peak_v = []
+    expt_vd_amp_rel = []
+    expt_vd_amp = []
+    expt_vd_v = []
+    for cell in cells:
+        for rec in cell.recordings:
+            if rec.protocol_name.lower() == prot_name.lower() and rec.amp_rel <= 100:
+                if 0 <= rec.amp_rel:
+                    feat_name = "maximum_voltage_from_voltagebase"
+                    # if feature was not extracted with bpe during extraction phase, do it now
+                    if not feat_name in rec.efeatures:
+                        rec.compute_efeatures([feat_name], efel_settings=efel_settings)
+                    if not numpy.isnan(rec.efeatures[feat_name]):
+                        expt_peak_v.append(rec.efeatures[feat_name])
+                        expt_peak_amp.append(float(rec.amp))
+                        expt_peak_amp_rel.append(float(rec.amp_rel))
+                else:
+                    feat_name = "voltage_deflection_vb_ssse"
+                    # if feature was not extracted with bpe during extraction phase, do it now
+                    if not feat_name in rec.efeatures:
+                        rec.compute_efeatures([feat_name], efel_settings=efel_settings)
+                    if not numpy.isnan(rec.efeatures[feat_name]):
+                        expt_vd_v.append(rec.efeatures[feat_name])
+                        expt_vd_amp.append(float(rec.amp))
+                        expt_vd_amp_rel.append(float(rec.amp_rel))
+
+    # binning the experimental datapoints to avoid crowding the figure
+    expt_peak_amp_rel, expt_peak_v_rel, expt_peak_v_rel_err = binning(
+        expt_peak_amp_rel, expt_peak_v, n_bin
+    )
+    # has to re-do full bining for absolute amp (and not just re-use expt_peak_v_rel)
+    # because threshold is different for each rec
+    expt_peak_amp, expt_peak_v_abs, expt_peak_v_abs_err = binning(
+        expt_peak_amp, expt_peak_v, n_bin
+    )
+
+    expt_vd_amp_rel, expt_vd_v_rel, expt_vd_v_rel_err = binning(
+        expt_vd_amp_rel, expt_vd_v, n_bin
+    )
+    # same here: has to re-do full bining for absolute amp
+    expt_vd_amp, expt_vd_v_abs, expt_vd_v_abs_err = binning(
+        expt_vd_amp, expt_vd_v, n_bin
+    )
+
+    exp_peak = {
+        "amp_rel": expt_peak_amp_rel,
+        "amp": expt_peak_amp,
+        "feat_rel": expt_peak_v_rel,
+        "feat_rel_err": expt_peak_v_rel_err,
+        "feat_abs": expt_peak_v_abs,
+        "feat_abs_err": expt_peak_v_abs_err,
+    }
+    exp_vd = {
+        "amp_rel": expt_vd_amp_rel,
+        "amp": expt_vd_amp,
+        "feat_rel": expt_vd_v_rel,
+        "feat_rel_err": expt_vd_v_rel_err,
+        "feat_abs": expt_vd_v_abs,
+        "feat_abs_err": expt_vd_v_abs_err,
+    }
+    return exp_peak, exp_vd
+
+
+def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv"):
+    """Returns a copy of the evaluator, with missing features added for IV_curve computation.
+    
+    Args:
+        evaluator (CellEvaluator): cell evaluator
+        efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
+        prot_name (str): name of protocol of which recordings to use
+    """
+    updated_evaluator = copy.deepcopy(evaluator)
+    # find protocols we expect to have the features we want to plot
+    prot_max_v = []
+    prot_v_deflection = []
+    for prot in evaluator.fitness_protocols["main_protocol"].protocols.values():
+        if prot_name.lower() in prot.name.lower():
+            if len(prot.stimuli) < 1 or not hasattr(prot.stimuli[0], "amp_rel"):
+                continue
+            if prot.stimuli[0].amp_rel < 100:
+                if prot.stimuli[0].amp_rel >= 0:
+                    prot_max_v.append(prot.name)
+                else:
+                    prot_v_deflection.append(prot.name)
+
+    # maps protocols of interest with all its associated features
+    # also get protocol data we need for feature registration
+    prots_to_feats = {}
+    prots_data = {}
+    for objective in evaluator.fitness_calculator.objectives:
+        feat = objective.features[0]
+        for protocol_name in prot_v_deflection + prot_max_v:
+            if protocol_name in feat.recording_names['']:
+                if not protocol_name in prots_to_feats:
+                    prots_to_feats[protocol_name] = []
+                if not protocol_name in prots_data:
+                    prots_data[protocol_name] = {
+                        "stimulus_current": feat.stimulus_current,
+                        "stim_start": feat.stim_start,
+                        "stim_end": feat.stim_end,
+                    }
+                prots_to_feats[protocol_name].append(feat.efel_feature_name)
+                continue
+    
+    # add missing features
+    for protocol_name, feat_list in prots_to_feats.items():
+        if protocol_name in prot_v_deflection and "voltage_deflection_vb_ssse" not in feat_list:
+            logger.debug(f"Adding voltage_deflection_vb_ssse to {protocol_name} in plot_IV_curves")
+            feat_name = f"{protocol_name}.soma.v.voltage_deflection_vb_ssse"
+            updated_evaluator.fitness_calculator.objectives.append(
+                SingletonWeightObjective(
+                    feat_name,
+                    eFELFeatureBPEM(
+                        feat_name,
+                        efel_feature_name="voltage_deflection_vb_ssse",
+                        recording_names={"": f"{protocol_name}.soma.v"},
+                        stim_start=prots_data[protocol_name]["stim_start"],
+                        stim_end=prots_data[protocol_name]["stim_end"],
+                        exp_mean=1.0,  # fodder: not used
+                        exp_std=1.0,  # fodder: not used
+                        stimulus_current=prots_data[protocol_name]["stimulus_current"],
+                        threshold=efel_settings.get("Threshold", None),
+                        interp_step=efel_settings.get("interp_step", None),
+                        weight=1.0,
+                    ),
+                    1.0
+                )
+            )
+        if protocol_name in prot_max_v and "maximum_voltage_from_voltagebase" not in feat_list:
+            logger.debug(
+                f"Adding maximum_voltage_from_voltagebase to {protocol_name} in plot_IV_curves"
+            )
+            feat_name = f"{protocol_name}.soma.v.maximum_voltage_from_voltagebase"
+            updated_evaluator.fitness_calculator.objectives.append(
+                SingletonWeightObjective(
+                    feat_name,
+                    eFELFeatureBPEM(
+                        feat_name,
+                        efel_feature_name="maximum_voltage_from_voltagebase",
+                        recording_names={"": f"{protocol_name}.soma.v"},
+                        stim_start=prots_data[protocol_name]["stim_start"],
+                        stim_end=prots_data[protocol_name]["stim_end"],
+                        exp_mean=1.0,  # fodder: not used
+                        exp_std=1.0,  # fodder: not used
+                        stimulus_current=prots_data[protocol_name]["stimulus_current"],
+                        threshold=efel_settings.get("Threshold", None),
+                        interp_step=efel_settings.get("interp_step", None),
+                        weight=1.0,
+                    ),
+                    1.0
+                )
+            )
+
+    return updated_evaluator
+
+
+def plot_IV_curves(evaluator, emodels, figures_dir, efel_settings, prot_name="iv", write_fig=True, n_bin=5):
     """Plots IV curves of peak voltage and voltage_deflection
-    with simulated and experimental values. Only works for threshold-based protocols."""
+    with simulated and experimental values. Only works for threshold-based protocols.
+    
+    Args:
+        evaluator (CellEvaluator): cell evaluator
+        emodels (list): list of EModels
+        figures_dir (str or Path): output directory for the figure to be saved on
+        efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
+        prot_name (str): name of protocol of which recordings to use
+        write_fig (bool): whether to save the figure
+        n_bin (int): number of bins to use
+    """
     # pylint: disable=too-many-nested-blocks
+    # note: should maybe also check location and recorded variable
     make_dir(figures_dir)
+    if efel_settings is None:
+        efel_settings = bluepyefe.tools.DEFAULT_EFEL_SETTINGS.copy()
 
+    # add missing features (if any) to evaluator
+    updated_evaluator = fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name)
+
+    emodel_name = None
+    cells = None
     for emodel in emodels:
-        cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
-        if cells is None:
-            continue
+        # -- get extracted IV curve data -- #
+        # do not re-extract data if the emodel is the same as previously
+        if emodel_name != emodel.emodel_metadata.emodel or cells is None:
+            # take extraction data from pickle file and rearange it for plotting
+            cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
+            if cells is None:
+                continue
 
-        values = evaluator.fitness_calculator.calculate_values(emodel.responses)
+            exp_peak, exp_vd = extract_experimental_data_for_IV_curve(cells, efel_settings, prot_name, n_bin)
+            
+            emodel_name = emodel.emodel_metadata.emodel
 
-        # experimental IV curve
-        expt_peak_amp_rel = []
-        expt_peak_amp = []
-        expt_peak_max_v = []
-        expt_vd_amp_rel = []
-        expt_vd_amp = []
-        expt_vd_max_v = []
-        for cell in cells:
-            for rec in cell.recordings:
-                if rec.protocol_name == "IV" and rec.amp_rel <= 100:
-                    for feat in rec.efeatures:
-                        if feat == "maximum_voltage_from_voltagebase" and 0 < rec.amp_rel:
-                            expt_peak_max_v.append(rec.efeatures[feat])
-                            expt_peak_amp.append(float(rec.amp))
-                            expt_peak_amp_rel.append(float(rec.amp_rel))
-                        elif feat == "voltage_deflection_vb_ssse":
-                            expt_vd_max_v.append(rec.efeatures[feat])
-                            expt_vd_amp.append(float(rec.amp))
-                            expt_vd_amp_rel.append(float(rec.amp_rel))
+        # -- get simulated IV curve data -- #
+        values = updated_evaluator.fitness_calculator.calculate_values(emodel.responses)
 
-        # simulated IV curve
-        simulated_peak_max_v = []
+        simulated_peak_v = []
         simulated_peak_amp_rel = []
         simulated_peak_amp = []
-        simulated_vd_max_v = []
+        simulated_vd_v = []
         simulated_vd_amp_rel = []
         simulated_vd_amp = []
         for val in values:
-            if "IV" in val:
+            if prot_name.lower() in val.lower():
                 amp_rel_temp = get_amplitude_from_feature_key(val)
                 if "maximum_voltage_from_voltagebase" in val:
-                    simulated_peak_max_v.append(values[val])
+                    simulated_peak_v.append(values[val])
                     simulated_peak_amp_rel.append(amp_rel_temp)
                     simulated_peak_amp.append(
                         amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
                     )
                 elif "voltage_deflection_vb_ssse" in val:
-                    simulated_vd_max_v.append(values[val])
+                    simulated_vd_v.append(values[val])
                     simulated_vd_amp_rel.append(amp_rel_temp)
                     simulated_vd_amp.append(
                         amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
                     )
-
-        plot_IV_FI_curve(
-            expt_peak_amp_rel,
-            expt_peak_max_v,
-            simulated_peak_amp_rel,
-            simulated_peak_max_v,
-            expt_peak_amp,
-            simulated_peak_amp,
-            figures_dir,
-            figure_name=emodel.emodel_metadata.as_string(emodel.seed) + "__peak_IV_curve.pdf",
-            ylabel="maximum_voltage_from_voltagebase (mV)",
-            write_fig=write_fig,
-            curve="IV",
+        
+        # plotting
+        _, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
+        ax[0].errorbar(
+            exp_peak["amp_rel"],
+            exp_peak["feat_rel"],
+            yerr=exp_peak["feat_rel_err"],
+            marker="o",
+            color="grey",
+            label="expt max(V)",
+        )
+        ax[0].errorbar(exp_vd["amp_rel"], exp_vd["feat_rel"], yerr=exp_vd["feat_rel_err"], marker="o", color="lightgrey", label="expt V deflection")
+        ax[0].set_xlabel("Amplitude (% of rheobase)")
+        ax[0].set_ylabel("Voltage (mV)")
+        ax[0].set_title(f"IV curve (relative amplitude)")
+        ax[0].plot(simulated_peak_amp_rel, simulated_peak_v, "o", color="blue", label="simulated max(V)")
+        ax[0].plot(
+            simulated_vd_amp_rel, simulated_vd_v, "o", color="royalblue", label="simulated V deflection"
         )
 
-        plot_IV_FI_curve(
-            expt_vd_amp_rel,
-            expt_vd_max_v,
-            simulated_vd_amp_rel,
-            simulated_vd_max_v,
-            expt_vd_amp,
-            simulated_vd_amp,
-            figures_dir,
-            figure_name=(
-                emodel.emodel_metadata.as_string(emodel.seed) + "__voltage_deflection_IV_curve.pdf"
-            ),
-            ylabel="voltage_deflection_vb_ssse (mV)",
-            write_fig=write_fig,
-            curve="IV",
+        ax[1].errorbar(
+            exp_peak["amp"],
+            exp_peak["feat_abs"],
+            yerr=exp_peak["feat_abs_err"],
+            marker="o",
+            color="grey",
+            label="expt max(V)"
         )
+        ax[1].errorbar(exp_vd["amp"], exp_vd["feat_abs"], yerr=exp_vd["feat_abs_err"], marker="o", color="lightgrey", label="expt V deflection")
+        ax[1].set_xlabel("Amplitude (nA)")
+        ax[1].set_ylabel("Voltage (mV)")
+        ax[1].set_title(f"IV curve (absolute amplitude)")
+        ax[1].plot(simulated_peak_amp, simulated_peak_v, "o", color="blue", label="simulated max(V)")
+        ax[1].plot(simulated_vd_amp, simulated_vd_v, "o", color="royalblue", label="simulated V deflection")
+
+        ax[0].legend()
+        ax[1].legend()
+        if write_fig:
+            save_fig(
+                figures_dir,
+                emodel.emodel_metadata.as_string(emodel.seed) + "__IV_curve.pdf"
+            )
 
 
-def plot_FI_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_fig=True):
+def plot_FI_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_fig=True, n_bin=5):
     """Plots FI (current vs frequency) curves of with simulated and experimental values.
     Only works for threshold-based protocols.
-    Expects mean_frequency to be available in extracted and simulated data."""
+    Expects mean_frequency to be available in extracted and simulated data.
+    
+    Args:
+        evaluator (CellEvaluator): cell evaluator
+        emodels (list): list of EModels
+        figures_dir (str or Path): output directory for the figure to be saved on
+        prot_name (str): name of the protocol to use for the FI curve
+        write_fig (bool): whether to save the figure
+    """
     # pylint: disable=too-many-nested-blocks
     make_dir(figures_dir)
 
+    emodel_name = None
+    cells = None
     for emodel in emodels:
-        emodel_name = emodel.emodel_metadata.emodel
-        cells = read_extraction_output_cells(emodel_name)
-        if cells is None:
-            continue
+        # do not re-extract data if the emodel is the same as previously
+        if emodel_name != emodel.emodel_metadata.emodel or cells is None:
+            # take extraction data from pickle file and rearange it for plotting
+            cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
+            if cells is None:
+                continue
 
-        values = evaluator.fitness_calculator.calculate_values(emodel.responses)
+            emodel_name = emodel.emodel_metadata.emodel
 
         # experimental FI curve
         expt_amp_rel = []
@@ -1450,7 +1605,18 @@ def plot_FI_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
                             if rec.amp_rel is not None:
                                 expt_amp_rel.append(float(rec.amp_rel))
 
+        # binning the experimental datapoints to avoid crowding the figure
+        expt_amp_rel, expt_freq_rel, expt_freq_rel_err = binning(
+            expt_amp_rel, expt_freq, n_bin
+        )
+        # has to re-do full bining for absolute amp (and not just re-use expt_freq_rel)
+        # because threshold is different for each rec
+        expt_amp, expt_freq_abs, expt_freq_abs_err = binning(
+            expt_amp, expt_freq, n_bin
+        )
+
         # simulated FI curve
+        values = evaluator.fitness_calculator.calculate_values(emodel.responses)
         simulated_freq = []
         simulated_amp_rel = []
         simulated_amp = []
@@ -1473,23 +1639,129 @@ def plot_FI_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
                     else:
                         simulated_amp.append(amp_temp)
 
-        plot_IV_FI_curve(
-            expt_amp_rel,
-            expt_freq,
-            simulated_amp_rel,
-            simulated_freq,
-            expt_amp,
-            simulated_amp,
-            figures_dir,
-            figure_name=emodel.emodel_metadata.as_string(emodel.seed) + "__FI_curve_comparison.pdf",
-            ylabel="Mean Frequency (Hz)",
-            write_fig=write_fig,
-            curve="FI",
+        # plotting
+        _, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
+        ax[0].errorbar(
+            expt_amp_rel, expt_freq_rel, yerr=expt_freq_rel_err, marker="o", color="grey", label="experiment",
         )
+        ax[0].set_xlabel("Amplitude (% of rheobase)")
+        ax[0].set_ylabel("Mean Frequency (Hz)")
+        ax[0].set_title(f"FI curve (relative amplitude)")
+        ax[0].plot(simulated_amp_rel, simulated_freq, "o", color="blue", label="model")
+
+        ax[1].errorbar(
+            expt_amp, expt_freq_abs, yerr=expt_freq_abs_err, marker="o", color="grey", label="experiment"
+        )
+        ax[1].set_xlabel("Amplitude (nA)")
+        ax[1].set_ylabel("Voltage (mV)")
+        ax[1].set_title(f"IV curve (absolute amplitude)")
+        ax[1].plot(simulated_amp, simulated_freq, "o", color="blue", label="model")
+
+        ax[0].legend()
+        ax[1].legend()
+        if write_fig:
+            save_fig(
+                figures_dir,
+                emodel.emodel_metadata.as_string(emodel.seed) + "__FI_curve_comparison.pdf"
+            )
+
+
+def phase_plot(emodels, figures_dir, prot_names, amplitude, amp_window, relative_amp=True, write_fig=True):
+    """Plots recordings as voltage vs time and in phase space.
+    
+    Args:
+        emodels (list): list of EModels
+        figures_dir (str or Path): output directory for the figure to be saved on
+        prot_names (list of str): the names of the protocols to select for plotting
+        amplitude (float): amplitude of the protocol to select.
+            Only exactly this amplitude will be selected for model.
+            An amplitude window is used for experimental trace selection
+        amp_window (float): amplitude window around amplitude for experimental recording selection
+            Is not used for model trace selection
+        relative_amp (bool): Are amplitde and amp_window in relative amplitude (True) or in
+            absolute amplitude (False).  
+        write_fig (bool): whether to save the figure
+    """
+    make_dir(figures_dir)
+
+    emodel_name = None
+    cells = None
+    for emodel in emodels:
+        print(emodel.seed)
+        # do not re-extract data if the emodel is the same as previously
+        if emodel_name != emodel.emodel_metadata.emodel or cells is None:
+            # take extraction data from pickle file and rearange it for plotting
+            cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
+            if cells is None:
+                continue
+
+            emodel_name = emodel.emodel_metadata.emodel
+
+        fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(10, 5))
+        for cell in cells:
+            for rec in cell.recordings:
+                if any(a.lower() in rec.protocol_name.lower() for a in prot_names):
+                    if relative_amp:
+                        rec_amp = rec.amp_rel
+                    else:
+                        rec_amp = rec.amp
+                    if amplitude - amp_window < rec_amp < amplitude + amp_window:
+                        ax[0].plot(rec.t, rec.voltage, color="grey")
+                        # interpolate to reproduce what is being done in efel
+                        interp_time = numpy.arange(rec.t[0], rec.t[-1] + 0.1, 0.1)
+                        interp_voltage = numpy.interp(interp_time, rec.t, rec.voltage)
+                        # plot the phase plot d(rec.voltage)/dt vs rec.voltage
+                        ax[1].plot(
+                            interp_voltage[1:],
+                            numpy.diff(interp_voltage) / numpy.diff(interp_time),
+                            color="grey",
+                        )
+                        ax[0].set_xlabel("Time (ms)")
+                        ax[0].set_ylabel("Voltage (mV)")
+                        ax[0].set_title("Traces")
+                        ax[1].set_xlabel("Voltage (mV)")
+                        ax[1].set_ylabel("dV/dt (V/s)")
+                        ax[1].set_title("Traces in phase space")
+
+        for resp_name, response in emodel.responses.items():
+            if any(prot_name.lower() in resp_name.lower() for prot_name in prot_names):
+                if str(amplitude) in resp_name:
+                    # have to turn reponse into numpy.array because they are pandas.Series
+                    time = numpy.asarray(response["time"])
+                    voltage = numpy.asarray(response["voltage"])
+                    ax[0].plot(time, voltage, color="blue")
+                    interp_time = numpy.arange(time[0], time[-1] + 0.1, 0.1)
+                    interp_voltage = numpy.interp(interp_time, time, voltage)
+                    # plot the phase plot d(rec.voltage)/dt vs rec.voltage
+                    ax[1].plot(
+                        interp_voltage[1:],
+                        numpy.diff(interp_voltage) / numpy.diff(interp_time),
+                        color="blue",
+                    )
+
+        # empty plots just for legend
+        ax[0].plot([], [], label='experiment', color="grey")
+        ax[0].plot([], [], label='model', color="blue")
+        ax[1].plot([], [], label='experiment', color="grey")
+        ax[1].plot([], [], label='model', color="blue")
+        ax[0].legend()
+        ax[1].legend()
+        fig.suptitle(f"{', '.join(prot_names)} {amplitude} {'%' if relative_amp else 'nA'}")
+        if write_fig:
+            save_fig(
+                figures_dir,
+                figure_name=emodel.emodel_metadata.as_string(emodel.seed) + "__phase_plot.pdf",
+            )
 
 
 def plot_trace_comparison(emodels, figures_dir, write_fig=True):
-    """Compare traces between experiments and models."""
+    """Compare traces between experiments and models.
+    
+    Args:
+        emodels (list): list of EModels
+        figures_dir (str or Path): output directory for the figure to be saved on
+        write_fig (bool): whether to save the figure
+    """
     # pylint: disable=too-many-nested-blocks
     prots_to_skip = ["bpo", "SearchHoldingCurrent.soma.v", "SearchThresholdCurrent.soma.v", "bAP"]
 
@@ -1597,7 +1869,10 @@ def plot_models(
     plot_bAP_EPSP=False,
     plot_IV_curve=False,
     plot_FI_curve_comparison=False,
+    plot_phase_plot=False,
+    IV_curve_prot_name="iv",
     FI_curve_prot_name="idrest",
+    phase_plot_settings=None,
     only_validated=False,
     save_recordings=False,
     load_from_local=False,
@@ -1626,8 +1901,20 @@ def plot_models(
             Expects threshold-based sub-threshold IV protocol.
         plot_FI_curve_comparison (bool): True to plot FI curve with experimental
             and simulated data. Expects threshold-based protocols.
+        plot_phase_plot (bool): True to plot phase plot with experimental
+            and simulated data. Can be threshold-based or non threshold-based.
+        IV_curve_prot_name (str): which protocol to use to plot_IV_curves.
         FI_curve_prot_name (str): which protocol to use to plot FI_curve comparison.
             The protocol must have the mean_frequency feature associated to it.
+        phase_plot_settings (dict): settings for the phase plot. Should contain the following keys:
+            "prot_names" (list of str): the names of the protocols to select for phase plot
+            "amplitude" (float): amplitude of the protocol to select.
+                Only exactly this amplitude will be selected for model.
+                An amplitude window is used for experimental trace selection
+            "amp_window" (float): amplitude window around amplitude for experimental recording selection
+                Is not used for model trace selection
+            "relative_amp" (bool): Are amplitde and amp_window in relative amplitude (True) or in
+            absolute amplitude (False).
         only_validated (bool): True to only plot validated models
         save_recordings (bool): Whether to save the responses data under a folder
             named `recordings`. Responses can then be loaded using load_from_local
@@ -1652,6 +1939,8 @@ def plot_models(
 
     if (
         plot_currentscape
+        # maybe we should give currentscape_config as an argument of this fct,
+        # like the other pipeline_settings
         and access_point.pipeline_settings.currentscape_config is not None
         and "current" in access_point.pipeline_settings.currentscape_config
         and "names" in access_point.pipeline_settings.currentscape_config["current"]
@@ -1670,6 +1959,8 @@ def plot_models(
             plot_dendritic_rheobase,
             plot_thumbnail,
             plot_IV_curves,
+            plot_FI_curve_comparison,
+            plot_phase_plot,
         )
     ):
         emodels = compute_responses(
@@ -1767,15 +2058,36 @@ def plot_models(
                 figures_dir=figures_dir_FI_curves,
             )
 
-        if plot_IV_curve:
-            figures_dir_IV_curves = figures_dir / "IV_curves" / dest_leaf
-            plot_IV_curves(cell_evaluator, emodels, figures_dir_IV_curves)
+    if plot_IV_curve:
+        figures_dir_IV_curves = figures_dir / "IV_curves" / dest_leaf
+        plot_IV_curves(
+            cell_evaluator,
+            emodels,
+            figures_dir_IV_curves,
+            # maybe we should give efel_settings as an argument of this fct,
+            # like the other pipeline_settings
+            access_point.pipeline_settings.efel_settings,
+            IV_curve_prot_name,
+        )
 
-        if plot_FI_curve_comparison:
-            figures_dir_FI_curves = figures_dir / "FI_curves" / dest_leaf
-            plot_FI_curves_comparison(
-                cell_evaluator, emodels, figures_dir_FI_curves, FI_curve_prot_name
-            )
+    if plot_FI_curve_comparison:
+        figures_dir_FI_curves = figures_dir / "FI_curves" / dest_leaf
+        plot_FI_curves_comparison(
+            cell_evaluator, emodels, figures_dir_FI_curves, FI_curve_prot_name
+        )
+
+    if plot_phase_plot:
+        figures_dir_phase_plot = figures_dir / "phase_plot" / dest_leaf
+        if phase_plot_settings is None:
+            phase_plot_settings = access_point.pipeline_settings.phase_plot_settings
+        phase_plot(
+            emodels,
+            figures_dir_phase_plot,
+            phase_plot_settings["prot_names"],
+            phase_plot_settings["amplitude"],
+            phase_plot_settings["amp_window"],
+            phase_plot_settings["relative_amp"],
+        )
 
     if plot_bAP_EPSP:
         run_and_plot_bAP(

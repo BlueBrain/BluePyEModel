@@ -229,7 +229,7 @@ def define_efeature(feature_config, protocol=None, global_efel_settings=None):
     stim_end = None
 
     if protocol:
-        stim_amp = protocol.amplitude
+        stim_amp = protocol.amplitude()
 
     if feature_config.efel_settings.get("stim_start", None) is not None:
         stim_start = feature_config.efel_settings["stim_start"]

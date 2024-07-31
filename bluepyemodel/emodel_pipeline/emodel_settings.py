@@ -76,11 +76,10 @@ class EModelPipelineSettings:
         plot_bAP_EPSP=False,
         plot_IV_curves=False,
         plot_FI_curve_comparison=False,
+        IV_curve_prot_name="iv",
         FI_curve_prot_name="idrest",
         plot_phase_plot=False,
-        phase_plot_prot_names=None,
-        phase_plot_prot_amplitude=150.0,
-        phase_plot_prot_amplitude_window=1.0,
+        phase_plot_settings=None,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -268,15 +267,20 @@ class EModelPipelineSettings:
                 IV curves be plotted for threshold-based sub-threshold IV protocols.
             plot_FI_curve_comparison (bool): during the plotting, should FI curve be plotted
                 for experimental and simulated data.
+            IV_curve_prot_name (str): which protocol to use to plot_IV_curves.
             FI_curve_prot_name (str): which protocol to use during plotting of FI curve comparison.
                 The protocol should be supra-threshold
                 and have the efeature mean_frequency associated to it.
             plot_phase_plot (bool): during the plotting, should phase plot be plotted.
-            phase_plot_prot_names (list): what protocols to plot in phase plot.
-            phase_plot_prot_amplitude (float): which amplitude (percentage of threshold) to plot
-                in phase plot.
-            phase_plot_prot_amplitude_window (float): window of accepted amplitude
-                around amplitude value to use for protocol selection of phase plot.
+            phase_plot_settings (dict): settings for the phase plot. Should contain the following:
+                "prot_names" (list of str): the names of the protocols to select for phase plot
+                "amplitude" (float): amplitude of the protocol to select.
+                    Only exactly this amplitude will be selected for model.
+                    An amplitude window is used for experimental trace selection
+                "amp_window" (float): amplitude window around amplitude for experimental
+                    recording selection.Is not used for model trace selection
+                "relative_amp" (bool): Are amplitde and amp_window in relative amplitude (True)
+                    or in absolute amplitude (False).
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
@@ -390,13 +394,17 @@ class EModelPipelineSettings:
         self.plot_bAP_EPSP = plot_bAP_EPSP
         self.plot_IV_curves = plot_IV_curves
         self.plot_FI_curve_comparison = plot_FI_curve_comparison
+        self.IV_curve_prot_name = IV_curve_prot_name
         self.FI_curve_prot_name = FI_curve_prot_name
         self.plot_phase_plot = plot_phase_plot
-        self.phase_plot_prot_names = phase_plot_prot_names
-        if self.phase_plot_prot_names is None:
-            self.phase_plot_prot_names = ["idrest"]
-        self.phase_plot_prot_amplitude = phase_plot_prot_amplitude
-        self.phase_plot_prot_amplitude_window = phase_plot_prot_amplitude_window
+        self.phase_plot_settings = phase_plot_settings
+        if self.phase_plot_settings is None:
+            self.phase_plot_settings = {
+                "prot_names": ["idrest"],
+                "amplitude": 150,
+                "amp_window": 1.5,
+                "relative_amp": True,
+            }
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings
