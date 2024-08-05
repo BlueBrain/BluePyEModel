@@ -1262,6 +1262,20 @@ def run_and_plot_EPSP(
         )
 
 
+def rel_to_abs_amplitude(rel_amp, responses):
+    """Converts relative amplitude to absolute amplitude.
+    
+    Args:
+        rel_amp (float): relative amplitude in percentage of threshold current
+        responses (dict): should contain 'bpo_threshold_current' and 'bpo_holding_current'
+    """
+    if "bpo_threshold_current" not in responses or "bpo_holding_current" not in responses:
+        logger.warning("Could not convert relative amplitude into absolute amplitude. "
+                       "Missing holding and threshold current in responses.")
+        return numpy.nan
+    return rel_amp * 0.01 * responses["bpo_threshold_current"] + responses["bpo_holding_current"]
+
+
 def binning(x, y, n_bin=5):
     """Put x and y into bins. Returns the binned x, binned y and std of binned y.
     
@@ -1512,14 +1526,12 @@ def plot_IV_curves(evaluator, emodels, figures_dir, efel_settings, prot_name="iv
                     simulated_peak_v.append(values[val])
                     simulated_peak_amp_rel.append(amp_rel_temp)
                     simulated_peak_amp.append(
-                        amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
+                        rel_to_abs_amplitude(amp_rel_temp, emodel.responses)
                     )
                 elif "voltage_deflection_vb_ssse" in val:
                     simulated_vd_v.append(values[val])
                     simulated_vd_amp_rel.append(amp_rel_temp)
-                    simulated_vd_amp.append(
-                        amp_rel_temp * 0.01 * emodel.responses["bpo_threshold_current"]
-                    )
+                    simulated_vd_amp.append(rel_to_abs_amplitude(amp_rel_temp, emodel.responses))
         
         # plotting
         _, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
@@ -1634,9 +1646,10 @@ def plot_FI_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
                     if "bpo_threshold_current" in emodel.responses:
                         simulated_amp_rel.append(amp_temp)
                         simulated_amp.append(
-                            amp_temp * 0.01 * emodel.responses["bpo_threshold_current"]
+                            rel_to_abs_amplitude(amp_temp, emodel.responses)
                         )
                     else:
+                        simulated_amp_rel.append(numpy.nan)
                         simulated_amp.append(amp_temp)
 
         # plotting
