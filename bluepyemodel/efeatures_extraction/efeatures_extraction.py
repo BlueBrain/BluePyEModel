@@ -39,15 +39,16 @@ def get_extraction_output_directory(emodel):
     return f"./figures/{emodel}/efeatures_extraction/"
 
 
-def read_extraction_output_cells(emodel):
-    """Returns cells.pkl output of extraction if present.
+def read_extraction_output(emodel, fname="cells.pkl"):
+    """Returns output of extraction if present. Can return cells or protocols file.
 
     Args:
         emodel (str): emodel name as in emodel_metadata.emodel
+        fname (str): file name. Can be 'cells.pkl' or 'protocols.pkl'
     """
-    cells_filepath = pathlib.Path(get_extraction_output_directory(emodel)) / "cells.pkl"
+    cells_filepath = pathlib.Path(get_extraction_output_directory(emodel)) / fname
     if not cells_filepath.is_file():
-        logger.warning("Could not find experimental cells.pkl file at %s.", cells_filepath)
+        logger.warning("Could not find experimental output %s file at %s.", fname, cells_filepath)
         return None
     with open(cells_filepath, "rb") as f:
         cells = pickle.load(f)

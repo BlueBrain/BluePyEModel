@@ -39,7 +39,7 @@ from matplotlib import colors
 
 from bluepyemodel.data.utils import read_dendritic_data
 from bluepyemodel.efeatures_extraction.efeatures_extraction import get_extraction_output_directory
-from bluepyemodel.efeatures_extraction.efeatures_extraction import read_extraction_output_cells
+from bluepyemodel.efeatures_extraction.efeatures_extraction import read_extraction_output
 from bluepyemodel.evaluation.efel_feature_bpem import eFELFeatureBPEM
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
@@ -1502,7 +1502,7 @@ def plot_IV_curves(evaluator, emodels, figures_dir, efel_settings, prot_name="iv
         # do not re-extract data if the emodel is the same as previously
         if emodel_name != emodel.emodel_metadata.emodel or cells is None:
             # take extraction data from pickle file and rearange it for plotting
-            cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
+            cells = read_extraction_output(emodel.emodel_metadata.emodel)
             if cells is None:
                 continue
 
@@ -1587,6 +1587,7 @@ def plot_FI_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
         figures_dir (str or Path): output directory for the figure to be saved on
         prot_name (str): name of the protocol to use for the FI curve
         write_fig (bool): whether to save the figure
+        n_bin (int): number of bins to use
     """
     # pylint: disable=too-many-nested-blocks
     make_dir(figures_dir)
@@ -1597,7 +1598,7 @@ def plot_FI_curves_comparison(evaluator, emodels, figures_dir, prot_name, write_
         # do not re-extract data if the emodel is the same as previously
         if emodel_name != emodel.emodel_metadata.emodel or cells is None:
             # take extraction data from pickle file and rearange it for plotting
-            cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
+            cells = read_extraction_output(emodel.emodel_metadata.emodel)
             if cells is None:
                 continue
 
@@ -1700,11 +1701,10 @@ def phase_plot(emodels, figures_dir, prot_names, amplitude, amp_window, relative
     emodel_name = None
     cells = None
     for emodel in emodels:
-        print(emodel.seed)
         # do not re-extract data if the emodel is the same as previously
         if emodel_name != emodel.emodel_metadata.emodel or cells is None:
             # take extraction data from pickle file and rearange it for plotting
-            cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
+            cells = read_extraction_output(emodel.emodel_metadata.emodel)
             if cells is None:
                 continue
 
@@ -1776,25 +1776,26 @@ def plot_trace_comparison(emodels, figures_dir, write_fig=True):
         write_fig (bool): whether to save the figure
     """
     # pylint: disable=too-many-nested-blocks
-    prots_to_skip = ["bpo", "SearchHoldingCurrent.soma.v", "SearchThresholdCurrent.soma.v", "bAP"]
+    prots_to_skip = ["bpo", "SearchHoldingCurrent", "SearchThresholdCurrent", "bAP"]
 
     make_dir(figures_dir)
 
+    emodel_name = None
+    protocols = None
     for emodel in emodels:
-        emodel_name = emodel.emodel_metadata.emodel
-        protocols_filepath = Path(get_extraction_output_directory(emodel_name)) / "protocols.pkl"
-        if not protocols_filepath.is_file():
-            logger.warning(
-                "Could not find experimental protocols.pkl file at %s.", protocols_filepath
-            )
-            continue
-        with open(protocols_filepath, "rb") as f:
-            protocols = pickle.load(f)
+        # do not re-extract data if the emodel is the same as previously
+        if emodel_name != emodel.emodel_metadata.emodel or protocols is None:
+            # take extraction data from pickle file and rearange it for plotting
+            protocols = read_extraction_output(emodel.emodel_metadata.emodel, "protocols.pkl")
+            if protocols is None:
+                continue
+
+            emodel_name = emodel.emodel_metadata.emodel
 
         count = 0
         for key in emodel.responses.keys():
             # only voltage traces
-            if any(s in key for s in prots_to_skip):
+            if any(s in key for s in prots_to_skip) or key[-2:] != ".v":
                 continue
             count = count + 1
 
@@ -1803,7 +1804,7 @@ def plot_trace_comparison(emodels, figures_dir, write_fig=True):
 
         i = 0
         for resp_name, response in sorted(emodel.responses.items()):
-            if any(s in resp_name for s in prots_to_skip):
+            if any(s in resp_name for s in prots_to_skip) or key[-2:] != ".v":
                 continue
 
             if "RMPProtocol.soma.v" in resp_name:
@@ -1883,6 +1884,7 @@ def plot_models(
     plot_IV_curve=False,
     plot_FI_curve_comparison=False,
     plot_phase_plot=False,
+    plot_traces_comparison=False,
     IV_curve_prot_name="iv",
     FI_curve_prot_name="idrest",
     phase_plot_settings=None,
@@ -1916,6 +1918,8 @@ def plot_models(
             and simulated data. Expects threshold-based protocols.
         plot_phase_plot (bool): True to plot phase plot with experimental
             and simulated data. Can be threshold-based or non threshold-based.
+        plot_traces_comparison (bool): True to plot a new figure with simulated traces
+            on top of experimental traces.
         IV_curve_prot_name (str): which protocol to use to plot_IV_curves.
         FI_curve_prot_name (str): which protocol to use to plot FI_curve comparison.
             The protocol must have the mean_frequency feature associated to it.
@@ -1974,6 +1978,7 @@ def plot_models(
             plot_IV_curves,
             plot_FI_curve_comparison,
             plot_phase_plot,
+            plot_traces_comparison,
         )
     ):
         emodels = compute_responses(
@@ -2071,6 +2076,7 @@ def plot_models(
                 figures_dir=figures_dir_FI_curves,
             )
 
+    # outside of for loop because we want to load pickle file only once
     if plot_IV_curve:
         figures_dir_IV_curves = figures_dir / "IV_curves" / dest_leaf
         plot_IV_curves(
@@ -2101,6 +2107,10 @@ def plot_models(
             phase_plot_settings["amp_window"],
             phase_plot_settings["relative_amp"],
         )
+    
+    if plot_traces_comparison:
+        figures_dir_FI_curves = figures_dir / "traces" / dest_leaf
+        plot_trace_comparison(emodels, figures_dir_FI_curves)
 
     if plot_bAP_EPSP:
         run_and_plot_bAP(

@@ -318,6 +318,7 @@ class EModel_pipeline:
             plot_IV_curve=self.access_point.pipeline_settings.plot_IV_curves,
             plot_FI_curve_comparison=self.access_point.pipeline_settings.plot_FI_curve_comparison,
             plot_phase_plot=self.access_point.pipeline_settings.plot_phase_plot,
+            plot_traces_comparison=self.access_point.pipeline_settings.plot_traces_comparison,
             IV_curve_prot_name=self.access_point.pipeline_settings.IV_curve_prot_name,
             FI_curve_prot_name=self.access_point.pipeline_settings.FI_curve_prot_name,
             phase_plot_settings=self.access_point.pipeline_settings.phase_plot_settings,

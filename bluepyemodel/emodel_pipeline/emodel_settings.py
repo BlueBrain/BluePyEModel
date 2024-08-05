@@ -76,6 +76,7 @@ class EModelPipelineSettings:
         plot_bAP_EPSP=False,
         plot_IV_curves=False,
         plot_FI_curve_comparison=False,
+        plot_traces_comparison=False,
         IV_curve_prot_name="iv",
         FI_curve_prot_name="idrest",
         plot_phase_plot=False,
@@ -267,6 +268,8 @@ class EModelPipelineSettings:
                 IV curves be plotted for threshold-based sub-threshold IV protocols.
             plot_FI_curve_comparison (bool): during the plotting, should FI curve be plotted
                 for experimental and simulated data.
+            plot_traces_comparison (bool): True to plot a new figure with simulated traces
+                on top of experimental traces.
             IV_curve_prot_name (str): which protocol to use to plot_IV_curves.
             FI_curve_prot_name (str): which protocol to use during plotting of FI curve comparison.
                 The protocol should be supra-threshold
@@ -357,7 +360,6 @@ class EModelPipelineSettings:
         self.max_ngen = max_ngen
         self.optimisation_checkpoint_period = optimisation_checkpoint_period
         self.use_stagnation_criterion = use_stagnation_criterion
-        self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
 
         # Specific to threshold based optimisation
@@ -386,14 +388,15 @@ class EModelPipelineSettings:
         self.max_n_batch = max_n_batch
         self.name_gene_map = name_gene_map
 
-        # Settings specific to the currentscape plotting
+        # Settings specific to the analysis (figure plotting)
+        self.plot_optimisation = plot_optimisation
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
-
         self.plot_parameter_evolution = plot_parameter_evolution
         self.plot_bAP_EPSP = plot_bAP_EPSP
         self.plot_IV_curves = plot_IV_curves
         self.plot_FI_curve_comparison = plot_FI_curve_comparison
+        self.plot_traces_comparison = plot_traces_comparison
         self.IV_curve_prot_name = IV_curve_prot_name
         self.FI_curve_prot_name = FI_curve_prot_name
         self.plot_phase_plot = plot_phase_plot
