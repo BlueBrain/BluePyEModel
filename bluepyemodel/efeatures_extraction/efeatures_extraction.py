@@ -39,20 +39,40 @@ def get_extraction_output_directory(emodel):
     return f"./figures/{emodel}/efeatures_extraction/"
 
 
-def read_extraction_output(emodel, fname="cells.pkl"):
+def read_extraction_output(filepath):
     """Returns output of extraction if present. Can return cells or protocols file.
 
     Args:
-        emodel (str): emodel name as in emodel_metadata.emodel
-        fname (str): file name. Can be 'cells.pkl' or 'protocols.pkl'
+        filename (str or Path): path to extraction pickle file
     """
-    cells_filepath = pathlib.Path(get_extraction_output_directory(emodel)) / fname
-    if not cells_filepath.is_file():
-        logger.warning("Could not find experimental output %s file at %s.", fname, cells_filepath)
+    if not filepath.is_file():
+        logger.warning("Could not find experimental output file at %s.", filepath)
         return None
-    with open(cells_filepath, "rb") as f:
+    with open(filepath, "rb") as f:
         cells = pickle.load(f)
     return cells
+
+
+def read_extraction_output_cells(emodel):
+    """Returns cells output of extraction if present.
+
+    Args:
+        emodel (str): emodel name as in emodel_metadata.emodel
+    """
+    filepath = bluepyefe.extract.cells_pickle_output_path(get_extraction_output_directory(emodel))
+    return read_extraction_output(filepath)
+
+
+def read_extraction_output_protocols(emodel):
+    """Returns protocols output of extraction if present.
+
+    Args:
+        emodel (str): emodel name as in emodel_metadata.emodel
+    """
+    filepath = bluepyefe.extract.protocols_pickle_output_path(
+        get_extraction_output_directory(emodel)
+    )
+    return read_extraction_output(filepath)
 
 
 def interpolate_RMP(fitness_calculator_configuration):

@@ -266,10 +266,13 @@ class EModelPipelineSettings:
                 since it depends on the presence of apical dendrite.
             plot_IV_curves (bool): during the plotting, should peak voltage and voltage_deflection
                 IV curves be plotted for threshold-based sub-threshold IV protocols.
+                Needs pickle_cells_extraction to be set to True.
             plot_FI_curve_comparison (bool): during the plotting, should FI curve be plotted
                 for experimental and simulated data.
+                Needs pickle_cells_extraction to be set to True.
             plot_traces_comparison (bool): True to plot a new figure with simulated traces
                 on top of experimental traces.
+                Needs pickle_cells_extraction to be set to True.
             IV_curve_prot_name (str): which protocol to use to plot_IV_curves.
             FI_curve_prot_name (str): which protocol to use during plotting of FI curve comparison.
                 The protocol should be supra-threshold
@@ -397,6 +400,12 @@ class EModelPipelineSettings:
         self.plot_IV_curves = plot_IV_curves
         self.plot_FI_curve_comparison = plot_FI_curve_comparison
         self.plot_traces_comparison = plot_traces_comparison
+        if pickle_cells_extraction is False:
+            if any((plot_IV_curves, plot_FI_curve_comparison, plot_traces_comparison)):
+                logger.warning("You have set pickle_cells_extraction to False in the settings, "
+                               "but plot_IV_curves, plot_FI_curve_comparison and "
+                               "plot_traces_comparison need it to be True. "
+                               "These plots will most likely fail.")
         self.IV_curve_prot_name = IV_curve_prot_name
         self.FI_curve_prot_name = FI_curve_prot_name
         self.plot_phase_plot = plot_phase_plot
