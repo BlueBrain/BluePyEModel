@@ -145,7 +145,7 @@ def binning(x, y, n_bin=5):
         start = intervals[i]
         stop = intervals[i + 1]
         new_x.append((start + stop) / 2.)
-        y_select = y[numpy.all([x > start, x < stop], axis=0)]
+        y_select = y[numpy.all([x >= start, x <= stop], axis=0)]
         new_y.append(numpy.nanmean(y_select))
         y_err.append(numpy.nanstd(y_select))
 
