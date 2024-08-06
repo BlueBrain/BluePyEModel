@@ -1,6 +1,6 @@
 # E-Model Building Pipeline with Luigi and Nexus
 
-This example demonstrates how to build an e-model using the Nexus access point and [Luigi](https://luigi.readthedocs.io/en/stable/). The [NexusAccessPoint](./../../bluepyemodel/access_point/nexus.py) class serves as the API that enables users to store and manage e-models on Nexus. This class provides a set of functions to create e-model-related resources on Nexus and link them to the electrophysiological data, mechanisms, and morphology registered on Nexus.
+This example demonstrates how to build an e-model using the Nexus access point and [Luigi](https://luigi.readthedocs.io/en/stable/). The [NexusAccessPoint](./../../bluepyemodel/access_point/nexus.py) class serves as the API that enables users to store and manage e-models on Nexus. This class provides a set of functions to create e-model-related resources on Nexus and link them to the electrophysiological data, mechanisms, and morphology registered on Nexus
 
 ## 1. Setup the virtual environment
 To setup the virtual environment and install all the needed packages, run:
@@ -35,7 +35,7 @@ The ``luigi.cfg`` file contains the configuration for the Luigi pipeline. Ensure
 
 For a detailed description of the configuration file, please refer to the [Luigi documentation](https://luigi.readthedocs.io/en/stable/configuration.html).
 
-## 3. Register the resources that will be used by the pipeline on the Nexus project (bbp/mmb-point-neuron-framework-model)
+## 3. Register the resources that will be used by the pipeline on the Nexus project
 
 Prior to executing the Luigi pipeline, it is essential to register the following resources within the Nexus project, as they will be needed by the pipeline:
 
@@ -70,6 +70,7 @@ python pipeline.py --step=configure_model_from_gene --emodel=EMODEL_NAME --itera
 
 If you wish to modify the gene-based configuration before proceeding with model optimisation, you can get the configuration from Nexus and modify it before proceeding further. The jupyter notebook [edit_neuron_model_configuration.ipynb](../ncmv3//edit_neuron_model_configuration.ipynb) explains how to do so.
 
+An example on how to run these steps is provided in the [run_pipeline.ipynb](./run_pipeline.ipynb) notebook.
 
 ## 4. Run the Luigi pipeline:
 Set the variables ``emodel``, ``etype``, ``iteration``, ``mtype``, and ``ttype`` in ``launch_luigi.sh`` to match the values you chose for ``EMODEL_NAME``, ``ETYPE``, ``ITERATION_TAG``, ``MTYPE``, and ``TTYPE``. Additionally, ensure that the ``species`` and ``brain_region`` variables are consistent with the values in ``pipeline.py``.
