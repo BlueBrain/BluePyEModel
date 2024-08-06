@@ -1251,11 +1251,16 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
         plot_currentscape = self.access_point.pipeline_settings.plot_currentscape
         plot_bAP_EPSP = self.access_point.pipeline_settings.plot_bAP_EPSP
+        plot_IV_curves = self.access_point.pipeline_settings.plot_IV_curves
+        plot_FI_curve_comparison = self.access_point.pipeline_settings.plot_FI_curve_comparison
+        plot_phase_plot = self.access_point.pipeline_settings.plot_phase_plot
+        plot_traces_comparison = self.access_point.pipeline_settings.plot_traces_comparison
+        IV_curve_prot_name = self.access_point.pipeline_settings.IV_curve_prot_name
+        FI_curve_prot_name = self.access_point.pipeline_settings.FI_curve_prot_name
+        phase_plot_settings = self.access_point.pipeline_settings.phase_plot_settings
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
 
         mapper = self.get_mapper()
-        # do not forget to update plot_models here as is in emodel_pipeline.py
-        # if this comment is still here at reviewing stage, you can humiliate me
         plot_models(
             access_point=self.access_point,
             mapper=mapper,
@@ -1269,6 +1274,13 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             plot_dendritic_rheobase=plot_optimisation,
             plot_currentscape=plot_currentscape,
             plot_bAP_EPSP=plot_bAP_EPSP,
+            plot_IV_curve=plot_IV_curves,
+            plot_FI_curve_comparison=plot_FI_curve_comparison,
+            plot_phase_plot=plot_phase_plot,
+            plot_traces_comparison=plot_traces_comparison,
+            IV_curve_prot_name=IV_curve_prot_name,
+            FI_curve_prot_name=FI_curve_prot_name,
+            phase_plot_settings=phase_plot_settings,
         )
 
     def output(self):
@@ -1278,7 +1290,6 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
 
         outputs = []
-        # also update output corresponding to new args of plot_models fct before merging change
         if plot_optimisation:
             # distribution
             fname = self.access_point.emodel_metadata.as_string()
