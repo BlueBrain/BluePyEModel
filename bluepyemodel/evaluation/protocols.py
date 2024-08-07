@@ -71,7 +71,6 @@ class BPEMProtocol(ephys.protocols.SweepProtocol):
         if not all(rec.checked for rec in self.recordings):
             self.recordings = check_recordings(self.recordings, cell_model.icell, sim)
 
-        # super().instantiate(sim, cell_model)
         for stimulus in self.stimuli:
             if isinstance(stimulus, ephys.stimuli.LFPStimulus):
                 stimulus.instantiate(sim=sim, lfpy_cell=cell_model.lfpy_cell)
