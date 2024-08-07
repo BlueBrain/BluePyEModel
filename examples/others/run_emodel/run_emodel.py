@@ -1,4 +1,4 @@
-"""Running the emodel with BlueCelluLab"""
+"""Download an e-model as a hoc file and run it with BlueCelluLab"""
 
 """
 Copyright 2024, EPFL/Blue Brain Project
