@@ -1454,7 +1454,7 @@ def phase_plot(
 
         for resp_name, response in emodel.responses.items():
             if any(prot_name.lower() in resp_name.lower() for prot_name in prot_names):
-                if str(amplitude) in resp_name:
+                if str(amplitude) in resp_name and resp_name[-7:] == ".soma.v":
                     # have to turn reponse into numpy.array because they are pandas.Series
                     time = numpy.asarray(response["time"])
                     voltage = numpy.asarray(response["voltage"])
