@@ -585,7 +585,9 @@ class FitnessCalculatorConfiguration:
             recordings = []
             for j, rec in enumerate(protocol.recordings):
                 if rec["type"] not in (
-                    "CompRecording", "FixedDtRecordingStimulus", "LooseDtRecordingStimulus"
+                    "CompRecording",
+                    "FixedDtRecordingStimulus",
+                    "LooseDtRecordingStimulus",
                 ):
                     for _rec in _set_morphology_dependent_locations(rec, cell):
                         try:
