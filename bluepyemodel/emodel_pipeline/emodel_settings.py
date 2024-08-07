@@ -77,10 +77,12 @@ class EModelPipelineSettings:
         plot_IV_curves=False,
         plot_FI_curve_comparison=False,
         plot_traces_comparison=False,
+        run_plot_custom_sinspec=False,
         IV_curve_prot_name="iv",
         FI_curve_prot_name="idrest",
         plot_phase_plot=False,
         phase_plot_settings=None,
+        sinespec_settings=None,
         currentscape_config=None,
         save_recordings=False,
         neuron_dt=None,
@@ -273,6 +275,8 @@ class EModelPipelineSettings:
             plot_traces_comparison (bool): True to plot a new figure with simulated traces
                 on top of experimental traces.
                 Needs pickle_cells_extraction to be set to True.
+            run_plot_custom_sinspec (bool): True to run a SineSpec protocol, and plot
+            its voltage and current trace, along with its impedance.
             IV_curve_prot_name (str): which protocol to use to plot_IV_curves.
             FI_curve_prot_name (str): which protocol to use during plotting of FI curve comparison.
                 The protocol should be supra-threshold
@@ -287,6 +291,10 @@ class EModelPipelineSettings:
                     recording selection.Is not used for model trace selection
                 "relative_amp" (bool): Are amplitde and amp_window in relative amplitude (True)
                     or in absolute amplitude (False).
+            sinespec_settings (dict): contains amplitude settings for the SineSpec protocol,
+                with keys 'amp' and 'threshold_based'.
+                'amp' should be in percentage of threshold if 'threshold_based' is True, e.g. 150,
+                or in nA if 'threshold_based' if false, e.g. 0.1.
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
@@ -402,10 +410,13 @@ class EModelPipelineSettings:
         self.plot_traces_comparison = plot_traces_comparison
         if pickle_cells_extraction is False:
             if any((plot_IV_curves, plot_FI_curve_comparison, plot_traces_comparison)):
-                logger.warning("You have set pickle_cells_extraction to False in the settings, "
-                               "but plot_IV_curves, plot_FI_curve_comparison and "
-                               "plot_traces_comparison need it to be True. "
-                               "These plots will most likely fail.")
+                logger.warning(
+                    "You have set pickle_cells_extraction to False in the settings, "
+                    "but plot_IV_curves, plot_FI_curve_comparison and "
+                    "plot_traces_comparison need it to be True. "
+                    "These plots will most likely fail."
+                )
+        self.run_plot_custom_sinspec = run_plot_custom_sinspec
         self.IV_curve_prot_name = IV_curve_prot_name
         self.FI_curve_prot_name = FI_curve_prot_name
         self.plot_phase_plot = plot_phase_plot
@@ -417,6 +428,9 @@ class EModelPipelineSettings:
                 "amp_window": 1.5,
                 "relative_amp": True,
             }
+        self.sinespec_settings = sinespec_settings
+        if self.sinespec_settings is None:
+            self.sinespec_settings = {"amp": 0.05, "threshold_based": False}
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings

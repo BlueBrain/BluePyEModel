@@ -28,7 +28,7 @@ def jwt_payload():
         "name": "Test User",
         "email": "test_user@example.com",
         "sub": "test_sub",
-        "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+        "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
     }
 
 
@@ -41,17 +41,24 @@ def mock_jwt_decode():
 
 @pytest.fixture
 def mock_nexus_access_point():
-    with patch("bluepyemodel.access_point.forge_access_point.NexusForgeAccessPoint.refresh_token") as mock_refresh, \
-         patch.object(NexusForgeAccessPoint, "forge", new_callable=PropertyMock) as mock_forge_prop, \
-         patch("bluepyemodel.access_point.nexus.get_brain_region_notation", return_value="SS") as mock_brain_region, \
-         patch("bluepyemodel.access_point.nexus.NexusAccessPoint.get_pipeline_settings", return_value=Mock()) as mock_pipeline_settings, \
-         patch("bluepyemodel.access_point.nexus.NexusAccessPoint.build_ontology_based_metadata") as mock_build_metadata:
+    with patch(
+        "bluepyemodel.access_point.forge_access_point.NexusForgeAccessPoint.refresh_token"
+    ) as mock_refresh, patch.object(
+        NexusForgeAccessPoint, "forge", new_callable=PropertyMock
+    ) as mock_forge_prop, patch(
+        "bluepyemodel.access_point.nexus.get_brain_region_notation", return_value="SS"
+    ) as mock_brain_region, patch(
+        "bluepyemodel.access_point.nexus.NexusAccessPoint.get_pipeline_settings",
+        return_value=Mock(),
+    ) as mock_pipeline_settings, patch(
+        "bluepyemodel.access_point.nexus.NexusAccessPoint.build_ontology_based_metadata"
+    ) as mock_build_metadata:
 
         mock_refresh.return_value = (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
 
         mock_forge = Mock()
         mock_resource = Mock()
-        mock_resource.id = '0'
+        mock_resource.id = "0"
         mock_forge.resolve.return_value = mock_resource
         mock_forge_prop.return_value = mock_forge
 
@@ -60,10 +67,13 @@ def mock_nexus_access_point():
             organisation="demo",
             endpoint="https://bbp.epfl.ch/nexus/v1",
             forge_path=None,
-            access_token="test_token"
+            access_token="test_token",
         )
 
-        with patch("bluepyemodel.access_point.forge_access_point.NexusForgeAccessPoint", return_value=mock_nexus_forge_access_point):
+        with patch(
+            "bluepyemodel.access_point.forge_access_point.NexusForgeAccessPoint",
+            return_value=mock_nexus_forge_access_point,
+        ):
             yield NexusAccessPoint(
                 emodel="L5_TPC",
                 etype="cAC",
@@ -78,15 +88,20 @@ def mock_nexus_access_point():
                 forge_path=None,
                 forge_ontology_path=None,
                 access_token="test_token",
-                sleep_time=0
+                sleep_time=0,
             )
 
 
 @pytest.fixture
 def nexus_patches():
-    with patch("bluepyemodel.access_point.nexus.get_brain_region_notation", return_value="SS") as mock_brain_region, \
-         patch("bluepyemodel.access_point.nexus.NexusAccessPoint.get_pipeline_settings", return_value=Mock()) as mock_pipeline_settings, \
-         patch("bluepyemodel.access_point.nexus.NexusAccessPoint.build_ontology_based_metadata") as mock_build_metadata:
+    with patch(
+        "bluepyemodel.access_point.nexus.get_brain_region_notation", return_value="SS"
+    ) as mock_brain_region, patch(
+        "bluepyemodel.access_point.nexus.NexusAccessPoint.get_pipeline_settings",
+        return_value=Mock(),
+    ) as mock_pipeline_settings, patch(
+        "bluepyemodel.access_point.nexus.NexusAccessPoint.build_ontology_based_metadata"
+    ) as mock_build_metadata:
         yield mock_brain_region, mock_pipeline_settings, mock_build_metadata
 
 
@@ -107,39 +122,55 @@ def test_init(mock_nexus_access_point):
     assert mock_nexus_access_point.sleep_time == 0
 
     resolved_resource = mock_nexus_access_point.access_point.forge.resolve()
-    assert resolved_resource.id == '0'
+    assert resolved_resource.id == "0"
 
 
 @pytest.fixture
 def mock_available_etypes():
-    with patch.object(NexusForgeAccessPoint, 'available_etypes', new_callable=PropertyMock) as mock_etypes:
+    with patch.object(
+        NexusForgeAccessPoint, "available_etypes", new_callable=PropertyMock
+    ) as mock_etypes:
         mock_etypes.return_value = ["0", "1", "2"]
         yield mock_etypes
 
 
 @pytest.fixture
 def mock_available_mtypes():
-    with patch.object(NexusForgeAccessPoint, 'available_mtypes', new_callable=PropertyMock) as mock_mtypes:
+    with patch.object(
+        NexusForgeAccessPoint, "available_mtypes", new_callable=PropertyMock
+    ) as mock_mtypes:
         mock_mtypes.return_value = ["0", "1", "2"]
         yield mock_mtypes
 
 
 @pytest.fixture
 def mock_available_ttypes():
-    with patch.object(NexusForgeAccessPoint, 'available_ttypes', new_callable=PropertyMock) as mock_ttypes:
+    with patch.object(
+        NexusForgeAccessPoint, "available_ttypes", new_callable=PropertyMock
+    ) as mock_ttypes:
         mock_ttypes.return_value = ["0", "1", "2"]
         yield mock_ttypes
 
 
 @pytest.fixture
 def mock_check_mettypes_dependencies():
-    with patch("bluepyemodel.access_point.nexus.ontology_forge_access_point") as mock_ontology_forge, \
-         patch("bluepyemodel.access_point.nexus.check_resource") as mock_check_resource:
+    with patch(
+        "bluepyemodel.access_point.nexus.ontology_forge_access_point"
+    ) as mock_ontology_forge, patch(
+        "bluepyemodel.access_point.nexus.check_resource"
+    ) as mock_check_resource:
         mock_ontology_forge.return_value = Mock()
         yield mock_ontology_forge, mock_check_resource
 
 
-def test_check_mettypes(mock_nexus_access_point, mock_available_etypes, mock_available_mtypes, mock_available_ttypes, mock_check_mettypes_dependencies, caplog):
+def test_check_mettypes(
+    mock_nexus_access_point,
+    mock_available_etypes,
+    mock_available_mtypes,
+    mock_available_ttypes,
+    mock_check_mettypes_dependencies,
+    caplog,
+):
     """
     Test the check_mettypes function of the NexusAccessPoint.
     """
@@ -194,32 +225,42 @@ def test_get_nexus_subject_human(mock_nexus_access_point):
     assert mock_nexus_access_point.get_nexus_subject("human") == expected_subject
 
 
-@pytest.mark.parametrize("species, expected_subject", [
-    (None, None),
-    ("human", {
-        "type": "Subject",
-        "species": {
-            "id": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
-            "label": "Homo sapiens",
-        }
-    }),
-    ("mouse", {
-        "type": "Subject",
-        "species": {
-            "id": "http://purl.obolibrary.org/obo/NCBITaxon_10090",
-            "label": "Mus musculus",
-        }
-    }),
-    ("rat", {
-        "type": "Subject",
-        "species": {
-            "id": "http://purl.obolibrary.org/obo/NCBITaxon_10116",
-            "label": "Rattus norvegicus",
-        }
-    }),
-])
-
-
+@pytest.mark.parametrize(
+    "species, expected_subject",
+    [
+        (None, None),
+        (
+            "human",
+            {
+                "type": "Subject",
+                "species": {
+                    "id": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
+                    "label": "Homo sapiens",
+                },
+            },
+        ),
+        (
+            "mouse",
+            {
+                "type": "Subject",
+                "species": {
+                    "id": "http://purl.obolibrary.org/obo/NCBITaxon_10090",
+                    "label": "Mus musculus",
+                },
+            },
+        ),
+        (
+            "rat",
+            {
+                "type": "Subject",
+                "species": {
+                    "id": "http://purl.obolibrary.org/obo/NCBITaxon_10116",
+                    "label": "Rattus norvegicus",
+                },
+            },
+        ),
+    ],
+)
 def test_get_nexus_subject_parametrized(mock_nexus_access_point, species, expected_subject):
     """
     Parametrized test for get_nexus_subject with different species inputs.

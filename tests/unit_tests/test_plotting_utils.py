@@ -1,4 +1,5 @@
 """Tests for plotting utils functions."""
+
 """
 Copyright 2023-2024 Blue Brain Project / EPFL
 
@@ -27,7 +28,7 @@ from bluepyemodel.emodel_pipeline.plotting_utils import (
     get_title,
     get_traces_ylabel,
     get_traces_names_and_float_responses,
-    rel_to_abs_amplitude
+    rel_to_abs_amplitude,
 )
 from bluepyemodel.evaluation.efel_feature_bpem import eFELFeatureBPEM
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
@@ -103,7 +104,7 @@ def test_get_traces_names_and_float_responses():
     }
     responses = {
         "Step_0.1234.soma.v": TimeVoltageResponse(
-            "test_response", [0., 0.1, 0.2], [-80., -80.1, -79.9]
+            "test_response", [0.0, 0.1, 0.2], [-80.0, -80.1, -79.9]
         )
     }
 
@@ -128,7 +129,7 @@ def test_get_traces_names_and_float_responses():
         "SearchHoldingCurrent.soma.v": TimeVoltageResponse("", [], []),
         "bpo_threshold_current": 0.2,
         "bpo_holding_current": -0.08,
-        "bpo_rmp": -80.,
+        "bpo_rmp": -80.0,
         "bpo_rin": 2357.09,
     }
 
@@ -144,7 +145,7 @@ def test_get_traces_names_and_float_responses():
         ],
         0.2,
         -0.08,
-        -80.,
+        -80.0,
         2357.09,
     )
 
@@ -163,9 +164,10 @@ def test_rel_to_abs_amplitude():
     numpy.testing.assert_equal(rel_to_abs_amplitude(0.1234, {}), numpy.nan)
 
     # relative amplitude case
-    assert rel_to_abs_amplitude(
-        150, {"bpo_threshold_current": 0.5, "bpo_holding_current": -0.2}
-    ) == 0.55
+    assert (
+        rel_to_abs_amplitude(150, {"bpo_threshold_current": 0.5, "bpo_holding_current": -0.2})
+        == 0.55
+    )
 
 
 def test_binning():
@@ -174,12 +176,12 @@ def test_binning():
     assert binning([0, 1], [2, 3]) == ([0, 1], [2, 3], [0, 0])
 
     # lists larger than n_bin
-    x = [0., 0.1, 0.1, 0.2, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.6, 0.6, 0.7, 0.7, 0.7, 1.]
+    x = [0.0, 0.1, 0.1, 0.2, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.6, 0.6, 0.7, 0.7, 0.7, 1.0]
     y = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
-    new_x, new_y, y_err =  binning(x, y)
+    new_x, new_y, y_err = binning(x, y)
     numpy.testing.assert_allclose(new_x, [0.1, 0.3, 0.5, 0.7, 0.9])
-    numpy.testing.assert_allclose(new_y, [3.5, 7., 11., 15., 17.])
-    numpy.testing.assert_allclose(y_err, [1.70782513, 2., 1.41421356, 0.816496581, 0.])
+    numpy.testing.assert_allclose(new_y, [3.5, 7.0, 11.0, 15.0, 17.0])
+    numpy.testing.assert_allclose(y_err, [1.70782513, 2.0, 1.41421356, 0.816496581, 0.0])
 
 
 def test_fill_in_IV_curve_evaluator(db):
@@ -212,11 +214,11 @@ def test_fill_in_IV_curve_evaluator(db):
                 recording_names={"": "IV_40.soma.v"},
                 stim_start=700,
                 stim_end=2700,
-                exp_mean=-80.,  # fodder: not used
+                exp_mean=-80.0,  # fodder: not used
                 exp_std=1.0,  # fodder: not used
                 stimulus_current=new_protocol.amplitude,
             ),
-            1.0
+            1.0,
         )
     )
 

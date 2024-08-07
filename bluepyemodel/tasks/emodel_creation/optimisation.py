@@ -1258,6 +1258,8 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         IV_curve_prot_name = self.access_point.pipeline_settings.IV_curve_prot_name
         FI_curve_prot_name = self.access_point.pipeline_settings.FI_curve_prot_name
         phase_plot_settings = self.access_point.pipeline_settings.phase_plot_settings
+        run_plot_custom_sinspec = self.access_point.pipeline_settings.run_plot_custom_sinspec
+        sinespec_settings = self.access_point.pipeline_settings.sinespec_settings
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
 
         mapper = self.get_mapper()
@@ -1278,9 +1280,11 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             plot_FI_curve_comparison=plot_FI_curve_comparison,
             plot_phase_plot=plot_phase_plot,
             plot_traces_comparison=plot_traces_comparison,
+            run_plot_custom_sinspec=run_plot_custom_sinspec,
             IV_curve_prot_name=IV_curve_prot_name,
             FI_curve_prot_name=FI_curve_prot_name,
             phase_plot_settings=phase_plot_settings,
+            sinespec_settings=sinespec_settings,
         )
 
     def output(self):

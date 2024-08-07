@@ -65,6 +65,7 @@ def get_loc_varlist(isection):
             local_varlist.append("_".join((var, channel)))
 
     local_varlist.append("v")
+    local_varlist.append("i")
 
     return local_varlist
 
@@ -85,6 +86,9 @@ def check_recordings(recordings, icell, sim):
     varlists = {}  # keep varlists to avoid re-computing them every time
 
     for rec in recordings:
+        if rec.checked:
+            new_recs.append(rec)
+            continue
         # get section from location
         try:
             seg = rec.location.instantiate(sim=sim, icell=icell)
@@ -182,6 +186,41 @@ class FixedDtRecordingCustom(LooseDtRecordingCustom):
 
         self.segment_area = seg.area()
         self.local_ion_list = get_loc_ions(seg.sec)
+
+        self.tvector = sim.neuron.h.Vector()
+        self.tvector.record(sim.neuron.h._ref_t, 0.1)  # pylint: disable=W0212
+
+        self.instantiated = True
+
+
+class LooseDtRecordingStimulus(ephys.recordings.CompRecording):
+    """Stimulus recording that can be checked, but that do not records at fixed dt."""
+
+    def __init__(self, name=None, location=None, variable=None):
+        super().__init__(name=name, location=None, variable=variable)
+        # to skip checking
+        self.checked = True
+
+    def instantiate(self, sim=None, icell=None, stimulus=None):
+        """Instantiate recording."""
+        self.varvector = sim.neuron.h.Vector()
+        self.varvector.record(getattr(stimulus.iclamp, f"_ref_{self.variable}"))
+
+        self.tvector = sim.neuron.h.Vector()
+        self.tvector.record(sim.neuron.h._ref_t)  # pylint: disable=W0212
+
+        self.instantiated = True
+
+    # check if in response(), varvector has to be corrected for units, or if it is already in nA
+
+
+class FixedDtRecordingStimulus(LooseDtRecordingStimulus):
+    """Stimulus recording that can be checked, with recording every 0.1 ms.."""
+
+    def instantiate(self, sim=None, icell=None, stimulus=None):
+        """Instantiate recording."""
+        self.varvector = sim.neuron.h.Vector()
+        self.varvector.record(getattr(stimulus.iclamp, f"_ref_{self.variable}"), 0.1)
 
         self.tvector = sim.neuron.h.Vector()
         self.tvector.record(sim.neuron.h._ref_t, 0.1)  # pylint: disable=W0212

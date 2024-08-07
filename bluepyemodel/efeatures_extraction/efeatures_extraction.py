@@ -36,7 +36,7 @@ def get_extraction_output_directory(emodel):
     Args:
         emodel (str): emodel name as in emodel_metadata.emodel
     """
-    return f"./figures/{emodel}/efeatures_extraction/"
+    return pathlib.Path(f"./figures/{emodel}/efeatures_extraction/")
 
 
 def read_extraction_output(filepath):
