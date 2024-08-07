@@ -22,9 +22,9 @@ import bluepyefe.extract
 
 def test_cells_pickle_output_path():
     """Test cells_pickle_output_path function."""
-    assert bluepyefe.extract.cells_pickle_output_path(Path("output")) == "output/cells.pkl"
+    assert bluepyefe.extract.cells_pickle_output_path(Path("output")) == Path("output/cells.pkl")
 
 
 def test_protocols_pickle_output_path():
     """Test protocols_pickle_output_path function."""
-    assert bluepyefe.extract.protocols_pickle_output_path(Path("output")) == "output/protocols.pkl"
+    assert bluepyefe.extract.protocols_pickle_output_path(Path("output")) == Path("output/protocols.pkl")
