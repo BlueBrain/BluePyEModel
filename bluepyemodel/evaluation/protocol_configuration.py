@@ -109,7 +109,9 @@ class ProtocolConfiguration:
             new_recordings.append(recording)
             new_recordings_from_config.append(recording)
 
-            if ion_variables is not None:
+            if ion_variables is not None and recording["type"] not in (
+                "FixedDtRecordingStimulus", "LooseDtRecordingStimulus"
+            ):
                 for ion in ion_variables:
                     new_rec = recording.copy()
 
