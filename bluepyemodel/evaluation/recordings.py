@@ -65,7 +65,6 @@ def get_loc_varlist(isection):
             local_varlist.append("_".join((var, channel)))
 
     local_varlist.append("v")
-    local_varlist.append("i")
 
     return local_varlist
 
