@@ -255,11 +255,12 @@ class EModel_pipeline:
                 instead of recomputing them. Responses are automatically saved locally when
                 plotting currentscapes.
         """
+        pp_settings = self.access_point.pipeline_settings
 
         cell_evaluator = get_evaluator_from_access_point(
             self.access_point,
             include_validation_protocols=True,
-            record_ions_and_currents=self.access_point.pipeline_settings.plot_currentscape,
+            record_ions_and_currents=pp_settings.plot_currentscape,
         )
 
         chkp_paths = glob.glob("./checkpoints/**/*.pkl", recursive=True)
@@ -282,7 +283,7 @@ class EModel_pipeline:
             seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
 
             plotting.optimisation(
-                optimiser=self.access_point.pipeline_settings.optimiser,
+                optimiser=pp_settings.optimiser,
                 emodel=self.access_point.emodel_metadata.emodel,
                 iteration=self.access_point.emodel_metadata.iteration,
                 seed=seed,
@@ -292,7 +293,7 @@ class EModel_pipeline:
                 / "optimisation",
             )
 
-        if self.access_point.pipeline_settings.plot_parameter_evolution:
+        if pp_settings.plot_parameter_evolution:
             plotting.evolution_parameters_density(
                 evaluator=cell_evaluator,
                 checkpoint_paths=checkpoint_paths,
@@ -311,21 +312,23 @@ class EModel_pipeline:
             plot_scores=True,
             plot_traces=True,
             plot_thumbnail=True,
-            plot_currentscape=self.access_point.pipeline_settings.plot_currentscape,
+            plot_currentscape=pp_settings.plot_currentscape,
             plot_dendritic_ISI_CV=True,
             plot_dendritic_rheobase=True,
-            plot_bAP_EPSP=self.access_point.pipeline_settings.plot_bAP_EPSP,
-            plot_IV_curve=self.access_point.pipeline_settings.plot_IV_curves,
-            plot_FI_curve_comparison=self.access_point.pipeline_settings.plot_FI_curve_comparison,
-            plot_phase_plot=self.access_point.pipeline_settings.plot_phase_plot,
-            plot_traces_comparison=self.access_point.pipeline_settings.plot_traces_comparison,
-            run_plot_custom_sinspec=self.access_point.pipeline_settings.run_plot_custom_sinspec,
-            IV_curve_prot_name=self.access_point.pipeline_settings.IV_curve_prot_name,
-            FI_curve_prot_name=self.access_point.pipeline_settings.FI_curve_prot_name,
-            phase_plot_settings=self.access_point.pipeline_settings.phase_plot_settings,
-            sinespec_settings=self.access_point.pipeline_settings.sinespec_settings,
+            plot_bAP_EPSP=pp_settings.plot_bAP_EPSP,
+            plot_IV_curve=pp_settings.plot_IV_curves,
+            plot_FI_curve_comparison=pp_settings.plot_FI_curve_comparison,
+            plot_phase_plot=pp_settings.plot_phase_plot,
+            plot_traces_comparison=pp_settings.plot_traces_comparison,
+            run_plot_custom_sinspec=pp_settings.run_plot_custom_sinspec,
+            IV_curve_prot_name=pp_settings.IV_curve_prot_name,
+            FI_curve_prot_name=pp_settings.FI_curve_prot_name,
+            phase_plot_settings=pp_settings.phase_plot_settings,
+            sinespec_settings=pp_settings.sinespec_settings,
+            custom_bluepyefe_cells_filepath=pp_settings.custom_bluepyefe_cells_filepath,
+            custom_bluepyefe_protocols_filepath=pp_settings.custom_bluepyefe_protocols_filepath,
             only_validated=only_validated,
-            save_recordings=self.access_point.pipeline_settings.save_recordings,
+            save_recordings=pp_settings.save_recordings,
             load_from_local=load_from_local,
             cell_evaluator=cell_evaluator,
         )

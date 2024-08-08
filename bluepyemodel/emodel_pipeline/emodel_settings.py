@@ -84,6 +84,8 @@ class EModelPipelineSettings:
         phase_plot_settings=None,
         sinespec_settings=None,
         currentscape_config=None,
+        custom_bluepyefe_cells_filepath=None,
+        custom_bluepyefe_protocols_filepath=None,
         save_recordings=False,
         neuron_dt=None,
         cvode_minstep=0.0,
@@ -301,6 +303,15 @@ class EModelPipelineSettings:
                 do not need to be set, since they are automatically overwritten by BluePyEModel.
                 If current.names is set nonetheless, it will be used as the subset of available
                 currents to be selected for the plot.
+            custom_bluepyefe_cells_filepath (str): file path to the cells.pkl output of BluePyEfe.
+                If None, will use usual file path used in BluePyEfe,
+                so this is to be set only to use a file at an unexpected path.
+                Only used in plotting functions for IV curves, IF curves and phase plot.
+            custom_bluepyefe_protocols_filepath (str): file path to the
+                protocols.pkl output of BluePyEfe.
+                If None, will use usual file path used in BluePyEfe,
+                so this is to be set only to use a file at an unexpected path.
+                Only used in plotting functions for trace_comparison.
             save_recordings (bool): Whether to save the responses data under a folder
                 named `recordings`.
             neuron_dt (float): time step of the NEURON simulator. If ``None``, cvode will be used.
@@ -431,6 +442,8 @@ class EModelPipelineSettings:
         self.sinespec_settings = sinespec_settings
         if self.sinespec_settings is None:
             self.sinespec_settings = {"amp": 0.05, "threshold_based": False}
+        self.custom_bluepyefe_cells_filepath = custom_bluepyefe_cells_filepath
+        self.custom_bluepyefe_protocols_filepath = custom_bluepyefe_protocols_filepath
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings
