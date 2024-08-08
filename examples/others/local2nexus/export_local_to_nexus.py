@@ -45,9 +45,9 @@ description = ""
 
 # Nexus settings
 nexus_project = ""  # a valid Nexus project name to which the emodel should be uploaded.
-nexus_organisation = "bbp"  # choose between "bbp" or "public"
+nexus_organisation = "" # replace with the organisation name
 # Nexus advanced settings (only change if you know what you are doing)
-nexus_endpoint = "https://bbp.epfl.ch/nexus/v1"
+nexus_endpoint = "" # replace with the Nexus endpoint url
 forge_path = "./forge.yml"
 forge_ontology_path = "./nsg.yml"
 sleep_time = 10  # increase the delay in case indexing is slow

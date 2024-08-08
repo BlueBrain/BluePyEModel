@@ -374,9 +374,9 @@ def update_memodel(
 
 
 if __name__ == "__main__":
-    project = "mmb-point-neuron-framework-model"
-    organisation = "bbp"
-    endpoint = "https://bbp.epfl.ch/nexus/v1"
+    project = "" # replace with a valid Nexus project name
+    organisation = "" # replace with the organisation name
+    endpoint = "" # replace with the Nexus endpoint url
     forge_path = "./forge.yml"  # this file has to be present
     forge_ontology_path = "./forge_ontology_path.yml"  # this file also
     memodel_id = "<MEMODEL ID>" # replace with the id of the MEModel you want to update
@@ -475,7 +475,7 @@ if __name__ == "__main__":
     emodel_score, emodel_holding, emodel_threshold = plot(access_point, seed, cell_evaluator, figures_dir, mapper)
     if not add_score:
         emodel_score = None
-    
+
     # if we have absolute amplitude protocols, and threshold current was not computed,
     # then compute it
     if emodel_threshold is None:

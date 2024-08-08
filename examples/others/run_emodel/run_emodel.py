@@ -1,4 +1,4 @@
-"""Running the emodel with BlueCelluLab"""
+"""Download an e-model as a hoc file and run it with BlueCelluLab"""
 
 """
 Copyright 2024, EPFL/Blue Brain Project
@@ -41,10 +41,10 @@ TEMPERATURE = 34.0 # celsius
 V_INIT = -70 # mV
 
 # Nexus configuration
-ORG = "" # e.g. "bbp"
+ORG = "" # replace with the organisation name
 PROJECT = "" # Nexus project name where the emodel is stored
 bucket = f"{ORG}/{PROJECT}"
-endpoint = "https://bbp.epfl.ch/nexus/v1"
+endpoint = "" # replace with the endpoint url
 access_token = getpass.getpass("Enter your Nexus token: ")
 forge_path = (
     "https://raw.githubusercontent.com/BlueBrain/nexus-forge/"
