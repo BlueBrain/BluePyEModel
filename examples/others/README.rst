@@ -25,7 +25,7 @@ To run the example, edit the `memodel.py` script to specify the MEModel ID and r
 local2nexus: Export Local E-Model to Nexus
 ===========================================
 
-This example demonstrates how to store a locally built EModel (using LocalAccessPoint) to the `BlueBrain <https://github.com/BlueBrain/nexus>`_` Nexus knowledge graph.
+This example demonstrates how to store a locally built EModel (using LocalAccessPoint) to the `BlueBrain Nexus <https://github.com/BlueBrain/nexus>`_ knowledge graph.
 
 For detailed instructions, refer to the `README <./local2nexus/README.md>`_.
 
