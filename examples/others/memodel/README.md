@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This example demonstrates how to retrieve, modify, and update an MEModel by adjusting its morphology and generating analysis plots.
+This example demonstrates how to create a MEModel (morpho-electric) model using an existing EModel and a new morphology. The example will create and run the MEModel and plot the results as model traces, feature scores, and currentscape, among others.
 
 ## Usage
 

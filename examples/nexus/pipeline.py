@@ -145,7 +145,7 @@ if __name__ == "__main__":
     morphology_format = "asc" # specify the format of the morphology file, if not specified, the first availabe format will be used
 
     nexus_project = "" # specify the project name in nexus
-    nexus_organisation = "bbp" # specify the organisation name in nexus. e.g. "bbp"
+    nexus_organisation = "" # specify the organisation name in nexus
     nexus_endpoint = "prod"
     forge_path = "./forge.yml"
     forge_ontology_path = "./nsg.yml"

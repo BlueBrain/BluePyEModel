@@ -41,10 +41,10 @@ TEMPERATURE = 34.0 # celsius
 V_INIT = -70 # mV
 
 # Nexus configuration
-ORG = "" # e.g. "bbp"
+ORG = "" # replace with the organisation name
 PROJECT = "" # Nexus project name where the emodel is stored
 bucket = f"{ORG}/{PROJECT}"
-endpoint = "https://bbp.epfl.ch/nexus/v1"
+endpoint = "" # replace with the endpoint url
 access_token = getpass.getpass("Enter your Nexus token: ")
 forge_path = (
     "https://raw.githubusercontent.com/BlueBrain/nexus-forge/"
