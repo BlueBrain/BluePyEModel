@@ -1195,7 +1195,7 @@ def plot_IV_curves(
     figures_dir,
     efel_settings,
     prot_name="iv",
-    custom_bluepyefe_cells_filepath=None,
+    custom_bluepyefe_cells_pklpath=None,
     write_fig=True,
     n_bin=5,
 ):
@@ -1208,7 +1208,7 @@ def plot_IV_curves(
         figures_dir (str or Path): output directory for the figure to be saved on
         efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
         prot_name (str): name of protocol of which recordings to use
-        custom_bluepyefe_cells_filepath (str): file path to the cells.pkl output of BluePyEfe.
+        custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
             so this is to be set only to use a file at an unexpected path.
         write_fig (bool): whether to save the figure
@@ -1228,9 +1228,9 @@ def plot_IV_curves(
     for emodel in emodels:
         # -- get extracted IV curve data -- #
         # do not re-extract data if the emodel is the same as previously
-        if custom_bluepyefe_cells_filepath is not None:
+        if custom_bluepyefe_cells_pklpath is not None:
             if cells is None:
-                cells = read_extraction_output(custom_bluepyefe_cells_filepath)
+                cells = read_extraction_output(custom_bluepyefe_cells_pklpath)
             if cells is None:
                 continue
             exp_peak, exp_vd = extract_experimental_data_for_IV_curve(
@@ -1338,7 +1338,7 @@ def plot_FI_curves_comparison(
     emodels,
     figures_dir,
     prot_name,
-    custom_bluepyefe_cells_filepath=None,
+    custom_bluepyefe_cells_pklpath=None,
     write_fig=True,
     n_bin=5,
 ):
@@ -1351,7 +1351,7 @@ def plot_FI_curves_comparison(
         emodels (list): list of EModels
         figures_dir (str or Path): output directory for the figure to be saved on
         prot_name (str): name of the protocol to use for the FI curve
-        custom_bluepyefe_cells_filepath (str): file path to the cells.pkl output of BluePyEfe.
+        custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
             so this is to be set only to use a file at an unexpected path.
         write_fig (bool): whether to save the figure
@@ -1364,9 +1364,9 @@ def plot_FI_curves_comparison(
     cells = None
     for emodel in emodels:
         # do not re-extract data if the emodel is the same as previously
-        if custom_bluepyefe_cells_filepath is not None:
+        if custom_bluepyefe_cells_pklpath is not None:
             if cells is None:
-                cells = read_extraction_output(custom_bluepyefe_cells_filepath)
+                cells = read_extraction_output(custom_bluepyefe_cells_pklpath)
             if cells is None:
                 continue
             # experimental FI curve
@@ -1446,7 +1446,7 @@ def phase_plot(
     amplitude,
     amp_window,
     relative_amp=True,
-    custom_bluepyefe_cells_filepath=None,
+    custom_bluepyefe_cells_pklpath=None,
     write_fig=True,
 ):
     """Plots recordings as voltage vs time and in phase space.
@@ -1462,7 +1462,7 @@ def phase_plot(
             Is not used for model trace selection
         relative_amp (bool): Are amplitde and amp_window in relative amplitude (True) or in
             absolute amplitude (False).
-        custom_bluepyefe_cells_filepath (str): file path to the cells.pkl output of BluePyEfe.
+        custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
             so this is to be set only to use a file at an unexpected path.
         write_fig (bool): whether to save the figure
@@ -1473,9 +1473,9 @@ def phase_plot(
     cells = None
     for emodel in emodels:
         # do not re-extract data if the emodel is the same as previously
-        if custom_bluepyefe_cells_filepath is not None:
+        if custom_bluepyefe_cells_pklpath is not None:
             if cells is None:
-                cells = read_extraction_output(custom_bluepyefe_cells_filepath)
+                cells = read_extraction_output(custom_bluepyefe_cells_pklpath)
         elif emodel_name != emodel.emodel_metadata.emodel or cells is None:
             # take extraction data from pickle file and rearange it for plotting
             cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
@@ -1541,14 +1541,14 @@ def phase_plot(
 
 
 def plot_trace_comparison(
-    emodels, figures_dir, custom_bluepyefe_protocols_filepath=None, write_fig=True
+    emodels, figures_dir, custom_bluepyefe_protocols_pklpath=None, write_fig=True
 ):
     """Compare traces between experiments and models.
 
     Args:
         emodels (list): list of EModels
         figures_dir (str or Path): output directory for the figure to be saved on
-        custom_bluepyefe_protocols_filepath (str): file path to
+        custom_bluepyefe_protocols_pklpath (str): file path to
             the protocols.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
             so this is to be set only to use a file at an unexpected path.
@@ -1563,9 +1563,9 @@ def plot_trace_comparison(
     protocols = None
     for emodel in emodels:
         # do not re-extract data if the emodel is the same as previously
-        if custom_bluepyefe_protocols_filepath is not None:
+        if custom_bluepyefe_protocols_pklpath is not None:
             if protocols is None:
-                protocols = read_extraction_output(custom_bluepyefe_protocols_filepath)
+                protocols = read_extraction_output(custom_bluepyefe_protocols_pklpath)
         elif emodel_name != emodel.emodel_metadata.emodel or protocols is None:
             # take extraction data from pickle file and rearange it for plotting
             protocols = read_extraction_output_protocols(emodel.emodel_metadata.emodel)
@@ -1786,8 +1786,8 @@ def plot_models(
     FI_curve_prot_name="idrest",
     phase_plot_settings=None,
     sinespec_settings=None,
-    custom_bluepyefe_cells_filepath=None,
-    custom_bluepyefe_protocols_filepath=None,
+    custom_bluepyefe_cells_pklpath=None,
+    custom_bluepyefe_protocols_pklpath=None,
     only_validated=False,
     save_recordings=False,
     load_from_local=False,
@@ -1838,10 +1838,10 @@ def plot_models(
             with keys 'amp' and 'threshold_based'.
             'amp' should be in percentage of threshold if 'threshold_based' is True, e.g. 150,
             or in nA if 'threshold_based' if false, e.g. 0.1.
-        custom_bluepyefe_cells_filepath (str): file path to the cells.pkl output of BluePyEfe.
+        custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
             so this is to be set only to use a file at an unexpected path.
-        custom_bluepyefe_protocols_filepath (str): file path to
+        custom_bluepyefe_protocols_pklpath (str): file path to
             the protocols.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
             so this is to be set only to use a file at an unexpected path.
@@ -2000,7 +2000,7 @@ def plot_models(
             # like the other pipeline_settings
             access_point.pipeline_settings.efel_settings,
             IV_curve_prot_name,
-            custom_bluepyefe_cells_filepath=custom_bluepyefe_cells_filepath,
+            custom_bluepyefe_cells_pklpath=custom_bluepyefe_cells_pklpath,
         )
 
     if plot_FI_curve_comparison:
@@ -2010,7 +2010,7 @@ def plot_models(
             emodels,
             figures_dir_FI_curves,
             FI_curve_prot_name,
-            custom_bluepyefe_cells_filepath=custom_bluepyefe_cells_filepath,
+            custom_bluepyefe_cells_pklpath=custom_bluepyefe_cells_pklpath,
         )
 
     if plot_phase_plot:
@@ -2024,7 +2024,7 @@ def plot_models(
             phase_plot_settings["amplitude"],
             phase_plot_settings["amp_window"],
             phase_plot_settings["relative_amp"],
-            custom_bluepyefe_cells_filepath=custom_bluepyefe_cells_filepath,
+            custom_bluepyefe_cells_pklpath=custom_bluepyefe_cells_pklpath,
         )
 
     if plot_traces_comparison:
@@ -2032,7 +2032,7 @@ def plot_models(
         plot_trace_comparison(
             emodels,
             figures_dir_FI_curves,
-            custom_bluepyefe_protocols_filepath=custom_bluepyefe_protocols_filepath,
+            custom_bluepyefe_protocols_pklpath=custom_bluepyefe_protocols_pklpath,
         )
 
     if plot_bAP_EPSP:
