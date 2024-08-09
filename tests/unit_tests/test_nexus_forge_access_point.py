@@ -17,8 +17,14 @@ limitations under the License.
 import math
 import pytest
 from unittest.mock import Mock, patch
-from bluepyemodel.access_point.forge_access_point import AccessPointException, NexusForgeAccessPoint, get_brain_region, get_brain_region_dict
+from bluepyemodel.access_point.forge_access_point import (
+    AccessPointException,
+    NexusForgeAccessPoint,
+    get_brain_region,
+    get_brain_region_dict,
+)
 from datetime import datetime, timezone, timedelta
+
 
 @pytest.fixture
 def mock_forge_access_point():
@@ -28,17 +34,23 @@ def mock_forge_access_point():
             "name": "Test User",
             "email": "test_user@example.com",
             "sub": "test_sub",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
         }
-        with patch("bluepyemodel.access_point.forge_access_point.NexusForgeAccessPoint.refresh_token") as mock_refresh_token:
-            mock_refresh_token.return_value = (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
-            with patch("bluepyemodel.access_point.forge_access_point.KnowledgeGraphForge") as mock_kg_forge:
+        with patch(
+            "bluepyemodel.access_point.forge_access_point.NexusForgeAccessPoint.refresh_token"
+        ) as mock_refresh_token:
+            mock_refresh_token.return_value = (
+                datetime.now(timezone.utc) + timedelta(hours=1)
+            ).timestamp()
+            with patch(
+                "bluepyemodel.access_point.forge_access_point.KnowledgeGraphForge"
+            ) as mock_kg_forge:
                 return NexusForgeAccessPoint(
                     project="test",
                     organisation="demo",
                     endpoint="https://bbp.epfl.ch/nexus/v1",
                     forge_path=None,
-                    access_token="test_token"
+                    access_token="test_token",
                 )
 
 
@@ -49,7 +61,10 @@ def test_nexus_forge_access_point_init(mock_forge_access_point):
     assert mock_forge_access_point.bucket == "demo/test"
     assert mock_forge_access_point.endpoint == "https://bbp.epfl.ch/nexus/v1"
     assert mock_forge_access_point.access_token == "test_token"
-    assert mock_forge_access_point.agent.id == "https://bbp.epfl.ch/nexus/v1/realms/bbp/users/test_user"
+    assert (
+        mock_forge_access_point.agent.id
+        == "https://bbp.epfl.ch/nexus/v1/realms/bbp/users/test_user"
+    )
 
 
 def test_refresh_token_not_expired(mock_forge_access_point):
@@ -63,7 +78,7 @@ def test_refresh_token_not_expired(mock_forge_access_point):
             "name": "Test User",
             "email": "test_user@example.com",
             "sub": "test_sub",
-            "exp": future_exp
+            "exp": future_exp,
         }
         exp_timestamp = mock_forge_access_point.refresh_token()
         assert math.isclose(exp_timestamp, future_exp, abs_tol=0.1)
@@ -82,17 +97,19 @@ def test_refresh_token_expired_offset(mock_forge_access_point, caplog):
                 "name": "Test User",
                 "email": "test_user@example.com",
                 "sub": "test_sub",
-                "exp": future_exp
+                "exp": future_exp,
             },
             {
                 "preferred_username": "test_user",
                 "name": "Test User",
                 "email": "test_user@example.com",
                 "sub": "test_sub",
-                "exp": new_future_exp
-            }
+                "exp": new_future_exp,
+            },
         ]
-        with patch.object(mock_forge_access_point, "get_access_token", return_value="new_test_token"):
+        with patch.object(
+            mock_forge_access_point, "get_access_token", return_value="new_test_token"
+        ):
             with caplog.at_level("INFO"):
                 exp_timestamp = mock_forge_access_point.refresh_token()
                 assert math.isclose(exp_timestamp, new_future_exp, abs_tol=0.1)
@@ -112,17 +129,19 @@ def test_refresh_token_expired(mock_forge_access_point, caplog):
                 "name": "Test User",
                 "email": "test_user@example.com",
                 "sub": "test_sub",
-                "exp": past_exp
+                "exp": past_exp,
             },
             {
                 "preferred_username": "test_user",
                 "name": "Test User",
                 "email": "test_user@example.com",
                 "sub": "test_sub",
-                "exp": new_future_exp
-            }
+                "exp": new_future_exp,
+            },
         ]
-        with patch.object(mock_forge_access_point, "get_access_token", return_value="new_test_token"):
+        with patch.object(
+            mock_forge_access_point, "get_access_token", return_value="new_test_token"
+        ):
             with caplog.at_level("INFO"):
                 exp_timestamp = mock_forge_access_point.refresh_token()
                 assert math.isclose(exp_timestamp, new_future_exp, abs_tol=0.1)
@@ -131,12 +150,18 @@ def test_refresh_token_expired(mock_forge_access_point, caplog):
 
 @pytest.fixture
 def mock_get_brain_region_resolve():
-    with patch("bluepyemodel.access_point.forge_access_point.ontology_forge_access_point") as mock_ontology_access_point:
+    with patch(
+        "bluepyemodel.access_point.forge_access_point.ontology_forge_access_point"
+    ) as mock_ontology_access_point:
         mock_access_point = Mock()
         mock_ontology_access_point.return_value = mock_access_point
 
         def resolve(brain_region, strategy, **kwargs):
-            if brain_region.lower() in ["somatosensory areas", "basic cell groups and regions", "mock_brain_region"]:
+            if brain_region.lower() in [
+                "somatosensory areas",
+                "basic cell groups and regions",
+                "mock_brain_region",
+            ]:
                 mock_resource = Mock()
                 mock_resource.id = "mock_id"
                 mock_resource.label = "mock_label"
@@ -160,7 +185,9 @@ def test_get_brain_region_not_found(mock_get_brain_region_resolve):
     """
     Test get_brain_region function when the brain region is not found.
     """
-    with pytest.raises(AccessPointException, match=r"Could not find any brain region with name UnknownRegion"):
+    with pytest.raises(
+        AccessPointException, match=r"Could not find any brain region with name UnknownRegion"
+    ):
         get_brain_region("UnknownRegion", access_token="test_token")
 
 
@@ -170,10 +197,7 @@ def test_get_brain_region_dict(mock_get_brain_region_resolve):
     """
     _, mock_access_point = mock_get_brain_region_resolve
 
-    mock_access_point.forge.as_json.return_value = {
-        "id": "mock_id",
-        "label": "mock_label"
-    }
+    mock_access_point.forge.as_json.return_value = {"id": "mock_id", "label": "mock_label"}
 
     result = get_brain_region_dict("SSCX", access_token="test_token")
     assert result["id"] == "mock_id"

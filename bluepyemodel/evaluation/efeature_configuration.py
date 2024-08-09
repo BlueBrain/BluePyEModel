@@ -51,7 +51,7 @@ class EFeatureConfiguration:
             mean (float): mean of the efeature.
             original_std (float): unmodified standard deviation of the efeature
             std (float): kept for legacy purposes.
-            efeature_name (str):given name for this specific feature. Can be different
+            efeature_name (str): given name for this specific feature. Can be different
                 from the efel efeature name.
             efel_settings (dict): eFEl settings.
             threshold_efeature_std (float): lower limit for the std expressed as a percentage of

@@ -584,7 +584,11 @@ class FitnessCalculatorConfiguration:
         for i, protocol in enumerate(self.protocols):
             recordings = []
             for j, rec in enumerate(protocol.recordings):
-                if rec["type"] != "CompRecording":
+                if rec["type"] not in (
+                    "CompRecording",
+                    "FixedDtRecordingStimulus",
+                    "LooseDtRecordingStimulus",
+                ):
                     for _rec in _set_morphology_dependent_locations(rec, cell):
                         try:
                             location = define_location(_rec)

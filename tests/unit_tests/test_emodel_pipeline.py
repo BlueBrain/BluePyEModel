@@ -46,7 +46,7 @@ def test_init_local(pipeline):
 def test_init_nexus_missing_project():
     with pytest.raises(
         ValueError,
-        match= "Nexus project name is required for Nexus access point.",
+        match="Nexus project name is required for Nexus access point.",
     ):
         _ = EModel_pipeline(
             emodel="cADpyr_L5TPC",

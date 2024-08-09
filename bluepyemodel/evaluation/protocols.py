@@ -23,6 +23,7 @@ from bluepyopt import ephys
 
 from ..ecode import eCodes
 from .recordings import LooseDtRecordingCustom
+from .recordings import LooseDtRecordingStimulus
 from .recordings import check_recordings
 
 # pylint: disable=abstract-method
@@ -70,7 +71,28 @@ class BPEMProtocol(ephys.protocols.SweepProtocol):
         if not all(rec.checked for rec in self.recordings):
             self.recordings = check_recordings(self.recordings, cell_model.icell, sim)
 
-        super().instantiate(sim, cell_model)
+        for stimulus in self.stimuli:
+            if isinstance(stimulus, ephys.stimuli.LFPStimulus):
+                stimulus.instantiate(sim=sim, lfpy_cell=cell_model.lfpy_cell)
+            else:
+                stimulus.instantiate(sim=sim, icell=cell_model.icell)
+
+        for recording in self.recordings:
+            try:
+                if isinstance(recording, ephys.recordings.LFPRecording):
+                    recording.instantiate(
+                        sim=sim, lfpy_cell=cell_model.lfpy_cell, electrode=cell_model.lfpy_electrode
+                    )
+                elif isinstance(recording, LooseDtRecordingStimulus):
+                    recording.instantiate(sim=sim, stimulus=self.stimuli[0])
+                else:
+                    recording.instantiate(sim=sim, icell=cell_model.icell)
+            except ephys.locations.EPhysLocInstantiateException:
+                logger.debug(
+                    "SweepProtocol: Instantiating recording generated "
+                    "location exception, will return empty response for "
+                    "this recording"
+                )
 
     def stim_start(self):
         """Time stimulus starts"""
