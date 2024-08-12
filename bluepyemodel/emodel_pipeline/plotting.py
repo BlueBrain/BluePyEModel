@@ -1207,7 +1207,7 @@ def plot_IV_curves(
         emodels (list): list of EModels
         figures_dir (str or Path): output directory for the figure to be saved on
         efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
-        prot_name (str): name of protocol of which recordings to use
+        prot_name (str): Only recordings from this protocol will be used.
         custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
             so this is to be set only to use a file at an unexpected path.
@@ -1342,7 +1342,7 @@ def plot_FI_curves_comparison(
     write_fig=True,
     n_bin=5,
 ):
-    """Plots FI (current vs frequency) curves of with simulated and experimental values.
+    """Plots FI (current vs frequency) curves with simulated and experimental values.
     Only works for threshold-based protocols.
     Expects mean_frequency to be available in extracted and simulated data.
 

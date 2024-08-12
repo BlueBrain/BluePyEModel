@@ -170,7 +170,7 @@ def extract_experimental_data_for_IV_curve(cells, efel_settings, prot_name="iv",
     Args:
         cells (list): list of bluepyefe.cell.Cell object to get recordings from
         efel_settings (dict): efel settings to use during feature extraction
-        prot_name (str): name of protocol of which recordings to use
+        prot_name (str): Only recordings from this protocol will be used.
         n_bin (int): number of bins to use for plotting
     """
     # experimental IV curve
@@ -239,7 +239,7 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv"):
     Args:
         evaluator (CellEvaluator): cell evaluator
         efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
-        prot_name (str): name of protocol of which recordings to use
+        prot_name (str): Only recordings from this protocol will be used.
     """
     updated_evaluator = copy.deepcopy(evaluator)
     # find protocols we expect to have the features we want to plot

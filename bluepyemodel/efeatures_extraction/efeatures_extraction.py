@@ -45,6 +45,7 @@ def read_extraction_output(filepath):
     Args:
         filename (str or Path): path to extraction pickle file
     """
+    filepath = pathlib.Path(filepath)
     if not filepath.is_file():
         logger.warning("Could not find experimental output file at %s.", filepath)
         return None
