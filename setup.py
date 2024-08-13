@@ -26,7 +26,6 @@ with open("README.rst", encoding="utf-8") as f:
 EXTRA_LUIGI = [
     "luigi>=3.0",
     "luigi-tools>=0.0.12",
-    "bbp-workflow",
 ]
 
 EXTRA_TEST = ["pytest>=6.2", "dictdiffer>=0.8"]
