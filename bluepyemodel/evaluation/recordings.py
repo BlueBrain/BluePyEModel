@@ -210,8 +210,6 @@ class LooseDtRecordingStimulus(ephys.recordings.CompRecording):
 
         self.instantiated = True
 
-    # check if in response(), varvector has to be corrected for units, or if it is already in nA
-
 
 class FixedDtRecordingStimulus(LooseDtRecordingStimulus):
     """Stimulus recording that can be checked, with recording every 0.1 ms.."""
