@@ -27,22 +27,13 @@ For a general overview and example of electrical model building, please refer to
 
 Note that this package only covers e-model building based on patch-clamp data and that it relies solely on the `NEURON <https://www.neuron.yale.edu/neuron/>`_ simulator.
 
-Citation
---------
 
-When you use the BluePyEModel software or method for your research, we ask you to cite the following publication (this includes poster presentations):
+How to cite
+-----------
+If you use this repository in your work, please refer to the ``Cite this repository`` button at the top of the repository page to get various citation formats, including APA and BibTeX.
 
-.. code-block::
+For detailed citation information, please refer to the `CITATION.cff <./CITATION.cff>`_ file.
 
-    @software{bluepyemodel_zenodo,
-      author       = {Damart, Tanguy and Jaquier, Aurélien and Arnaudon, Alexis and Mandge, Darshan and Van Geit, Werner and Kilic, Ilkan},
-      title        = {BluePyEModel},
-      month        = aug,
-      year         = 2023,
-      publisher    = {Zenodo},
-      doi          = {8283490},
-      url          = {https://doi.org/10.5281/zenodo.8283490}
-    }
 
 Installation
 ------------
@@ -58,6 +49,7 @@ If you do not wish to install all dependencies, specific dependencies can be sel
 * luigi
 * nexus
 * all
+
 
 To get started with the E-Model building pipeline
 -------------------------------------------------
@@ -81,18 +73,20 @@ These six steps are to be run in order as for example validation cannot be run i
 For an example of how to run the pipeline with the Nexus access point, see the `Nexus example <https://github.com/BlueBrain/BluePyEModel/tree/main/examples/nexus/>`_
 
 Schematics of BluePyEModel classes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
 .. image:: https://raw.githubusercontent.com/BlueBrain/BluePyEModel/main/doc/images/classes_schema.png
    :alt: Schematics of BluePyEModel classes
 
+
 Acknowledgment
-~~~~~~~~~~~~~~
+--------------
 
 This work was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board of the Swiss Federal Institutes of Technology. This work has been partially funded by the European Union Seventh Framework Program (FP7/2007­2013) under grant agreement no. 604102 (HBP), and by the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreements No. 720270 (Human Brain Project SGA1) and No. 785907 (Human Brain Project SGA2) and by the EBRAINS research infrastructure, funded from the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreement No. 945539 (Human Brain Project SGA3).
 
+
 Copyright
-~~~~~~~~~
+---------
 
 Copyright (c) 2023-2024 Blue Brain Project/EPFL
 

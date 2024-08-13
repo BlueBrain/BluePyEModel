@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "BluePyEModel"
+doi: 10.5281/zenodo.8283490
+url: https://doi.org/10.5281/zenodo.8283490
+abstract: "BluePyEModel is a Python package facilitating the configuration and execution of electrical neuron model (e-model) building tasks. It covers tasks such as extraction of electrical features from electrophysiology data, e-model parameters optimisation and model validation. As such, it builds on top of eFEL, BluePyEfe and BluePyOpt."
+authors:
+  - family-names: "Damart"
+    given-names: "Tanguy"
+  - family-names: "Jaquier"
+    given-names: "Aurélien"
+  - family-names: "Mandge"
+    given-names: "Darshan"
+  - family-names: "Kilic"
+    given-names: "Ilkan"
+  - family-names: "Tuncel"
+    given-names: "Anil"
+  - family-names: "Arnaudon"
+    given-names: "Alexis"
+  - family-names: "Van Dorp"
+    given-names: "Stijn"
+  - family-names: "Ficarelli"
+    given-names: "Gianluca"
+  - family-names: "Kanari"
+    given-names: "Lida"
+  - family-names: "Markram"
+    given-names: "Henry"
+  - family-names: "Van Geit"
+    given-names: "Werner"
+date-released: 2023-08-25
+publisher: "Zenodo"
