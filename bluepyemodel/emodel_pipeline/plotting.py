@@ -1673,8 +1673,10 @@ def plot_sinespec(
         5300.0,
         efel_settings,
     )
+    if freq is None or smooth_Z is None:
+        return None, None
 
-    fig, axs = plt.subplots(3, figsize=(6, 12))  # see if we need to change figsize here
+    fig, axs = plt.subplots(3, figsize=(6, 12))
     # current trace
     axs[0].plot(responses[current_key]["time"], responses[current_key]["voltage"])
     axs[0].set_xlabel("Time (ms)")
@@ -1744,22 +1746,6 @@ def run_and_plot_custom_sinespec(
     for mo in emodels:
         figures_dir_sinespec = Path(figures_dir) / "sinespec" / "all"
         mo.features = mo.evaluator.fitness_calculator.calculate_values(mo.responses)
-        # testing responses
-        # print(mo.features)
-        # print("responses:")
-        # print(list(mo.responses.keys()))
-        # make_dir(figures_dir_sinespec)
-        # plt.plot(
-        #     mo.responses["SineSpec_80.soma.injected_current"]["time"],
-        #     mo.responses["SineSpec_80.soma.injected_current"]["voltage"],
-        # )
-        # plt.savefig(figures_dir_sinespec / f"tmp_{mo.seed}.sinespec.png", dpi=400)
-
-        # for key, value in model.features.items():
-        #     if value is not None:
-        #         # turn features from arrays to float to be json serializable
-        #         model.features[key] = float(numpy.nanmean([v for v in value if v is not None]))
-
         plot_sinespec(mo, mo.responses, sinespec_settings, efel_settings, figures_dir_sinespec)
 
 
@@ -2028,10 +2014,10 @@ def plot_models(
         )
 
     if plot_traces_comparison:
-        figures_dir_FI_curves = figures_dir / "traces" / dest_leaf
+        figures_dir_traces = figures_dir / "traces" / dest_leaf
         plot_trace_comparison(
             emodels,
-            figures_dir_FI_curves,
+            figures_dir_traces,
             custom_bluepyefe_protocols_pklpath=custom_bluepyefe_protocols_pklpath,
         )
 

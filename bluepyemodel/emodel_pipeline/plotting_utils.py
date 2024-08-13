@@ -440,12 +440,24 @@ def get_impedance(time, voltage, current, stim_start, stim_end, efel_settings):
     )
     if efel_vals[0]["voltage_base"] is not None:
         holding_voltage = efel_vals[0]["voltage_base"][0]
-    else:
+    elif efel_vals[0]["steady_state_voltage_stimend"] is not None:
         holding_voltage = efel_vals[0]["steady_state_voltage_stimend"][0]
+    else:
+        logger.warning(
+            "Could not get impedance because neither voltage_base "
+            "nor steady_state_voltage_stimend could be retrieve from efel."
+        )
+        return None, None
     if efel_vals[0]["current_base"] is not None:
         holding_current = efel_vals[0]["current_base"][0]
-    else:
+    elif efel_vals[0]["steady_state_current_stimend"] is not None:
         holding_current = efel_vals[0]["steady_state_current_stimend"][0]
+    else:
+        logger.warning(
+            "Could not get impedance because neither current_base "
+            "nor steady_state_current_stimend could be retrieve from efel."
+        )
+        return None, None
 
     normalized_voltage = voltage - holding_voltage
     normalized_current = current - holding_current
