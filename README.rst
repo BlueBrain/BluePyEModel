@@ -28,7 +28,7 @@ For a general overview and example of electrical model building, please refer to
 Note that this package only covers e-model building based on patch-clamp data and that it relies solely on the `NEURON <https://www.neuron.yale.edu/neuron/>`_ simulator.
 
 How to cite
-===========
+-----------
 If you use this repository in your work, please refer to the "Cite this repository" button at the top of the repository page to get various citation formats, including APA and BibTeX.
 
 For detailed citation information, please refer to the `CITATION.cff <./CITATION.cff>`_ file.
