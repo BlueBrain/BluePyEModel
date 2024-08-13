@@ -293,10 +293,18 @@ class EModelPipelineSettings:
                     recording selection.Is not used for model trace selection
                 "relative_amp" (bool): Are amplitde and amp_window in relative amplitude (True)
                     or in absolute amplitude (False).
+                If set to None, it will default to:
+                {
+                    "prot_names": ["idrest"],
+                    "amplitude": 150,
+                    "amp_window": 1.5,
+                    "relative_amp": True,
+                }
             sinespec_settings (dict): contains amplitude settings for the SineSpec protocol,
                 with keys 'amp' and 'threshold_based'.
                 'amp' should be in percentage of threshold if 'threshold_based' is True, e.g. 150,
                 or in nA if 'threshold_based' if false, e.g. 0.1.
+                If set to None, it will default to: {"amp": 0.05, "threshold_based": False}
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
