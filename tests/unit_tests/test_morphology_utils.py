@@ -40,7 +40,7 @@ def test_get_apical_point_soma_distance(morph_path):
 
 def test_get_apical_max_radial_distance(morph_path):
     """Test get_apical_length function."""
-    apical_max_radial_distance =  get_apical_max_radial_distance(morph_path)
+    apical_max_radial_distance = get_apical_max_radial_distance(morph_path)
     # increase tolerance because neurom v4 has changed behavior of 'max_radial_distance'
     numpy.testing.assert_allclose(apical_max_radial_distance, 1044.1445, rtol=0.02)
 
@@ -63,7 +63,7 @@ def test_get_hotspot_location(morph_path):
 
 def test_morphology_utils(morph_path):
     """Test that output of morphology_utils functions are consistent with one another."""
-    apical_max_dist_1 =  get_apical_max_radial_distance(morph_path)
+    apical_max_dist_1 = get_apical_max_radial_distance(morph_path)
     basal_max_dist, apical_max_dist_2 = get_basal_and_apical_max_radial_distances(morph_path)
     soma_dist = get_apical_point_soma_distance(morph_path)
     hotspot_start, hotspot_end = get_hotspot_location(morph_path)

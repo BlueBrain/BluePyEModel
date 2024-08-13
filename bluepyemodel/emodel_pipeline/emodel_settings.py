@@ -74,7 +74,18 @@ class EModelPipelineSettings:
         plot_currentscape=True,
         plot_parameter_evolution=True,
         plot_bAP_EPSP=False,
+        plot_IV_curves=False,
+        plot_FI_curve_comparison=False,
+        plot_traces_comparison=False,
+        run_plot_custom_sinspec=False,
+        IV_curve_prot_name="iv",
+        FI_curve_prot_name="idrest",
+        plot_phase_plot=False,
+        phase_plot_settings=None,
+        sinespec_settings=None,
         currentscape_config=None,
+        custom_bluepyefe_cells_pklpath=None,
+        custom_bluepyefe_protocols_pklpath=None,
         save_recordings=False,
         neuron_dt=None,
         cvode_minstep=0.0,
@@ -257,12 +268,58 @@ class EModelPipelineSettings:
                 and EPSP protocols be run and plotted.
                 Should be True only for pyramidal cells,
                 since it depends on the presence of apical dendrite.
+            plot_IV_curves (bool): during the plotting, should peak voltage and voltage_deflection
+                IV curves be plotted for threshold-based sub-threshold IV protocols.
+                Needs pickle_cells_extraction to be set to True.
+            plot_FI_curve_comparison (bool): during the plotting, should FI curve be plotted
+                for experimental and simulated data.
+                Needs pickle_cells_extraction to be set to True.
+            plot_traces_comparison (bool): True to plot a new figure with simulated traces
+                on top of experimental traces.
+                Needs pickle_cells_extraction to be set to True.
+            run_plot_custom_sinspec (bool): True to run a SineSpec protocol, and plot
+            its voltage and current trace, along with its impedance.
+            IV_curve_prot_name (str): which protocol to use to plot_IV_curves.
+            FI_curve_prot_name (str): which protocol to use during plotting of FI curve comparison.
+                The protocol should be supra-threshold
+                and have the efeature mean_frequency associated to it.
+            plot_phase_plot (bool): during the plotting, should phase plot be plotted.
+            phase_plot_settings (dict): settings for the phase plot. Should contain the following:
+                "prot_names" (list of str): the names of the protocols to select for phase plot
+                "amplitude" (float): amplitude of the protocol to select.
+                    Only exactly this amplitude will be selected for model.
+                    An amplitude window is used for experimental trace selection
+                "amp_window" (float): amplitude window around amplitude for experimental
+                    recording selection.Is not used for model trace selection
+                "relative_amp" (bool): Are amplitde and amp_window in relative amplitude (True)
+                    or in absolute amplitude (False).
+                If set to None, it will default to:
+                {
+                    "prot_names": ["idrest"],
+                    "amplitude": 150,
+                    "amp_window": 1.5,
+                    "relative_amp": True,
+                }
+            sinespec_settings (dict): contains amplitude settings for the SineSpec protocol,
+                with keys 'amp' and 'threshold_based'.
+                'amp' should be in percentage of threshold if 'threshold_based' is True, e.g. 150,
+                or in nA if 'threshold_based' if false, e.g. 0.1.
+                If set to None, it will default to: {"amp": 0.05, "threshold_based": False}
             currentscape_config (dict): currentscape configuration according to the currentscape
                 documentation (https://github.com/BlueBrain/Currentscape).
                 Note that current.names, output.savefig, output.fname and output.dir
                 do not need to be set, since they are automatically overwritten by BluePyEModel.
                 If current.names is set nonetheless, it will be used as the subset of available
                 currents to be selected for the plot.
+            custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
+                If None, will use usual file path used in BluePyEfe,
+                so this is to be set only to use a file at an unexpected path.
+                Only used in plotting functions for IV curves, IF curves and phase plot.
+            custom_bluepyefe_protocols_pklpath (str): file path to the
+                protocols.pkl output of BluePyEfe.
+                If None, will use usual file path used in BluePyEfe,
+                so this is to be set only to use a file at an unexpected path.
+                Only used in plotting functions for trace_comparison.
             save_recordings (bool): Whether to save the responses data under a folder
                 named `recordings`.
             neuron_dt (float): time step of the NEURON simulator. If ``None``, cvode will be used.
@@ -333,7 +390,6 @@ class EModelPipelineSettings:
         self.max_ngen = max_ngen
         self.optimisation_checkpoint_period = optimisation_checkpoint_period
         self.use_stagnation_criterion = use_stagnation_criterion
-        self.plot_optimisation = plot_optimisation
         self.compile_mechanisms = compile_mechanisms
 
         # Specific to threshold based optimisation
@@ -362,12 +418,40 @@ class EModelPipelineSettings:
         self.max_n_batch = max_n_batch
         self.name_gene_map = name_gene_map
 
-        # Settings specific to the currentscape plotting
+        # Settings specific to the analysis (figure plotting)
+        self.plot_optimisation = plot_optimisation
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
-
         self.plot_parameter_evolution = plot_parameter_evolution
         self.plot_bAP_EPSP = plot_bAP_EPSP
+        self.plot_IV_curves = plot_IV_curves
+        self.plot_FI_curve_comparison = plot_FI_curve_comparison
+        self.plot_traces_comparison = plot_traces_comparison
+        if pickle_cells_extraction is False:
+            if any((plot_IV_curves, plot_FI_curve_comparison, plot_traces_comparison)):
+                logger.warning(
+                    "You have set pickle_cells_extraction to False in the settings, "
+                    "but plot_IV_curves, plot_FI_curve_comparison and "
+                    "plot_traces_comparison need it to be True. "
+                    "These plots will most likely fail."
+                )
+        self.run_plot_custom_sinspec = run_plot_custom_sinspec
+        self.IV_curve_prot_name = IV_curve_prot_name
+        self.FI_curve_prot_name = FI_curve_prot_name
+        self.plot_phase_plot = plot_phase_plot
+        self.phase_plot_settings = phase_plot_settings
+        if self.phase_plot_settings is None:
+            self.phase_plot_settings = {
+                "prot_names": ["idrest"],
+                "amplitude": 150,
+                "amp_window": 1.5,
+                "relative_amp": True,
+            }
+        self.sinespec_settings = sinespec_settings
+        if self.sinespec_settings is None:
+            self.sinespec_settings = {"amp": 0.05, "threshold_based": False}
+        self.custom_bluepyefe_cells_pklpath = custom_bluepyefe_cells_pklpath
+        self.custom_bluepyefe_protocols_pklpath = custom_bluepyefe_protocols_pklpath
 
         # Settings specific to the recordings
         self.save_recordings = save_recordings

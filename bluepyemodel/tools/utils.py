@@ -248,3 +248,18 @@ def select_rec_for_thumbnail(rec_names, additional_step_prots=None, thumbnail_re
     logger.debug("Selected %s for thumbnail", selected_rec)
 
     return selected_rec
+
+
+def get_amplitude_from_feature_key(feat_key):
+    """Get amplitude from a key of the EModel.feature dict.
+
+    Args:
+        feat_key (str): feature key, e.g. IV_40.soma.maximum_voltage_from_voltagebase
+    """
+    n = feat_key.split(".")
+    # case where protocol has '.' in its name, e.g. IV_40.0
+    if len(n) == 4 and n[1].isdigit():
+        n = [".".join(n[:2]), n[2], n[3]]
+    protocol_name = n[0]
+
+    return float(protocol_name.split("_")[-1])

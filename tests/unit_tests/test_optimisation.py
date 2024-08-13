@@ -28,6 +28,7 @@ def checkpoint_check(dir, fname, metadata, inner_dir):
     assert str(get_checkpoint_path(metadata, seed=0)) == "/".join((".", inner_dir, fname))
     f.unlink()
 
+
 def test_get_checkpoint_path(workspace):
     metadata = EModelMetadata(
         emodel="L5PC",
@@ -38,10 +39,10 @@ def test_get_checkpoint_path(workspace):
         allen_notation="SSCX",
     )
     path = get_checkpoint_path(metadata, seed=0)
-    fname = "emodel=L5PC__ttype=t_type__mtype=L5TPC_A__brain_region=SSCX__iteration=test__seed=0.pkl"
-    assert (
-        str(path) == f"./checkpoints/L5PC/test/{fname}"
+    fname = (
+        "emodel=L5PC__ttype=t_type__mtype=L5TPC_A__brain_region=SSCX__iteration=test__seed=0.pkl"
     )
+    assert str(path) == f"./checkpoints/L5PC/test/{fname}"
     path = get_legacy_checkpoint_path(path)
     assert str(path) == f"./checkpoints/{fname}"
 
@@ -51,9 +52,13 @@ def test_get_checkpoint_path(workspace):
     dir.mkdir(parents=True)
     fname = "emodel=L5PC__ttype=t type__mtype=L5TPC:A__brain_region=somatosensory cortex__iteration=test__seed=0.pkl"
     checkpoint_check(dir, fname, metadata, inner_dir)
-    fname = "emodel=L5PC__ttype=t type__mtype=L5TPC:A__brain_region=SSCX__iteration=test__seed=0.pkl"
+    fname = (
+        "emodel=L5PC__ttype=t type__mtype=L5TPC:A__brain_region=SSCX__iteration=test__seed=0.pkl"
+    )
     checkpoint_check(dir, fname, metadata, inner_dir)
-    fname = "emodel=L5PC__ttype=t type__mtype=L5TPC_A__brain_region=SSCX__iteration=test__seed=0.pkl"
+    fname = (
+        "emodel=L5PC__ttype=t type__mtype=L5TPC_A__brain_region=SSCX__iteration=test__seed=0.pkl"
+    )
     checkpoint_check(dir, fname, metadata, inner_dir)
 
 

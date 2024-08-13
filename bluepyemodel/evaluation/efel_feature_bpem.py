@@ -144,6 +144,10 @@ class eFELFeatureBPEM(eFELFeature):
             trace[f"T{postfix}"] = responses[self.recording_names[""]]["time"]
             trace[f"V{postfix}"] = responses[recording_name]["voltage"]
 
+            current_recording_name = f'{".".join(recording_name.split(".")[:-2])}.iclamp.i'
+            if current_recording_name in responses:
+                trace[f"I{postfix}"] = responses[current_recording_name]["voltage"]
+
             if callable(self.stim_start):
                 trace[f"stim_start{postfix}"] = [self.stim_start()]
             else:

@@ -18,6 +18,7 @@ limitations under the License.
 
 import logging
 import pathlib
+import pickle
 from importlib.machinery import SourceFileLoader
 
 import bluepyefe.extract
@@ -27,6 +28,52 @@ from bluepyemodel.evaluation.fitness_calculator_configuration import FitnessCalc
 from bluepyemodel.tools.search_pdfs import search_figure_efeatures
 
 logger = logging.getLogger(__name__)
+
+
+def get_extraction_output_directory(emodel):
+    """Get output directory for extraction figures.
+
+    Args:
+        emodel (str): emodel name as in emodel_metadata.emodel
+    """
+    return pathlib.Path(f"./figures/{emodel}/efeatures_extraction/")
+
+
+def read_extraction_output(filepath):
+    """Returns output of extraction if present. Can return cells or protocols file.
+
+    Args:
+        filename (str or Path): path to extraction pickle file
+    """
+    filepath = pathlib.Path(filepath)
+    if not filepath.is_file():
+        logger.warning("Could not find experimental output file at %s.", filepath)
+        return None
+    with open(filepath, "rb") as f:
+        cells = pickle.load(f)
+    return cells
+
+
+def read_extraction_output_cells(emodel):
+    """Returns cells output of extraction if present.
+
+    Args:
+        emodel (str): emodel name as in emodel_metadata.emodel
+    """
+    filepath = bluepyefe.extract.cells_pickle_output_path(get_extraction_output_directory(emodel))
+    return read_extraction_output(filepath)
+
+
+def read_extraction_output_protocols(emodel):
+    """Returns protocols output of extraction if present.
+
+    Args:
+        emodel (str): emodel name as in emodel_metadata.emodel
+    """
+    filepath = bluepyefe.extract.protocols_pickle_output_path(
+        get_extraction_output_directory(emodel)
+    )
+    return read_extraction_output(filepath)
 
 
 def interpolate_RMP(fitness_calculator_configuration):
@@ -179,7 +226,7 @@ def extract_save_features_protocols(access_point, mapper=map):
 
     threshold_nvalue_save = access_point.pipeline_settings.extraction_threshold_value_save
     plot = access_point.pipeline_settings.plot_extraction
-    output_directory = f"./figures/{access_point.emodel_metadata.emodel}/efeatures_extraction/"
+    output_directory = get_extraction_output_directory(access_point.emodel_metadata.emodel)
 
     efeatures, stimuli, current = bluepyefe.extract.extract_efeatures(
         output_directory=output_directory,
