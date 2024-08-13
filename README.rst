@@ -57,7 +57,7 @@ To get started with the E-Model building pipeline
 .. image:: https://raw.githubusercontent.com/BlueBrain/BluePyEModel/main/doc/images/pipeline.png
    :alt: E-Model building pipeline
 
-This section presents a general picture of the pipeline. For a detailed picture and how to use it, please refer to the `example directory <https://github.com/BlueBrain/BluePyEModel/tree/main/examples/L5PC/>`_ and its `README <https://github.com/BlueBrain/BluePyEModel/tree/main/examples/L5PC/README.rst>`_.
+This section presents a general picture of the pipeline. For a detailed picture and how to use it, please refer to the `L5PC example <https://github.com/BlueBrain/BluePyEModel/tree/main/examples/L5PC/>`_ and its `README <https://github.com/BlueBrain/BluePyEModel/tree/main/examples/L5PC/README.rst>`_.
 
 The pipeline is divided in 6 steps:
 
@@ -70,6 +70,7 @@ The pipeline is divided in 6 steps:
 
 These six steps are to be run in order as for example validation cannot be run if no models have been stored. Steps ``validation``, ``plotting`` and ``exporting`` are optional. Step ``extraction`` can also be optional in the case where the file containing the protocols and optimisation targets is created by hand or if it is obtained from an older project.
 
+For an example of how to run the pipeline with the Nexus access point, see the `Nexus example <https://github.com/BlueBrain/BluePyEModel/tree/main/examples/nexus/>`_
 
 Schematics of BluePyEModel classes
 -----------------------------------

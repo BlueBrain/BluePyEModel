@@ -45,7 +45,9 @@ from .protocols import SearchHoldingCurrent
 from .protocols import SearchThresholdCurrent
 from .protocols import ThresholdBasedProtocol
 from .recordings import FixedDtRecordingCustom
+from .recordings import FixedDtRecordingStimulus
 from .recordings import LooseDtRecordingCustom
+from .recordings import LooseDtRecordingStimulus
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +87,10 @@ def define_location(definition):
             return soma_loc
         if definition["location"] == "ais":
             return ais_loc
-        raise ValueError("Only soma and ais are implemented for CompRecording")
+        raise ValueError(
+            "Only soma and ais are implemented for CompRecording."
+            f' Cannot load {definition["name"]} at {definition["location"]}.'
+        )
 
     if definition["type"] == "somadistance":
         return NrnSomaDistanceCompLocation(
@@ -125,10 +130,19 @@ def define_recording(recording_conf, use_fixed_dt_recordings=False):
 
     Returns:
         FixedDtRecordingCustom or LooseDtRecordingCustom
+        or FixedDtRecordingStimulus or LooseDtRecordingStimulus
     """
-
-    location = define_location(recording_conf)
     variable = recording_conf.get("variable", recording_conf.get("var"))
+    # iclamp current recording case
+    if recording_conf["type"] == "FixedDtRecordingStimulus":
+        return FixedDtRecordingStimulus(name=recording_conf["name"], variable=variable)
+    if recording_conf["type"] == "LooseDtRecordingStimulus":
+        if use_fixed_dt_recordings:
+            return FixedDtRecordingStimulus(name=recording_conf["name"], variable=variable)
+        return LooseDtRecordingStimulus(name=recording_conf["name"], variable=variable)
+
+    # variable at location recording case
+    location = define_location(recording_conf)
 
     if use_fixed_dt_recordings:
         rec_class = FixedDtRecordingCustom
