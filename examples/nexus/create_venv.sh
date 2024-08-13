@@ -17,11 +17,11 @@
 #####################################################################
 
 deactivate
-module purge all # comment out this line if you are not using spack packages
+module purge all
 
-module load unstable python # comment out this line if you are not using spack packages
+module load unstable python
 python -m venv myvenv
-module purge all # comment out this line if you are not using spack packages
+module purge all
 source myvenv/bin/activate
 
 pip install bbp-workflow

@@ -1,6 +1,6 @@
-# E-Model Building Pipeline with Luigi and Nexus
+# E-Model Building Pipeline with Luigi, Nexus and bbp-workflow
 
-This example demonstrates how to build an e-model using the Nexus access point and [Luigi](https://luigi.readthedocs.io/en/stable/). The [NexusAccessPoint](./../../bluepyemodel/access_point/nexus.py) class serves as the API that enables users to store, manage, and use e-model resources on Nexus. This class provides a set of functions to create e-model-related resources on Nexus and link them to the electrophysiological data, mechanisms, and morphology registered on Nexus.
+This example demonstrates how to build an e-model using the Nexus access, [Luigi](https://luigi.readthedocs.io/en/stable/) and [bbp-workflow](https://github.com/BlueBrain/bbp-workflow), which automates batch job pipelines. The [NexusAccessPoint](./../../bluepyemodel/access_point/nexus.py) class serves as the API that enables users to store, manage, and use e-model resources on Nexus. This class provides a set of functions to create e-model-related resources on Nexus and link them to the electrophysiological data, mechanisms, and morphology registered on Nexus.
 
 ## 1. Setup the virtual environment
 To setup the virtual environment and install all the needed packages, run:
@@ -9,6 +9,8 @@ To setup the virtual environment and install all the needed packages, run:
 kinit
 ./create_venv.sh
 ```
+
+Note: Ensure that your Python version is 3.10 or higher, as bbp-workflow is only compatible with Python >= 3.10.
 
 Then activate the virtual environment:
 
