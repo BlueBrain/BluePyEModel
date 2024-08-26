@@ -1,0 +1,37 @@
+{
+    "simplecell": {
+        "morph_path": "./morphologies/",
+        "morphology": [
+            [
+                "simple",
+                "simple.swc"
+            ]
+        ],
+        "params": "config/params/simple.json",
+        "features": "config/features/simplecell.json",
+        "pipeline_settings": {
+            "path_extract_config": "config/extract_config/simplecell_config.json",
+            "plot_extraction": true,
+            "default_std_value": 0.01,
+            "extract_absolute_amplitudes": true,
+            "efel_settings":{
+                "strict_stiminterval": true,
+                "Threshold": -20.0,
+                "interp_step": 0.025
+            },
+            "optimisation_timeout": 300,
+            "optimiser": "SO-CMA",
+            "max_ngen": 5,
+            "optimisation_params": {
+                "offspring_size": 20
+            },
+            "validation_threshold": 100,
+            "plot_currentscape": true,
+            "currentscape_config": {
+                "title": "simplecell"
+            },
+            "validation_protocols": [],
+            "morph_modifiers": []
+        }
+    }
+}
