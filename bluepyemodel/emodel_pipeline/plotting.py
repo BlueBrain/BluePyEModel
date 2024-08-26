@@ -247,7 +247,11 @@ def evolution_parameters_density(
         max_n_gen = max(max_n_gen, run["generation"])
         genealogies[checkpoint_path] = (run["history"].genealogy_history, seed)
 
-    gen_per_bin = 4
+    if max_n_gen >= 8:
+        gen_per_bin = 4
+    else:
+        gen_per_bin = 1
+
     pop_size = len(run["population"])
     histo_bins = (int(max_n_gen / gen_per_bin), 20)
     normalization_factor = gen_per_bin * pop_size
