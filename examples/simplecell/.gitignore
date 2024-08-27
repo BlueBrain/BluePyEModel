@@ -16,5 +16,4 @@ recordings/
 __pycache__/
 ephys_data/
 myvenv/
-final.json
 final_tmp.json

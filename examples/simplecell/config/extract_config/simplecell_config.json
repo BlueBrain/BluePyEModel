@@ -398,6 +398,39 @@
       }
     },
     {
+      "efeature": "Spikecount",
+      "protocol": "IDrest",
+      "amplitude": 0.4,
+      "tolerance": 0.1,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "mean_frequency",
+      "protocol": "IDrest",
+      "amplitude": 0.4,
+      "tolerance": 0.1,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
+      "efeature": "voltage_base",
+      "protocol": "IDrest",
+      "amplitude": 0.4,
+      "tolerance": 0.1,
+      "efeature_name": null,
+      "weight": 1.0,
+      "efel_settings": {
+        "strict_stiminterval": true
+      }
+    },
+    {
       "efeature": "voltage_base",
       "protocol": "IV",
       "amplitude": -0.147,

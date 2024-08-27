@@ -1,0 +1,42 @@
+{
+  "simplecell__1": {
+    "emodel": "simplecell",
+    "etype": "cADpyr",
+    "ttype": null,
+    "mtype": null,
+    "species": "rat",
+    "brain_region": "SSCX",
+    "iteration": null,
+    "synapse_class": null,
+    "allen_notation": null,
+    "score": 1257.8671455915864,
+    "parameters": {
+      "gnabar_hh.somatic": 0.10623315844384061,
+      "gkbar_hh.somatic": 0.026127548830000066
+    },
+    "fitness": {
+      "IDrest_0.256.soma.v.Spikecount": 0.1320676359488435,
+      "IDrest_0.256.soma.v.mean_frequency": 250.0,
+      "IDrest_0.256.soma.v.voltage_base": 6.755673681284991,
+      "IV_-0.147.soma.v.voltage_base": 0.979404274352486,
+      "IV_-0.147.soma.v.ohmic_input_resistance_vb_ssse": 250.0,
+      "IDrest_0.4.soma.v.Spikecount": 250.0,
+      "IDrest_0.4.soma.v.mean_frequency": 250.0,
+      "IDrest_0.4.soma.v.voltage_base": 250.0
+    },
+    "features": {
+      "IDrest_0.256.soma.v.Spikecount": 6.0,
+      "IDrest_0.256.soma.v.mean_frequency": 1105.990783485126,
+      "IDrest_0.256.soma.v.voltage_base": -82.68936403171544,
+      "IDrest_0.4.soma.v.Spikecount": 4.0,
+      "IDrest_0.4.soma.v.mean_frequency": 1333.3333334958297,
+      "IDrest_0.4.soma.v.voltage_base": -82.5609583626679,
+      "IV_-0.147.soma.v.voltage_base": -84.8480244239635,
+      "IV_-0.147.soma.v.ohmic_input_resistance_vb_ssse": 1060.9623644880035
+    },
+    "validation_fitness": {},
+    "validated": false,
+    "seed": 1,
+    "pdfs": []
+  }
+}
