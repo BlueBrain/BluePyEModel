@@ -367,7 +367,7 @@
     {
       "efeature": "Spikecount",
       "protocol": "IDrest",
-      "amplitude": 0.256,
+      "amplitude": 0.2,
       "tolerance": 0.1,
       "efeature_name": null,
       "weight": 1.0,
@@ -378,7 +378,7 @@
     {
       "efeature": "mean_frequency",
       "protocol": "IDrest",
-      "amplitude": 0.256,
+      "amplitude": 0.2,
       "tolerance": 0.1,
       "efeature_name": null,
       "weight": 1.0,
@@ -389,7 +389,7 @@
     {
       "efeature": "voltage_base",
       "protocol": "IDrest",
-      "amplitude": 0.256,
+      "amplitude": 0.2,
       "tolerance": 0.1,
       "efeature_name": null,
       "weight": 1.0,
@@ -433,7 +433,7 @@
     {
       "efeature": "voltage_base",
       "protocol": "IV",
-      "amplitude": -0.147,
+      "amplitude": -0.1,
       "tolerance": 0.1,
       "efeature_name": null,
       "weight": 1.0,
@@ -444,7 +444,7 @@
     {
       "efeature": "ohmic_input_resistance_vb_ssse",
       "protocol": "IV",
-      "amplitude": -0.147,
+      "amplitude": -0.1,
       "tolerance": 0.1,
       "efeature_name": null,
       "weight": 1.0,

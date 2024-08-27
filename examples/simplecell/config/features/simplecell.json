@@ -2,53 +2,53 @@
   "efeatures": [
     {
       "efel_feature_name": "Spikecount",
-      "protocol_name": "IDrest_0.256",
+      "protocol_name": "IDrest_0.2",
       "recording_name": "soma.v",
       "threshold_efeature_std": null,
       "default_std_value": 0.001,
-      "mean": 6.6,
-      "original_std": 4.5431266766402185,
-      "sample_size": 5,
+      "mean": 5.0,
+      "original_std": 3.605551275463989,
+      "sample_size": 4,
       "efeature_name": "Spikecount",
       "weight": 1.0,
       "efel_settings": {
         "interp_step": 0.025,
         "strict_stiminterval": true,
-        "Threshold": -50.11250305175781
+        "Threshold": -48.99374771118164
       }
     },
     {
       "efel_feature_name": "mean_frequency",
-      "protocol_name": "IDrest_0.256",
+      "protocol_name": "IDrest_0.2",
       "recording_name": "soma.v",
       "threshold_efeature_std": null,
       "default_std_value": 0.001,
-      "mean": 4.6549665308108965,
-      "original_std": 1.7066939148229534,
-      "sample_size": 4,
+      "mean": 3.9105121810617045,
+      "original_std": 1.2910808300604681,
+      "sample_size": 3,
       "efeature_name": "mean_frequency",
       "weight": 1.0,
       "efel_settings": {
         "interp_step": 0.025,
         "strict_stiminterval": true,
-        "Threshold": -50.11250305175781
+        "Threshold": -48.99374771118164
       }
     },
     {
       "efel_feature_name": "voltage_base",
-      "protocol_name": "IDrest_0.256",
+      "protocol_name": "IDrest_0.2",
       "recording_name": "soma.v",
       "threshold_efeature_std": null,
       "default_std_value": 0.001,
-      "mean": -84.9396882128033,
-      "original_std": 0.3331013733422112,
-      "sample_size": 5,
+      "mean": -84.83373198951986,
+      "original_std": 0.28733612701960526,
+      "sample_size": 4,
       "efeature_name": "voltage_base",
       "weight": 1.0,
       "efel_settings": {
         "interp_step": 0.025,
         "strict_stiminterval": true,
-        "Threshold": -50.11250305175781
+        "Threshold": -48.99374771118164
       }
     },
     {
@@ -104,56 +104,56 @@
     },
     {
       "efel_feature_name": "voltage_base",
-      "protocol_name": "IV_-0.147",
+      "protocol_name": "IV_-0.1",
       "recording_name": "soma.v",
       "threshold_efeature_std": null,
       "default_std_value": 0.001,
-      "mean": -84.5937809414334,
-      "original_std": 0.25958992541480197,
-      "sample_size": 5,
+      "mean": -84.4690685507692,
+      "original_std": 0.08042238367019017,
+      "sample_size": 4,
       "efeature_name": "voltage_base",
       "weight": 1.0,
       "efel_settings": {
         "interp_step": 0.025,
         "strict_stiminterval": true,
-        "Threshold": -64.5374984741211
+        "Threshold": -64.51874923706055
       }
     },
     {
       "efel_feature_name": "ohmic_input_resistance_vb_ssse",
-      "protocol_name": "IV_-0.147",
+      "protocol_name": "IV_-0.1",
       "recording_name": "soma.v",
       "threshold_efeature_std": null,
       "default_std_value": 0.001,
-      "mean": 47.95114886552402,
-      "original_std": 1.5928203273461563,
-      "sample_size": 5,
+      "mean": 48.64694052877976,
+      "original_std": 0.8664384286999164,
+      "sample_size": 4,
       "efeature_name": "ohmic_input_resistance_vb_ssse",
       "weight": 1.0,
       "efel_settings": {
         "interp_step": 0.025,
         "strict_stiminterval": true,
-        "Threshold": -64.5374984741211
+        "Threshold": -64.51874923706055
       }
     }
   ],
   "protocols": [
     {
-      "name": "IDrest_0.256",
+      "name": "IDrest_0.2",
       "stimuli": [
         {
           "delay": 700.0000000000001,
-          "amp": 0.2579375009983778,
+          "amp": 0.23945312993600965,
           "thresh_perc": null,
           "duration": 2000.0,
           "totduration": 3000.0,
-          "holding_current": -0.0266875009983778
+          "holding_current": -0.026718751061707735
         }
       ],
       "recordings_from_config": [
         {
           "type": "CompRecording",
-          "name": "IDrest_0.256.soma.v",
+          "name": "IDrest_0.2.soma.v",
           "location": "soma",
           "variable": "v"
         }
@@ -187,21 +187,21 @@
       "stochasticity": false
     },
     {
-      "name": "IV_-0.147",
+      "name": "IV_-0.1",
       "stimuli": [
         {
           "delay": 20.0,
-          "amp": -0.1440624985843897,
+          "amp": -0.1265624992083758,
           "thresh_perc": null,
           "duration": 1000.0,
           "totduration": 1320.0,
-          "holding_current": -0.02878124974668026
+          "holding_current": -0.02816406195051968
         }
       ],
       "recordings_from_config": [
         {
           "type": "CompRecording",
-          "name": "IV_-0.147.soma.v",
+          "name": "IV_-0.1.soma.v",
           "location": "soma",
           "variable": "v"
         }
