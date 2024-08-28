@@ -263,11 +263,13 @@ def get_amplitude_from_feature_key(feat_key):
 
 def parse_feature_name_parts(feature_name):
     """
-    Splits the feature name into its respective parts, handling cases where the protocol name contains a dot.
+    Splits the feature name into its respective parts,
+    handling cases where the protocol name contains a dot.
 
     This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
-    and a response key (e.g., "IV_40.0.soma.v"). It splits the input into a list of parts, combining the
-    first two parts if the protocol name contains a dot and is followed by a numeric component.
+    and a response key (e.g., "IV_40.0.soma.v"). It splits the input into a list of parts,
+    combining the first two parts if the protocol name contains a dot and is followed by
+    a numeric component.
 
     Args:
         feature_name (str): The full feature name string or response key to be parsed.
@@ -370,4 +372,3 @@ def get_curr_name(feature_name):
     if len(parts) < 3:
         raise IndexError("Current name not found in the feature name.")
     return parts[2]
-
