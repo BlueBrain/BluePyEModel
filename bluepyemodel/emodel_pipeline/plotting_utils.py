@@ -32,6 +32,9 @@ from bluepyemodel.evaluation.protocols import BPEMProtocol
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from bluepyemodel.evaluation.recordings import FixedDtRecordingCustom
 from bluepyemodel.evaluation.recordings import FixedDtRecordingStimulus
+from bluepyemodel.tools.utils import get_curr_name
+from bluepyemodel.tools.utils import get_loc_name
+from bluepyemodel.tools.utils import get_protocol_name
 
 logger = logging.getLogger("__main__")
 
@@ -379,12 +382,7 @@ def get_simulated_FI_curve_for_plotting(evaluator, responses, prot_name):
     simulated_amp = []
     for val in values:
         if prot_name.lower() in val.lower():
-            # val is e.g. IV_40.soma.maximum_voltage_from_voltagebase
-            n = val.split(".")
-            # case where protocol has '.' in its name, e.g. IV_40.0
-            if len(n) == 4 and n[1].isdigit():
-                n = [".".join(n[:2]), n[2], n[3]]
-            protocol_name = n[0]
+            protocol_name = get_protocol_name(val)
             amp_temp = float(protocol_name.split("_")[-1])
             if "mean_frequency" in val:
                 simulated_freq.append(values[val])
@@ -593,17 +591,11 @@ def get_ordered_currentscape_keys(keys):
 
     ordered_keys = {}
     for name in keys:
-        n = name.split(".")
-        # case where protocol has '.' in its name, e.g. IV_-100.0
-        if len(n) == 4 and n[1].isdigit():
-            n = [".".join(n[:2]), n[2], n[3]]
-        prot_name = n[0]
+        prot_name = get_protocol_name(name)
         # prot_name can be e.g. RMPProtocol, or RMPProtocol_apical055
         if not any(to_skip_ in prot_name for to_skip_ in to_skip):
-            if len(n) != 3:
-                raise ValueError(f"Expected 3 elements in {n}")
-            loc_name = n[1]
-            curr_name = n[2]
+            loc_name = get_loc_name(name)
+            curr_name = get_curr_name(name)
 
             if prot_name not in ordered_keys:
                 ordered_keys[prot_name] = {}

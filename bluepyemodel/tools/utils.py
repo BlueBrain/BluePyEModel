@@ -256,10 +256,119 @@ def get_amplitude_from_feature_key(feat_key):
     Args:
         feat_key (str): feature key, e.g. IV_40.soma.maximum_voltage_from_voltagebase
     """
-    n = feat_key.split(".")
-    # case where protocol has '.' in its name, e.g. IV_40.0
-    if len(n) == 4 and n[1].isdigit():
-        n = [".".join(n[:2]), n[2], n[3]]
-    protocol_name = n[0]
+    protocol_name = get_protocol_name(feat_key)
 
     return float(protocol_name.split("_")[-1])
+
+
+def parse_feature_name_parts(feature_name):
+    """
+    Splits the feature name into its respective parts,
+    handling cases where the protocol name contains a dot.
+
+    This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
+    and a response key (e.g., "IV_40.0.soma.v"). It splits the input into a list of parts,
+    combining the first two parts if the protocol name contains a dot and is followed by
+    a numeric component.
+
+    Args:
+        feature_name (str): The full feature name string or response key to be parsed.
+
+    Returns:
+        list: A list of strings representing the correctly parsed parts of the feature name.
+
+    Examples:
+        >>> parse_feature_name_parts("IV_40.0.soma.v.voltage_base")
+        ['IV_40.0', 'soma', 'v', 'voltage_base']
+
+        >>> parse_feature_name_parts("IV_40.0.soma.v")
+        ['IV_40.0', 'soma', 'v']
+    """
+    parts = feature_name.split(".")
+    if len(parts) > 1 and parts[1].isdigit():
+        return [".".join(parts[:2])] + parts[2:]
+    return parts
+
+
+def get_protocol_name(feature_name):
+    """
+    Extracts the protocol name from the feature name or response key.
+
+    This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
+    and a response key (e.g., "IV_40.0.soma.v"). It returns the first part of the input, which is
+    the protocol name, correctly handling cases where the protocol contains a dot.
+
+    Args:
+        feature_name (str): The full feature name string or response key.
+
+    Returns:
+        str: The protocol name part of the feature name.
+
+    Examples:
+        >>> get_protocol_name("IV_40.0.soma.v.voltage_base")
+        'IV_40.0'
+
+        >>> get_protocol_name("IV_40.0.soma.v")
+        'IV_40.0'
+    """
+    return parse_feature_name_parts(feature_name)[0]
+
+
+def get_loc_name(feature_name):
+    """
+    Extracts the location name from the feature name or response key.
+
+    This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
+    and a response key (e.g., "IV_40.0.soma.v"). It returns the second part of the input, which is
+    the location name, correctly handling cases where the protocol contains a dot.
+
+    Args:
+        feature_name (str): The full feature name string or response key.
+
+    Returns:
+        str: The location name part of the feature name.
+
+    Raises:
+        IndexError: If the location name cannot be determined from the input.
+
+    Examples:
+        >>> get_loc_name("IV_40.0.soma.v.voltage_base")
+        'soma'
+
+        >>> get_loc_name("IV_40.0.soma.v")
+        'soma'
+    """
+    parts = parse_feature_name_parts(feature_name)
+    if len(parts) < 2:
+        raise IndexError("Location name not found in the feature name.")
+    return parts[1]
+
+
+def get_curr_name(feature_name):
+    """
+    Extracts the current name from the feature name or response key.
+
+    This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
+    and a response key (e.g., "IV_40.0.soma.v"). It returns the third part of the input, which is
+    the current name, correctly handling cases where the protocol contains a dot.
+
+    Args:
+        feature_name (str): The full feature name string or response key.
+
+    Returns:
+        str: The current name part of the feature name.
+
+    Raises:
+        IndexError: If the current name cannot be determined from the input.
+
+    Examples:
+        >>> get_curr_name("IV_40.0.soma.v.voltage_base")
+        'v'
+
+        >>> get_curr_name("IV_40.0.soma.v")
+        'v'
+    """
+    parts = parse_feature_name_parts(feature_name)
+    if len(parts) < 3:
+        raise IndexError("Current name not found in the feature name.")
+    return parts[2]
