@@ -79,7 +79,7 @@ def compute_scores(model, validation_protocols):
         n = feature_name.split(".")
         # case where protocol has '.' in its name, e.g. IV_40.0
         if n[1].isdigit():
-            n = [".".join(n[:2]), n[2], n[3]]
+            n = [".".join(n[:2])] + n[2:]
         protocol_name = n[0]
         if any(are_same_protocol(p, protocol_name) for p in validation_protocols):
             model.scores_validation[feature_name] = scores[feature_name]
