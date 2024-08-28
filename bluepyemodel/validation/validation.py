@@ -25,6 +25,7 @@ import numpy
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.tools.utils import are_same_protocol
+from bluepyemodel.tools.utils import get_protocol_name
 from bluepyemodel.validation import validation_functions
 
 logger = logging.getLogger(__name__)
@@ -76,11 +77,7 @@ def compute_scores(model, validation_protocols):
 
     scores = model.evaluator.fitness_calculator.calculate_scores(model.responses)
     for feature_name in scores:
-        n = feature_name.split(".")
-        # case where protocol has '.' in its name, e.g. IV_40.0
-        if n[1].isdigit():
-            n = [".".join(n[:2])] + n[2:]
-        protocol_name = n[0]
+        protocol_name = get_protocol_name(feature_name)
         if any(are_same_protocol(p, protocol_name) for p in validation_protocols):
             model.scores_validation[feature_name] = scores[feature_name]
         else:

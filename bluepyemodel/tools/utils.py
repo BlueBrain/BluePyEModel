@@ -256,10 +256,56 @@ def get_amplitude_from_feature_key(feat_key):
     Args:
         feat_key (str): feature key, e.g. IV_40.soma.maximum_voltage_from_voltagebase
     """
-    n = feat_key.split(".")
-    # case where protocol has '.' in its name, e.g. IV_40.0
-    if len(n) == 4 and n[1].isdigit():
-        n = [".".join(n[:2]), n[2], n[3]]
-    protocol_name = n[0]
+    protocol_name = get_protocol_name(feat_key)
 
     return float(protocol_name.split("_")[-1])
+
+
+def combine_parts_if_dot_in_protocol(feature_name):
+    """
+    Combine the first two elements of a list if the second element is numeric,
+    indicating the presence of a dot in the protocol.
+
+    Args:
+        feature_name (list): The list of split parts from the feature name.
+    """
+    if len(feature_name) > 1 and feature_name[1].isdigit():
+        return [".".join(feature_name[:2])] + feature_name[2:]
+    return feature_name
+
+
+def get_protocol_name(feature_name):
+    """
+    Extract the protocol name from the feature name.
+
+    Args:
+        feature_name (str): The full feature name string.
+    """
+    n = combine_parts_if_dot_in_protocol(feature_name.split("."))
+    return n[0]
+
+
+def get_loc_name(feature_name):
+    """
+    Extract the location name from the feature name.
+
+    Args:
+        feature_name (str): The full feature name string.
+    """
+    n = combine_parts_if_dot_in_protocol(feature_name.split("."))
+    if len(n) < 2:
+        raise IndexError("cannot get location name from feature name")
+    return n[1]
+
+
+def get_curr_name(feature_name):
+    """
+    Extract the current name from the feature name.
+
+    Args:
+        feature_name (str): The full feature name string.
+    """
+    n = combine_parts_if_dot_in_protocol(feature_name.split("."))
+    if len(n) < 3:
+        raise IndexError("cannot get current name from feature name")
+    return n[2]

@@ -20,6 +20,9 @@ from bluepyemodel.tools.mechanisms import get_mechanism_currents
 from bluepyemodel.tools.utils import are_same_protocol
 from bluepyemodel.tools.utils import format_protocol_name_to_list
 from bluepyemodel.tools.utils import select_rec_for_thumbnail
+from bluepyemodel.tools.utils import get_protocol_name
+from bluepyemodel.tools.utils import get_loc_name
+from bluepyemodel.tools.utils import get_curr_name
 from tests.utils import DATA
 
 
@@ -136,3 +139,38 @@ def test_select_rec_for_thumbnail():
     assert (
         select_rec_for_thumbnail(rec_names, thumbnail_rec="sAHP_20.soma.v") == "IDrest_130.soma.v"
     )
+
+
+def test_get_protocol_name():
+    feature_name = "IV_40.0.soma.v.voltage_base"
+    assert get_protocol_name(feature_name) == "IV_40.0"
+
+    feature_name = "IV_40.soma.v.voltage_base"
+    assert get_protocol_name(feature_name) == "IV_40"
+
+    feature_name = "ProtocolA.1.soma.some_feature"
+    assert get_protocol_name(feature_name) == "ProtocolA.1"
+
+
+def test_get_loc_name():
+    feature_name = "IV_40.0.soma.v.voltage_base"
+    assert get_loc_name(feature_name) == "soma"
+
+    feature_name = "IV_40.soma.v.voltage_base"
+    assert get_loc_name(feature_name) == "soma"
+
+    feature_name = "IV_40.0"
+    with pytest.raises(IndexError, match="cannot get location name from feature name"):
+        get_loc_name(feature_name)
+
+
+def test_get_curr_name():
+    feature_name = "IV_40.0.soma.v.voltage_base"
+    assert get_curr_name(feature_name) == "v"
+
+    feature_name = "IV_40.soma.v.voltage_base"
+    assert get_curr_name(feature_name) == "v"
+
+    feature_name = "IV_40.0.soma"
+    with pytest.raises(IndexError, match="cannot get current name from feature name"):
+        get_curr_name(feature_name)
