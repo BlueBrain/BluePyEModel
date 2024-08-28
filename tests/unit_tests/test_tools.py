@@ -142,17 +142,29 @@ def test_select_rec_for_thumbnail():
 
 
 def test_get_protocol_name():
+    # feature keys
     feature_name = "IV_40.0.soma.v.voltage_base"
     assert get_protocol_name(feature_name) == "IV_40.0"
 
     feature_name = "IV_40.soma.v.voltage_base"
     assert get_protocol_name(feature_name) == "IV_40"
 
-    feature_name = "ProtocolA.1.soma.some_feature"
+    feature_name = "ProtocolA.1.soma.v.some_feature"
+    assert get_protocol_name(feature_name) == "ProtocolA.1"
+
+    # response keys
+    feature_name = "IV_40.0.soma.v"
+    assert get_protocol_name(feature_name) == "IV_40.0"
+
+    feature_name = "IV_40.soma.v"
+    assert get_protocol_name(feature_name) == "IV_40"
+
+    feature_name = "ProtocolA.1.soma.v"
     assert get_protocol_name(feature_name) == "ProtocolA.1"
 
 
 def test_get_loc_name():
+    # feature keys
     feature_name = "IV_40.0.soma.v.voltage_base"
     assert get_loc_name(feature_name) == "soma"
 
@@ -160,11 +172,21 @@ def test_get_loc_name():
     assert get_loc_name(feature_name) == "soma"
 
     feature_name = "IV_40.0"
-    with pytest.raises(IndexError, match="cannot get location name from feature name"):
+    with pytest.raises(IndexError, match="Location name not found in the feature name."):
         get_loc_name(feature_name)
 
+    # response keys
+    feature_name = "IV_40.0.soma.v"
+    assert get_loc_name(feature_name) == "soma"
+
+    feature_name = "IV_40.soma.v"
+    assert get_loc_name(feature_name) == "soma"
+
+    feature_name = "ProtocolA.1.soma.v"
+    assert get_loc_name(feature_name) == "soma"
 
 def test_get_curr_name():
+    # feature keys
     feature_name = "IV_40.0.soma.v.voltage_base"
     assert get_curr_name(feature_name) == "v"
 
@@ -172,5 +194,15 @@ def test_get_curr_name():
     assert get_curr_name(feature_name) == "v"
 
     feature_name = "IV_40.0.soma"
-    with pytest.raises(IndexError, match="cannot get current name from feature name"):
+    with pytest.raises(IndexError, match="Current name not found in the feature name."):
         get_curr_name(feature_name)
+
+    # response keys
+    feature_name = "IV_40.0.soma.v"
+    assert get_curr_name(feature_name) == "v"
+
+    feature_name = "IV_40.soma.v"
+    assert get_curr_name(feature_name) == "v"
+
+    feature_name = "ProtocolA.1.soma.v"
+    assert get_curr_name(feature_name) == "v"

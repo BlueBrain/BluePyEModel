@@ -261,51 +261,113 @@ def get_amplitude_from_feature_key(feat_key):
     return float(protocol_name.split("_")[-1])
 
 
-def combine_parts_if_dot_in_protocol(feature_name):
+def parse_feature_name_parts(feature_name):
     """
-    Combine the first two elements of a list if the second element is numeric,
-    indicating the presence of a dot in the protocol.
+    Splits the feature name into its respective parts, handling cases where the protocol name contains a dot.
+
+    This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
+    and a response key (e.g., "IV_40.0.soma.v"). It splits the input into a list of parts, combining the
+    first two parts if the protocol name contains a dot and is followed by a numeric component.
 
     Args:
-        feature_name (list): The list of split parts from the feature name.
+        feature_name (str): The full feature name string or response key to be parsed.
+
+    Returns:
+        list: A list of strings representing the correctly parsed parts of the feature name.
+
+    Examples:
+        >>> parse_feature_name_parts("IV_40.0.soma.v.voltage_base")
+        ['IV_40.0', 'soma', 'v', 'voltage_base']
+
+        >>> parse_feature_name_parts("IV_40.0.soma.v")
+        ['IV_40.0', 'soma', 'v']
     """
-    if len(feature_name) > 1 and feature_name[1].isdigit():
-        return [".".join(feature_name[:2])] + feature_name[2:]
-    return feature_name
+    parts = feature_name.split(".")
+    if len(parts) > 1 and parts[1].isdigit():
+        return [".".join(parts[:2])] + parts[2:]
+    return parts
 
 
 def get_protocol_name(feature_name):
     """
-    Extract the protocol name from the feature name.
+    Extracts the protocol name from the feature name or response key.
+
+    This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
+    and a response key (e.g., "IV_40.0.soma.v"). It returns the first part of the input, which is
+    the protocol name, correctly handling cases where the protocol contains a dot.
 
     Args:
-        feature_name (str): The full feature name string.
+        feature_name (str): The full feature name string or response key.
+
+    Returns:
+        str: The protocol name part of the feature name.
+
+    Examples:
+        >>> get_protocol_name("IV_40.0.soma.v.voltage_base")
+        'IV_40.0'
+
+        >>> get_protocol_name("IV_40.0.soma.v")
+        'IV_40.0'
     """
-    n = combine_parts_if_dot_in_protocol(feature_name.split("."))
-    return n[0]
+    return parse_feature_name_parts(feature_name)[0]
 
 
 def get_loc_name(feature_name):
     """
-    Extract the location name from the feature name.
+    Extracts the location name from the feature name or response key.
+
+    This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
+    and a response key (e.g., "IV_40.0.soma.v"). It returns the second part of the input, which is
+    the location name, correctly handling cases where the protocol contains a dot.
 
     Args:
-        feature_name (str): The full feature name string.
+        feature_name (str): The full feature name string or response key.
+
+    Returns:
+        str: The location name part of the feature name.
+
+    Raises:
+        IndexError: If the location name cannot be determined from the input.
+
+    Examples:
+        >>> get_loc_name("IV_40.0.soma.v.voltage_base")
+        'soma'
+
+        >>> get_loc_name("IV_40.0.soma.v")
+        'soma'
     """
-    n = combine_parts_if_dot_in_protocol(feature_name.split("."))
-    if len(n) < 2:
-        raise IndexError("cannot get location name from feature name")
-    return n[1]
+    parts = parse_feature_name_parts(feature_name)
+    if len(parts) < 2:
+        raise IndexError("Location name not found in the feature name.")
+    return parts[1]
 
 
 def get_curr_name(feature_name):
     """
-    Extract the current name from the feature name.
+    Extracts the current name from the feature name or response key.
+
+    This function works with both a full feature name string (e.g., "IV_40.0.soma.v.voltage_base")
+    and a response key (e.g., "IV_40.0.soma.v"). It returns the third part of the input, which is
+    the current name, correctly handling cases where the protocol contains a dot.
 
     Args:
-        feature_name (str): The full feature name string.
+        feature_name (str): The full feature name string or response key.
+
+    Returns:
+        str: The current name part of the feature name.
+
+    Raises:
+        IndexError: If the current name cannot be determined from the input.
+
+    Examples:
+        >>> get_curr_name("IV_40.0.soma.v.voltage_base")
+        'v'
+
+        >>> get_curr_name("IV_40.0.soma.v")
+        'v'
     """
-    n = combine_parts_if_dot_in_protocol(feature_name.split("."))
-    if len(n) < 3:
-        raise IndexError("cannot get current name from feature name")
-    return n[2]
+    parts = parse_feature_name_parts(feature_name)
+    if len(parts) < 3:
+        raise IndexError("Current name not found in the feature name.")
+    return parts[2]
+
