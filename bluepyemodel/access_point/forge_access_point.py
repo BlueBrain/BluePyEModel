@@ -150,7 +150,7 @@ class NexusForgeAccessPoint:
         self._available_ttypes = None
         self._atlas_release = None
 
-    def refresh_token(self, offset=300):
+    def refresh_token(self, offset=30):
         """refresh token if token is expired or will be soon. Returns new expiring time.
 
         Args:
