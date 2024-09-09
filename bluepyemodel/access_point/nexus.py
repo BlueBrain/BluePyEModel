@@ -698,7 +698,7 @@ class NexusAccessPoint(DataAccessPoint):
             ids_dict = emodel_workflow.get_related_nexus_ids()
             if "generates" in ids_dict:
                 resource.generates = ids_dict["generates"]
-                schema_type = EModelWorkflow
+                schema_type = "EModelWorkflow"
             if "hasPart" in ids_dict:
                 resource.hasPart = ids_dict["hasPart"]
 
