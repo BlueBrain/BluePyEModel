@@ -347,6 +347,7 @@ class NexusForgeAccessPoint:
         replace=False,
         distributions=None,
         images=None,
+        type_=None,
     ):
         """Register a resource from its dictionary description.
 
@@ -359,6 +360,7 @@ class NexusForgeAccessPoint:
             replace (bool): whether to replace resource if found with filters_existence
             distributions (list): paths to resource object as json and other distributions
             images (list): paths to images to be attached to the resource
+            type_ (str): type of the resource. Will be used to get the schemas.
         """
 
         if "type" not in resource_description:
@@ -413,7 +415,16 @@ class NexusForgeAccessPoint:
                     about=resource_type,
                 )
 
-        self.forge.register(resource)
+        # validate with Entity schema at creation.
+        # validation with EModelWorkflow schema is done at a later step,
+        # when EModelWorkflow resource is complete
+        if type_ == "EModelWorkflow":
+            type_ = "Entity"
+        # validate schemas
+        schema_id = self.forge._model.schema_id(type_)
+        self.forge.validate(resource, type_=type_)
+
+        self.forge.register(resource, schema_id=schema_id)
 
     def retrieve(self, id_):
         """Retrieve a resource based on its id"""
@@ -712,6 +723,7 @@ class NexusForgeAccessPoint:
             replace=replace,
             distributions=distributions,
             images=nexus_images,
+            type_=type_,
         )
 
     def update_distribution(self, resource, metadata_str, object_):

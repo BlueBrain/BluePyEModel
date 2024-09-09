@@ -692,11 +692,13 @@ class NexusAccessPoint(DataAccessPoint):
             )
         # if present on nexus -> update its state
         else:
+            schema_type = "Entity"
             resource = resources[0]
             resource.state = emodel_workflow.state
             ids_dict = emodel_workflow.get_related_nexus_ids()
             if "generates" in ids_dict:
                 resource.generates = ids_dict["generates"]
+                schema_type = EModelWorkflow
             if "hasPart" in ids_dict:
                 resource.hasPart = ids_dict["hasPart"]
 
@@ -705,7 +707,11 @@ class NexusAccessPoint(DataAccessPoint):
                 resource, self.emodel_metadata.as_string(), emodel_workflow
             )
 
-            self.access_point.forge.update(updated_resource)
+            # validate schemas
+            schema_id = self.access_point.forge._model.schema_id(schema_type)
+            self.access_point.forge.validate(resource, type_=schema_type)
+
+            self.access_point.forge.update(updated_resource, schema_id=schema_id)
 
     def get_emodel(self, seed=None):
         """Fetch an emodel"""
@@ -1256,6 +1262,7 @@ class NexusAccessPoint(DataAccessPoint):
         self.access_point.register(
             resource_description=payload,
             distributions=[morphology_path],
+            type_="NeuronMorphology",
         )
 
     def store_hocs(
