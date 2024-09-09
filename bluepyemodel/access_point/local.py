@@ -340,6 +340,10 @@ class LocalAccessPoint(DataAccessPoint):
 
         return f"{self.emodel_metadata.emodel}__{seed}"
 
+    def store_or_update_emodel(self, emodel):
+        """Calls store_emodel."""
+        self.store_emodel(emodel)
+
     def store_emodel(self, emodel):
         """Store an emodel obtained from BluePyOpt in the final.json. Note that if a model in the
         final.json has the same key (emodel__iteration_tag__seed), it will be overwritten.

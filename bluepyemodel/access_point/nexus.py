@@ -751,6 +751,36 @@ class NexusAccessPoint(DataAccessPoint):
         emodel.emodel_metadata = copy.deepcopy(self.emodel_metadata)
 
         return emodel
+    
+    def store_or_update_emodel(self, emodel):
+        """Update emodel if already present on nexus. If not, store it."""
+        type_ = "EModel"
+
+        filters = {"type": type_}
+        filters.update(self.emodel_metadata_ontology.filters_for_resource())
+        filters_legacy = {"type": type_}
+        filters_legacy.update(self.emodel_metadata_ontology.filters_for_resource_legacy())
+        filters["seed"] = int(emodel.seed)
+        filters_legacy["seed"] = int(emodel.seed)
+        resources = self.access_point.fetch_legacy_compatible(filters, filters_legacy)
+
+        if resources is None:
+            return self.store_emodel(emodel)
+        
+        em_r = resources[0]
+        emodel_dict = emodel.as_dict()
+
+        self.access_point.add_images_to_resource(
+            emodel_dict["nexus_images"], em_r, filters_existence=None
+        )
+        self.access_point.update_distribution(em_r, self.emodel_metadata.as_string(), emodel)
+        em_r.score = emodel.fitness
+
+        schema_id = self.access_point.forge._model.schema_id("EModel")
+        setattr(em_r, '_synchronized', False)
+        self.access_point.forge.update(em_r, schema_id=schema_id)
+
+
 
     def store_emodel(self, emodel, description=None):
         """Store an EModel on Nexus"""
