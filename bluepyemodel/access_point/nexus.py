@@ -696,6 +696,7 @@ class NexusAccessPoint(DataAccessPoint):
             resource = resources[0]
             resource.state = emodel_workflow.state
             ids_dict = emodel_workflow.get_related_nexus_ids()
+            print(ids_dict)
             if "generates" in ids_dict:
                 resource.generates = ids_dict["generates"]
                 schema_type = "EModelWorkflow"
@@ -707,11 +708,29 @@ class NexusAccessPoint(DataAccessPoint):
                 resource, self.emodel_metadata.as_string(), emodel_workflow
             )
 
-            # validate schemas
             schema_id = self.access_point.forge._model.schema_id(schema_type)
-            self.access_point.forge.validate(resource, type_=schema_type)
-
             self.access_point.forge.update(updated_resource, schema_id=schema_id)
+
+    def update_emodel_images(self, seed):
+        """Update an EModel resources with local emodel plots"""
+        type_ = "EModel"
+
+        filters = {"type": type_}
+        filters.update(self.emodel_metadata_ontology.filters_for_resource())
+        filters_legacy = {"type": type_}
+        filters_legacy.update(self.emodel_metadata_ontology.filters_for_resource_legacy())
+        filters["seed"] = int(seed)
+        filters_legacy["seed"] = int(seed)
+        resources = self.access_point.fetch_legacy_compatible(filters, filters_legacy)
+        em_r = resources[0]
+
+        em = self.get_emodel(seed=seed)
+
+        self.access_point.add_images_to_resource(em.as_dict()["nexus_images"], em_r, filters_existence=None)
+        schema_id = self.access_point.forge._model.schema_id("EModel")
+
+        setattr(em_r, '_synchronized', False)
+        self.access_point.forge.update(em_r, schema_id=schema_id)
 
     def get_emodel(self, seed=None):
         """Fetch an emodel"""

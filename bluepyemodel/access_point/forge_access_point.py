@@ -339,6 +339,32 @@ class NexusForgeAccessPoint:
 
         return self.forge.resolve(text, scope=scope, strategy=resolving_strategy, limit=limit)
 
+    def add_images_to_resource(self, images, resource, filters_existence=None):
+        """Attach images to a resource.
+        
+        Args:
+            images (list of str): list of local paths to images
+            resource (kgforge.core.Resource): resource to attach the images to
+            filters_existence (dict): contains resource type, name and metadata,
+                can be used to search for existence of resource on nexus.
+                Used to get image type if cannot be extracted from image path.
+        """
+        resource = Dataset.from_resource(self.forge, resource)
+        if filters_existence is None:
+            filters_existence = {}
+        for path in images:
+            try:
+                resource_type = path.split("__")[-1].split(".")[0]
+            except IndexError:
+                resource_type = filters_existence.get("type", None)
+            # Do NOT do this BEFORE turning resource into a Dataset.
+            # That would break the storing LazyAction into a string
+            resource.add_image(
+                path=path,
+                content_type=f"application/{path.split('.')[-1]}",
+                about=resource_type,
+            )
+
     def register(
         self,
         resource_description,
@@ -402,27 +428,14 @@ class NexusForgeAccessPoint:
                 resource.add_distribution(path, content_type=f"application/{path.split('.')[-1]}")
 
         if images:
-            for path in images:
-                try:
-                    resource_type = path.split("__")[-1].split(".")[0]
-                except IndexError:
-                    resource_type = filters_existence.get("type", None)
-                # Do NOT do this BEFORE turning resource into a Dataset.
-                # That would break the storing LazyAction into a string
-                resource.add_image(
-                    path=path,
-                    content_type=f"application/{path.split('.')[-1]}",
-                    about=resource_type,
-                )
+            self.add_images_to_resource(images, resource, filters_existence)
 
         # validate with Entity schema at creation.
         # validation with EModelWorkflow schema is done at a later step,
         # when EModelWorkflow resource is complete
         if type_ == "EModelWorkflow":
             type_ = "Entity"
-        # validate schemas
         schema_id = self.forge._model.schema_id(type_)
-        self.forge.validate(resource, type_=type_)
 
         self.forge.register(resource, schema_id=schema_id)
 
