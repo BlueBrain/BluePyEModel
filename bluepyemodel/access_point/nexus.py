@@ -803,16 +803,16 @@ class NexusAccessPoint(DataAccessPoint):
 
         emodel.workflow_id = nexus_id
         is_analysis_suitable = (
-            self.has_fitness_calculator_configuration and
-            self.has_model_configuration and
-            self.has_pipeline_settings and
-            self.has_targets_configuration
+            self.has_fitness_calculator_configuration
+            and self.has_model_configuration
+            and self.has_pipeline_settings
+            and self.has_targets_configuration
         )
         self.store_object(
             emodel,
             seed=emodel.seed,
             description=description,
-            is_analysis_suitable=is_analysis_suitable
+            is_analysis_suitable=is_analysis_suitable,
         )
         # wait for the object to be uploaded and fetchable
         time.sleep(self.sleep_time)

@@ -128,7 +128,7 @@ class EModelMetadata:
 
     def annotation_list(self, is_analysis_suitable=False):
         """Returns an annotation list containing mtype, etype and ttype annotations.
-        
+
         Args:
             is_analysis_suitable (bool): Should be True only when managing metatada for resources
                 of type EModel, for which all data are complete (has FCC, ETC, EMC, etc.).
@@ -136,7 +136,7 @@ class EModelMetadata:
         annotation_list = []
         if is_analysis_suitable:
             annotation_list.append(
-                    {
+                {
                     "type": ["QualityAnnotation", "Annotation"],
                     "hasBody": {
                         "id": "https://bbp.epfl.ch/ontologies/core/bmo/AnalysisSuitable",
