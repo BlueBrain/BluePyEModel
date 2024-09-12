@@ -284,10 +284,14 @@ class NexusAccessPoint(DataAccessPoint):
 
         return subject
 
-    def store_object(self, object_, seed=None, description=None, currents=None):
+    def store_object(
+        self, object_, seed=None, description=None, currents=None, is_analysis_suitable=False
+    ):
         """Store a BPEM object on Nexus"""
 
-        metadata_dict = self.emodel_metadata_ontology.for_resource()
+        metadata_dict = self.emodel_metadata_ontology.for_resource(
+            is_analysis_suitable=is_analysis_suitable
+        )
         if seed is not None:
             metadata_dict["seed"] = seed
         if description is not None:
@@ -673,6 +677,7 @@ class NexusAccessPoint(DataAccessPoint):
 
     def store_or_update_emodel_workflow(self, emodel_workflow):
         """If emodel workflow is not on nexus, store it. If it is, fetch it and update its state"""
+        # pylint: disable=protected-access
         type_ = "EModelWorkflow"
 
         filters = {"type": type_}
@@ -692,11 +697,13 @@ class NexusAccessPoint(DataAccessPoint):
             )
         # if present on nexus -> update its state
         else:
+            schema_type = "Entity"
             resource = resources[0]
             resource.state = emodel_workflow.state
             ids_dict = emodel_workflow.get_related_nexus_ids()
             if "generates" in ids_dict:
                 resource.generates = ids_dict["generates"]
+                schema_type = "EModelWorkflow"
             if "hasPart" in ids_dict:
                 resource.hasPart = ids_dict["hasPart"]
 
@@ -705,7 +712,35 @@ class NexusAccessPoint(DataAccessPoint):
                 resource, self.emodel_metadata.as_string(), emodel_workflow
             )
 
-            self.access_point.forge.update(updated_resource)
+            schema_id = self.access_point.forge._model.schema_id(schema_type)
+            self.access_point.forge.update(updated_resource, schema_id=schema_id)
+
+    def update_emodel_images(self, seed, keep_old_images=False):
+        """Update an EModel resource with local emodel plots."""
+        # pylint: disable=protected-access
+        type_ = "EModel"
+
+        filters = {"type": type_}
+        filters.update(self.emodel_metadata_ontology.filters_for_resource())
+        filters_legacy = {"type": type_}
+        filters_legacy.update(self.emodel_metadata_ontology.filters_for_resource_legacy())
+        filters["seed"] = int(seed)
+        filters_legacy["seed"] = int(seed)
+        resources = self.access_point.fetch_legacy_compatible(filters, filters_legacy)
+        if resources is None:
+            return
+        em_r = resources[0]
+        if not keep_old_images:
+            em_r.image = []  # remove any previous images
+
+        em = self.get_emodel(seed=seed)
+
+        em_r = self.access_point.add_images_to_resource(
+            em.as_dict()["nexus_images"], em_r, filters_existence=None
+        )
+        schema_id = self.access_point.forge._model.schema_id("EModel")
+
+        self.access_point.forge.update(em_r, schema_id=schema_id)
 
     def get_emodel(self, seed=None):
         """Fetch an emodel"""
@@ -727,6 +762,35 @@ class NexusAccessPoint(DataAccessPoint):
 
         return emodel
 
+    def store_or_update_emodel(self, emodel):
+        """Update emodel if already present on nexus. If not, store it."""
+        # pylint: disable=protected-access
+        type_ = "EModel"
+
+        filters = {"type": type_}
+        filters.update(self.emodel_metadata_ontology.filters_for_resource())
+        filters_legacy = {"type": type_}
+        filters_legacy.update(self.emodel_metadata_ontology.filters_for_resource_legacy())
+        filters["seed"] = int(emodel.seed)
+        filters_legacy["seed"] = int(emodel.seed)
+        resources = self.access_point.fetch_legacy_compatible(filters, filters_legacy)
+
+        if resources is None:
+            self.store_emodel(emodel)
+            return
+
+        em_r = resources[0]
+        emodel_dict = emodel.as_dict()
+
+        em_r = self.access_point.add_images_to_resource(
+            emodel_dict["nexus_images"], em_r, filters_existence=None
+        )
+        self.access_point.update_distribution(em_r, self.emodel_metadata.as_string(), emodel)
+        em_r.score = emodel.fitness
+
+        schema_id = self.access_point.forge._model.schema_id("EModel")
+        self.access_point.forge.update(em_r, schema_id=schema_id)
+
     def store_emodel(self, emodel, description=None):
         """Store an EModel on Nexus"""
 
@@ -738,7 +802,18 @@ class NexusAccessPoint(DataAccessPoint):
             )
 
         emodel.workflow_id = nexus_id
-        self.store_object(emodel, seed=emodel.seed, description=description)
+        is_analysis_suitable = (
+            self.has_fitness_calculator_configuration
+            and self.has_model_configuration
+            and self.has_pipeline_settings
+            and self.has_targets_configuration
+        )
+        self.store_object(
+            emodel,
+            seed=emodel.seed,
+            description=description,
+            is_analysis_suitable=is_analysis_suitable,
+        )
         # wait for the object to be uploaded and fetchable
         time.sleep(self.sleep_time)
 
@@ -1256,6 +1331,7 @@ class NexusAccessPoint(DataAccessPoint):
         self.access_point.register(
             resource_description=payload,
             distributions=[morphology_path],
+            type_="NeuronMorphology",
         )
 
     def store_hocs(

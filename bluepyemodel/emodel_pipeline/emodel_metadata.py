@@ -126,9 +126,28 @@ class EModelMetadata:
             "name": "T-type annotation",
         }
 
-    def annotation_list(self):
-        """Returns an annotation list containing mtype, etype and ttype annotations"""
+    def annotation_list(self, is_analysis_suitable=False):
+        """Returns an annotation list containing mtype, etype and ttype annotations.
+
+        Args:
+            is_analysis_suitable (bool): Should be True only when managing metatada for resources
+                of type EModel, for which all data are complete (has FCC, ETC, EMC, etc.).
+        """
         annotation_list = []
+        if is_analysis_suitable:
+            annotation_list.append(
+                {
+                    "type": ["QualityAnnotation", "Annotation"],
+                    "hasBody": {
+                        "id": "https://bbp.epfl.ch/ontologies/core/bmo/AnalysisSuitable",
+                        "type": ["AnnotationBody", "DataScope"],
+                        "label": "Analysis Suitable",
+                    },
+                    "motivatedBy": {"id": "quality:Assessment", "type": "Motivation"},
+                    "name": "Data usage scope annotation",
+                    "note": "Analysis can be run on this model.",
+                }
+            )
         if self.etype:
             annotation_list.append(self.etype_annotation_dict())
         if self.mtype:
@@ -182,15 +201,19 @@ class EModelMetadata:
         """Legacy metadata used for filtering, without the annotation list"""
         return self.as_dict_for_resource_legacy()
 
-    def for_resource(self):
+    def for_resource(self, is_analysis_suitable=False):
         """Metadata to add to a resource to register.
 
         DO NOT use for filtering. For filtering, use self.filters_for_resource() instead.
+
+        Args:
+            is_analysis_suitable (bool): Should be True only when managing metatada for resources
+                of type EModel, for which all data are complete (has FCC, ETC, EMC, etc.).
         """
 
         metadata = self.as_dict_for_resource()
 
-        metadata["annotation"] = self.annotation_list()
+        metadata["annotation"] = self.annotation_list(is_analysis_suitable=is_analysis_suitable)
 
         return metadata
 

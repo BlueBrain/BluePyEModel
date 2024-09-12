@@ -130,6 +130,6 @@ def validate(access_point, mapper, preselect_for_validation=False):
             )
         )
 
-        access_point.store_emodel(model)
+        access_point.store_or_update_emodel(model)
 
     return emodels

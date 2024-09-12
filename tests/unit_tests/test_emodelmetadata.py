@@ -113,11 +113,12 @@ def test_ttype_annotation_dict(metadata):
 
 def test_annotation_list(metadata):
     """Test annotation_list method."""
-    annotation_list = metadata.annotation_list()
-    assert len(annotation_list) == 3
-    assert annotation_list[0]["hasBody"]["label"] == "cAC"
-    assert annotation_list[1]["hasBody"]["label"] == "L5_TPC:B"
-    assert annotation_list[2]["hasBody"]["label"] == "245_L5 PT CTX"
+    annotation_list = metadata.annotation_list(is_analysis_suitable=True)
+    assert len(annotation_list) == 4
+    assert annotation_list[0]["hasBody"]["label"] == "Analysis Suitable"
+    assert annotation_list[1]["hasBody"]["label"] == "cAC"
+    assert annotation_list[2]["hasBody"]["label"] == "L5_TPC:B"
+    assert annotation_list[3]["hasBody"]["label"] == "245_L5 PT CTX"
 
     # test when some of etype, mtype or ttype are None
     metadata_args_2 = metadata_args.copy()

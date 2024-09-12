@@ -216,6 +216,9 @@ class DataAccessPoint:
     ):
         """Store hoc file produced by export_sonata"""
 
+    def update_emodel_images(self, seed, keep_old_images=False):
+        """Update an EModel resource with local emodel plots if access_point is nexus."""
+
     def optimisation_state(self, seed=None, continue_opt=False):
         """Return the state of the optimisation.
 
