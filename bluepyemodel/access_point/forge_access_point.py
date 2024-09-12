@@ -496,9 +496,9 @@ class NexusForgeAccessPoint:
         Returns:
             resources (list): list of resources
         """
-        resources = self.fetch(filters)
+        resources = self.fetch(filters, cross_bucket=self.cross_bucket)
         if not resources and legacy_filters is not None:
-            resources = self.fetch(legacy_filters)
+            resources = self.fetch(legacy_filters, cross_bucket=self.cross_bucket)
 
         if resources:
             return resources
