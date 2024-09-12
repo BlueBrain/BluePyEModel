@@ -113,7 +113,7 @@ def test_ttype_annotation_dict(metadata):
 
 def test_annotation_list(metadata):
     """Test annotation_list method."""
-    annotation_list = metadata.annotation_list()
+    annotation_list = metadata.annotation_list(is_analysis_suitable=True)
     assert len(annotation_list) == 4
     assert annotation_list[0]["hasBody"]["label"] == "Analysis Suitable"
     assert annotation_list[1]["hasBody"]["label"] == "cAC"
@@ -126,8 +126,8 @@ def test_annotation_list(metadata):
     metadata_args_2["mtype"] = None
     metadata_2 = EModelMetadata(**metadata_args_2)
     annotation_list_2 = metadata_2.annotation_list()
-    assert len(annotation_list_2) == 2
-    assert annotation_list_2[1]["hasBody"]["label"] == "245_L5 PT CTX"
+    assert len(annotation_list_2) == 1
+    assert annotation_list_2[0]["hasBody"]["label"] == "245_L5 PT CTX"
 
 
 def test_as_dict_for_resource(metadata):
@@ -227,17 +227,6 @@ def test_for_resource(metadata):
         "eModel": "test",
         "mType": "mtype_test",
         "annotation": [
-            {
-                "type": ["QualityAnnotation", "Annotation"],
-                "hasBody": {
-                    "id": "https://bbp.epfl.ch/ontologies/core/bmo/AnalysisSuitable",
-                    "type": ["AnnotationBody", "DataScope"],
-                    "label": "Analysis Suitable",
-                },
-                "motivatedBy": {"id": "quality:Assessment", "type": "Motivation"},
-                "name": "Data usage scope annotation",
-                "note": "Analysis can be run on this model.",
-            },
             {
                 "type": [
                     "MTypeAnnotation",
