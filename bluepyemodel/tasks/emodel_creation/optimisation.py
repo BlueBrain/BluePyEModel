@@ -1289,7 +1289,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         )
         
         if isinstance(self.access_point, NexusAccessPoint):
-            self.access_point.update_emodel_images(seed=self.seed)
+            self.access_point.update_emodel_images(seed=self.seed, keep_old_images=False)
 
     def output(self):
         """ """
@@ -1371,7 +1371,7 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
         )
 
         if isinstance(self.access_point, NexusAccessPoint):
-            self.access_point.update_emodel_images(seed=self.seed)
+            self.access_point.update_emodel_images(seed=self.seed, keep_old_images=False)
         
 
     def output(self):

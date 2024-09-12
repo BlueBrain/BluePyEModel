@@ -349,7 +349,7 @@ class NexusForgeAccessPoint:
                 can be used to search for existence of resource on nexus.
                 Used to get image type if cannot be extracted from image path.
         """
-        resource = Dataset.from_resource(self.forge, resource)
+        resource = Dataset.from_resource(self.forge, resource, store_metadata=True)
         if filters_existence is None:
             filters_existence = {}
         for path in images:
@@ -364,6 +364,7 @@ class NexusForgeAccessPoint:
                 content_type=f"application/{path.split('.')[-1]}",
                 about=resource_type,
             )
+        return resource
 
     def register(
         self,
@@ -428,7 +429,7 @@ class NexusForgeAccessPoint:
                 resource.add_distribution(path, content_type=f"application/{path.split('.')[-1]}")
 
         if images:
-            self.add_images_to_resource(images, resource, filters_existence)
+            resource = self.add_images_to_resource(images, resource, filters_existence)
 
         # validate with Entity schema at creation.
         # validation with EModelWorkflow schema is done at a later step,

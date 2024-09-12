@@ -696,7 +696,6 @@ class NexusAccessPoint(DataAccessPoint):
             resource = resources[0]
             resource.state = emodel_workflow.state
             ids_dict = emodel_workflow.get_related_nexus_ids()
-            print(ids_dict)
             if "generates" in ids_dict:
                 resource.generates = ids_dict["generates"]
                 schema_type = "EModelWorkflow"
@@ -711,8 +710,9 @@ class NexusAccessPoint(DataAccessPoint):
             schema_id = self.access_point.forge._model.schema_id(schema_type)
             self.access_point.forge.update(updated_resource, schema_id=schema_id)
 
-    def update_emodel_images(self, seed):
-        """Update an EModel resources with local emodel plots"""
+    def update_emodel_images(self, seed, keep_old_images=False):
+        """Update an EModel resource with local emodel plots.
+        """
         type_ = "EModel"
 
         filters = {"type": type_}
@@ -723,13 +723,14 @@ class NexusAccessPoint(DataAccessPoint):
         filters_legacy["seed"] = int(seed)
         resources = self.access_point.fetch_legacy_compatible(filters, filters_legacy)
         em_r = resources[0]
+        if not keep_old_images:
+            em_r.image = [] # remove any previous images
 
         em = self.get_emodel(seed=seed)
 
-        self.access_point.add_images_to_resource(em.as_dict()["nexus_images"], em_r, filters_existence=None)
+        em_r = self.access_point.add_images_to_resource(em.as_dict()["nexus_images"], em_r, filters_existence=None)
         schema_id = self.access_point.forge._model.schema_id("EModel")
 
-        setattr(em_r, '_synchronized', False)
         self.access_point.forge.update(em_r, schema_id=schema_id)
 
     def get_emodel(self, seed=None):
@@ -770,7 +771,7 @@ class NexusAccessPoint(DataAccessPoint):
         em_r = resources[0]
         emodel_dict = emodel.as_dict()
 
-        self.access_point.add_images_to_resource(
+        em_r = self.access_point.add_images_to_resource(
             emodel_dict["nexus_images"], em_r, filters_existence=None
         )
         self.access_point.update_distribution(em_r, self.emodel_metadata.as_string(), emodel)
