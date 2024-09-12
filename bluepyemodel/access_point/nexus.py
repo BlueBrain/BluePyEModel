@@ -284,10 +284,14 @@ class NexusAccessPoint(DataAccessPoint):
 
         return subject
 
-    def store_object(self, object_, seed=None, description=None, currents=None):
+    def store_object(
+        self, object_, seed=None, description=None, currents=None, is_analysis_suitable=False
+    ):
         """Store a BPEM object on Nexus"""
 
-        metadata_dict = self.emodel_metadata_ontology.for_resource()
+        metadata_dict = self.emodel_metadata_ontology.for_resource(
+            is_analysis_suitable=is_analysis_suitable
+        )
         if seed is not None:
             metadata_dict["seed"] = seed
         if description is not None:
@@ -798,7 +802,18 @@ class NexusAccessPoint(DataAccessPoint):
             )
 
         emodel.workflow_id = nexus_id
-        self.store_object(emodel, seed=emodel.seed, description=description)
+        is_analysis_suitable = (
+            self.has_fitness_calculator_configuration and
+            self.has_model_configuration and
+            self.has_pipeline_settings and
+            self.has_targets_configuration
+        )
+        self.store_object(
+            emodel,
+            seed=emodel.seed,
+            description=description,
+            is_analysis_suitable=is_analysis_suitable
+        )
         # wait for the object to be uploaded and fetchable
         time.sleep(self.sleep_time)
 
