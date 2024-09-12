@@ -1287,7 +1287,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             phase_plot_settings=phase_plot_settings,
             sinespec_settings=sinespec_settings,
         )
-        
+
         if isinstance(self.access_point, NexusAccessPoint):
             self.access_point.update_emodel_images(seed=self.seed, keep_old_images=False)
 
@@ -1371,8 +1371,9 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
         )
 
         if isinstance(self.access_point, NexusAccessPoint):
-            self.access_point.update_emodel_images(seed=self.seed, keep_old_images=False)
-        
+            seeds = [emodel.seed for emodel in self.access_point.get_emodels()]
+            for seed in seeds:
+                self.access_point.update_emodel_images(seed=seed, keep_old_images=False)
 
     def output(self):
         """ """

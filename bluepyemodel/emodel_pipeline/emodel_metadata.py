@@ -130,24 +130,15 @@ class EModelMetadata:
         """Returns an annotation list containing mtype, etype and ttype annotations"""
         annotation_list = [
             {
-                "type": [
-                    "QualityAnnotation",
-                    "Annotation"
-                ],
+                "type": ["QualityAnnotation", "Annotation"],
                 "hasBody": {
                     "id": "https://bbp.epfl.ch/ontologies/core/bmo/AnalysisSuitable",
-                    "type": [
-                        "AnnotationBody",
-                        "DataScope"
-                    ],
-                    "label": "Analysis Suitable"
+                    "type": ["AnnotationBody", "DataScope"],
+                    "label": "Analysis Suitable",
                 },
-                "motivatedBy": {
-                    "id": "quality:Assessment",
-                    "type": "Motivation"
-                },
+                "motivatedBy": {"id": "quality:Assessment", "type": "Motivation"},
                 "name": "Data usage scope annotation",
-                "note": "Analysis can be run on this model."
+                "note": "Analysis can be run on this model.",
             }
         ]
         if self.etype:

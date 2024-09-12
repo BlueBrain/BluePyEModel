@@ -341,7 +341,7 @@ class NexusForgeAccessPoint:
 
     def add_images_to_resource(self, images, resource, filters_existence=None):
         """Attach images to a resource.
-        
+
         Args:
             images (list of str): list of local paths to images
             resource (kgforge.core.Resource): resource to attach the images to
@@ -389,6 +389,7 @@ class NexusForgeAccessPoint:
             images (list): paths to images to be attached to the resource
             type_ (str): type of the resource. Will be used to get the schemas.
         """
+        # pylint: disable=protected-access
 
         if "type" not in resource_description:
             raise AccessPointException("The resource description should contain 'type'.")

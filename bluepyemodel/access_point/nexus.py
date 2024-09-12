@@ -673,6 +673,7 @@ class NexusAccessPoint(DataAccessPoint):
 
     def store_or_update_emodel_workflow(self, emodel_workflow):
         """If emodel workflow is not on nexus, store it. If it is, fetch it and update its state"""
+        # pylint: disable=protected-access
         type_ = "EModelWorkflow"
 
         filters = {"type": type_}
@@ -711,8 +712,8 @@ class NexusAccessPoint(DataAccessPoint):
             self.access_point.forge.update(updated_resource, schema_id=schema_id)
 
     def update_emodel_images(self, seed, keep_old_images=False):
-        """Update an EModel resource with local emodel plots.
-        """
+        """Update an EModel resource with local emodel plots."""
+        # pylint: disable=protected-access
         type_ = "EModel"
 
         filters = {"type": type_}
@@ -722,13 +723,17 @@ class NexusAccessPoint(DataAccessPoint):
         filters["seed"] = int(seed)
         filters_legacy["seed"] = int(seed)
         resources = self.access_point.fetch_legacy_compatible(filters, filters_legacy)
+        if resources is None:
+            return
         em_r = resources[0]
         if not keep_old_images:
-            em_r.image = [] # remove any previous images
+            em_r.image = []  # remove any previous images
 
         em = self.get_emodel(seed=seed)
 
-        em_r = self.access_point.add_images_to_resource(em.as_dict()["nexus_images"], em_r, filters_existence=None)
+        em_r = self.access_point.add_images_to_resource(
+            em.as_dict()["nexus_images"], em_r, filters_existence=None
+        )
         schema_id = self.access_point.forge._model.schema_id("EModel")
 
         self.access_point.forge.update(em_r, schema_id=schema_id)
@@ -752,9 +757,10 @@ class NexusAccessPoint(DataAccessPoint):
         emodel.emodel_metadata = copy.deepcopy(self.emodel_metadata)
 
         return emodel
-    
+
     def store_or_update_emodel(self, emodel):
         """Update emodel if already present on nexus. If not, store it."""
+        # pylint: disable=protected-access
         type_ = "EModel"
 
         filters = {"type": type_}
@@ -766,8 +772,9 @@ class NexusAccessPoint(DataAccessPoint):
         resources = self.access_point.fetch_legacy_compatible(filters, filters_legacy)
 
         if resources is None:
-            return self.store_emodel(emodel)
-        
+            self.store_emodel(emodel)
+            return
+
         em_r = resources[0]
         emodel_dict = emodel.as_dict()
 
@@ -778,10 +785,7 @@ class NexusAccessPoint(DataAccessPoint):
         em_r.score = emodel.fitness
 
         schema_id = self.access_point.forge._model.schema_id("EModel")
-        setattr(em_r, '_synchronized', False)
         self.access_point.forge.update(em_r, schema_id=schema_id)
-
-
 
     def store_emodel(self, emodel, description=None):
         """Store an EModel on Nexus"""
