@@ -675,7 +675,8 @@ def _get_fi_curve_from_evaluator(
             [efel_trace], ["Spikecount", "mean_frequency"], raise_warnings=False
         )[0]
         spike_freq_equivalent.append(1e3 * float(features["Spikecount"]) / length_step)
-        frequencies.append(features.get("mean_frequency", None))
+        mean_freq = features.get("mean_frequency", None)
+        frequencies.append(mean_freq[0] if mean_freq is not None else None)
 
     frequencies = numpy.array(frequencies, dtype=float)
     return amps, frequencies, spike_freq_equivalent
