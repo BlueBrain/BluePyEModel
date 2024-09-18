@@ -677,6 +677,7 @@ def _get_fi_curve_from_evaluator(
         spike_freq_equivalent.append(1e3 * float(features["Spikecount"]) / length_step)
         frequencies.append(features.get("mean_frequency", None))
 
+    frequencies = numpy.array(frequencies, dtype=float)
     return amps, frequencies, spike_freq_equivalent
 
 
