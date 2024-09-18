@@ -399,7 +399,7 @@ def thumbnail(
         voltage = responses[trace_name]["voltage"]
     except KeyError:
         logger.warning(
-            "Could not find protocol %s in respsonses. Skipping thumbnail plotting.",
+            "Could not find protocol %s in responses. Skipping thumbnail plotting.",
             trace_name,
         )
         return None, None
