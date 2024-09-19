@@ -370,7 +370,8 @@ def update_memodel(
         )
 
     # update memodel resource
-    forge.update(memodel_r)
+    schema_id = forge._model.schema_id("MEModel")
+    forge.update(memodel_r, chema_id=schema_id)
 
 
 if __name__ == "__main__":
