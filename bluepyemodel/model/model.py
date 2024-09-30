@@ -56,10 +56,19 @@ def multi_locations(section_name, additional_multiloc_map):
     if additional_multiloc_map is not None:
         multiloc_map.update(additional_multiloc_map)
 
-    return [
+    seclist_locations =  [
         ephys.locations.NrnSeclistLocation(sec, seclist_name=sec)
         for sec in multiloc_map.get(section_name, [section_name])
     ]
+
+    for sec_loc in seclist_locations:
+        if sec_loc not in multiloc_map["allact"]:
+            logger.warning(
+                f"Section location {sec_loc} not in expected locations {multiloc_map['allact']}. "
+                "This might make the cell crash at run time."
+            )
+
+    return seclist_locations
 
 
 def define_distributions(distributions_definition, morphology=None):
