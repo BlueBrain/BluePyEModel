@@ -62,9 +62,15 @@ def multi_locations(section_name, additional_multiloc_map):
     ]
 
     for sec_loc in seclist_locations:
-        if sec_loc not in multiloc_map["allact"]:
+        # all and myelinated are also accepted
+        if (
+            sec_loc.seclist_name not in multiloc_map["allact"] and
+            sec_loc.seclist_name != "all" and
+            sec_loc.seclist_name != "myelinated"
+        ):
             logger.warning(
-                f"Section location {sec_loc} not in expected locations {multiloc_map['allact']}. "
+                f"Section location {sec_loc.seclist_name} "
+                f"not in expected locations {multiloc_map['allact']}. "
                 "This might make the cell crash at run time."
             )
 
