@@ -861,11 +861,12 @@ def plot_bAP(
     apical_distances, apical_values = apical_feature.get_distances_feature_values(responses)
     basal_distances, basal_values = basal_feature.get_distances_feature_values(responses)
 
-    if 0 in apical_distances:
-        apical_x_fit, apical_y_fit = bAP_fit(apical_feature, apical_distances, apical_values)
-    if 0 in basal_distances:
-        basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
-
+    if apical_values is None or basal_values is None:
+        logger.warning(
+            "Cannot plot figure for bAP because dendrite feature could not be computed. "
+            "This can happen when the emodel is bad and cannot even compute curent threshold."
+        )
+        return fig, ax
     if len(apical_distances) != len(apical_values) or len(basal_distances) != len(basal_values):
         logger.warning(
             "Cannot plot figure for bAP because of mismatch between "
@@ -873,6 +874,11 @@ def plot_bAP(
             "the emodel is bad and cannot even compute curent threshold."
         )
         return fig, ax
+
+    if 0 in apical_distances:
+        apical_x_fit, apical_y_fit = bAP_fit(apical_feature, apical_distances, apical_values)
+    if 0 in basal_distances:
+        basal_x_fit, basal_y_fit = bAP_fit(basal_feature, basal_distances, basal_values)
 
     ax.scatter(
         apical_distances,
@@ -1667,6 +1673,18 @@ def plot_sinespec(
     current_key = f"{prot_name}.iclamp.i"
     voltage_key = f"{prot_name}.soma.v"
 
+    fig, axs = plt.subplots(3, figsize=(6, 12))
+
+    if voltage_key not in responses or current_key not in responses:
+        logger.warning(
+            "Could not find sinespec responses %s for emodel with seed %s. "
+            "This is most probably due to a bad model unable to compute threshold. "
+            "Skipping Sinespec plot.",
+            model.emodel_metadata.emodel,
+            model.seed,
+        )
+        return fig, axs
+
     freq, smooth_Z = get_impedance(
         responses[voltage_key]["time"],
         responses[voltage_key]["voltage"],
@@ -1676,9 +1694,8 @@ def plot_sinespec(
         efel_settings,
     )
     if freq is None or smooth_Z is None:
-        return None, None
+        return fig, axs
 
-    fig, axs = plt.subplots(3, figsize=(6, 12))
     # current trace
     axs[0].plot(responses[current_key]["time"], responses[current_key]["voltage"])
     axs[0].set_xlabel("Time (ms)")

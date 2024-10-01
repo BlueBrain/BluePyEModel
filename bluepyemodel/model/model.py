@@ -56,10 +56,26 @@ def multi_locations(section_name, additional_multiloc_map):
     if additional_multiloc_map is not None:
         multiloc_map.update(additional_multiloc_map)
 
-    return [
+    seclist_locations = [
         ephys.locations.NrnSeclistLocation(sec, seclist_name=sec)
         for sec in multiloc_map.get(section_name, [section_name])
     ]
+
+    for sec_loc in seclist_locations:
+        # all and myelinated are also accepted
+        if (
+            sec_loc.seclist_name not in multiloc_map["allact"]
+            and sec_loc.seclist_name != "all"
+            and sec_loc.seclist_name != "myelinated"
+        ):
+            logger.warning(
+                "Section location %s not in expected locations %s. "
+                "This might make the cell crash at run time.",
+                sec_loc.seclist_name,
+                multiloc_map["allact"],
+            )
+
+    return seclist_locations
 
 
 def define_distributions(distributions_definition, morphology=None):
