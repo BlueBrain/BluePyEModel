@@ -385,7 +385,13 @@ def get_simulated_FI_curve_for_plotting(evaluator, responses, prot_name):
             protocol_name = get_protocol_name(val)
             amp_temp = float(protocol_name.split("_")[-1])
             if "mean_frequency" in val:
-                simulated_freq.append(values[val])
+                mean_freq = values[val]
+                # Expects a one-sized array or None.
+                # If list is a mix of arrays and Nones, matplotlib will raise an error when trying
+                # to turn the list into a numpy array.
+                # -> turn one-sized array into number
+                mean_freq = mean_freq[0] if mean_freq is not None else None
+                simulated_freq.append(mean_freq)
                 if "bpo_threshold_current" in responses:
                     simulated_amp_rel.append(amp_temp)
                     simulated_amp.append(rel_to_abs_amplitude(amp_temp, responses))
@@ -393,6 +399,8 @@ def get_simulated_FI_curve_for_plotting(evaluator, responses, prot_name):
                     simulated_amp_rel.append(numpy.nan)
                     simulated_amp.append(amp_temp)
 
+    # turn Nones into NaNs
+    simulated_freq = numpy.asarray(simulated_freq, dtype=float)
     return simulated_amp_rel, simulated_amp, simulated_freq
 
 
@@ -514,6 +522,8 @@ def get_sinespec_evaluator(evaluator, sinespec_settings, efel_settings):
             FixedDtRecordingCustom(f"{prot_name}.soma.v", location=soma_loc, variable="v"),
             FixedDtRecordingStimulus(f"{prot_name}.iclamp.i", location=None, variable="i"),
         ],
+        # with constant Vm change, cvode would actually take longer to compute than fixed dt
+        cvode_active=False,
     )
     new_prots[prot_name] = sinespec_prot
 
