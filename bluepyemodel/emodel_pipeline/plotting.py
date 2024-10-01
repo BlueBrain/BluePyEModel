@@ -874,7 +874,7 @@ def plot_bAP(
             "the emodel is bad and cannot even compute curent threshold."
         )
         return fig, ax
-    
+
     if 0 in apical_distances:
         apical_x_fit, apical_y_fit = bAP_fit(apical_feature, apical_distances, apical_values)
     if 0 in basal_distances:
@@ -1677,10 +1677,11 @@ def plot_sinespec(
 
     if voltage_key not in responses or current_key not in responses:
         logger.warning(
-            f"Could not find sinespec responses for emodel {model.emodel_metadata.emodel} "
-            f"with seed {model.seed}. "
+            "Could not find sinespec responses %s for emodel with seed %s. "
             "This is most probably due to a bad model unable to compute threshold. "
-            "Skipping Sinespec plot."
+            "Skipping Sinespec plot.",
+            model.emodel_metadata.emodel,
+            model.seed,
         )
         return fig, axs
 
