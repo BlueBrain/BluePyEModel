@@ -12,7 +12,8 @@
 #W0622 - redefined-builti
 #C0325 - superfluous-parens
 #R0205 - useless-object-inheritance
-disable=C0103,R0904,R0903,W0511,R0801,R0401,I0013,W0622,C0325,R0205,C0302,C0415,E1133,C0112,C0116,W0221,W1514,C0413,W0105
+#R0917 - too-many-positional-arguments
+disable=C0103,R0904,R0903,W0511,R0801,R0401,I0013,W0622,C0325,R0205,C0302,C0415,E1133,C0112,C0116,W0221,W1514,C0413,W0105,R0917
 
 [FORMAT]
 # Maximum number of characters on a single line.
