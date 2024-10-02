@@ -245,7 +245,7 @@ class EModel_pipeline:
             preselect_for_validation=preselect_for_validation,
         )
 
-    def plot(self, only_validated=False, load_from_local=False):
+    def plot(self, only_validated=False, load_from_local=False, seeds=None):
         """Plot the results of the optimisation in a subfolder called "figures".
 
         Args:
@@ -254,6 +254,7 @@ class EModel_pipeline:
             load_from_local (bool): if True, loads responses of the e-models from local files
                 instead of recomputing them. Responses are automatically saved locally when
                 plotting currentscapes.
+            seeds (list): list of seeds to use for plot. If None, all emodels will be plotted.
         """
         pp_settings = self.access_point.pipeline_settings
 
@@ -306,7 +307,7 @@ class EModel_pipeline:
         return plotting.plot_models(
             access_point=self.access_point,
             mapper=self.mapper,
-            seeds=None,
+            seeds=seeds,
             figures_dir=pathlib.Path("./figures") / self.access_point.emodel_metadata.emodel,
             plot_distributions=True,
             plot_scores=True,

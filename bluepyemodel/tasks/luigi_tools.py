@@ -63,7 +63,7 @@ class WorkflowTask(luigi.Task):
             species=self.species,
             brain_region=self.brain_region,
             iteration_tag=self.iteration_tag,
-            **EmodelAPIConfig().api_args
+            **EmodelAPIConfig().api_args,
         )
 
     def get_mapper(self):
@@ -112,7 +112,7 @@ class WorkflowTarget(luigi.Target, ABC):
             species=species,
             brain_region=brain_region,
             iteration_tag=iteration_tag,
-            **EmodelAPIConfig().api_args
+            **EmodelAPIConfig().api_args,
         )
 
 

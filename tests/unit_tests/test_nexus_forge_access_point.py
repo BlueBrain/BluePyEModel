@@ -34,13 +34,13 @@ def mock_forge_access_point():
             "name": "Test User",
             "email": "test_user@example.com",
             "sub": "test_sub",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
+            "exp": (datetime.now(timezone.utc) + timedelta(seconds=300)).timestamp(),
         }
         with patch(
             "bluepyemodel.access_point.forge_access_point.NexusForgeAccessPoint.refresh_token"
         ) as mock_refresh_token:
             mock_refresh_token.return_value = (
-                datetime.now(timezone.utc) + timedelta(hours=1)
+                datetime.now(timezone.utc) + timedelta(seconds=300)
             ).timestamp()
             with patch(
                 "bluepyemodel.access_point.forge_access_point.KnowledgeGraphForge"
@@ -71,7 +71,7 @@ def test_refresh_token_not_expired(mock_forge_access_point):
     """
     Test refresh_token method when the token is not expired.
     """
-    future_exp = (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+    future_exp = (datetime.now(timezone.utc) + timedelta(seconds=300)).timestamp()
     with patch("jwt.decode") as mock_jwt_decode:
         mock_jwt_decode.return_value = {
             "preferred_username": "test_user",
@@ -88,8 +88,8 @@ def test_refresh_token_expired_offset(mock_forge_access_point, caplog):
     """
     Test refresh_token method when the token is about to expire.
     """
-    future_exp = (datetime.now(timezone.utc) + timedelta(seconds=299)).timestamp()
-    new_future_exp = (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+    future_exp = (datetime.now(timezone.utc) + timedelta(seconds=29)).timestamp()
+    new_future_exp = (datetime.now(timezone.utc) + timedelta(seconds=300)).timestamp()
     with patch("jwt.decode") as mock_jwt_decode:
         mock_jwt_decode.side_effect = [
             {
@@ -121,7 +121,7 @@ def test_refresh_token_expired(mock_forge_access_point, caplog):
     Test refresh_token method when the token has expired.
     """
     past_exp = (datetime.now(timezone.utc) - timedelta(seconds=1)).timestamp()
-    new_future_exp = (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+    new_future_exp = (datetime.now(timezone.utc) + timedelta(seconds=300)).timestamp()
     with patch("jwt.decode") as mock_jwt_decode:
         mock_jwt_decode.side_effect = [
             {

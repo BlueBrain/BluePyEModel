@@ -36,7 +36,7 @@ multiloc_map = {
     "allact": ["apical", "basal", "somatic", "axonal"],
 }
 
-global_parameters = ["v_init", "celsius", "cm", "Ra", "ena", "ek"]
+global_parameters = ["v_init", "celsius", "cm", "Ra", "ena", "ek", "eca", "eh"]
 
 
 class NeuronModelConfiguration:

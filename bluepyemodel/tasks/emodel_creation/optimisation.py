@@ -24,6 +24,7 @@ from pathlib import Path
 import luigi
 
 from bluepyemodel.access_point.access_point import OptimisationState
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.efeatures_extraction.targets_configurator import TargetsConfigurator
 from bluepyemodel.emodel_pipeline.plotting import optimisation
@@ -1287,6 +1288,9 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             sinespec_settings=sinespec_settings,
         )
 
+        if isinstance(self.access_point, NexusAccessPoint):
+            self.access_point.update_emodel_images(seed=self.seed, keep_old_images=False)
+
     def output(self):
         """ """
 
@@ -1365,6 +1369,11 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
             plot_bAP_EPSP=False,
             only_validated=True,
         )
+
+        if isinstance(self.access_point, NexusAccessPoint):
+            seeds = [emodel.seed for emodel in self.access_point.get_emodels()]
+            for seed in seeds:
+                self.access_point.update_emodel_images(seed=seed, keep_old_images=False)
 
     def output(self):
         """ """

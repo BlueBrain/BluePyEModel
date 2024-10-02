@@ -150,7 +150,7 @@ class NexusForgeAccessPoint:
         self._available_ttypes = None
         self._atlas_release = None
 
-    def refresh_token(self, offset=300):
+    def refresh_token(self, offset=30):
         """refresh token if token is expired or will be soon. Returns new expiring time.
 
         Args:
@@ -339,6 +339,33 @@ class NexusForgeAccessPoint:
 
         return self.forge.resolve(text, scope=scope, strategy=resolving_strategy, limit=limit)
 
+    def add_images_to_resource(self, images, resource, filters_existence=None):
+        """Attach images to a resource.
+
+        Args:
+            images (list of str): list of local paths to images
+            resource (kgforge.core.Resource): resource to attach the images to
+            filters_existence (dict): contains resource type, name and metadata,
+                can be used to search for existence of resource on nexus.
+                Used to get image type if cannot be extracted from image path.
+        """
+        resource = Dataset.from_resource(self.forge, resource, store_metadata=True)
+        if filters_existence is None:
+            filters_existence = {}
+        for path in images:
+            try:
+                resource_type = path.split("__")[-1].split(".")[0]
+            except IndexError:
+                resource_type = filters_existence.get("type", None)
+            # Do NOT do this BEFORE turning resource into a Dataset.
+            # That would break the storing LazyAction into a string
+            resource.add_image(
+                path=path,
+                content_type=f"application/{path.split('.')[-1]}",
+                about=resource_type,
+            )
+        return resource
+
     def register(
         self,
         resource_description,
@@ -347,6 +374,7 @@ class NexusForgeAccessPoint:
         replace=False,
         distributions=None,
         images=None,
+        type_=None,
     ):
         """Register a resource from its dictionary description.
 
@@ -359,7 +387,9 @@ class NexusForgeAccessPoint:
             replace (bool): whether to replace resource if found with filters_existence
             distributions (list): paths to resource object as json and other distributions
             images (list): paths to images to be attached to the resource
+            type_ (str): type of the resource. Will be used to get the schemas.
         """
+        # pylint: disable=protected-access
 
         if "type" not in resource_description:
             raise AccessPointException("The resource description should contain 'type'.")
@@ -400,20 +430,16 @@ class NexusForgeAccessPoint:
                 resource.add_distribution(path, content_type=f"application/{path.split('.')[-1]}")
 
         if images:
-            for path in images:
-                try:
-                    resource_type = path.split("__")[-1].split(".")[0]
-                except IndexError:
-                    resource_type = filters_existence.get("type", None)
-                # Do NOT do this BEFORE turning resource into a Dataset.
-                # That would break the storing LazyAction into a string
-                resource.add_image(
-                    path=path,
-                    content_type=f"application/{path.split('.')[-1]}",
-                    about=resource_type,
-                )
+            resource = self.add_images_to_resource(images, resource, filters_existence)
 
-        self.forge.register(resource)
+        # validate with Entity schema at creation.
+        # validation with EModelWorkflow schema is done at a later step,
+        # when EModelWorkflow resource is complete
+        if type_ == "EModelWorkflow":
+            type_ = "Entity"
+        schema_id = self.forge._model.schema_id(type_)
+
+        self.forge.register(resource, schema_id=schema_id)
 
     def retrieve(self, id_):
         """Retrieve a resource based on its id"""
@@ -470,9 +496,9 @@ class NexusForgeAccessPoint:
         Returns:
             resources (list): list of resources
         """
-        resources = self.fetch(filters)
+        resources = self.fetch(filters, cross_bucket=self.cross_bucket)
         if not resources and legacy_filters is not None:
-            resources = self.fetch(legacy_filters)
+            resources = self.fetch(legacy_filters, cross_bucket=self.cross_bucket)
 
         if resources:
             return resources
@@ -712,6 +738,7 @@ class NexusForgeAccessPoint:
             replace=replace,
             distributions=distributions,
             images=nexus_images,
+            type_=type_,
         )
 
     def update_distribution(self, resource, metadata_str, object_):

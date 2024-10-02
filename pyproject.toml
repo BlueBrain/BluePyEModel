@@ -1,0 +1,94 @@
+[build-system]
+requires = ["setuptools >= 64", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bluepyemodel"
+authors = [
+    {name = "Blue Brain Project, EPFL"},
+]
+description="Blue Brain Python Electrical Modeling Pipeline"
+readme = "README.rst"
+license = {file = "LICENSE.txt"}
+requires-python = ">= 3.9"
+dynamic = ["version"]
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "ipyparallel>=6.3",
+    "tqdm",
+    "pyyaml",
+    "gitpython",
+    "bluepyopt>=1.14.10",
+    "bluepyefe>=2.2.0",
+    "neurom>=3.0",
+    "efel>=5.5.5",
+    "configparser",
+    "neuron>=8.0",
+    "morph_tool>=2.8",
+    "morphio",
+    "fasteners>=0.16",
+    "jinja2>=3.0.3",
+    "currentscape>=0.0.11",
+]
+keywords=[
+    "computational neuroscience",
+    "simulation",
+    "analysis",
+    "parameters",
+    "Blue Brain Project",
+]
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+]
+
+[project.optional-dependencies]
+luigi = [
+    "luigi>=3.0",
+    "luigi-tools>=0.0.12",
+]
+docs = [
+    "graphviz",
+    "sphinx",
+    "sphinx-bluebrain-theme",
+    "luigi>=3.0",
+    "luigi-tools>=0.0.12",
+]
+test = [
+    "pytest>=6.2",
+    "dictdiffer>=0.8",
+]
+nexus = [
+    "nexusforge>=0.8.2",
+    "entity_management>=1.2",
+    "pyJWT>=2.1.0",
+]
+all = [
+    "luigi>=3.0",
+    "luigi-tools>=0.0.12",
+    "nexusforge>=0.8.2",
+    "entity_management>=1.2",
+    "pyJWT>=2.1.0",
+    "pytest>=6.2",
+    "dictdiffer>=0.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/BlueBrain/BluePyEModel"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["tests",]
+
+[tool.setuptools_scm]
+version_scheme = "python-simplified-semver"
+local_scheme = "no-local-version"
