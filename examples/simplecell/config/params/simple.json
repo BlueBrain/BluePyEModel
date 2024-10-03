@@ -1,0 +1,24 @@
+{
+    "mechanisms": {
+        "somatic":
+            {"mech":["hh"]}
+    },
+    "distributions": {
+    },
+    "parameters": {
+        "__comment": "define constants as single values and params to optimise as tuples of bounds: [lower, upper]",
+        "global":   [
+            {"name":"v_init",                 "val":-80},
+            {"name":"celsius",                "val":34}
+        ],
+        "somatic": [
+            {"name":"Ra",                     "val":100},
+            {"name":"cm",                     "val":1},
+            {"name":"ena",                    "val":50},
+            {"name":"ek",                     "val":-90},
+            {"name":"gnabar_hh",               "val":[0.05, 0.125]},
+            {"name":"gkbar_hh",              "val":[0.01, 0.075]}
+
+        ]
+    }
+}
