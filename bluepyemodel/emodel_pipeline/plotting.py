@@ -1977,6 +1977,10 @@ def plot_models(
             dendritic_feature_plots(mo, "rheobase", dest_leaf, figures_dir)
 
         if plot_currentscape:
+            logger.warning(
+                "If a .mod file lacks RANGE current variable, "
+                "no associated current will be plotted in Currentscape."
+            )
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
             currentscape(
