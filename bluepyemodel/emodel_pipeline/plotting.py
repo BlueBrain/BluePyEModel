@@ -1978,8 +1978,8 @@ def plot_models(
 
         if plot_currentscape:
             logger.warning(
-                "If a .mod file lacks RANGE current variable, "
-                "no associated current will be plotted in Currentscape."
+                "If an ion channel mod file lacks RANGE current variable (e.g. RANGE ik, ina), "
+                "no associated current will be plotted for that SUFFIX in Currentscape."
             )
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
