@@ -39,12 +39,6 @@
     "validated": false,
     "seed": 1,
     "pdfs": [
-      "/gpfs/bbp.cscs.ch/home/ikilic/workspace/BluePyEModel/examples/simplecell/figures/simplecell/optimisation/emodel=simplecell__etype=cADpyr__species=rat__brain_region=SSCX__seed=1__optimisation.pdf",
-      "/gpfs/bbp.cscs.ch/home/ikilic/workspace/BluePyEModel/examples/simplecell/figures/simplecell/traces/all/emodel=simplecell__etype=cADpyr__species=rat__brain_region=SSCX__seed=1__traces.pdf",
-      "/gpfs/bbp.cscs.ch/home/ikilic/workspace/BluePyEModel/examples/simplecell/figures/simplecell/scores/all/emodel=simplecell__etype=cADpyr__species=rat__brain_region=SSCX__seed=1__scores.pdf",
-      "/gpfs/bbp.cscs.ch/home/ikilic/workspace/BluePyEModel/examples/simplecell/figures/simplecell/thumbnail/all/emodel=simplecell__etype=cADpyr__species=rat__brain_region=SSCX__seed=1__thumbnail.png",
-      "/gpfs/bbp.cscs.ch/home/ikilic/workspace/BluePyEModel/examples/simplecell/figures/simplecell/distributions/all/emodel=simplecell__etype=cADpyr__species=rat__brain_region=SSCX__parameters_distribution.pdf",
-      "/gpfs/bbp.cscs.ch/home/ikilic/workspace/BluePyEModel/examples/simplecell/figures/simplecell/parameter_evolution/emodel=simplecell__etype=cADpyr__species=rat__brain_region=SSCX__seed=1__evo_parameter_density.pdf"
     ]
   }
 }
