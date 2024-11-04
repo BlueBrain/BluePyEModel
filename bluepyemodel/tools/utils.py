@@ -230,7 +230,7 @@ def select_rec_for_thumbnail(rec_names, additional_step_prots=None, thumbnail_re
         if "LocalInjection" not in rec_name and any(
             step_prot.lower() in rec_name.lower() for step_prot in step_prots
         ):
-            prot_name = rec_name.split(".")[0]
+            prot_name = ".".join(rec_name.split(".")[:-2])
             try:
                 _, rec_amp = format_protocol_name_to_list(prot_name)
                 if 0 < rec_amp < selected_amp:

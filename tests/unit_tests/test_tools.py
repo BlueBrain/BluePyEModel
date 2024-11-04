@@ -140,6 +140,15 @@ def test_select_rec_for_thumbnail():
         select_rec_for_thumbnail(rec_names, thumbnail_rec="sAHP_20.soma.v") == "IDrest_130.soma.v"
     )
 
+    # absolute amplitude with float amp case
+    rec_names = [
+        "IDrest_0.2.soma.v",
+        "IDrest_-0.04.soma.v",
+        "IDrest_0.13.soma.v",
+        "sAHP_0.04.soma.v",
+    ]
+    assert select_rec_for_thumbnail(rec_names) == "IDrest_0.13.soma.v"
+
 
 def test_get_protocol_name():
     # feature keys
