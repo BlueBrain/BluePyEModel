@@ -62,6 +62,7 @@ from bluepyemodel.evaluation.utils import define_bAP_protocol
 from bluepyemodel.evaluation.utils import define_EPSP_feature
 from bluepyemodel.evaluation.utils import define_EPSP_protocol
 from bluepyemodel.model.morphology_utils import get_basal_and_apical_max_radial_distances
+from bluepyemodel.tools.utils import existing_checkpoint_paths
 from bluepyemodel.tools.utils import get_amplitude_from_feature_key
 from bluepyemodel.tools.utils import make_dir
 from bluepyemodel.tools.utils import read_checkpoint
@@ -1773,6 +1774,9 @@ def plot_models(
     mapper,
     seeds=None,
     figures_dir="./figures",
+    plot_optimisation_progress=True,
+    optimiser=None,
+    plot_parameter_evolution=True,
     plot_distributions=True,
     plot_scores=True,
     plot_traces=True,
@@ -1807,6 +1811,10 @@ def plot_models(
             individual in the population.
         seeds (list): if not None, filter emodels to keep only the ones with these seeds.
         figures_dir (str): path of the directory in which the figures should be saved.
+        plot_optimisation_progress (bool): True to plot the optimisation progress from checkpoint
+        optimiser (str): name of the algorithm used for optimisation, can be "IBEA", "SO-CMA"
+            or "MO-CMA". Is used in optimisation progress plotting.
+        plot_parameter_evolution (bool): True to plot parameter evolution
         plot_distributions (bool): True to plot the parameters distributions
         plot_scores (bool): True to plot the scores
         plot_traces (bool): True to plot the traces
@@ -1884,6 +1892,34 @@ def plot_models(
             cell_evaluator,
             access_point.pipeline_settings.currentscape_config["current"]["names"],
             use_fixed_dt_recordings=False,
+        )
+    
+    if plot_optimisation_progress or plot_parameter_evolution:
+        checkpoint_paths = existing_checkpoint_paths(access_point.emodel_metadata)
+
+    if plot_optimisation_progress:
+        if optimiser is None:
+            logger.warning("Will not plot optimisation progress because optimiser was not given.")
+        else:
+            for chkp_path in checkpoint_paths:
+                stem = str(Path(chkp_path).stem)
+                seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
+
+                optimisation(
+                    optimiser=optimiser,
+                    emodel=access_point.emodel_metadata.emodel,
+                    iteration=access_point.emodel_metadata.iteration,
+                    seed=seed,
+                    checkpoint_path=chkp_path,
+                    figures_dir=figures_dir / "optimisation",
+                )
+
+    if plot_parameter_evolution:
+        evolution_parameters_density(
+            evaluator=cell_evaluator,
+            checkpoint_paths=checkpoint_paths,
+            metadata=access_point.emodel_metadata,
+            figures_dir=figures_dir / "parameter_evolution",
         )
 
     if any(

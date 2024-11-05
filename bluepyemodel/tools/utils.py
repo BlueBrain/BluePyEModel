@@ -16,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import glob
 import logging
 import pickle
 from pathlib import Path
@@ -27,6 +28,28 @@ from bluepyemodel.ecode import eCodes
 
 logger = logging.getLogger("__main__")
 
+
+def existing_checkpoint_paths(emodel_metadata, checkpoint_paths=None):
+    """Returns a list of existing checkpoint paths conforming to metadata.
+    
+    Args:
+        emodel_metadata (EModelMetadata): contains emodel and iteration
+            that should be present in each returned checkpoint path
+        checkpoint_paths (list): list of existing checkpoint paths to be filtered
+            using metadata. If None, will be created on the spot.
+    """
+    if checkpoint_paths is None:
+        checkpoint_paths = glob.glob("./checkpoints/**/*.pkl", recursive=True)
+        if not checkpoint_paths:
+            raise ValueError("The checkpoints directory is empty, or there are no .pkl files.")
+    
+    if not emodel_metadata.iteration:
+        return [chkp for chkp in checkpoint_paths if emodel_metadata.emodel in chkp.split("/")]
+    return [
+        chkp for chkp in checkpoint_paths
+        if emodel_metadata.emodel in chkp.split("/")
+        and emodel_metadata.iteration in chkp.split("/")
+    ]
 
 def checkpoint_path_exists(checkpoint_path):
     """Returns True if checkpoint path exists, False if not.

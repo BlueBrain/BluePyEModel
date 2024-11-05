@@ -38,6 +38,7 @@ from bluepyemodel.tasks.luigi_tools import WorkflowTask
 from bluepyemodel.tasks.luigi_tools import WorkflowTaskRequiringMechanisms
 from bluepyemodel.tasks.luigi_tools import WorkflowWrapperTask
 from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
+from bluepyemodel.tools.utils import existing_checkpoint_paths
 
 # pylint: disable=W0235,W0621,W0404,W0611,W0703,E1128
 logger = logging.getLogger(__name__)
@@ -1250,6 +1251,7 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         """ """
 
         plot_optimisation = self.access_point.pipeline_settings.plot_optimisation
+        optimiser = self.access_point.pipeline_settings.optimiser
         plot_currentscape = self.access_point.pipeline_settings.plot_currentscape
         plot_bAP_EPSP = self.access_point.pipeline_settings.plot_bAP_EPSP
         plot_IV_curves = self.access_point.pipeline_settings.plot_IV_curves
@@ -1269,6 +1271,9 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             mapper=mapper,
             seeds=range(self.seed, self.seed + batch_size),
             figures_dir=Path("./figures") / self.emodel,
+            plot_optimisation_progress=plot_optimisation,
+            optimiser=optimiser,
+            plot_parameter_evolution=plot_optimisation,
             plot_distributions=plot_optimisation,
             plot_traces=plot_optimisation,
             plot_scores=plot_optimisation,
@@ -1289,7 +1294,8 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         )
 
         if isinstance(self.access_point, NexusAccessPoint):
-            self.access_point.update_emodel_images(seed=self.seed, keep_old_images=False)
+            for seed in range(self.seed, self.seed + batch_size):
+                self.access_point.update_emodel_images(seed=seed, keep_old_images=False)
 
     def output(self):
         """ """
@@ -1299,6 +1305,21 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
 
         outputs = []
         if plot_optimisation:
+            # optimisation progress
+            for checkpoint_path in existing_checkpoint_paths(self.access_point.emodel_metadata):
+                p = Path(checkpoint_path)
+                fname = p.stem
+                fname += "__optimisation.pdf"
+                fpath = Path("./figures") / self.emodel / "optimisation" / fname
+                outputs.append(luigi.LocalTarget(fpath))
+
+            # parameter evolution
+            for seed in range(self.seed, self.seed + batch_size):
+                fname = self.access_point.emodel_metadata.as_string(seed=seed)
+                fname += "__evo_parameter_density.pdf"
+                fpath = Path("./figures") / self.emodel / "parameter_evolution" / fname
+                outputs.append(luigi.LocalTarget(fpath))
+
             # distribution
             fname = self.access_point.emodel_metadata.as_string()
             fname += "__parameters_distribution.pdf"
