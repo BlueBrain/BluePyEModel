@@ -1,0 +1,9 @@
+The CC-BY-NC-SA license applies, as indicated by headers in the
+respective source files.
+
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+The detailed text is available here
+https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+The Python code and cell morphology are licensed with the above mentioned CC-BY-NC-SA license.

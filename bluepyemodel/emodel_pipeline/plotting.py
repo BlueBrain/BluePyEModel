@@ -247,7 +247,11 @@ def evolution_parameters_density(
         max_n_gen = max(max_n_gen, run["generation"])
         genealogies[checkpoint_path] = (run["history"].genealogy_history, seed)
 
-    gen_per_bin = 4
+    if max_n_gen >= 8:
+        gen_per_bin = 4
+    else:
+        gen_per_bin = 1
+
     pop_size = len(run["population"])
     histo_bins = (int(max_n_gen / gen_per_bin), 20)
     normalization_factor = gen_per_bin * pop_size
@@ -1973,6 +1977,10 @@ def plot_models(
             dendritic_feature_plots(mo, "rheobase", dest_leaf, figures_dir)
 
         if plot_currentscape:
+            logger.warning(
+                "If an ion channel mod file lacks RANGE current variable (e.g. RANGE ik, ina), "
+                "no associated current will be plotted for that SUFFIX in Currentscape."
+            )
             config = access_point.pipeline_settings.currentscape_config
             figures_dir_currentscape = figures_dir / "currentscape" / dest_leaf
             currentscape(

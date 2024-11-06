@@ -1,0 +1,25 @@
+{
+    "simplecell": {
+        "morph_path": "./morphologies/",
+        "morphology": [
+            [
+                "simple",
+                "simple.swc"
+            ]
+        ],
+        "params": "config/params/simple.json",
+        "features": "config/features/simplecell.json",
+        "pipeline_settings": {
+            "path_extract_config": "config/extract_config/simplecell_config.json",
+            "extract_absolute_amplitudes": true,
+            "optimiser": "SO-CMA",
+            "max_ngen": 5,
+            "optimisation_params": {
+                "offspring_size": 20
+            },
+            "validation_protocols": ["IDrest_0.4"],
+            "morph_modifiers": [],
+            "plot_currentscape": false
+        }
+    }
+}
