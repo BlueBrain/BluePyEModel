@@ -1269,6 +1269,9 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
             mapper=mapper,
             seeds=range(self.seed, self.seed + batch_size),
             figures_dir=Path("./figures") / self.emodel,
+            # False because already done in PlotOptimisation task
+            plot_optimisation_progress=False,
+            plot_parameter_evolution=plot_optimisation,
             plot_distributions=plot_optimisation,
             plot_traces=plot_optimisation,
             plot_scores=plot_optimisation,
@@ -1289,7 +1292,8 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         )
 
         if isinstance(self.access_point, NexusAccessPoint):
-            self.access_point.update_emodel_images(seed=self.seed, keep_old_images=False)
+            for seed in range(self.seed, self.seed + batch_size):
+                self.access_point.update_emodel_images(seed=seed, keep_old_images=False)
 
     def output(self):
         """ """
@@ -1299,6 +1303,13 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
 
         outputs = []
         if plot_optimisation:
+            # parameter evolution
+            for seed in range(self.seed, self.seed + batch_size):
+                fname = self.access_point.emodel_metadata.as_string(seed=seed)
+                fname += "__evo_parameter_density.pdf"
+                fpath = Path("./figures") / self.emodel / "parameter_evolution" / fname
+                outputs.append(luigi.LocalTarget(fpath))
+
             # distribution
             fname = self.access_point.emodel_metadata.as_string()
             fname += "__parameters_distribution.pdf"
@@ -1360,6 +1371,8 @@ class PlotValidatedDistributions(WorkflowTaskRequiringMechanisms):
             access_point=self.access_point,
             mapper=self.get_mapper(),
             figures_dir=Path("./figures") / self.emodel,
+            plot_optimisation_progress=False,
+            plot_parameter_evolution=False,
             plot_distributions=True,
             plot_traces=False,
             plot_scores=False,
