@@ -1893,34 +1893,36 @@ def plot_models(
             access_point.pipeline_settings.currentscape_config["current"]["names"],
             use_fixed_dt_recordings=False,
         )
-    
+
     if plot_optimisation_progress or plot_parameter_evolution:
         checkpoint_paths = existing_checkpoint_paths(access_point.emodel_metadata)
 
-    if plot_optimisation_progress:
-        if optimiser is None:
-            logger.warning("Will not plot optimisation progress because optimiser was not given.")
-        else:
-            for chkp_path in checkpoint_paths:
-                stem = str(Path(chkp_path).stem)
-                seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
-
-                optimisation(
-                    optimiser=optimiser,
-                    emodel=access_point.emodel_metadata.emodel,
-                    iteration=access_point.emodel_metadata.iteration,
-                    seed=seed,
-                    checkpoint_path=chkp_path,
-                    figures_dir=figures_dir / "optimisation",
+        if plot_optimisation_progress:
+            if optimiser is None:
+                logger.warning(
+                    "Will not plot optimisation progress because optimiser was not given."
                 )
+            else:
+                for chkp_path in checkpoint_paths:
+                    stem = str(Path(chkp_path).stem)
+                    seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
 
-    if plot_parameter_evolution:
-        evolution_parameters_density(
-            evaluator=cell_evaluator,
-            checkpoint_paths=checkpoint_paths,
-            metadata=access_point.emodel_metadata,
-            figures_dir=figures_dir / "parameter_evolution",
-        )
+                    optimisation(
+                        optimiser=optimiser,
+                        emodel=access_point.emodel_metadata.emodel,
+                        iteration=access_point.emodel_metadata.iteration,
+                        seed=seed,
+                        checkpoint_path=chkp_path,
+                        figures_dir=figures_dir / "optimisation",
+                    )
+
+        if plot_parameter_evolution:
+            evolution_parameters_density(
+                evaluator=cell_evaluator,
+                checkpoint_paths=checkpoint_paths,
+                metadata=access_point.emodel_metadata,
+                figures_dir=figures_dir / "parameter_evolution",
+            )
 
     if any(
         (
