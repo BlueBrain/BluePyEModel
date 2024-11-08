@@ -60,7 +60,6 @@ class EModelPipelineSettings:
         use_stagnation_criterion=True,
         validation_function="max_score",
         validation_threshold=5.0,
-        plot_optimisation=True,
         use_ProbAMPANMDA_EMS=False,
         compile_mechanisms=False,
         n_model=3,
@@ -242,8 +241,6 @@ class EModelPipelineSettings:
                 Nexus access_point and the IC-selector.
             n_model (int): minimum number of models to pass validation to consider the e-model
                 building task done. Only used by the Luigi workflow.
-            plot_optimisation (bool): should the e-models scores and traces be plotted. Only used
-                by the Luigi workflow.
             use_ProbAMPANMDA_EMS (bool): True to link ProbAMPANMDA_EMS in EMC on nexus,
                 and download ProbAMPANMDA from nexus along with other mechanisms.
             compile_mechanisms (bool): should the mod files be copied in the local
@@ -433,7 +430,6 @@ class EModelPipelineSettings:
         self.name_gene_map = name_gene_map
 
         # Settings specific to the analysis (figure plotting)
-        self.plot_optimisation = plot_optimisation
         self.plot_optimisation_progress = plot_optimisation_progress
         self.plot_distributions = plot_distributions
         self.plot_scores = plot_scores
