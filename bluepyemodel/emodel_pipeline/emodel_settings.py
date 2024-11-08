@@ -71,8 +71,15 @@ class EModelPipelineSettings:
         name_rmp_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
-        plot_currentscape=True,
+        plot_optimisation_progress=True,
         plot_parameter_evolution=True,
+        plot_distributions=True,
+        plot_scores=True,
+        plot_traces=True,
+        plot_thumbnail=True,
+        plot_currentscape=True,
+        plot_dendritic_ISI_CV=True,
+        plot_dendritic_rheobase=True,
         plot_bAP_EPSP=False,
         plot_IV_curves=False,
         plot_FI_curve_comparison=False,
@@ -260,10 +267,17 @@ class EModelPipelineSettings:
             validation_protocols (list of str): name of the protocols to be used for validation
                 only. E.g. ``["APWaveform_300"]``. These protocols will not be used during
                 optimisation.
-            plot_currentscape (bool): during the plotting, should the currentscapes be
-                plotted for the recordings.
+            plot_optimisation_progress (bool): True to plot the optimisation progress
+                from checkpoint.
             plot_parameter_evolution (bool): during the plotting, should the evolution of the
                 parameters be plotted.
+            plot_distributions (bool): True to plot the parameters distributions.
+            plot_scores (bool): True to plot the scores
+            plot_traces (bool): True to plot the traces
+            plot_thumbnail (bool): True to plot a trace that can be used as thumbnail
+            plot_currentscape (bool): during the plotting, should the currentscapes be
+                plotted for the recordings.
+            plot_dendritic_rheobase (bool): True to plot dendritic rheobase (if present)
             plot_bAP_EPSP (bool): during the plotting, should ready-to-use back-propagating AP
                 and EPSP protocols be run and plotted.
                 Should be True only for pyramidal cells,
@@ -420,6 +434,13 @@ class EModelPipelineSettings:
 
         # Settings specific to the analysis (figure plotting)
         self.plot_optimisation = plot_optimisation
+        self.plot_optimisation_progress = plot_optimisation_progress
+        self.plot_distributions = plot_distributions
+        self.plot_scores = plot_scores
+        self.plot_traces = plot_traces
+        self.plot_thumbnail = plot_thumbnail
+        self.plot_dendritic_ISI_CV = plot_dendritic_ISI_CV
+        self.plot_dendritic_rheobase = plot_dendritic_rheobase
         self.plot_currentscape = plot_currentscape
         self.currentscape_config = currentscape_config
         self.plot_parameter_evolution = plot_parameter_evolution
