@@ -531,10 +531,10 @@ class Validation(WorkflowTaskRequiringMechanisms, IPyParallelTask):
         """ """
 
         compile_mechanisms = self.access_point.pipeline_settings.compile_mechanisms
-        plot_parameter_evolution  = self.access_point.pipeline_settings.plot_parameter_evolution
-        plot_distributions  = self.access_point.pipeline_settings.plot_distributions
-        plot_traces  = self.access_point.pipeline_settings.plot_traces
-        plot_scores  = self.access_point.pipeline_settings.plot_scores
+        plot_parameter_evolution = self.access_point.pipeline_settings.plot_parameter_evolution
+        plot_distributions = self.access_point.pipeline_settings.plot_distributions
+        plot_traces = self.access_point.pipeline_settings.plot_traces
+        plot_scores = self.access_point.pipeline_settings.plot_scores
 
         to_run = [
             StoreBestModels(
@@ -1237,13 +1237,13 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
     def run(self):
         """ """
 
-        plot_parameter_evolution  = self.access_point.pipeline_settings.plot_parameter_evolution
-        plot_distributions  = self.access_point.pipeline_settings.plot_distributions
-        plot_traces  = self.access_point.pipeline_settings.plot_traces
-        plot_scores  = self.access_point.pipeline_settings.plot_scores
-        plot_thumbnail  = self.access_point.pipeline_settings.plot_thumbnail
-        plot_dendritic_ISI_CV  = self.access_point.pipeline_settings.plot_dendritic_ISI_CV
-        plot_dendritic_rheobase  = self.access_point.pipeline_settings.plot_dendritic_rheobase
+        plot_parameter_evolution = self.access_point.pipeline_settings.plot_parameter_evolution
+        plot_distributions = self.access_point.pipeline_settings.plot_distributions
+        plot_traces = self.access_point.pipeline_settings.plot_traces
+        plot_scores = self.access_point.pipeline_settings.plot_scores
+        plot_thumbnail = self.access_point.pipeline_settings.plot_thumbnail
+        plot_dendritic_ISI_CV = self.access_point.pipeline_settings.plot_dendritic_ISI_CV
+        plot_dendritic_rheobase = self.access_point.pipeline_settings.plot_dendritic_rheobase
         plot_currentscape = self.access_point.pipeline_settings.plot_currentscape
         plot_bAP_EPSP = self.access_point.pipeline_settings.plot_bAP_EPSP
         plot_IV_curves = self.access_point.pipeline_settings.plot_IV_curves
@@ -1293,10 +1293,10 @@ class PlotModels(WorkflowTaskRequiringMechanisms):
         """ """
 
         batch_size = self.access_point.pipeline_settings.optimisation_batch_size
-        plot_parameter_evolution  = self.access_point.pipeline_settings.plot_parameter_evolution
-        plot_distributions  = self.access_point.pipeline_settings.plot_distributions
-        plot_traces  = self.access_point.pipeline_settings.plot_traces
-        plot_scores  = self.access_point.pipeline_settings.plot_scores
+        plot_parameter_evolution = self.access_point.pipeline_settings.plot_parameter_evolution
+        plot_distributions = self.access_point.pipeline_settings.plot_distributions
+        plot_traces = self.access_point.pipeline_settings.plot_traces
+        plot_scores = self.access_point.pipeline_settings.plot_scores
 
         outputs = []
         if plot_parameter_evolution:

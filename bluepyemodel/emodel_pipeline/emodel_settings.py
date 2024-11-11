@@ -18,8 +18,7 @@ limitations under the License.
 
 import logging
 
-# pylint: disable=too-many-arguments,too-many-locals,too-many-instance-attributes
-# pylint: disable=too-many-statements
+# pylint: disable=too-many-arguments,too-many-locals,too-many-instance-attributes, unused-argument
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +69,7 @@ class EModelPipelineSettings:
         name_rmp_protocol=None,
         validation_protocols=None,
         name_gene_map=None,
+        plot_optimisation=True,
         plot_optimisation_progress=True,
         plot_parameter_evolution=True,
         plot_distributions=True,
@@ -264,6 +264,7 @@ class EModelPipelineSettings:
             validation_protocols (list of str): name of the protocols to be used for validation
                 only. E.g. ``["APWaveform_300"]``. These protocols will not be used during
                 optimisation.
+            plot_optimisation (bool): legacy parameter, is not used anymore.
             plot_optimisation_progress (bool): True to plot the optimisation progress
                 from checkpoint.
             plot_parameter_evolution (bool): during the plotting, should the evolution of the
