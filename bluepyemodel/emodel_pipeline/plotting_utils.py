@@ -27,7 +27,9 @@ from bluepyopt.ephys.objectives import SingletonWeightObjective
 from bluepyemodel.ecode.sinespec import SineSpec
 from bluepyemodel.evaluation.efel_feature_bpem import eFELFeatureBPEM
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
+from bluepyemodel.evaluation.evaluator import define_protocol
 from bluepyemodel.evaluation.evaluator import soma_loc
+from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.evaluation.protocols import BPEMProtocol
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from bluepyemodel.evaluation.recordings import FixedDtRecordingCustom
@@ -81,6 +83,7 @@ def get_recording_names(protocol_config, stimuli):
 
 def get_traces_names_and_float_responses(responses, recording_names):
     """Extract the names of the traces to be plotted, as well as the float responses values."""
+    # pylint: disable=too-many-nested-blocks
 
     traces_names = []
     threshold = None
@@ -236,14 +239,16 @@ def extract_experimental_data_for_IV_curve(cells, efel_settings, prot_name="iv",
     return exp_peak, exp_vd
 
 
-def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv"):
+def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", amps=None):
     """Returns a copy of the evaluator, with missing features added for IV_curve computation.
 
     Args:
         evaluator (CellEvaluator): cell evaluator
         efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
         prot_name (str): Only recordings from this protocol will be used.
+        amps (list): List of amplitudes to extend the protocols with.
     """
+    # pylint: disable=too-many-branches,
     updated_evaluator = copy.deepcopy(evaluator)
     # find protocols we expect to have the features we want to plot
     prot_max_v = []
@@ -258,6 +263,15 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv"):
                 else:
                     prot_v_deflection.append(prot.name)
 
+    for protocol_name in prot_v_deflection + prot_max_v:
+        for amp in amps:
+            protocol_name_amp = f"{protocol_name.split('_')[0]}_{amp}"
+            if amp < 100:
+                if amp >= 0:
+                    prot_max_v.append(protocol_name_amp)
+                else:
+                    prot_v_deflection.append(protocol_name_amp)
+
     # maps protocols of interest with all its associated features
     # also get protocol data we need for feature registration
     prots_to_feats = {}
@@ -271,6 +285,48 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv"):
                 if protocol_name not in prots_data:
                     prots_data[protocol_name] = {
                         "stimulus_current": feat.stimulus_current,
+                        "stim_start": feat.stim_start,
+                        "stim_end": feat.stim_end,
+                    }
+                prots_to_feats[protocol_name].append(feat.efel_feature_name)
+                continue
+            # additional simulation data points to compare with experimental data
+            if protocol_name.split("_")[0] in feat.recording_names[""]:
+                p_rel_name = feat.recording_names[""].split(".")[0]
+                amp_rel = float(protocol_name.split("_")[1])
+                amp = float(feat.recording_names[""].split(".")[0].split("_")[-1])
+                p_rel = updated_evaluator.fitness_protocols["main_protocol"].protocols[p_rel_name]
+                stimuli = [
+                    {
+                        "holding_current": p_rel.stimuli[0].holding_current,
+                        "threshold_current": p_rel.stimuli[0].threshold_current,
+                        "amp": feat.stimulus_current() * amp_rel / amp,
+                        "thresh_perc": amp_rel,
+                        "delay": p_rel.stimuli[0].delay,
+                        "duration": p_rel.stimuli[0].duration,
+                        "totduration": p_rel.stimuli[0].total_duration,
+                    }
+                ]
+                recordings = [
+                    {
+                        "type": "CompRecording",
+                        "name": f"{protocol_name}.soma.v",
+                        "location": "soma",
+                        "variable": "v",
+                    }
+                ]
+                my_protocol_configuration = ProtocolConfiguration(
+                    name=protocol_name, stimuli=stimuli, recordings=recordings, validation=False
+                )
+                p = define_protocol(my_protocol_configuration)
+
+                updated_evaluator.fitness_protocols["main_protocol"].protocols[protocol_name] = p
+
+                if protocol_name not in prots_to_feats:
+                    prots_to_feats[protocol_name] = []
+                if protocol_name not in prots_data:
+                    prots_data[protocol_name] = {
+                        "stimulus_current": feat.stimulus_current() * amp_rel / amp,
                         "stim_start": feat.stim_start,
                         "stim_end": feat.stim_end,
                     }
@@ -381,7 +437,7 @@ def get_simulated_FI_curve_for_plotting(evaluator, responses, prot_name):
     simulated_amp_rel = []
     simulated_amp = []
     for val in values:
-        if prot_name.lower() in val.lower():
+        if prot_name.lower().split("_")[0] in val.lower():
             protocol_name = get_protocol_name(val)
             amp_temp = float(protocol_name.split("_")[-1])
             if "mean_frequency" in val:

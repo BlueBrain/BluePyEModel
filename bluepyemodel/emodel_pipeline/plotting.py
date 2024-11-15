@@ -28,6 +28,7 @@ import matplotlib
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import numpy
+from bluepyopt.ephys.objectives import SingletonWeightObjective
 from bluepyopt.ephys.protocols import SweepProtocol
 from bluepyopt.ephys.recordings import CompRecording
 from bluepyopt.ephys.stimuli import NrnSquarePulse
@@ -51,11 +52,14 @@ from bluepyemodel.emodel_pipeline.plotting_utils import get_traces_names_and_flo
 from bluepyemodel.emodel_pipeline.plotting_utils import get_traces_ylabel
 from bluepyemodel.emodel_pipeline.plotting_utils import get_voltage_currents_from_files
 from bluepyemodel.emodel_pipeline.plotting_utils import rel_to_abs_amplitude
+from bluepyemodel.evaluation.efel_feature_bpem import eFELFeatureBPEM
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
 from bluepyemodel.evaluation.evaluator import add_recordings_to_evaluator
+from bluepyemodel.evaluation.evaluator import define_protocol
 from bluepyemodel.evaluation.evaluator import soma_loc
+from bluepyemodel.evaluation.protocol_configuration import ProtocolConfiguration
 from bluepyemodel.evaluation.protocols import ThresholdBasedProtocol
 from bluepyemodel.evaluation.utils import define_bAP_feature
 from bluepyemodel.evaluation.utils import define_bAP_protocol
@@ -1204,8 +1208,11 @@ def run_and_plot_EPSP(
 def plot_IV_curves(
     evaluator,
     emodels,
+    access_point,
     figures_dir,
     efel_settings,
+    mapper,
+    seeds,
     prot_name="iv",
     custom_bluepyefe_cells_pklpath=None,
     write_fig=True,
@@ -1217,8 +1224,11 @@ def plot_IV_curves(
     Args:
         evaluator (CellEvaluator): cell evaluator
         emodels (list): list of EModels
+        access_point (DataAccessPoint): data access point
         figures_dir (str or Path): output directory for the figure to be saved on
         efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
+        mapper (map): used to parallelize the evaluation of the individual in the population.
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
         prot_name (str): Only recordings from this protocol will be used.
         custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
@@ -1226,14 +1236,41 @@ def plot_IV_curves(
         write_fig (bool): whether to save the figure
         n_bin (int): number of bins to use
     """
-    # pylint: disable=too-many-nested-blocks, possibly-used-before-assignment
+    # pylint: disable=too-many-nested-blocks, possibly-used-before-assignment, disable=too-many-locals, disable=too-many-statements
     # note: should maybe also check location and recorded variable
     make_dir(figures_dir)
     if efel_settings is None:
         efel_settings = bluepyefe.tools.DEFAULT_EFEL_SETTINGS.copy()
 
+    # get simulation data points matching the experimental data points
+    sim_amp_points = []
+    for emodel in emodels:
+        cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
+        if cells is None:
+            continue
+        exp_peak, exp_vd = extract_experimental_data_for_IV_curve(
+            cells, efel_settings, prot_name, n_bin
+        )
+
+        sim_amp_points += exp_peak["amp_rel"] + exp_vd["amp_rel"]
+
+    sim_amp_points = list(set(sim_amp_points))
+    sim_amp_points = [int(value) for value in sim_amp_points]
     # add missing features (if any) to evaluator
-    updated_evaluator = fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name)
+    updated_evaluator = fill_in_IV_curve_evaluator(
+        evaluator, efel_settings, prot_name, sim_amp_points
+    )
+
+    updated_evaluator.fitness_protocols["main_protocol"].execution_order = (
+        updated_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    )
+
+    emodels = compute_responses(
+        access_point,
+        updated_evaluator,
+        map_function=mapper,
+        seeds=seeds,
+    )
 
     emodel_name = None
     cells = None
@@ -1348,6 +1385,9 @@ def plot_IV_curves(
 def plot_FI_curves_comparison(
     evaluator,
     emodels,
+    access_point,
+    seeds,
+    mapper,
     figures_dir,
     prot_name,
     custom_bluepyefe_cells_pklpath=None,
@@ -1361,6 +1401,9 @@ def plot_FI_curves_comparison(
     Args:
         evaluator (CellEvaluator): cell evaluator
         emodels (list): list of EModels
+        access_point (DataAccessPoint): data access point
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        mapper (map): used to parallelize the evaluation of the individual in the population.
         figures_dir (str or Path): output directory for the figure to be saved on
         prot_name (str): name of the protocol to use for the FI curve
         custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
@@ -1372,49 +1415,103 @@ def plot_FI_curves_comparison(
     # pylint: disable=too-many-nested-blocks, possibly-used-before-assignment
     make_dir(figures_dir)
 
-    emodel_name = None
-    cells = None
-    for emodel in emodels:
-        # do not re-extract data if the emodel is the same as previously
-        if custom_bluepyefe_cells_pklpath is not None:
+    emodel_name, cells = None, None
+
+    def load_cells_for_emodel(emodel):
+        nonlocal cells, emodel_name
+
+        if custom_bluepyefe_cells_pklpath:
             if cells is None:
                 cells = read_extraction_output(custom_bluepyefe_cells_pklpath)
-            if cells is None:
-                continue
-            # experimental FI curve
-            (
-                expt_amp_rel,
-                expt_freq_rel,
-                expt_freq_rel_err,
-                expt_amp,
-                expt_freq_abs,
-                expt_freq_abs_err,
-            ) = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
-        elif emodel_name != emodel.emodel_metadata.emodel or cells is None:
-            # take extraction data from pickle file and rearange it for plotting
+            return cells is not None
+
+        if emodel_name != emodel.emodel_metadata.emodel or cells is None:
             cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
             emodel_name = emodel.emodel_metadata.emodel
-            if cells is None:
-                continue
+            return cells is not None
+        return True
 
-            # experimental FI curve
-            (
-                expt_amp_rel,
-                expt_freq_rel,
-                expt_freq_rel_err,
-                expt_amp,
-                expt_freq_abs,
-                expt_freq_abs_err,
-            ) = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
+    def get_original_protocol_name(prot_name, evaluator):
+        """Retrieve the protocol name as defined by the user, preserving the original case"""
+        for protocol_name in evaluator.fitness_protocols["main_protocol"].protocols:
+            if prot_name.lower() in protocol_name.lower():
+                return protocol_name
+        return prot_name
 
-            emodel_name = emodel.emodel_metadata.emodel
+    def update_evaluator(expt_amp_rel, prot_name, evaluator):
+        """update evaluator with new simulation protocols."""
+        updated_evaluator = copy.deepcopy(evaluator)
+        for amp_rel in expt_amp_rel:
+            protocol_name = f"{prot_name.split('_')[0]}_{int(amp_rel)}"
+            protocol = evaluator.fitness_protocols["main_protocol"].protocols[prot_name]
+            if protocol_name not in evaluator.fitness_protocols["main_protocol"].protocols:
+                stimuli = [
+                    {
+                        "holding_current": protocol.stimuli[0].holding_current,
+                        "threshold_current": protocol.stimuli[0].threshold_current,
+                        "thresh_perc": int(amp_rel),
+                        "delay": protocol.stimuli[0].delay,
+                        "duration": protocol.stimuli[0].duration,
+                        "totduration": protocol.stimuli[0].total_duration,
+                    }
+                ]
+                recordings = [
+                    {
+                        "type": "CompRecording",
+                        "name": f"{protocol_name}.soma.v",
+                        "location": "soma",
+                        "variable": "v",
+                    }
+                ]
 
-        # simulated FI curve
-        simulated_amp_rel, simulated_amp, simulated_freq = get_simulated_FI_curve_for_plotting(
-            evaluator, emodel.responses, prot_name
-        )
+                my_protocol_config = ProtocolConfiguration(
+                    name=protocol_name, stimuli=stimuli, recordings=recordings, validation=False
+                )
+                main_protocol = updated_evaluator.fitness_protocols["main_protocol"]
+                main_protocol.protocols[protocol_name] = define_protocol(my_protocol_config)
 
-        # plotting
+                for objective in evaluator.fitness_calculator.objectives:
+                    feat = objective.features[0]
+                    if (
+                        protocol_name.split("_", maxsplit=1)[0] in feat.recording_names[""]
+                        and "mean_frequency" in feat.efel_feature_name
+                    ):
+                        feat_name = f"{protocol_name}.soma.v.mean_frequency"
+                        amp_rel = float(protocol_name.split("_")[1])
+                        amp = float(feat.recording_names[""].split(".")[0].split("_")[-1])
+                        updated_evaluator.fitness_calculator.objectives.append(
+                            SingletonWeightObjective(
+                                feat_name,
+                                eFELFeatureBPEM(
+                                    feat_name,
+                                    efel_feature_name="mean_frequency",
+                                    recording_names={"": f"{protocol_name}.soma.v"},
+                                    stim_start=feat.stim_start,
+                                    stim_end=feat.stim_end,
+                                    exp_mean=1.0,  # fodder: not used
+                                    exp_std=1.0,  # fodder: not used
+                                    threshold=feat.threshold,
+                                    stimulus_current=feat.stimulus_current() * amp_rel / amp,
+                                    weight=1.0,
+                                ),
+                                1.0,
+                            )
+                        )
+                        break
+        return updated_evaluator
+
+    def plot_fi_curves(expt_data, sim_data, figures_dir, emodel, write_fig):
+        """Plot and save the FI curves."""
+        (
+            expt_amp_rel,
+            expt_freq_rel,
+            expt_freq_rel_err,
+            expt_amp,
+            expt_freq_abs,
+            expt_freq_abs_err,
+        ) = expt_data
+        simulated_amp_rel, simulated_amp, simulated_freq = sim_data
+
         _, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
         ax[0].errorbar(
             expt_amp_rel,
@@ -1424,10 +1521,11 @@ def plot_FI_curves_comparison(
             color="grey",
             label="experiment",
         )
+        ax[0].plot(simulated_amp_rel, simulated_freq, "o", color="blue", label="model")
         ax[0].set_xlabel("Amplitude (% of rheobase)")
         ax[0].set_ylabel("Mean Frequency (Hz)")
         ax[0].set_title("FI curve (relative amplitude)")
-        ax[0].plot(simulated_amp_rel, simulated_freq, "o", color="blue", label="model")
+        ax[0].legend()
 
         ax[1].errorbar(
             expt_amp,
@@ -1437,18 +1535,39 @@ def plot_FI_curves_comparison(
             color="grey",
             label="experiment",
         )
+        ax[1].plot(simulated_amp, simulated_freq, "o", color="blue", label="model")
         ax[1].set_xlabel("Amplitude (nA)")
         ax[1].set_ylabel("Voltage (mV)")
         ax[1].set_title("IV curve (absolute amplitude)")
-        ax[1].plot(simulated_amp, simulated_freq, "o", color="blue", label="model")
-
-        ax[0].legend()
         ax[1].legend()
+
         if write_fig:
-            save_fig(
-                figures_dir,
-                emodel.emodel_metadata.as_string(emodel.seed) + "__FI_curve_comparison.pdf",
-            )
+            filename = f"{emodel.emodel_metadata.as_string(emodel.seed)}__FI_curve_comparison.pdf"
+            save_fig(figures_dir, filename)
+
+    updated_evaluator = copy.deepcopy(evaluator)
+    for emodel in emodels:
+        if not load_cells_for_emodel(emodel):
+            continue
+
+        expt_data = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
+        expt_data_amp_rel = expt_data[0]
+        prot_name_original = get_original_protocol_name(prot_name, evaluator)
+        updated_evaluator = update_evaluator(
+            expt_data_amp_rel, prot_name_original, updated_evaluator
+        )
+
+    updated_evaluator.fitness_protocols["main_protocol"].execution_order = (
+        updated_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    )
+
+    emodels = compute_responses(access_point, updated_evaluator, mapper, seeds)
+    for emodel in emodels:
+        expt_data = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
+        sim_data = get_simulated_FI_curve_for_plotting(
+            updated_evaluator, emodel.responses, prot_name
+        )
+        plot_fi_curves(expt_data, sim_data, figures_dir, emodel, write_fig)
 
 
 def phase_plot(
@@ -2008,10 +2127,13 @@ def plot_models(
         plot_IV_curves(
             cell_evaluator,
             emodels,
+            access_point,
             figures_dir_IV_curves,
             # maybe we should give efel_settings as an argument of plot_models,
             # like the other pipeline_settings
             access_point.pipeline_settings.efel_settings,
+            mapper,
+            seeds,
             IV_curve_prot_name,
             custom_bluepyefe_cells_pklpath=custom_bluepyefe_cells_pklpath,
         )
@@ -2021,6 +2143,9 @@ def plot_models(
         plot_FI_curves_comparison(
             cell_evaluator,
             emodels,
+            access_point,
+            seeds,
+            mapper,
             figures_dir_FI_curves,
             FI_curve_prot_name,
             custom_bluepyefe_cells_pklpath=custom_bluepyefe_cells_pklpath,
