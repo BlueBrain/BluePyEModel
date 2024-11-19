@@ -239,16 +239,34 @@ def extract_experimental_data_for_IV_curve(cells, efel_settings, prot_name="iv",
     return exp_peak, exp_vd
 
 
-def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", amps=None):
+def find_matching_feature(evaluator, protocol_name):
+    conditions = [
+        lambda feat: protocol_name in feat.recording_names[""],
+        lambda feat: protocol_name.split(".")[0] in feat.recording_names[""]
+        and feat.stimulus_current() is not None,
+        lambda feat: protocol_name.split("_")[0] in feat.recording_names[""]
+        and feat.stimulus_current() is not None,
+    ]
+
+    for condition in conditions:
+        for objective in evaluator.fitness_calculator.objectives:
+            feat = objective.features[0]
+            if condition(feat):
+                return feat, condition == conditions[0]
+
+    return None, False
+
+
+def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", new_amps=None):
     """Returns a copy of the evaluator, with missing features added for IV_curve computation.
 
     Args:
         evaluator (CellEvaluator): cell evaluator
         efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
         prot_name (str): Only recordings from this protocol will be used.
-        amps (list): List of amplitudes to extend the protocols with.
+        new_amps (list): List of amplitudes to extend the protocols with.
     """
-    # pylint: disable=too-many-branches,
+    # pylint: disable=too-many-branches
     updated_evaluator = copy.deepcopy(evaluator)
     # find protocols we expect to have the features we want to plot
     prot_max_v = []
@@ -263,44 +281,43 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", amps=No
                 else:
                     prot_v_deflection.append(prot.name)
 
-    for protocol_name in prot_v_deflection + prot_max_v:
-        for amp in amps:
-            protocol_name_amp = f"{protocol_name.split('_')[0]}_{amp}"
-            if amp < 100:
-                if amp >= 0:
+    if new_amps is not None:
+        for protocol_name in prot_v_deflection + prot_max_v:
+            for amp in new_amps:
+                protocol_name_amp = f"{protocol_name.split('_')[0]}_{amp}"
+                if 0 <= amp < 100:
                     prot_max_v.append(protocol_name_amp)
-                else:
+                elif amp < 0:
                     prot_v_deflection.append(protocol_name_amp)
 
     # maps protocols of interest with all its associated features
     # also get protocol data we need for feature registration
     prots_to_feats = {}
     prots_data = {}
-    for objective in evaluator.fitness_calculator.objectives:
-        feat = objective.features[0]
-        for protocol_name in prot_v_deflection + prot_max_v:
-            if protocol_name in feat.recording_names[""]:
+
+    for protocol_name in prot_v_deflection + prot_max_v:
+        matched_feat, feat_already_present = find_matching_feature(evaluator, protocol_name)
+        if matched_feat is not None:
+            if feat_already_present:
                 if protocol_name not in prots_to_feats:
                     prots_to_feats[protocol_name] = []
                 if protocol_name not in prots_data:
                     prots_data[protocol_name] = {
-                        "stimulus_current": feat.stimulus_current,
-                        "stim_start": feat.stim_start,
-                        "stim_end": feat.stim_end,
+                        "stimulus_current": matched_feat.stimulus_current,
+                        "stim_start": matched_feat.stim_start,
+                        "stim_end": matched_feat.stim_end,
                     }
-                prots_to_feats[protocol_name].append(feat.efel_feature_name)
-                continue
-            # additional simulation data points to compare with experimental data
-            if protocol_name.split("_")[0] in feat.recording_names[""]:
-                p_rel_name = feat.recording_names[""].split(".")[0]
+                prots_to_feats[protocol_name].append(matched_feat.efel_feature_name)
+            else:
+                p_rel_name = matched_feat.recording_names[""].split(".")[0]
                 amp_rel = float(protocol_name.split("_")[1])
-                amp = float(feat.recording_names[""].split(".")[0].split("_")[-1])
+                amp = float(matched_feat.recording_names[""].split(".")[0].split("_")[-1])
                 p_rel = updated_evaluator.fitness_protocols["main_protocol"].protocols[p_rel_name]
                 stimuli = [
                     {
                         "holding_current": p_rel.stimuli[0].holding_current,
                         "threshold_current": p_rel.stimuli[0].threshold_current,
-                        "amp": feat.stimulus_current() * amp_rel / amp,
+                        "amp": matched_feat.stimulus_current() * amp_rel / amp,
                         "thresh_perc": amp_rel,
                         "delay": p_rel.stimuli[0].delay,
                         "duration": p_rel.stimuli[0].duration,
@@ -326,12 +343,11 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", amps=No
                     prots_to_feats[protocol_name] = []
                 if protocol_name not in prots_data:
                     prots_data[protocol_name] = {
-                        "stimulus_current": feat.stimulus_current() * amp_rel / amp,
-                        "stim_start": feat.stim_start,
-                        "stim_end": feat.stim_end,
+                        "stimulus_current": matched_feat.stimulus_current() * amp_rel / amp,
+                        "stim_start": matched_feat.stim_start,
+                        "stim_end": matched_feat.stim_end,
                     }
-                prots_to_feats[protocol_name].append(feat.efel_feature_name)
-                continue
+                prots_to_feats[protocol_name].append(matched_feat.efel_feature_name)
 
     # add missing features
     for protocol_name, feat_list in prots_to_feats.items():
