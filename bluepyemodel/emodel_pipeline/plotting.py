@@ -1538,7 +1538,7 @@ def plot_FI_curves_comparison(
         ax[1].plot(simulated_amp, simulated_freq, "o", color="blue", label="model")
         ax[1].set_xlabel("Amplitude (nA)")
         ax[1].set_ylabel("Voltage (mV)")
-        ax[1].set_title("IV curve (absolute amplitude)")
+        ax[1].set_title("FI curve (absolute amplitude)")
         ax[1].legend()
 
         if write_fig:
