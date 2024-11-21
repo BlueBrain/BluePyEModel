@@ -416,7 +416,8 @@ class EModelPipelineSettings:
             logger.warning(
                 "Setting threshold-based amplitude related settings "
                 "'name_rmp_protocol' and 'name_Rin_protocol' to None because "
-                "extract_absolute_amplitudes setting is set to True")
+                "extract_absolute_amplitudes setting is set to True"
+            )
         self.strict_holding_bounds = strict_holding_bounds
 
         # Settings related to the validation
