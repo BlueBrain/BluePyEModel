@@ -24,7 +24,6 @@ import warnings
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.efeatures_extraction.efeatures_extraction import extract_save_features_protocols
 from bluepyemodel.emodel_pipeline import plotting
-from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.export_emodel.export_emodel import export_emodels_sonata
 from bluepyemodel.model.model_configuration import configure_model
 from bluepyemodel.optimisation import setup_and_run_optimisation
@@ -258,64 +257,21 @@ class EModel_pipeline:
         """
         pp_settings = self.access_point.pipeline_settings
 
-        cell_evaluator = get_evaluator_from_access_point(
-            self.access_point,
-            include_validation_protocols=True,
-            record_ions_and_currents=pp_settings.plot_currentscape,
-        )
-
-        chkp_paths = glob.glob("./checkpoints/**/*.pkl", recursive=True)
-        if not chkp_paths:
-            raise ValueError("The checkpoints directory is empty, or there are no .pkl files.")
-
-        # Filter the checkpoints to plot
-        checkpoint_paths = []
-        for chkp_path in chkp_paths:
-            if self.access_point.emodel_metadata.emodel not in chkp_path.split("/"):
-                continue
-            if (
-                self.access_point.emodel_metadata.iteration
-                and self.access_point.emodel_metadata.iteration not in chkp_path.split("/")
-            ):
-                continue
-            checkpoint_paths.append(chkp_path)
-
-            stem = str(pathlib.Path(chkp_path).stem)
-            seed = int(stem.rsplit("seed=", maxsplit=1)[-1])
-
-            plotting.optimisation(
-                optimiser=pp_settings.optimiser,
-                emodel=self.access_point.emodel_metadata.emodel,
-                iteration=self.access_point.emodel_metadata.iteration,
-                seed=seed,
-                checkpoint_path=chkp_path,
-                figures_dir=pathlib.Path("./figures")
-                / self.access_point.emodel_metadata.emodel
-                / "optimisation",
-            )
-
-        if pp_settings.plot_parameter_evolution:
-            plotting.evolution_parameters_density(
-                evaluator=cell_evaluator,
-                checkpoint_paths=checkpoint_paths,
-                metadata=self.access_point.emodel_metadata,
-                figures_dir=pathlib.Path("./figures")
-                / self.access_point.emodel_metadata.emodel
-                / "parameter_evolution",
-            )
-
         return plotting.plot_models(
             access_point=self.access_point,
             mapper=self.mapper,
             seeds=seeds,
             figures_dir=pathlib.Path("./figures") / self.access_point.emodel_metadata.emodel,
-            plot_distributions=True,
-            plot_scores=True,
-            plot_traces=True,
-            plot_thumbnail=True,
+            plot_optimisation_progress=pp_settings.plot_optimisation_progress,
+            optimiser=pp_settings.optimiser,
+            plot_parameter_evolution=pp_settings.plot_parameter_evolution,
+            plot_distributions=pp_settings.plot_distributions,
+            plot_scores=pp_settings.plot_scores,
+            plot_traces=pp_settings.plot_traces,
+            plot_thumbnail=pp_settings.plot_thumbnail,
             plot_currentscape=pp_settings.plot_currentscape,
-            plot_dendritic_ISI_CV=True,
-            plot_dendritic_rheobase=True,
+            plot_dendritic_ISI_CV=pp_settings.plot_dendritic_ISI_CV,
+            plot_dendritic_rheobase=pp_settings.plot_dendritic_rheobase,
             plot_bAP_EPSP=pp_settings.plot_bAP_EPSP,
             plot_IV_curve=pp_settings.plot_IV_curves,
             plot_FI_curve_comparison=pp_settings.plot_FI_curve_comparison,
@@ -331,7 +287,6 @@ class EModel_pipeline:
             only_validated=only_validated,
             save_recordings=pp_settings.save_recordings,
             load_from_local=load_from_local,
-            cell_evaluator=cell_evaluator,
         )
 
     def export_emodels(self, only_validated=False, seeds=None):
