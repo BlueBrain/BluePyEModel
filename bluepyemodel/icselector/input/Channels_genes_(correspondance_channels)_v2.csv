@@ -1,0 +1,211 @@
+gene_symbol,gene_id,chromosome,gene_entrez_id,Channel,gene_name
+Kcmf1,500714484,6,74287,,potassium channel modulatory factor 1
+Kcna1,500715342,6,16485,Kv1.1,"potassium voltage-gated channel, shaker-related subfamily, member 1"
+Kcna10,500707406,3,242151,Kv1.8,"potassium voltage-gated channel, shaker-related subfamily, member 10"
+Kcna2,500707405,3,16490,Kv1.2,"potassium voltage-gated channel, shaker-related subfamily, member 2"
+Kcna3,500707402,3,16491,Kv1.3,"potassium voltage-gated channel, shaker-related subfamily, member 3"
+Kcna4,500704262,2,16492,Kv1.4,"potassium voltage-gated channel, shaker-related subfamily, member 4"
+Kcna5,500715338,6,16493,Kv1.5,"potassium voltage-gated channel, shaker-related subfamily, member 5"
+Kcna6,500715343,6,16494,Kv1.6,"potassium voltage-gated channel, shaker-related, subfamily, member 6"
+Kcna7,500717470,7,16495,Kv1.7,"potassium voltage-gated channel, shaker-related subfamily, member 7"
+Kcnab1,500706535,3,16497,KvBeta1,"potassium voltage-gated channel, shaker-related subfamily, beta member 1"
+Kcnab2,500710583,4,16498,KvBeta2,"potassium voltage-gated channel, shaker-related subfamily, beta member 2"
+Kcnab3,500727350,11,16499,KvBeta3,"potassium voltage-gated channel, shaker-related subfamily, beta member 3"
+Kcnb1,500705479,2,16500,Kv2.1,"potassium voltage gated channel, Shab-related subfamily, member 1"
+Kcnb2,500699796,1,98741,Kv2.2,"potassium voltage gated channel, Shab-related subfamily, member 2"
+Kcnc1,500717525,7,16502,Kv3.1,"potassium voltage gated channel, Shaw-related subfamily, member 1"
+Kcnc2,500725744,10,268345,Kv3.2,"potassium voltage gated channel, Shaw-related subfamily, member 2"
+Kcnc3,500717401,7,16504,Kv3.3,"potassium voltage gated channel, Shaw-related subfamily, member 3"
+Kcnc4,500707416,3,99738,Kv3.4,"potassium voltage gated channel, Shaw-related subfamily, member 4"
+Kcnd1,500742892,X,16506,Kv4.1,"potassium voltage-gated channel, Shal-related family, member 1"
+Kcnd2,500713405,6,16508,Kv4.2,"potassium voltage-gated channel, Shal-related family, member 2"
+Kcnd3,500707369,3,56543,Kv4.3,"potassium voltage-gated channel, Shal-related family, member 3"
+Kcne1,500738103,16,16509,,"potassium voltage-gated channel, Isk-related subfamily, member 1"
+Kcne2,500738099,16,246133,,"potassium voltage-gated channel, Isk-related subfamily, gene 2"
+Kcne3,500718322,7,57442,,"potassium voltage-gated channel, Isk-related subfamily, gene 3"
+Kcne4,500700654,1,57814,,"potassium voltage-gated channel, Isk-related subfamily, gene 4"
+Kcnf1,500729179,12,382571,Kv5.1,"potassium voltage-gated channel, subfamily F, member 1"
+Kcng1,500705523,2,241794,Kv6.1,"potassium voltage-gated channel, subfamily G, member 1"
+Kcng2,500741394,18,240444,Kv6.2,"potassium voltage-gated channel, subfamily G, member 2"
+Kcng3,500740111,17,225030,Kv6.3,"potassium voltage-gated channel, subfamily G, member 3"
+Kcng4,500721492,8,66733,Kv6.4,"potassium voltage-gated channel, subfamily G, member 4"
+Kcnh1,500702292,1,16510,Kv10.1,"potassium voltage-gated channel, subfamily H (eag-related), member 1"
+Kcnh2,500710976,5,16511,Kv11.1,"potassium voltage-gated channel, subfamily H (eag-related), member 2"
+Kcnh3,500736623,15,16512,Kv12.2,"potassium voltage-gated channel, subfamily H (eag-related), member 3"
+Kcnh4,500728369,11,380728,Kv12.3,"potassium voltage-gated channel, subfamily H (eag-related), member 4"
+Kcnh5,500729889,12,238271,Kv10.2,"potassium voltage-gated channel, subfamily H (eag-related), member 5"
+Kcnh6,500728564,11,192775,Kv11.2,"potassium voltage-gated channel, subfamily H (eag-related), member 6"
+Kcnh7,500703357,2,170738,Kv11.3,"potassium voltage-gated channel, subfamily H (eag-related), member 7"
+Kcnh8,500739679,17,211468,Kv12.1,"potassium voltage-gated channel, subfamily H (eag-related), member 8"
+Kcnip1,500726637,11,70357,KChip1,Kv channel-interacting protein 1
+Kcnip2,500742551,19,80906,KChip2a,Kv channel-interacting protein 2
+Kcnip3,500704636,2,56461,,"Kv channel interacting protein 3, calsenilin"
+Kcnip4,500711393,5,80334,,Kv channel interacting protein 4
+Kcnj1,500722192,9,56379,Kir1.1,"potassium inwardly-rectifying channel, subfamily J, member 1"
+Kcnj10,500701917,1,16513,Kir4.1,"potassium inwardly-rectifying channel, subfamily J, member 10"
+Kcnj11,500717520,7,16514,Kir6.2,"potassium inwardly rectifying channel, subfamily J, member 11"
+Kcnj12,500727177,11,16515,Kir2.2,"potassium inwardly-rectifying channel, subfamily J, member 12"
+Kcnj13,500700795,1,100040591,Kir7.1,"potassium inwardly-rectifying channel, subfamily J, member 13"
+Kcnj14,500717507,7,211480,Kir2.4,"potassium inwardly-rectifying channel, subfamily J, member 14"
+Kcnj15,500738157,16,16516,Kir4.2,"potassium inwardly-rectifying channel, subfamily J, member 15"
+Kcnj16,500728664,11,16517,Kir5.1,"potassium inwardly-rectifying channel, subfamily J, member 16"
+Kcnj2,500728665,11,16518,Kir2.1,"potassium inwardly-rectifying channel, subfamily J, member 2"
+Kcnj3,500703273,2,16519,Kir3.1,"potassium inwardly-rectifying channel, subfamily J, member 3"
+Kcnj4,500736119,15,16520,Kir2.3,"potassium inwardly-rectifying channel, subfamily J, member 4"
+Kcnj5,500722189,9,16521,Kir3.4,"potassium inwardly-rectifying channel, subfamily J, member 5"
+Kcnj6,500738153,16,16522,Kir3.2,"potassium inwardly-rectifying channel, subfamily J, member 6"
+Kcnj8,500715678,6,16523,Kir6.1,"potassium inwardly-rectifying channel, subfamily J, member 8"
+Kcnj9,500701916,1,16524,Kir3.3,"potassium inwardly-rectifying channel, subfamily J, member 9"
+Kcnk1,500721734,8,16525,TWIK-1,"potassium channel, subfamily K, member 1"
+Kcnk10,500730271,12,72258,TREK-2,"potassium channel, subfamily K, member 10"
+Kcnk12,500740191,17,210741,THIK-2,"potassium channel, subfamily K, member 12"
+Kcnk13,500730299,12,217826,THIK-1,"potassium channel, subfamily K, member 13"
+Kcnk15,500705361,2,241769,TASK-5,"potassium channel, subfamily K, member 15"
+Kcnk16,500733336,14,74571,TALK-1,"potassium channel, subfamily K, member 16"
+Kcnk18,500742747,19,332396,,"potassium channel, subfamily K, member 18"
+Kcnk2,500702223,1,16526,TREK-1,"potassium channel, subfamily K, member 2"
+Kcnk3,500711115,5,16527,TASK-1,"potassium channel, subfamily K, member 3"
+Kcnk4,500741716,19,16528,,"potassium channel, subfamily K, member 4"
+Kcnk5,500733334,14,16529,TASK-2,"potassium channel, subfamily K, member 5"
+Kcnk6,500716903,7,52150,TWIK-2,"potassium inwardly-rectifying channel, subfamily K, member 6"
+Kcnk7,500741644,19,16530,,"potassium channel, subfamily K, member 7"
+Kcnk9,500735843,15,223604,TASK-3,"potassium channel, subfamily K, member 9"
+Kcnma1,500733388,14,16531,Slo1,"potassium large conductance calcium-activated channel, subfamily M, alpha member 1"
+Kcnmb1,500726644,11,16533,BkB1,"potassium large conductance calcium-activated channel, subfamily M, beta member 1"
+Kcnmb2,500706130,3,72413,BkB2,"potassium large conductance calcium-activated channel, subfamily M, beta member 2"
+Kcnmb3,500706136,3,100502876,BkB3,"potassium large conductance calcium-activated channel, subfamily M, beta member 3"
+Kcnmb4,500725775,10,58802,BkB4,"potassium large conductance calcium-activated channel, subfamily M, beta member 4"
+Kcnn1,500720591,8,84036,SK1,"potassium intermediate/small conductance calcium-activated channel, subfamily N, member 1"
+Kcnn2,500740884,18,140492,SK2,"potassium intermediate/small conductance calcium-activated channel, subfamily N, member 2"
+Kcnn3,500706895,3,140493,SK3,"potassium intermediate/small conductance calcium-activated channel, subfamily N, member 3"
+Kcnn4,500716672,7,16534,SK4,"potassium intermediate/small conductance calcium-activated channel, subfamily N, member 4"
+Kcnq1,500719509,7,16535,Kv7.1,"potassium voltage-gated channel, subfamily Q, member 1"
+Kcnq2,500705819,2,16536,Kv7.2,"potassium voltage-gated channel, subfamily Q, member 2"
+Kcnq3,500735801,15,110862,Kv7.3,"potassium voltage-gated channel, subfamily Q, member 3"
+Kcnq4,500709676,4,60613,Kv7.4,"potassium voltage-gated channel, subfamily Q, member 4"
+Kcnq5,500699876,1,226922,Kv7.5,"potassium voltage-gated channel, subfamily Q, member 5"
+Kcnrg,500734462,14,328424,,potassium channel regulator
+Kcns1,500705368,2,16538,Kv9.1,"K+ voltage-gated channel, subfamily S, 1"
+Kcns2,500735465,15,16539,Kv9.2,"K+ voltage-gated channel, subfamily S, 2"
+Kcns3,500729103,12,238076,Kv9.3,"potassium voltage-gated channel, delayed-rectifier, subfamily S, member 3"
+Kcnt1,500702755,2,227632,Slo2,"potassium channel, subfamily T, member 1"
+Kcnt2,500701449,1,240776,Slo2b,"potassium channel, subfamily T, member 2"
+Kcnu1,500720009,8,16532,,"potassium channel, subfamily U, member 1"
+Kcnv1,500735618,15,67498,Kv8.1,"potassium channel, subfamily V, member 1"
+Kcnv2,500742177,19,240595,Kv8.2,"potassium channel, subfamily V, member 2"
+Kctd1,500740416,18,106931,,potassium channel tetramerisation domain containing 1
+Kctd10,500712315,5,330171,,potassium channel tetramerisation domain containing 10
+Kctd11,500727395,11,216858,,potassium channel tetramerisation domain containing 11
+Kctd12,500734964,14,239217,,potassium channel tetramerisation domain containing 12
+Kctd12b,500744878,X,207474,,potassium channel tetramerisation domain containing 12b
+Kctd13,500719055,7,233877,,potassium channel tetramerisation domain containing 13
+Kctd14,500718239,7,233529,,potassium channel tetramerisation domain containing 14
+Kctd15,500717122,7,233107,,potassium channel tetramerisation domain containing 15
+Kctd16,500740820,18,383348,,potassium channel tetramerisation domain containing 16
+Kctd17,500736060,15,72844,,potassium channel tetramerisation domain containing 17
+Kctd18,500700311,1,51960,,potassium channel tetramerisation domain containing 18
+Kctd19,500721224,8,279499,,potassium channel tetramerisation domain containing 19
+Kctd2,500728742,11,70382,,potassium channel tetramerisation domain containing 2
+Kctd20,500738946,17,66989,,potassium channel tetramerisation domain containing 20
+Kctd21,500718234,7,622320,,potassium channel tetramerisation domain containing 21
+Kctd3,500702220,1,226823,,potassium channel tetramerisation domain containing 3
+Kctd4,500734777,14,67516,,potassium channel tetramerisation domain containing 4
+Kctd5,500738711,17,69259,,potassium channel tetramerisation domain containing 5
+Kctd6,500733209,14,71393,,potassium channel tetramerisation domain containing 6
+Kctd7,500712692,5,212919,,potassium channel tetramerisation domain containing 7
+Kctd8,500711558,5,243043,,potassium channel tetramerisation domain containing 8
+Kctd9,500734604,14,105440,,potassium channel tetramerisation domain containing 9
+Scn10a,500723950,9,20264,Nav1.8,"sodium channel, voltage-gated, type X, alpha"
+Scn11a,500723952,9,24046,Nav1.9,"sodium channel, voltage-gated, type XI, alpha"
+Scn1a,500703382,2,20265,Nav1.1,"sodium channel, voltage-gated, type I, alpha"
+Scn1b,500717017,7,20266,,"sodium channel, voltage-gated, type I, beta"
+Scn2a1,500703377,2,110876,Nav1.2,"sodium channel, voltage-gated, type II, alpha 1"
+Scn2b,500722556,9,72821,,"sodium channel, voltage-gated, type II, beta"
+Scn3a,500703375,2,20269,Nav1.3,"sodium channel, voltage-gated, type III, alpha"
+Scn3b,500722419,9,235281,,"sodium channel, voltage-gated, type III, beta"
+Scn4a,500728578,11,110880,Nav1.4,"sodium channel, voltage-gated, type IV, alpha"
+Scn4b,500722557,9,399548,Nav2.4,"sodium channel, type IV, beta"
+Scn5a,500723949,9,20271,Nav1.5,"sodium channel, voltage-gated, type V, alpha"
+Scn7a,500703388,2,20272,"Nav2.1, Nav2.2, Nav2.3","sodium channel, voltage-gated, type VII, alpha"
+Scn8a,500736693,15,20273,Nav1.6,"sodium channel, voltage-gated, type VIII, alpha"
+Scn9a,500703386,2,20274,Nav1.7,"sodium channel, voltage-gated, type IX, alpha"
+Scnm1,500707091,3,69269,,sodium channel modifier 1
+Scnn1a,500715322,6,20276,,"sodium channel, nonvoltage-gated 1 alpha"
+Scnn1b,500718954,7,20277,,"sodium channel, nonvoltage-gated 1 beta"
+Scnn1g,500718952,7,20278,,"sodium channel, nonvoltage-gated 1 gamma"
+Cacfd1,500702808,2,381356,,calcium channel flower domain containing 1
+Cacna1a,500720857,8,12286,Cav2.1,"calcium channel, voltage-dependent, P/Q type, alpha 1A subunit"
+Cacna1b,500702675,2,12287,Cav2.2,"calcium channel, voltage-dependent, N type, alpha 1B subunit"
+Cacna1c,500715134,6,12288,Cav1.2,"calcium channel, voltage-dependent, L type, alpha 1C subunit"
+Cacna1d,500733502,14,12289,Cav1.3,"calcium channel, voltage-dependent, L type, alpha 1D subunit"
+Cacna1e,500701581,1,12290,Cav2.3,"calcium channel, voltage-dependent, R type, alpha 1E subunit"
+Cacna1f,500742877,X,54652,Cav1.4,"calcium channel, voltage-dependent, alpha 1F subunit"
+Cacna1g,500728058,11,12291,Cav3.1,"calcium channel, voltage-dependent, T type, alpha 1G subunit"
+Cacna1h,500738793,17,58226,Cav3.2,"calcium channel, voltage-dependent, T type, alpha 1H subunit"
+Cacna1i,500736158,15,239556,Cav3.3,"calcium channel, voltage-dependent, alpha 1I subunit"
+Cacna1s,500701384,1,12292,Cav1.1,"calcium channel, voltage-dependent, L type, alpha 1S subunit"
+Cacna2d1,500710873,5,12293,cacna2d1,"calcium channel, voltage-dependent, alpha2/delta subunit 1"
+Cacna2d2,500723655,9,56808,cacna2d2,"calcium channel, voltage-dependent, alpha 2/delta subunit 2"
+Cacna2d3,500733488,14,12294,cacna2d3,"calcium channel, voltage-dependent, alpha2/delta subunit 3"
+Cacna2d4,500715143,6,319734,,"calcium channel, voltage-dependent, alpha 2/delta subunit 4"
+Cacnb1,500728209,11,12295,cacnb1,"calcium channel, voltage-dependent, beta 1 subunit"
+Cacnb2,500702555,2,12296,cacnb2,"calcium channel, voltage-dependent, beta 2 subunit"
+Cacnb3,500736591,15,12297,cacnb3,"calcium channel, voltage-dependent, beta 3 subunit"
+Cacnb4,500703255,2,12298,cacnb4,"calcium channel, voltage-dependent, beta 4 subunit"
+Cacng1,500728613,11,12299,cacng1,"calcium channel, voltage-dependent, gamma subunit 1"
+Cacng2,500736046,15,12300,cacng2,"calcium channel, voltage-dependent, gamma subunit 2"
+Cacng3,500718972,7,54376,cacng3,"calcium channel, voltage-dependent, gamma subunit 3"
+Cacng4,500728614,11,54377,cacng4,"calcium channel, voltage-dependent, gamma subunit 4"
+Cacng5,500728615,11,140723,cacng5,"calcium channel, voltage-dependent, gamma subunit 5"
+Cacng6,500715826,7,54378,cacng6,"calcium channel, voltage-dependent, gamma subunit 6"
+Cacng7,500715821,7,81904,cacng7,"calcium channel, voltage-dependent, gamma subunit 7"
+Cacng8,500715823,7,81905,cacng8,"calcium channel, voltage-dependent, gamma subunit 8"
+Clca1,500707912,3,23844,ClCa1,chloride channel calcium activated 1
+Clca2,500707913,3,229933,ClCa2,chloride channel calcium activated 2
+Clca3a1,500707901,3,12722,ClCa3,chloride channel calcium activated 3A1
+Clca3a2,500707903,3,80797,ClCa3,chloride channel calcium activated 3A2
+Clca3b,500707905,3,229927,ClCa3,chloride channel calcium activated 3B
+Clca4a,500707910,3,99663,ClCa4,chloride channel calcium activated 4A
+Clca4b,500707908,3,99709,ClCa4,chloride channel calcium activated 4B
+Clca4c-ps,500707907,3,622139,ClCa4,chloride channel calcium activated 4C
+Clcc1,500707468,3,229725,ClIC1,chloride channel CLIC-like 1
+Clcn1,500713777,6,12723,ClvC1,chloride channel 1
+Clcn2,500737207,16,12724,ClvC2,chloride channel 2
+Clcn3,500720417,8,12725,ClvC3,chloride channel 3
+Clcn4-2,500715999,7,12727,ClvC4,chloride channel 4-2
+Clcn5,500742860,X,12728,ClvC5,chloride channel 5
+Clcn6,500710469,4,26372,ClvC6,chloride channel 6
+Clcn7,500738775,17,26373,ClvC7,chloride channel 7
+Clcnka,500710263,4,12733,ClCK1,chloride channel Ka
+Clcnkb,500710265,4,56365,ClCK2,chloride channel Kb
+Ano1,500719541,7,101772,,"anoctamin 1, calcium activated chloride channel"
+Clns1a,500718247,7,12729,,"chloride channel, nucleotide-sensitive, 1A"
+Sclt1,500706285,3,67161,,sodium channel and clathrin linker 1
+Hcn1,500733003,13,15165,HCN1,"hyperpolarization-activated, cyclic nucleotide-gated K+ 1"
+Hcn2,500725164,10,15166,HCN2,"hyperpolarization-activated, cyclic nucleotide-gated K+ 2"
+Hcn3,500706861,3,15168,HCN3,"hyperpolarization-activated, cyclic nucleotide-gated K+ 3"
+Hcn4,500722844,9,330953,HCN4,"hyperpolarization-activated, cyclic nucleotide-gated K+ 4"
+Trpa1,500699792,1,277328,TRPA1,"transient receptor potential cation channel, subfamily A, member 1"
+Trpc1,500723442,9,22063,TRPC1,"transient receptor potential cation channel, subfamily C, member 1"
+Trpc2,500718383,7,22064,TRPC2,"transient receptor potential cation channel, subfamily C, member 2"
+Trpc3,500706206,3,22065,TRPC3,"transient receptor potential cation channel, subfamily C, member 3"
+Trpc4,500706376,3,22066,TRPC4,"transient receptor potential cation channel, subfamily C, member 4"
+Trpc4ap,500705200,2,56407,TRPC4,"transient receptor potential cation channel, subfamily C, member 4 associated protein"
+Trpc5,500744717,X,22067,TRPC5,"transient receptor potential cation channel, subfamily C, member 5"
+Trpc5os,500744718,X,100503240,TRPC5,"transient receptor potential cation channel, subfamily C, member 5, opposite strand"
+Trpc6,500721833,9,22068,TRPC6,"transient receptor potential cation channel, subfamily C, member 6"
+Trpc7,500732034,13,26946,TRPC7,"transient receptor potential cation channel, subfamily C, member 7"
+Trpm1,500717778,7,17364,TRPM1,"transient receptor potential cation channel, subfamily M, member 1"
+Trpm2,500725097,10,28240,TRPM2,"transient receptor potential cation channel, subfamily M, member 2"
+Trpm3,500742108,19,226025,TRPM3,"transient receptor potential cation channel, subfamily M, member 3"
+Trpm4,500717463,7,68667,TRPM4,"transient receptor potential cation channel, subfamily M, member 4"
+Trpm5,500719508,7,56843,TRPM5,"transient receptor potential cation channel, subfamily M, member 5"
+Trpm6,500742075,19,225997,TRPM6,"transient receptor potential cation channel, subfamily M, member 6"
+Trpm7,500704611,2,58800,TRPM7,"transient receptor potential cation channel, subfamily M, member 7"
+Trpm8,500700829,1,171382,TRPM8,"transient receptor potential cation channel, subfamily M, member 8"
+Trpv1,500727535,11,193034,TRPV1,"transient receptor potential cation channel, subfamily V, member 1"
+Trpv2,500727216,11,22368,TRPV2,"transient receptor potential cation channel, subfamily V, member 2"
+Trpv3,500727536,11,246788,TRPV3,"transient receptor potential cation channel, subfamily V, member 3"
+Trpv4,500712324,5,63873,TRPV4,"transient receptor potential cation channel, subfamily V, member 4"
+Trpv5,500713761,6,194352,TRPV5,"transient receptor potential cation channel, subfamily V, member 5"
+Trpv6,500713758,6,64177,TRPV6,"transient receptor potential cation channel, subfamily V, member 6"

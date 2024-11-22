@@ -1,0 +1,110 @@
+Channel name,Gene name,Stoichiometry,Stoichiometry reference,Synonyms,Description,"Unitary current (pS), unprocessed with multiple values","Unitary current (pS), processed number value",Reference for conductance,PDB Structure Used for Area,Subunit Cross Section Area (angstrom²),Channel Cross Section Area (angstrom²),Ratio multimeric / subunit Areas,Maximal Conductance (S/cm²),Comments
+Kv1.1,KCNA1,,,"Kv1.1, RBK1, HUK1, MBK1","potassium channel, voltage gated shaker related subfamily A, member 1",10,10,Gutman 2005,1EXB(RAT),9517,"30 651,00","3,22","3,262536296",conductance taken from supp. mat. of (3) . NOT IN OPM
+Kv1.2,KCNA2,"tetrameric, heteromerized with other Kv1 α subunits",Al-Sabi 2013,"Kv1.2, HK4","potassium channel, voltage gated shaker related subfamily A, member 2",14,14,Carvacho 2008,3LUT (RAT),12868,"45 966,00","3,57","3,045729452",
+Kv1.3,KCNA3,,,"Kv1.3, MK3, HLK3, HPCN3","potassium channel, voltage gated shaker related subfamily A, member 3",13,13,Gutman 2005,7EJ1(HUMAN),,"45 077,00",,"2,883954123", EM pdb
+Kv1.4,KCNA4,,,"Kv1.4, HK1, HPCN2","potassium channel, voltage gated shaker related subfamily A, member 4",5,5,Gutman 2005,-,,,,,
+Kv1.5,KCNA5,,,"Kv1.5, HK2, HPCN1","potassium channel, voltage gated shaker related subfamily A, member 5",10,10,Carvacho 2008,-,,,,,
+Kv1.6,KCNA6,,,"Kv1.6, HBK2, PPP1R96","potassium channel, voltage gated shaker related subfamily A, member 6",9,9,Gutman 2005,-,,,,,
+Kv1.7,KCNA7,,,"Kv1.7, HAK6","potassium channel, voltage gated shaker related subfamily A, member 7",21,21,Carvacho 2008,-,,,,,
+Kv1.8,KCNA10,,,Kv1.8,"potassium channel, voltage gated shaker related subfamily A, member 10",12,12,Gutman 2005,-,,,,,
+,KCNAB1,,,"AKR6A3, KCNA1B, hKvBeta3, Kvb1.3, hKvb3","potassium channel, voltage gated subfamily A regulatory beta subunit 1",--,,,,,,,,
+,KCNAB2,,,"AKR6A5, KCNA2B, HKvbeta2.1, HKvbeta2.2","potassium channel, voltage gated subfamily A regulatory beta subunit 2",--,,,1ZSX (HUMAN),8638,"33 511,00","3,88",,NOT IN OPM
+,KCNAB3,,,"AKR6A9, KCNA3B","potassium channel, voltage gated subfamily A regulatory beta subunit 3",--,,,,,,,,
+Kv2.1,KCNB1,,,Kv2.1,"potassium channel, voltage gated Shab related subfamily B, member 1",8.0,8,Kirsch 1992,2R9R (RAT),21014,"43 438,00","2,07","1,841705419",PDB = Paddle Chimera (Kv1.2 - 2.1) WITH BETA SUBUNIT
+Kv2.2,KCNB2,,,Kv2.2,"potassium channel, voltage gated Shab related subfamily B, member 2",15,15,Carvacho 2008,-,,,,,
+Kv3.1,KCNC1,,,Kv3.1,"potassium channel, voltage gated Shaw related subfamily C, member 1",27.0,27,"De Biasi 1993, De Coursey 1984",-,,,,,
+Kv3.2,KCNC2,,,Kv3.2,"potassium channel, voltage gated Shaw related subfamily C, member 2","16.0 - 20.0, rat",18,Rudy 1999,-,,,,,
+Kv3.3,KCNC3,,,Kv3.3,"potassium channel, voltage gated Shaw related subfamily C, member 3",32 -38 pS,35,Fernandez 2003,-,,,,,
+Kv3.4,KCNC4,,,"Kv3.4, HKSHIIIC","potassium channel, voltage gated Shaw related subfamily C, member 4","14.0, rat",14,"Rettig 1992, Schroter 1991",-,,,,,
+Kv4.1,KCND1,,,Kv4.1,"potassium channel, voltage gated Shal related subfamily D, member 1",6.0,6,"An 2000, Jerng 1999, Shaidullah 2003",-,,,,,
+Kv4.2,KCND2,,,"Kv4.2, RK5, KIAA1044","potassium channel, voltage gated Shal related subfamily D, member 2",18.3 +/- 1.2,"18,3",Wang 2003,"1S6C (RAT , KChIP1 and Kv4.2)",,,,,
+Kv4.3,KCND3,,,"Kv4.3, KSHIVB","potassium channel, voltage gated Shal related subfamily D, member 3",5.0 pS,"5,00",Holmqvist 2000,"2NZ0 (HUMAN, KChIP1)",,,,,
+minK,KCNE1,,,"minK, ISK, JLNS2, LQT5","potassium channel, voltage gated subfamily E regulatory beta subunit 1",---,,,"2K21 (HUMAN, uncomplete)",,,,,
+,KCNE2,,,"MiRP1, LQT6","potassium channel, voltage gated subfamily E regulatory beta subunit 2",---,,,"2M0Q (HUMAN, uncomplete)",,,,,
+,KCNE3,,,"MiRP2, HOKPP","potassium channel, voltage gated subfamily E regulatory beta subunit 3",---,,,"2NDJ (HUMAN, uncomplete)",,,,,
+,KCNE4,as many as four KCNE4 subunits can bind to the same Kv1.3 channel,Sole 2020,MiRP3,"modulatory subunit, potassium channel, voltage gated subfamily E regulatory beta subunit 4",---,,,-,,,,,
+,KCNE5,,,,"potassium channel, voltage gated subfamily E regulatory beta subunit 5",---,,,-,,,,,
+Kv5.1,KCNF1,,,"Kv5.1, kH1, IK8","potassium channel, voltage gated modifier subfamily F, member 1",---,,,-,,,,,
+Kv6.1,KCNG1,,,"Kv6.1, kH2, K13","potassium channel, voltage gated modifier subfamily G, member 1",---,,,-,,,,,
+Kv6.2,KCNG2,,,"Kv6.2, KCNF2","potassium channel, voltage gated modifier subfamily G, member 2",---,,,-,,,,,
+Kv6.3,KCNG3,,,Kv6.3,"potassium channel, voltage gated modifier subfamily G, member 3",---,,,-,,,,,
+Kv6.4,KCNG4,,,Kv6.4,"potassium channel, voltage gated modifier subfamily G, member 4",---,,,-,,,,,
+Kv7.1,KCNQ1,,,,"potassium voltage-gated channel, subfamily Q, member 1","1.8 human, 3.2 human","2,5","Pusch 1998, Werry 2013","6UZZ (HUMAN-CaM complex), 6V00 (HUMAN, KCNQ1-KCNE3-CaM complex)",,"34 145,00",,"0,732171621",
+Kv7.2,KCNQ2,,,,"potassium voltage-gated channel, subfamily Q, member 2",6.2 human,"6,2","Li 2004, Soldovieri 2007",-,,,,,
+Kv7.3,KCNQ3,,,,"potassium voltage-gated channel, subfamily Q, member 3",8.5 human,"8,5",Li 2004,-,,,,,
+Kv7.4,KCNQ4,,,,"potassium voltage-gated channel, subfamily Q, member 4",2.1 human,"2,1",Li 2004,-,,,,,
+Kv7.5,KCNQ5,,,,"potassium voltage-gated channel, subfamily Q, member 5",2.2 human,"2,2",Li 2004,-,,,,,
+Kv8.1,KCNV1,,,,"potassium channel, subfamily V, member 1",---,,,-,,,,,Kv8.1 is not functional on its own but modulates the properties of coexpressed Kv2.1.
+Kv8.2,KCNV2,,,,"potassium channel, subfamily V, member 2",---,,,-,,,,,"Kv8.2 has no function on its own, but it has important modulatory actions on Kv2 channels."
+Kv9.1,KCNS1,,,,"K+ voltage-gated channel, subfamily S, 1",---,,,-,,,,,Electrically silent on its own.
+Kv9.2,KCNS2,,,,"K+ voltage-gated channel, subfamily S, 2",---,,,-,,,,,"Electrically silent on its own, modulates properties of Kv2.1 in heterooligomers"
+Kv9.3,KCNS3,,,,"potassium voltage-gated channel, delayed-rectifier, subfamily S, member 3",---,,,-,,,,,Modifiers/ Silencer
+Kv10.1,KCNH1,,,"Kv10.1, eag, h-eag, eag1","potassium channel, voltage gated eag related subfamily H, member 1",1 rat,"1,00",Pardo 1998,"5K7L (RAT, Eag1-CaM)","30 334,00","70 385,00","2,32","0,1420757264",
+Kv10.2,KCNH5,,,"Kv10.2, H-EAG2, eag2","potassium channel, voltage gated eag related subfamily H, member 5",4.9 ± 1.0 nS human,"4,9",Yang 2013,-,,,,,
+Kv11.1,KCNH2,,,"Kv11.1, HERG, erg1","potassium channel, voltage gated eag related subfamily H, member 2","13.5 pS, human, 2 pS at 5 mm[K+]o compared to 9 pS at 100 mm[K+]o, 5 pS in 2mMK+, 9pS in 100 mMK+","8,16","Vijayvergiya 2015, Kiehn 1996",5VA1(HUMAN),16092,"47 289,00","2,94","1,725559855",in heart
+Kv11.2,KCNH6,,,"Kv11.2, erg2, HERG2","potassium channel, voltage gated eag related subfamily H, member 6",,,,-,,,,,
+Kv11.3,KCNH7,,,"Kv11.3, HERG3, erg3","potassium channel, voltage gated eag related subfamily H, member 7",,,,-,,,,,
+Kv12.1,KCNH8,,,"Kv12.1, elk3","potassium channel, voltage gated eag related subfamily H, member 8",,,,-,,,,,
+Kv12.2,KCNH3,,,"Kv12.2, BEC1, elk2","potassium channel, voltage gated eag related subfamily H, member 3",,,,-,,,,,
+Kv12.3,KCNH4,,,"Kv12.3, elk1","potassium channel, voltage gated eag related subfamily H, member 4",,,,-,,,,,
+Kir1.1,KCNJ1,,,"Kir1.1, ROMK1","potassium channel, inwardly rectifying subfamily J, member 1",39.0,"39,00",Ho 1993,-,,,,,
+Kir2.1,KCNJ2,Do not use,,"Kir2.1, IRK1, LQT7","potassium channel, inwardly rectifying subfamily J, member 2",21.0,"21,00",Kubo 1993,-,,,,,in heart
+Kir2.2,KCNJ12,,,"Kir2.2, Kir2.2v, IRK2, hIRK1","potassium channel, inwardly rectifying subfamily J, member 12",34.2 pS,"34,20",Takahashi 1994,"3JYC (CHICKEN), 5KUK (CHICKEN)",9163,"20 330,00","2,22","16,82242991",
+Kir2.3,KCNJ4,Do not use,,"Kir2.3, HIR, HRK1, hIRK2, IRK3","potassium channel, inwardly rectifying subfamily J, member 4","13.0 pS, human","13,00",Perier 1994,-,,,,,in heart
+Kir 2.4,KCNJ14,Do not use,,,,"15.0 - 19.4 pS, rat","17,2","Tennant 2006, Topert 1998",-,,,,,cranial nerve nuclei
+Kir3.1,KCNJ3,Do not use,,"Kir3.1, GIRK1, KGA","potassium channel, inwardly rectifying subfamily J, member 3","42.0 pS, rat","42,00",Kubo 1993,2QKS (MOUSE),,"21 765,00",,"19,29703653",in heart
+Kir3.2,KCNJ6,,,"Kir3.2, GIRK2, KATP2, BIR1, hiGIRK2","potassium channel, inwardly rectifying subfamily J, member 6",30.0 pS,"30,00",Kofuji 1995,-,,,,,
+Kir3.3,KCNJ9,,,"Kir3.3, GIRK3","potassium channel, inwardly rectifying subfamily J, member 9","forms functional heteromers with Kir3.2 (31pS,) and Kir3.1 (39pS)","35,00","Jelacic 2000, Jelacic 1999, Kofujo 1995",-,,,,,
+Kir3.4,KCNJ5,,,"Kir3.4, CIR, KATP1, GIRK4, LQT13","potassium channel, inwardly rectifying subfamily J, member 5","30.0 pS,Kir3.2 forms functional heteromers with Kir3.3 (31pS)","30,5","Kofuji 1995, Jelacic 2000",-,,,,,
+Kir4.1,KCNJ10,,,"Kir4.1, Kir1.2","potassium channel, inwardly rectifying subfamily J, member 10",12.3 - 36.0 (median: 21.0) pS,"21,00","Pessia 1996, Takumi 1995, Tamemoto 2000",-,,,,,
+Kir4.2,KCNJ15,,,,,"25.2 pS, rat","25,2",Pessia 2001,-,,,,,
+Kir 5.1,KCNJ16,,,,,"Functional channels are also formed by heteromers of Kir5.1 with
+· Kir4.1 (K+,43 pS,
+· Kir4.2 (K+, 54 pS, ), rat","47,50","Pessia 1996, Pessia 2001",-,,,,,
+Kir6.1,KCNJ8,,,Kir6.1,"potassium channel, inwardly rectifying subfamily J, member 8",33.0 pS,"33,00",Yamada 1997,-,,,,,
+Kir6.2,KCNJ11,,,"Kir6.2, BIR","potassium channel, inwardly rectifying subfamily J, member 11","heteromers of Kir6.2 coexpressed with either SUR1 (74.3-76.4pS, ) or SUR2A (79.3pS,).","75,35","Beguin 1999, Inagaki 1995, Inagaki 1996",-,,,,,
+Kir 7.1,KCNJ13,,,,"potassium channel, inwardly rectifying","0.043 - 0.055 pS, human","0,05","Doring 1998, Krapavinsky 1998, Shimura 2001",-,,,,,
+KCa1.1,KCNMA1,,,Slo1,,272.0 pS,"272,00","Butler 1993, Wei 1994",6V3G (HUMAN),,"61 767,00",,"44,0364596",
+KCa2.1,KCNN1,,,,,"9.2 pS, human","9,2",Kohler 1996,,,,,,
+KCa2.2,KCNN2,,,Sk2,,"9.9 pS, rat","9,9",Kohler 1996,-,,,,,
+KCa2.3,KCNN3,,,,,10–20 pS,"15,00",Goodchild 2009,,,,,,
+KCa3.1,KCNN4,,,,,"11.0 - 40.0 pS, human","25,5","Grissmer 1993, Ishii 1997, Joiner 1997",,,,,,
+KNa1.1,KCNT1,,,Slo2.1,,,,,,,,,,
+KNa1.2,KCNT2,,,Slo2.2,,"59 , rat, 138+-1","98,50","Santi 2006, Smith 2018","5U70(open), 5U76(closed) (GALLUS)",,"57 265,00",,"17,20073343",
+KCa5.1,KCNU1,,,,,"106.0 - 110.0 pS, human","108,00",Schreiber 1998,,,,,,
+TWIK1 (K2P1.1),KCNK1,,,,,"32 human, 41/132, 34","132,00","Rajan 2005, Xian 2006, lesage 1996",3UKM (HUMAN),,"9 966,00",,"132,4503311",
+TREK1 (K2P2.1),KCNK2,,,,,"85 rat,112 pS","98,50","Bockenhauer 2001, Kang 2006",6CQ8 (MOUSE),,"19 727,00",,"49,93156587",
+TASK1 (K2P3.1),KCNK3,,,,,"16.2 ± 1.3, 14.2 ± 0.4 (heteromer with task-3: 38.1 ± 0.7 pS)","15,2","Han 2002, Kang 2004 (J. Physiology)",6RV2 (HUMAN),,"11 770,00",,"12,91418862",
+TRAAK1 (K2P4.1),KCNK4,,,,,"73 pS, 45.5","59,25","Kang 2006, Kim 2001",4WFE (HUMAN),,"12 344,00",,"47,99902787",
+TASK2 (K2P5.1),KCNK5,,,,,70,"70,00",Kang 2004,6WLV (MOUSE),,"13 098,00",,"53,44327378",
+TWIK2 (K2P6.1),KCNK6,,,,,33,"33,00",Yost 2000,-,,,,,
+KCNK7 (K2P7.1),KCNK7,,,,,,,,-,,,,,
+TASK3 (K2P9.1),KCNK9,,,,,"60pS, guinea pig; 36, rat, 37.8 ± 0.7,  27 pS at −60 mV and 17 pS at 60 mV","35,50","Han 2002, Kang 2004 (J. Physiology), Kim 2000",-,,,,,
+TREK2 (K2P10.1),KCNK10,,,,,"104 ± 6,52/220. 50 pS, 110 (-40 mv) 68 (+40 mv)","110,00","Han 2002,Simkin 2008, Kang 2006","4BW5(open), 4XDK(closed) (HUMAN)",,"10 226,00",,"107,5689419",
+THIK2 (K2P12.1),KCNK12,,,,,,,,-,,,,,Does not function as a homodimer but can form a functional heterodimer with K2P13
+THIK1 (K2P13.1),KCNK13,,,,,"5, rat","5,00",Kang 2013,-,,,,,
+TASK5 (K2P15.1),KCNK15,,,,,0,"0,00",Kim 2001,-,,,,,nonfunctional by itself
+TALK1 (K2P16.1),KCNK16,,,,,21,"21,00",Kang 2004,-,,,,,
+TALK2 (K2P17.1),KCNK17,,,,,33,"33,00",Kang 2004,-,,,,,
+TRESK (K2P18.1),KCNK18,,,,,14 pS,"14,00",Kang 2006,-,,,,,
+Slo2.1,KCNT1,,,,might be kna,100–200 pS if kna,"150,00",Gray 2021,-,,,,,
+Slo2.2,KCNT2,,,,might be kna,100–200 pS if kna,"150,00",Gray 2021,"5U70(open), 5U76(closed) (GALLUS)",,,,,
+NaChBAC-L1,,,,,,26 +/- 6,"26,00",Jo 2017,,,,,,
+NaChBAC-L2,,,,,,93 +/- 18,"93,00",Jo 2017,,,,,,
+NaChBAC-L3,,,,,,268 +/- 45,"268,00",Jo 2017,,,,,,
+HCN1,HCN1,,,,,0.46,"0,46",Liu 2016,5U6O (HUMAN),,"36 355,00",,"0,1265300509",
+HCN2,HCN2,,,,,1.71,"1,71",Liu 2016,-,,,,,
+"Nav1.1, ",SCN1A,,,,,"17, human","17,00",Vanoye 2006,7DTD (HUMAN),,"36 934,00",,"4,602805004",
+"Nav1.2, ",SCN2A,,,,,"19, rat; 20.8  +/-1.8 ","19,9",Stuhmer 1997; Ben-Shalom 2017,6J8E (HUMAN),,"39 662,00",,"5,017397005",
+Nav1.3,SCN3A,,,,,,,,-,,,,,
+Nav 1.4,SCN4A,Do not use,,,,53,"53,00","Backx 1992, Weiss 1986",-,,,,,muscle channel
+Nav 1.5,SCN5A,Do not use,,,,43,"43,00","Backx 1992, Weiss 1986",7DTC (HUMAN),,"33 726,00",,"12,74980727",muscle channel
+Nav1.6,SCN8A,,,,,"16, if equivalent to Nap","16,00",Puig 2016,-,,,,,
+Nav 1.7,SCN9A,Do not use,,,,	19.5 in rat,"19,5",Rush 1998,"6N4Q, 6N4R",,"47 547,00",,"4,101205123","PNS, dorsal root ganglion"
+Nav 1.8,SCN10A,Do not use,,,,,,,-,,,,,"PNS, dorsal root ganglion"
+Nav 1.9,SCN11A,Do not use,,,,,,,-,,,,,"PNS, dorsal root ganglion"
+,,,,,,,,,,,,,,
+,,,,,,,,,,,"34 041,04",,,
+,,,,,,,,,,,"17178,3519",,,
+,,,,,,,,,,,,,,
+,,,,,,,,,,,"0,5046364666",,,
