@@ -21,6 +21,7 @@ import logging
 from pathlib import Path
 
 import efel
+import matplotlib.pyplot as plt
 import numpy
 from bluepyopt.ephys.objectives import SingletonWeightObjective
 
@@ -257,6 +258,60 @@ def find_matching_feature(evaluator, protocol_name):
     return None, False
 
 
+def create_protocol(amp_rel, amp, feature, protocol, protocol_name):
+    """
+    Create a new threshold-based protocol with an adjusted stimulus amplitude.
+
+    This function generates a new protocol based on a given protocol,
+    adjusting the stimulus amplitude relative to a specified threshold.
+    If an absolute amplitude (`amp`) is provided,
+    the stimulus amplitude is recalculated based on the relative amplitude (`amp_rel`)
+    and the reference current from the feature.
+
+    Parameters:
+    - amp_rel: Relative amplitude as a percentage of the threshold current.
+    - amp: Absolute amplitude to use for recalculating the stimulus amplitude.
+    - feature: Optional feature object used to retrieve the threshold current for scaling.
+    - protocol: The original protocol to modify.
+    - protocol_name: Name for the new protocol.
+
+    Returns:
+    - A new protocol object with the adjusted threshold-based stimulus amplitude.
+    """
+    if amp is None:
+        s_amp = amp_rel
+    elif amp_rel is not None and feature is not None:
+        s_amp = feature.stimulus_current() * amp_rel / amp
+    else:
+        s_amp = None
+
+    stimuli = [
+        {
+            "holding_current": protocol.stimuli[0].holding_current,
+            "threshold_current": protocol.stimuli[0].threshold_current,
+            "amp": s_amp,
+            "thresh_perc": amp_rel,
+            "delay": protocol.stimuli[0].delay,
+            "duration": protocol.stimuli[0].duration,
+            "totduration": protocol.stimuli[0].total_duration,
+        }
+    ]
+    recordings = [
+        {
+            "type": "CompRecording",
+            "name": f"{protocol_name}.soma.v",
+            "location": "soma",
+            "variable": "v",
+        }
+    ]
+    my_protocol_configuration = ProtocolConfiguration(
+        name=protocol_name, stimuli=stimuli, recordings=recordings, validation=False
+    )
+    p = define_protocol(my_protocol_configuration)
+
+    return p
+
+
 def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", new_amps=None):
     """Returns a copy of the evaluator, with missing features added for IV_curve computation.
 
@@ -282,13 +337,12 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", new_amp
                     prot_v_deflection.append(prot.name)
 
     if new_amps is not None:
-        for protocol_name in prot_v_deflection + prot_max_v:
-            for amp in new_amps:
-                protocol_name_amp = f"{protocol_name.split('_')[0]}_{amp}"
-                if 0 <= amp < 100:
-                    prot_max_v.append(protocol_name_amp)
-                elif amp < 0:
-                    prot_v_deflection.append(protocol_name_amp)
+        for amp in new_amps:
+            protocol_name_amp = f"{prot_name.split('_')[0]}_{amp}"
+            if 0 <= amp < 100:
+                prot_max_v.append(protocol_name_amp)
+            elif amp < 0:
+                prot_v_deflection.append(protocol_name_amp)
 
     # maps protocols of interest with all its associated features
     # also get protocol data we need for feature registration
@@ -313,30 +367,7 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", new_amp
                 amp_rel = float(protocol_name.split("_")[1])
                 amp = float(matched_feat.recording_names[""].split(".")[0].split("_")[-1])
                 p_rel = updated_evaluator.fitness_protocols["main_protocol"].protocols[p_rel_name]
-                stimuli = [
-                    {
-                        "holding_current": p_rel.stimuli[0].holding_current,
-                        "threshold_current": p_rel.stimuli[0].threshold_current,
-                        "amp": matched_feat.stimulus_current() * amp_rel / amp,
-                        "thresh_perc": amp_rel,
-                        "delay": p_rel.stimuli[0].delay,
-                        "duration": p_rel.stimuli[0].duration,
-                        "totduration": p_rel.stimuli[0].total_duration,
-                    }
-                ]
-                recordings = [
-                    {
-                        "type": "CompRecording",
-                        "name": f"{protocol_name}.soma.v",
-                        "location": "soma",
-                        "variable": "v",
-                    }
-                ]
-                my_protocol_configuration = ProtocolConfiguration(
-                    name=protocol_name, stimuli=stimuli, recordings=recordings, validation=False
-                )
-                p = define_protocol(my_protocol_configuration)
-
+                p = create_protocol(amp_rel, amp, matched_feat, p_rel, protocol_name)
                 updated_evaluator.fitness_protocols["main_protocol"].protocols[protocol_name] = p
 
                 if protocol_name not in prots_to_feats:
@@ -397,6 +428,10 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", new_amp
                     1.0,
                 )
             )
+
+    updated_evaluator.fitness_protocols["main_protocol"].execution_order = (
+        updated_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    )
 
     return updated_evaluator
 
@@ -722,3 +757,105 @@ def get_voltage_currents_from_files(key_dict, output_dir):
     ionic_concentrations = [numpy.loadtxt(ion_conc_path)[:, 1] for ion_conc_path in ion_conc_paths]
 
     return time, voltage, currents, ionic_concentrations
+
+
+def get_original_protocol_name(prot_name, evaluator):
+    """Retrieve the protocol name as defined by the user, preserving the original case"""
+    for protocol_name in evaluator.fitness_protocols["main_protocol"].protocols:
+        if prot_name.lower() in protocol_name.lower():
+            return protocol_name
+    return prot_name
+
+
+def update_evaluator(expt_amp_rel, prot_name, evaluator):
+    """update evaluator with new simulation protocols."""
+    for amp_rel in expt_amp_rel:
+        protocol_name = f"{prot_name.split('_')[0]}_{int(amp_rel)}"
+        protocol = evaluator.fitness_protocols["main_protocol"].protocols[prot_name]
+        if protocol_name not in evaluator.fitness_protocols["main_protocol"].protocols:
+            p = create_protocol(int(amp_rel), None, None, protocol, protocol_name)
+            evaluator.fitness_protocols["main_protocol"].protocols[protocol_name] = p
+
+            for objective in evaluator.fitness_calculator.objectives:
+                feat = objective.features[0]
+                if (
+                    protocol_name.split("_", maxsplit=1)[0] in feat.recording_names[""]
+                    and "mean_frequency" in feat.efel_feature_name
+                ):
+                    feat_name = f"{protocol_name}.soma.v.mean_frequency"
+                    amp_rel = float(protocol_name.split("_")[1])
+                    amp = float(feat.recording_names[""].split(".")[0].split("_")[-1])
+                    evaluator.fitness_calculator.objectives.append(
+                        SingletonWeightObjective(
+                            feat_name,
+                            eFELFeatureBPEM(
+                                feat_name,
+                                efel_feature_name="mean_frequency",
+                                recording_names={"": f"{protocol_name}.soma.v"},
+                                stim_start=feat.stim_start,
+                                stim_end=feat.stim_end,
+                                exp_mean=1.0,  # fodder: not used
+                                exp_std=1.0,  # fodder: not used
+                                threshold=feat.threshold,
+                                stimulus_current=feat.stimulus_current() * amp_rel / amp,
+                                weight=1.0,
+                            ),
+                            1.0,
+                        )
+                    )
+                    break
+    return evaluator
+
+
+def plot_fi_curves(expt_data, sim_data, figures_dir, emodel, write_fig):
+    """Plot and save the FI curves."""
+    (
+        expt_amp_rel,
+        expt_freq_rel,
+        expt_freq_rel_err,
+        expt_amp,
+        expt_freq_abs,
+        expt_freq_abs_err,
+    ) = expt_data
+    simulated_amp_rel, simulated_amp, simulated_freq = sim_data
+
+    _, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
+    ax[0].errorbar(
+        expt_amp_rel,
+        expt_freq_rel,
+        yerr=expt_freq_rel_err,
+        marker="o",
+        color="grey",
+        label="experiment",
+    )
+    ax[0].plot(simulated_amp_rel, simulated_freq, "o", color="blue", label="model")
+    ax[0].set_xlabel("Amplitude (% of rheobase)")
+    ax[0].set_ylabel("Mean Frequency (Hz)")
+    ax[0].set_title("FI curve (relative amplitude)")
+    ax[0].legend()
+
+    ax[1].errorbar(
+        expt_amp,
+        expt_freq_abs,
+        yerr=expt_freq_abs_err,
+        marker="o",
+        color="grey",
+        label="experiment",
+    )
+    ax[1].plot(simulated_amp, simulated_freq, "o", color="blue", label="model")
+    ax[1].set_xlabel("Amplitude (nA)")
+    ax[1].set_ylabel("Voltage (mV)")
+    ax[1].set_title("FI curve (absolute amplitude)")
+    ax[1].legend()
+
+    if write_fig:
+        filename = f"{emodel.emodel_metadata.as_string(emodel.seed)}__FI_curve_comparison.pdf"
+        save_fig(figures_dir, filename)
+
+
+def save_fig(figures_dir, figure_name, dpi=100):
+    """Save a matplotlib figure"""
+    p = Path(figures_dir) / figure_name
+    plt.savefig(str(p), dpi=dpi, bbox_inches="tight")
+    plt.close("all")
+    plt.clf()
