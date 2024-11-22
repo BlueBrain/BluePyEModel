@@ -1236,11 +1236,10 @@ def plot_IV_curves(
         efel_settings = bluepyefe.tools.DEFAULT_EFEL_SETTINGS.copy()
 
     lower_bound = -100
-    upper_bound = 300
+    upper_bound = 100
 
     # Generate amplitude points
-    sim_amp_points = list(numpy.linspace(lower_bound, upper_bound, n_bin))
-
+    sim_amp_points = list(map(int, numpy.linspace(lower_bound, upper_bound, n_bin + 1)))
     # add missing features (if any) to evaluator
     updated_evaluator = fill_in_IV_curve_evaluator(
         evaluator, efel_settings, prot_name, sim_amp_points

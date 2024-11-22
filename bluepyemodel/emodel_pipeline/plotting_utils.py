@@ -337,12 +337,15 @@ def fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name="iv", new_amp
                     prot_v_deflection.append(prot.name)
 
     if new_amps is not None:
+        prot_name_original = get_original_protocol_name(prot_name, evaluator)
         for amp in new_amps:
-            protocol_name_amp = f"{prot_name.split('_')[0]}_{amp}"
+            protocol_name_amp = f"{prot_name_original.split('_')[0]}_{amp}"
             if 0 <= amp < 100:
-                prot_max_v.append(protocol_name_amp)
+                if protocol_name_amp not in prot_max_v:
+                    prot_max_v.append(protocol_name_amp)
             elif amp < 0:
-                prot_v_deflection.append(protocol_name_amp)
+                if protocol_name_amp not in prot_v_deflection:
+                    prot_v_deflection.append(protocol_name_amp)
 
     # maps protocols of interest with all its associated features
     # also get protocol data we need for feature registration
