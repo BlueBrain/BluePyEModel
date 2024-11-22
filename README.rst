@@ -36,10 +36,12 @@ For detailed citation information, please refer to the `CITATION.cff <./CITATION
 
 Additionally, to cite software used for different steps of the pipeline, please use these :
 
-- Optimisation and Validation: ``BluePyOpt``: `Van Geit et al., 2016 <https://doi.org/10.3389/fninf.2016.00017>`_
+- Optimisation and Validation:
+   - ``BluePyOpt``: `Van Geit et al., 2016 <https://doi.org/10.3389/fninf.2016.00017>`_
+   - ``NEURON``:  The NEURON Book: Carnevale and Hines 2006 : https://doi.org/10.1017/CBO9780511541612
 - Feature Extraction:
-  -- ``eFEL``: `Zenodo DOI: 10.5281/zenodo.593869 <https://doi.org/10.5281/zenodo.593869>`_
-  -- ``BluePyEfe``: `Zenodo DOI: 10.5281/zenodo.3728191 <https://doi.org/10.5281/zenodo.3728191>`_
+  - ``eFEL``: `Zenodo DOI: 10.5281/zenodo.593869 <https://doi.org/10.5281/zenodo.593869>`_
+  - ``BluePyEfe``: `Zenodo DOI: 10.5281/zenodo.3728191 <https://doi.org/10.5281/zenodo.3728191>`_
 - Ion Channel Selector: `Me-Features-to-Mo-ID Mapping <https://github.com/BlueBrain/me-features-to-mo-ID-mapping>`_: paper: `Roussel et al., 2023 <https://doi.org/10.1371/journal.pcbi.1010058>`_
 
 Installation
