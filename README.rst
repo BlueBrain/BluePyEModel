@@ -30,10 +30,17 @@ Note that this package only covers e-model building based on patch-clamp data an
 
 How to cite
 -----------
-If you use this repository in your work, please refer to the ``Cite this repository`` button at the top of the repository page to get various citation formats, including APA and BibTeX.
+If you use this repository in your work, please use the ``Cite this repository`` button at the top of the repository page to get various citation formats, including APA and BibTeX.
 
 For detailed citation information, please refer to the `CITATION.cff <./CITATION.cff>`_ file.
 
+Additionally, to cite software used for different steps of the pipeline, please use these :
+
+- Optimisation and Validation: ``BluePyOpt``: `Van Geit et al., 2016 <https://doi.org/10.3389/fninf.2016.00017>`_
+- Feature Extraction:
+  -- ``eFEL``: `Zenodo DOI: 10.5281/zenodo.593869 <https://doi.org/10.5281/zenodo.593869>`_
+  -- ``BluePyEfe``: `Zenodo DOI: 10.5281/zenodo.3728191 <https://doi.org/10.5281/zenodo.3728191>`_
+- Ion Channel Selector: `Me-Features-to-Mo-ID Mapping <https://github.com/BlueBrain/me-features-to-mo-ID-mapping>`_: paper: `Roussel et al., 2023 <https://doi.org/10.1371/journal.pcbi.1010058>`_
 
 Installation
 ------------
