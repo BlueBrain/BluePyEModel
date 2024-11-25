@@ -260,23 +260,17 @@ def find_matching_feature(evaluator, protocol_name):
 
 def create_protocol(amp_rel, amp, feature, protocol, protocol_name):
     """
-    Create a new threshold-based protocol with an adjusted stimulus amplitude.
+    Create a new protocol with adjusted stimulus amplitude based on a threshold.
 
-    This function generates a new protocol based on a given protocol,
-    adjusting the stimulus amplitude relative to a specified threshold.
-    If an absolute amplitude (`amp`) is provided,
-    the stimulus amplitude is recalculated based on the relative amplitude (`amp_rel`)
-    and the reference current from the feature.
-
-    Parameters:
-    - amp_rel: Relative amplitude as a percentage of the threshold current.
-    - amp: Absolute amplitude to use for recalculating the stimulus amplitude.
-    - feature: Optional feature object used to retrieve the threshold current for scaling.
-    - protocol: The original protocol to modify.
-    - protocol_name: Name for the new protocol.
+    Arguments:
+        amp_rel (float): Relative amplitude as a percentage of the threshold current.
+        amp (float): Absolute amplitude to use for recalculating the stimulus amplitude.
+        feature (eFELFeatureBPEM, optional): Feature object used to retrieve the threshold current for scaling.
+        protocol (BPEMProtocol): The original protocol to modify.
+        protocol_name (str): Name for the new protocol.
 
     Returns:
-    - A new protocol object with the adjusted threshold-based stimulus amplitude.
+        BPEMProtocol: A new protocol object with the adjusted threshold-based stimulus amplitude.
     """
     if amp is None:
         s_amp = amp_rel
