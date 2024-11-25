@@ -265,7 +265,8 @@ def create_protocol(amp_rel, amp, feature, protocol, protocol_name):
     Arguments:
         amp_rel (float): Relative amplitude as a percentage of the threshold current.
         amp (float): Absolute amplitude to use for recalculating the stimulus amplitude.
-        feature (eFELFeatureBPEM, optional): Feature object used to retrieve the threshold current for scaling.
+        feature (eFELFeatureBPEM, optional): Feature object used to retrieve the threshold
+        current for scaling.
         protocol (BPEMProtocol): The original protocol to modify.
         protocol_name (str): Name for the new protocol.
 
