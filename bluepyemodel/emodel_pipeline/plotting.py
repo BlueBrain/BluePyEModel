@@ -43,6 +43,7 @@ from bluepyemodel.emodel_pipeline.plotting_utils import fill_in_IV_curve_evaluat
 from bluepyemodel.emodel_pipeline.plotting_utils import get_experimental_FI_curve_for_plotting
 from bluepyemodel.emodel_pipeline.plotting_utils import get_impedance
 from bluepyemodel.emodel_pipeline.plotting_utils import get_ordered_currentscape_keys
+from bluepyemodel.emodel_pipeline.plotting_utils import get_original_protocol_name
 from bluepyemodel.emodel_pipeline.plotting_utils import get_recording_names
 from bluepyemodel.emodel_pipeline.plotting_utils import get_simulated_FI_curve_for_plotting
 from bluepyemodel.emodel_pipeline.plotting_utils import get_sinespec_evaluator
@@ -50,7 +51,10 @@ from bluepyemodel.emodel_pipeline.plotting_utils import get_title
 from bluepyemodel.emodel_pipeline.plotting_utils import get_traces_names_and_float_responses
 from bluepyemodel.emodel_pipeline.plotting_utils import get_traces_ylabel
 from bluepyemodel.emodel_pipeline.plotting_utils import get_voltage_currents_from_files
+from bluepyemodel.emodel_pipeline.plotting_utils import plot_fi_curves
 from bluepyemodel.emodel_pipeline.plotting_utils import rel_to_abs_amplitude
+from bluepyemodel.emodel_pipeline.plotting_utils import save_fig
+from bluepyemodel.emodel_pipeline.plotting_utils import update_evaluator
 from bluepyemodel.evaluation.evaluation import compute_responses
 from bluepyemodel.evaluation.evaluation import get_evaluator_from_access_point
 from bluepyemodel.evaluation.evaluator import PRE_PROTOCOLS
@@ -83,14 +87,6 @@ colours = {
     "modelpoint_basal": "mediumseagreen",
     "modelline_basal": "darkgreen",
 }
-
-
-def save_fig(figures_dir, figure_name, dpi=100):
-    """Save a matplotlib figure"""
-    p = Path(figures_dir) / figure_name
-    plt.savefig(str(p), dpi=dpi, bbox_inches="tight")
-    plt.close("all")
-    plt.clf()
 
 
 def optimisation(
@@ -1205,8 +1201,11 @@ def run_and_plot_EPSP(
 def plot_IV_curves(
     evaluator,
     emodels,
+    access_point,
     figures_dir,
     efel_settings,
+    mapper,
+    seeds,
     prot_name="iv",
     custom_bluepyefe_cells_pklpath=None,
     write_fig=True,
@@ -1218,8 +1217,11 @@ def plot_IV_curves(
     Args:
         evaluator (CellEvaluator): cell evaluator
         emodels (list): list of EModels
+        access_point (DataAccessPoint): data access point
         figures_dir (str or Path): output directory for the figure to be saved on
         efel_settings (dict): eFEL settings in the form {setting_name: setting_value}.
+        mapper (map): used to parallelize the evaluation of the individual in the population.
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
         prot_name (str): Only recordings from this protocol will be used.
         custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
             If None, will use usual file path used in BluePyEfe,
@@ -1227,14 +1229,28 @@ def plot_IV_curves(
         write_fig (bool): whether to save the figure
         n_bin (int): number of bins to use
     """
-    # pylint: disable=too-many-nested-blocks, possibly-used-before-assignment
+    # pylint: disable=too-many-nested-blocks, possibly-used-before-assignment, disable=too-many-locals, disable=too-many-statements
     # note: should maybe also check location and recorded variable
     make_dir(figures_dir)
     if efel_settings is None:
         efel_settings = bluepyefe.tools.DEFAULT_EFEL_SETTINGS.copy()
 
+    lower_bound = -100
+    upper_bound = 100
+
+    # Generate amplitude points
+    sim_amp_points = list(map(int, numpy.linspace(lower_bound, upper_bound, n_bin + 1)))
     # add missing features (if any) to evaluator
-    updated_evaluator = fill_in_IV_curve_evaluator(evaluator, efel_settings, prot_name)
+    updated_evaluator = fill_in_IV_curve_evaluator(
+        evaluator, efel_settings, prot_name, sim_amp_points
+    )
+
+    emodels = compute_responses(
+        access_point,
+        updated_evaluator,
+        map_function=mapper,
+        seeds=seeds,
+    )
 
     emodel_name = None
     cells = None
@@ -1349,6 +1365,9 @@ def plot_IV_curves(
 def plot_FI_curves_comparison(
     evaluator,
     emodels,
+    access_point,
+    seeds,
+    mapper,
     figures_dir,
     prot_name,
     custom_bluepyefe_cells_pklpath=None,
@@ -1362,6 +1381,9 @@ def plot_FI_curves_comparison(
     Args:
         evaluator (CellEvaluator): cell evaluator
         emodels (list): list of EModels
+        access_point (DataAccessPoint): data access point
+        seeds (list): if not None, filter emodels to keep only the ones with these seeds.
+        mapper (map): used to parallelize the evaluation of the individual in the population.
         figures_dir (str or Path): output directory for the figure to be saved on
         prot_name (str): name of the protocol to use for the FI curve
         custom_bluepyefe_cells_pklpath (str): file path to the cells.pkl output of BluePyEfe.
@@ -1373,8 +1395,8 @@ def plot_FI_curves_comparison(
     # pylint: disable=too-many-nested-blocks, possibly-used-before-assignment
     make_dir(figures_dir)
 
-    emodel_name = None
-    cells = None
+    emodel_name, cells = None, None
+    updated_evaluator = copy.deepcopy(evaluator)
     for emodel in emodels:
         # do not re-extract data if the emodel is the same as previously
         if custom_bluepyefe_cells_pklpath is not None:
@@ -1382,15 +1404,9 @@ def plot_FI_curves_comparison(
                 cells = read_extraction_output(custom_bluepyefe_cells_pklpath)
             if cells is None:
                 continue
+
             # experimental FI curve
-            (
-                expt_amp_rel,
-                expt_freq_rel,
-                expt_freq_rel_err,
-                expt_amp,
-                expt_freq_abs,
-                expt_freq_abs_err,
-            ) = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
+            expt_data = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
         elif emodel_name != emodel.emodel_metadata.emodel or cells is None:
             # take extraction data from pickle file and rearange it for plotting
             cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
@@ -1399,57 +1415,47 @@ def plot_FI_curves_comparison(
                 continue
 
             # experimental FI curve
-            (
-                expt_amp_rel,
-                expt_freq_rel,
-                expt_freq_rel_err,
-                expt_amp,
-                expt_freq_abs,
-                expt_freq_abs_err,
-            ) = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
+            expt_data = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
 
             emodel_name = emodel.emodel_metadata.emodel
 
-        # simulated FI curve
-        simulated_amp_rel, simulated_amp, simulated_freq = get_simulated_FI_curve_for_plotting(
-            evaluator, emodel.responses, prot_name
+        expt_data_amp_rel = expt_data[0]
+        prot_name_original = get_original_protocol_name(prot_name, evaluator)
+        updated_evaluator = update_evaluator(
+            expt_data_amp_rel, prot_name_original, updated_evaluator
         )
 
-        # plotting
-        _, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
-        ax[0].errorbar(
-            expt_amp_rel,
-            expt_freq_rel,
-            yerr=expt_freq_rel_err,
-            marker="o",
-            color="grey",
-            label="experiment",
-        )
-        ax[0].set_xlabel("Amplitude (% of rheobase)")
-        ax[0].set_ylabel("Mean Frequency (Hz)")
-        ax[0].set_title("FI curve (relative amplitude)")
-        ax[0].plot(simulated_amp_rel, simulated_freq, "o", color="blue", label="model")
+    updated_evaluator.fitness_protocols["main_protocol"].execution_order = (
+        updated_evaluator.fitness_protocols["main_protocol"].compute_execution_order()
+    )
 
-        ax[1].errorbar(
-            expt_amp,
-            expt_freq_abs,
-            yerr=expt_freq_abs_err,
-            marker="o",
-            color="grey",
-            label="experiment",
-        )
-        ax[1].set_xlabel("Amplitude (nA)")
-        ax[1].set_ylabel("Voltage (mV)")
-        ax[1].set_title("IV curve (absolute amplitude)")
-        ax[1].plot(simulated_amp, simulated_freq, "o", color="blue", label="model")
+    emodels = compute_responses(access_point, updated_evaluator, mapper, seeds)
+    for emodel in emodels:
+        # do not re-extract data if the emodel is the same as previously
+        if custom_bluepyefe_cells_pklpath is not None:
+            if cells is None:
+                cells = read_extraction_output(custom_bluepyefe_cells_pklpath)
+            if cells is None:
+                continue
 
-        ax[0].legend()
-        ax[1].legend()
-        if write_fig:
-            save_fig(
-                figures_dir,
-                emodel.emodel_metadata.as_string(emodel.seed) + "__FI_curve_comparison.pdf",
-            )
+            # experimental FI curve
+            expt_data = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
+        elif emodel_name != emodel.emodel_metadata.emodel or cells is None:
+            # take extraction data from pickle file and rearange it for plotting
+            cells = read_extraction_output_cells(emodel.emodel_metadata.emodel)
+            emodel_name = emodel.emodel_metadata.emodel
+            if cells is None:
+                continue
+
+            # experimental FI curve
+            expt_data = get_experimental_FI_curve_for_plotting(cells, prot_name, n_bin=n_bin)
+
+            emodel_name = emodel.emodel_metadata.emodel
+
+        sim_data = get_simulated_FI_curve_for_plotting(
+            updated_evaluator, emodel.responses, prot_name
+        )
+        plot_fi_curves(expt_data, sim_data, figures_dir, emodel, write_fig)
 
 
 def phase_plot(
@@ -2046,10 +2052,13 @@ def plot_models(
         plot_IV_curves(
             cell_evaluator,
             emodels,
+            access_point,
             figures_dir_IV_curves,
             # maybe we should give efel_settings as an argument of plot_models,
             # like the other pipeline_settings
             access_point.pipeline_settings.efel_settings,
+            mapper,
+            seeds,
             IV_curve_prot_name,
             custom_bluepyefe_cells_pklpath=custom_bluepyefe_cells_pklpath,
         )
@@ -2059,6 +2068,9 @@ def plot_models(
         plot_FI_curves_comparison(
             cell_evaluator,
             emodels,
+            access_point,
+            seeds,
+            mapper,
             figures_dir_FI_curves,
             FI_curve_prot_name,
             custom_bluepyefe_cells_pklpath=custom_bluepyefe_cells_pklpath,

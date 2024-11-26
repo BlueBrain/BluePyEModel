@@ -456,6 +456,14 @@ class EModelPipelineSettings:
         self.plot_IV_curves = plot_IV_curves
         self.plot_FI_curve_comparison = plot_FI_curve_comparison
         self.plot_traces_comparison = plot_traces_comparison
+        if extract_absolute_amplitudes is True:
+            if any((plot_IV_curves, plot_FI_curve_comparison)):
+                logger.warning(
+                    "The 'plot_IV_curves' and 'plot_FI_curve_comparison' features do not "
+                    "support absolute current amplitude. These plots have been disabled."
+                )
+                self.plot_IV_curves = False
+                self.plot_FI_curve_comparison = False
         if pickle_cells_extraction is False:
             if any((plot_IV_curves, plot_FI_curve_comparison, plot_traces_comparison)):
                 logger.warning(
