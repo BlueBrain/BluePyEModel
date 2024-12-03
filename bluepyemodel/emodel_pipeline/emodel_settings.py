@@ -408,6 +408,16 @@ class EModelPipelineSettings:
         # Specific to threshold based optimisation
         self.name_Rin_protocol = name_Rin_protocol
         self.name_rmp_protocol = name_rmp_protocol
+        if self.extract_absolute_amplitudes and (
+            self.name_Rin_protocol is not None or self.name_rmp_protocol is not None
+        ):
+            self.name_Rin_protocol = None
+            self.name_rmp_protocol = None
+            logger.warning(
+                "Setting threshold-based amplitude related settings "
+                "'name_rmp_protocol' and 'name_Rin_protocol' to None because "
+                "extract_absolute_amplitudes setting is set to True"
+            )
         self.strict_holding_bounds = strict_holding_bounds
 
         # Settings related to the validation
@@ -446,6 +456,14 @@ class EModelPipelineSettings:
         self.plot_IV_curves = plot_IV_curves
         self.plot_FI_curve_comparison = plot_FI_curve_comparison
         self.plot_traces_comparison = plot_traces_comparison
+        if extract_absolute_amplitudes is True:
+            if any((plot_IV_curves, plot_FI_curve_comparison)):
+                logger.warning(
+                    "The 'plot_IV_curves' and 'plot_FI_curve_comparison' features do not "
+                    "support absolute current amplitude. These plots have been disabled."
+                )
+                self.plot_IV_curves = False
+                self.plot_FI_curve_comparison = False
         if pickle_cells_extraction is False:
             if any((plot_IV_curves, plot_FI_curve_comparison, plot_traces_comparison)):
                 logger.warning(
