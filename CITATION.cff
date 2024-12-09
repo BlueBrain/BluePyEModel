@@ -5,12 +5,12 @@ doi: 10.5281/zenodo.8283490
 url: https://doi.org/10.5281/zenodo.8283490
 abstract: "BluePyEModel is a Python package facilitating the configuration and execution of electrical neuron model (e-model) building tasks. It covers tasks such as extraction of electrical features from electrophysiology data, e-model parameters optimisation and model validation. As such, it builds on top of eFEL, BluePyEfe and BluePyOpt."
 authors:
-  - family-names: "Damart"
-    given-names: "Tanguy"
-  - family-names: "Jaquier"
-    given-names: "Aurélien"
   - family-names: "Mandge"
     given-names: "Darshan"
+  - family-names: "Jaquier"
+    given-names: "Aurélien"
+  - family-names: "Damart"
+    given-names: "Tanguy"
   - family-names: "Kilic"
     given-names: "Ilkan"
   - family-names: "Tuncel"
