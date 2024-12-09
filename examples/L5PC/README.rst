@@ -54,7 +54,7 @@ The main configuration file is named “recipes” as it contains the ingredient
                 "validation_protocols": ["sAHP_220"],
                 "name_Rin_protocol":"IV_-20",
                 "name_rmp_protocol":"IV_0",
-                "morph_modifiers"; ["replace_axon_with_taper"]
+                "morph_modifiers": ["replace_axon_with_taper"]
             }
         }
     }
