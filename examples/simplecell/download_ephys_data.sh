@@ -62,10 +62,7 @@ FILES_TO_DOWNLOAD=(
 mkdir -p "$DEST_DIR"
 
 # Fetch the list of files from the GitHub API and filter for required files
-# Execute the following line if you are working on linux:
-FILES=$(curl -s "$BASE_API" | grep -oP "\"path\": \"$FOLDER/.*?\.ibw\"" | grep -oP "(?<=\"$FOLDER/)[^\"]+")
-# Execute the following line if you are working on macos:
-# FILES=$(curl -s "$BASE_API" | grep -oE "\"path\": \"$FOLDER/.*?\.ibw")
+FILES=$(curl -s "$BASE_API" | grep -oE "\"path\": \"$FOLDER/[^\"]*\.ibw")
 
 # Download each file if it matches the list to download
 for file in $FILES; do
