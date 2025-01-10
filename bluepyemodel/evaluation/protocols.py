@@ -1002,7 +1002,7 @@ class ProtocolRunner(ephys.protocols.Protocol):
                 logger.debug(
                     "Skipping protocol %s, using saved value %s",
                     protocol_name,
-                    self.threshold_data[prot_output_key]
+                    self.threshold_data[prot_output_key],
                 )
                 new_responses = {prot_output_key, self.threshold_data[prot_output_key]}
             else:
