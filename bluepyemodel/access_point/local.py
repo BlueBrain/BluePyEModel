@@ -666,6 +666,7 @@ class LocalAccessPoint(DataAccessPoint):
             passedValidation=model_data.get("validated", None),
             seed=model_data.get("seed", None),
             emodel_metadata=emodel_metadata,
+            threshold_data=model_data.get("threshold_data", None),
         )
 
         return emodel

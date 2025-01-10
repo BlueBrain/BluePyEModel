@@ -958,6 +958,7 @@ class ProtocolRunner(ephys.protocols.Protocol):
 
         self.protocols = protocols
         self.execution_order = self.compute_execution_order()
+        self.threshold_data = {}
 
     def _add_to_execution_order(self, protocol, execution_order, before_index=None):
         """Recursively adds protocols to the execution order while making sure that their
@@ -996,19 +997,28 @@ class ProtocolRunner(ephys.protocols.Protocol):
         cell_model.freeze(param_values)
 
         for protocol_name in self.execution_order:
-            logger.debug("Computing protocol %s", protocol_name)
-            new_responses = self.protocols[protocol_name].run(
-                cell_model,
-                param_values={},
-                sim=sim,
-                isolate=isolate,
-                timeout=timeout,
-                responses=responses,
-            )
+            prot_output_key = getattr(self.protocols[protocol_name], "output_key", None)
+            if prot_output_key in self.threshold_data:
+                logger.debug(
+                    "Skipping protocol %s, using saved value %s",
+                    protocol_name,
+                    self.threshold_data[prot_output_key]
+                )
+                new_responses = {prot_output_key, self.threshold_data[prot_output_key]}
+            else:
+                logger.debug("Computing protocol %s", protocol_name)
+                new_responses = self.protocols[protocol_name].run(
+                    cell_model,
+                    param_values={},
+                    sim=sim,
+                    isolate=isolate,
+                    timeout=timeout,
+                    responses=responses,
+                )
 
-            if new_responses is None or any(v is None for v in new_responses.values()):
-                logger.debug("None in responses, exiting evaluation")
-                break
+                if new_responses is None or any(v is None for v in new_responses.values()):
+                    logger.debug("None in responses, exiting evaluation")
+                    break
 
             responses.update(new_responses)
 

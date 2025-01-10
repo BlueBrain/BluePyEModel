@@ -27,6 +27,7 @@ from bluepyopt.ephys.responses import TimeVoltageResponse
 from bluepyemodel.access_point import get_access_point
 from bluepyemodel.access_point.local import LocalAccessPoint
 from bluepyemodel.evaluation.evaluator import create_evaluator
+from bluepyemodel.evaluation.protocols import ProtocolRunner
 from bluepyemodel.model import model
 from bluepyemodel.tools.mechanisms import compile_mechs_in_emodel_dir
 from bluepyemodel.tools.mechanisms import delete_compiled_mechanisms
@@ -120,13 +121,17 @@ def get_responses(to_run):
 
     Args:
         to_run (dict): of the form
-            to_run = {"evaluator": CellEvaluator, "parameters": Dict}
+            to_run = {"evaluator": CellEvaluator, "parameters": Dict, "threshold_data": Dict}
     """
 
     eva = to_run["evaluator"]
     params = to_run["parameters"]
 
     eva.cell_model.unfreeze(params)
+
+    for prot in eva.fitness_protocols.values():
+        if to_run.get("threshold_data", {}) and isinstance(prot, ProtocolRunner):
+            prot.threshold_data = to_run["threshold_data"]
 
     responses = eva.run_protocols(protocols=eva.fitness_protocols.values(), param_values=params)
     responses["evaluator"] = eva
@@ -142,6 +147,7 @@ def compute_responses(
     preselect_for_validation=False,
     store_responses=False,
     load_from_local=False,
+    recompute_threshold_protocols=False,
 ):
     """Compute the responses of the emodel to the optimisation and validation protocols.
 
@@ -157,6 +163,8 @@ def compute_responses(
             only select models that have not been through validation yet.
         store_responses (bool): whether to locally store the responses.
         load_from_local (bool): True to load responses from locally saved recordings.
+        recompute_threshold_protocols (bool): True to re-compute rmp, rin, holding current and
+            threshold current even when threshold output is available.
     Returns:
         emodels (list): list of emodels.
     """
@@ -183,6 +191,7 @@ def compute_responses(
                 {
                     "evaluator": copy.deepcopy(cell_evaluator),
                     "parameters": mo.parameters,
+                    "threshold_data": {} if recompute_threshold_protocols else mo.threshold_data,
                 }
             )
 
