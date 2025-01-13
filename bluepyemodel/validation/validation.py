@@ -130,6 +130,11 @@ def validate(access_point, mapper, preselect_for_validation=False):
             )
         )
 
+        # save threshold computation results
+        model.threshold_data = {
+            key: output for key, output in model.responses.items() if key[:4] == "bpo_"
+        }
+
         access_point.store_or_update_emodel(model)
 
     return emodels

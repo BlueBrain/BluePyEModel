@@ -122,6 +122,7 @@ class EModel(EModelMixin):
         emodel_metadata=None,
         workflow_id=None,
         nexus_images=None,  # pylint: disable=unused-argument
+        threshold_data=None,
     ):
         """Init
 
@@ -138,6 +139,10 @@ class EModel(EModelMixin):
             workflow_id (str): EModelWorkflow id on nexus.
             nexus_images (list): list of pdfs associated to the emodel.
                 Not used, retained for legacy purposes only.
+            threshold_data (dict): contains rmp, Rin, holding current and threshold current values
+                to avoid re-computation of related protocols. Keys must match the 'output_key'
+                used in respective protocols. If None, threshold-related protocols will be
+                re-computed each time protocols are run.
         """
 
         self.emodel_metadata = emodel_metadata
@@ -175,6 +180,7 @@ class EModel(EModelMixin):
 
         self.responses = {}
         self.evaluator = None
+        self.threshold_data = threshold_data if threshold_data is not None else {}
 
     def copy_pdf_dependencies_to_new_path(self, seed, overwrite=False):
         """Copy pdf dependencies to new path using allen notation"""
@@ -212,4 +218,5 @@ class EModel(EModelMixin):
             "passedValidation": self.passed_validation,
             "nexus_images": pdf_dependencies,
             "seed": self.seed,
+            "threshold_data": self.threshold_data,
         }
